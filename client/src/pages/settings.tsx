@@ -40,8 +40,8 @@ export default function Settings() {
   
   // API settings
   const [apiKeys, setApiKeys] = useState({
-    openai: process.env.OPENAI_API_KEY || '',
-    googleBooks: process.env.GOOGLE_BOOKS_API_KEY || '',
+    openai: import.meta.env.VITE_OPENAI_API_KEY || '',
+    googleBooks: import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || '',
   });
   
   // Analysis settings

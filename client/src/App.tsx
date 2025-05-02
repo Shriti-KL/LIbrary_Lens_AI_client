@@ -8,17 +8,21 @@ import Analyze from "@/pages/analyze";
 import Archives from "@/pages/archives";
 import Batch from "@/pages/batch";
 import Settings from "@/pages/settings";
+import AuthPage from "@/pages/auth-page";
 import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Analyze} />
-      <Route path="/analyze" component={Analyze} />
-      <Route path="/archives" component={Archives} />
-      <Route path="/batch" component={Batch} />
-      <Route path="/settings" component={Settings} />
+      <ProtectedRoute path="/" component={Analyze} />
+      <ProtectedRoute path="/analyze" component={Analyze} />
+      <ProtectedRoute path="/archives" component={Archives} />
+      <ProtectedRoute path="/batch" component={Batch} />
+      <ProtectedRoute path="/settings" component={Settings} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -27,14 +31,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class">
-        <TooltipProvider>
-          <AppLayout>
-            <Router />
-          </AppLayout>
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider attribute="class">
+          <TooltipProvider>
+            <AppLayout>
+              <Router />
+            </AppLayout>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
