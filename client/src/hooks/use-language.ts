@@ -66,11 +66,12 @@ const translations: Translations = {
     selectedBook: "Selected Book",
     noSelection: "No Book Selected",
     saving: "Saving...",
-    results: "Results",
+    resultCount: "Results",
     preview: "Preview",
     status: "Status",
     clear: "Clear",
     loading: "Loading...",
+    bookProcessed: "Book details have been analyzed successfully."
   },
   es: {
     appName: "LibraryLens AI",

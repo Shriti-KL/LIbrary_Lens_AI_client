@@ -28,13 +28,13 @@ export default function Search() {
     onSuccess: (data) => {
       setSelectedBook(data);
       toast({
-        title: "Book Processed",
-        description: "Book details have been analyzed successfully."
+        title: t('complete'),
+        description: t('bookProcessed')
       });
     },
     onError: (error) => {
       toast({
-        title: "Processing Failed",
+        title: t('error'),
         description: error.message,
         variant: "destructive"
       });

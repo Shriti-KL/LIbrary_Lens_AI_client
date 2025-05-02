@@ -15,7 +15,7 @@ export function useGoogleBooks() {
   const { toast } = useToast();
 
   // Search books mutation
-  const searchBooksMutation = useMutation({
+  const searchMutation = useMutation({
     mutationFn: async (params: GoogleBookSearchParams) => {
       // Build query string
       const queryParams = new URLSearchParams();
@@ -41,20 +41,23 @@ export function useGoogleBooks() {
     }
   });
 
-  // Get book by ISBN query
-  const getBookByISBN = (isbn: string) => {
-    return useQuery({
-      queryKey: ['/api/googlebooks/isbn', isbn],
-      enabled: Boolean(isbn),
-      queryFn: async () => {
-        const response = await apiRequest("GET", `/api/googlebooks/isbn/${isbn}`);
-        return await response.json();
-      },
-    });
-  };
+  // Search by ISBN mutation
+  const searchByISBNMutation = useMutation({
+    mutationFn: async (isbn: string) => {
+      const response = await apiRequest("GET", `/api/googlebooks/isbn/${isbn}`);
+      return await response.json();
+    },
+    onError: (error) => {
+      toast({
+        title: "ISBN Search Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
 
   // Find similar books mutation
-  const findSimilarBooksMutation = useMutation({
+  const similarBooksMutation = useMutation({
     mutationFn: async (bookInfo: Partial<Book>) => {
       const response = await apiRequest("POST", "/api/googlebooks/similar", bookInfo);
       return await response.json();
@@ -68,7 +71,25 @@ export function useGoogleBooks() {
     }
   });
 
+  // Original functions for backward compatibility
+  const searchBooksMutation = searchMutation;
+  const findSimilarBooksMutation = similarBooksMutation;
+  const getBookByISBN = (isbn: string) => {
+    return useQuery({
+      queryKey: ['/api/googlebooks/isbn', isbn],
+      enabled: Boolean(isbn),
+      queryFn: async () => {
+        const response = await apiRequest("GET", `/api/googlebooks/isbn/${isbn}`);
+        return await response.json();
+      },
+    });
+  };
+
   return {
+    searchMutation,
+    searchByISBNMutation,
+    similarBooksMutation,
+    // Keep original exports for compatibility
     searchBooksMutation,
     getBookByISBN,
     findSimilarBooksMutation

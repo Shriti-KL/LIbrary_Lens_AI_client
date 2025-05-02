@@ -1,81 +1,90 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useGoogleBooks } from '@/hooks/use-google-books';
-import { Book } from '@shared/schema';
+import { cn } from '@/lib/utils';
+import { Book as BookType } from '@shared/schema';
+import { Book, Loader } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, BookOpen } from 'lucide-react';
-import BookItem from './BookItem';
 
 interface RelatedBooksProps {
-  book: Partial<Book>;
+  book: Partial<BookType>;
   className?: string;
   onBookClick?: (bookInfo: any) => void;
 }
 
 export default function RelatedBooks({ book, className, onBookClick }: RelatedBooksProps) {
   const { t } = useLanguage();
-  const { findSimilarBooksMutation } = useGoogleBooks();
   
-  // Fetch similar books when book data is available
-  useEffect(() => {
-    if (book && (book.title || book.author || book.genres)) {
-      findSimilarBooksMutation.mutate(book);
+  const { similarBooksMutation } = useGoogleBooks();
+  
+  // Fetch similar books when book changes
+  React.useEffect(() => {
+    if (book && (book.title || book.author)) {
+      similarBooksMutation.mutate({
+        title: book.title || '',
+        author: book.author || ''
+      });
     }
-  }, [book.id, book.title, book.author, JSON.stringify(book.genres)]);
+  }, [book]);
   
-  // Handle book item click
-  const handleBookClick = (bookInfo: any) => {
+  // Handle book selection
+  const handleBookClick = (relatedBook: any) => {
     if (onBookClick) {
-      onBookClick(bookInfo);
+      onBookClick(relatedBook);
     }
   };
   
-  // If no book data, return early
-  if (!book || (!book.title && !book.author && !book.genres)) {
+  if (!book || !(book.title || book.author)) {
     return null;
   }
-
+  
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-lg font-serif">{t('similarBooks')}</CardTitle>
+    <Card className={cn("overflow-hidden", className)}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">
+          {t('similarBooks')}
+        </CardTitle>
       </CardHeader>
       
-      <CardContent>
-        {findSimilarBooksMutation.isPending ? (
-          <div className="text-center py-6">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary mb-2" />
-            <p className="text-sm text-neutral-500">{t('loading')}</p>
+      <CardContent className="p-0">
+        {similarBooksMutation.isPending ? (
+          <div className="flex items-center justify-center p-6">
+            <Loader className="h-5 w-5 text-muted-foreground animate-spin" />
           </div>
-        ) : findSimilarBooksMutation.isSuccess && Array.isArray(findSimilarBooksMutation.data) ? (
-          findSimilarBooksMutation.data.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
-              {findSimilarBooksMutation.data.map((item: any, index: number) => {
-                const volumeInfo = item.volumeInfo || {};
-                return (
-                  <div key={item.id || index} onClick={() => handleBookClick(item)}>
-                    <BookItem
-                      book={{
-                        title: volumeInfo.title || 'Unknown',
-                        author: volumeInfo.authors ? volumeInfo.authors[0] : 'Unknown',
-                        coverImageUrl: volumeInfo.imageLinks?.thumbnail
-                      }}
-                      onClick={onBookClick ? () => handleBookClick(item) : undefined}
+        ) : similarBooksMutation.data && similarBooksMutation.data.length > 0 ? (
+          <div className="divide-y divide-border">
+            {similarBooksMutation.data.slice(0, 5).map((relatedBook: any) => (
+              <div 
+                key={relatedBook.id}
+                className="flex p-3 cursor-pointer hover:bg-accent/30 transition-colors"
+                onClick={() => handleBookClick(relatedBook)}
+              >
+                {relatedBook.thumbnailUrl ? (
+                  <div className="mr-3 flex-shrink-0">
+                    <img 
+                      src={relatedBook.thumbnailUrl} 
+                      alt={relatedBook.title} 
+                      className="w-10 h-auto object-cover rounded-sm"
                     />
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <BookOpen className="h-6 w-6 mx-auto text-neutral-300 mb-2" />
-              <p className="text-sm text-neutral-500">No similar books found</p>
-            </div>
-          )
+                ) : (
+                  <div className="mr-3 flex-shrink-0 w-10 h-14 bg-muted flex items-center justify-center rounded-sm">
+                    <Book className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                
+                <div className="min-w-0">
+                  <h4 className="text-xs font-medium line-clamp-2">{relatedBook.title}</h4>
+                  {relatedBook.author && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{relatedBook.author}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="text-center py-6">
-            <BookOpen className="h-6 w-6 mx-auto text-neutral-300 mb-2" />
-            <p className="text-sm text-neutral-500">Search for books to see related titles</p>
+          <div className="p-3 text-center">
+            <p className="text-xs text-muted-foreground">{t('noResults')}</p>
           </div>
         )}
       </CardContent>
