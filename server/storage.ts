@@ -82,17 +82,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchBooks(query: string): Promise<Book[]> {
-    const lowercaseQuery = `%${query.toLowerCase()}%`;
-    return db
-      .select()
-      .from(books)
-      .where(
-        or(
-          like(books.title, lowercaseQuery),
-          like(books.author, lowercaseQuery),
-          like(books.isbn, lowercaseQuery)
-        )
-      );
+    // Let's do a manual search to see if we're having issues with the ORM
+    console.log("Searching for books with query:", query);
+    
+    const allBooks = await db.select().from(books);
+    console.log("Total books in database:", allBooks.length);
+    
+    // Now let's do the search manually
+    const lowercaseQuery = query.toLowerCase();
+    
+    const results = allBooks.filter(book => 
+      (book.title && book.title.toLowerCase().includes(lowercaseQuery)) ||
+      (book.author && book.author.toLowerCase().includes(lowercaseQuery)) ||
+      (book.isbn && book.isbn.toLowerCase().includes(lowercaseQuery))
+    );
+    
+    console.log("Filtered books:", results.length);
+    return results;
   }
 
   async getRecentBooks(limit: number): Promise<Book[]> {
