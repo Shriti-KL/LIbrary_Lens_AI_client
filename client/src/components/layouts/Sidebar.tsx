@@ -22,7 +22,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
   const { t } = useLanguage();
 
   // Fetch recent books
-  const { data: recentBooks } = useQuery({
+  const { data: recentBooks = [] } = useQuery<any[]>({
     queryKey: ['/api/books/recent'],
     enabled: !mobile, // Only fetch on desktop
   });
@@ -38,62 +38,66 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
     )}>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <nav className="mt-2 flex-1 px-4 space-y-1">
-          <Link href="/analyze">
-            <a 
-              onClick={handleNavigation}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-md", 
-                location === "/" || location === "/analyze" 
-                  ? "bg-primary text-white" 
-                  : "text-neutral-800 hover:bg-primary-light hover:text-white"
-              )}
-            >
-              <ClipboardSignature className="mr-3 h-5 w-5" />
-              {t('bookAnalysis')}
-            </a>
-          </Link>
-          <Link href="/archives">
-            <a 
-              onClick={handleNavigation}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-md", 
-                location === "/archives" 
-                  ? "bg-primary text-white" 
-                  : "text-neutral-800 hover:bg-primary-light hover:text-white"
-              )}
-            >
-              <Archive className="mr-3 h-5 w-5" />
-              {t('bookArchive')}
-            </a>
-          </Link>
-          <Link href="/batch">
-            <a 
-              onClick={handleNavigation}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-md", 
-                location === "/batch" 
-                  ? "bg-primary text-white" 
-                  : "text-neutral-800 hover:bg-primary-light hover:text-white"
-              )}
-            >
-              <LayersIcon className="mr-3 h-5 w-5" />
-              {t('batchProcessing')}
-            </a>
-          </Link>
-          <Link href="/settings">
-            <a 
-              onClick={handleNavigation}
-              className={cn(
-                "flex items-center px-4 py-3 text-sm font-medium rounded-md", 
-                location === "/settings" 
-                  ? "bg-primary text-white" 
-                  : "text-neutral-800 hover:bg-primary-light hover:text-white"
-              )}
-            >
-              <Settings className="mr-3 h-5 w-5" />
-              {t('settings')}
-            </a>
-          </Link>
+          <div 
+            onClick={() => {
+              handleNavigation();
+              window.location.href = "/analyze";
+            }}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
+              location === "/" || location === "/analyze" 
+                ? "bg-primary text-white" 
+                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+            )}
+          >
+            <ClipboardSignature className="mr-3 h-5 w-5" />
+            {t('bookAnalysis')}
+          </div>
+          <div 
+            onClick={() => {
+              handleNavigation();
+              window.location.href = "/archives";
+            }}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
+              location === "/archives" 
+                ? "bg-primary text-white" 
+                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+            )}
+          >
+            <Archive className="mr-3 h-5 w-5" />
+            {t('bookArchive')}
+          </div>
+          <div 
+            onClick={() => {
+              handleNavigation();
+              window.location.href = "/batch";
+            }}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
+              location === "/batch" 
+                ? "bg-primary text-white" 
+                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+            )}
+          >
+            <LayersIcon className="mr-3 h-5 w-5" />
+            {t('batchProcessing')}
+          </div>
+          <div 
+            onClick={() => {
+              handleNavigation();
+              window.location.href = "/settings";
+            }}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
+              location === "/settings" 
+                ? "bg-primary text-white" 
+                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+            )}
+          >
+            <Settings className="mr-3 h-5 w-5" />
+            {t('settings')}
+          </div>
           
           {!mobile && recentBooks && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
@@ -102,12 +106,17 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               </h3>
               <div className="mt-2 space-y-1">
                 {recentBooks.map((book: any) => (
-                  <Link key={book.id} href={`/book/${book.id}`}>
-                    <a className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent hover:text-neutral-800">
-                      <Book className="mr-3 h-4 w-4" />
-                      <span className="truncate">{book.title}</span>
-                    </a>
-                  </Link>
+                  <div 
+                    key={book.id}
+                    onClick={() => {
+                      handleNavigation();
+                      window.location.href = `/book/${book.id}`;
+                    }}
+                    className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent hover:text-neutral-800 cursor-pointer"
+                  >
+                    <Book className="mr-3 h-4 w-4" />
+                    <span className="truncate">{book.title}</span>
+                  </div>
                 ))}
               </div>
             </div>

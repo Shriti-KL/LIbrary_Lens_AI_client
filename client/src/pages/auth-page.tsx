@@ -199,10 +199,10 @@ export default function AuthPage() {
                     {registerMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                        Creating Account...
+                        {t('loading')}
                       </>
                     ) : (
-                      "Create Account"
+                      t('createAccount')
                     )}
                   </Button>
                 </form>
