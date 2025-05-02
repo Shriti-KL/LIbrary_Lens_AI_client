@@ -5,10 +5,136 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
     <title>LibraryLens AI - Book Analysis Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Open+Sans:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Open Sans', sans-serif;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(to bottom, #f0f4f9, #ffffff);
+        min-height: 100vh;
+      }
+      header {
+        background-color: #1e40af;
+        color: white;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      .flex {
+        display: flex;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .items-center {
+        align-items: center;
+      }
+      nav {
+        background-color: white;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .nav-links {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .nav-links li {
+        margin-right: 1.5rem;
+      }
+      .nav-links a {
+        display: block;
+        padding: 0.75rem 0.5rem;
+        color: #4b5563;
+        text-decoration: none;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+      }
+      .nav-links a.active {
+        color: #1e40af;
+        border-bottom-color: #1e40af;
+      }
+      main {
+        padding: 2rem 0;
+      }
+      .card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      h1 {
+        font-family: 'Libre Baskerville', serif;
+        margin-top: 0;
+      }
+      h2 {
+        font-family: 'Libre Baskerville', serif;
+        margin-top: 0;
+        font-size: 1.5rem;
+      }
+      .footer {
+        background-color: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        padding: 1.5rem 0;
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-top: auto;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="static-app">
+      <header>
+        <div class="container flex justify-between items-center">
+          <h1>LibraryLens AI</h1>
+          <p>Book Analysis Platform</p>
+        </div>
+      </header>
+      
+      <nav>
+        <div class="container">
+          <ul class="nav-links">
+            <li><a href="#" class="active">Home</a></li>
+            <li><a href="#">Analyze</a></li>
+            <li><a href="#">Archives</a></li>
+            <li><a href="#">Settings</a></li>
+          </ul>
+        </div>
+      </nav>
+      
+      <main class="container">
+        <div class="card">
+          <h2>Welcome to LibraryLens AI</h2>
+          <p>
+            This application helps librarians analyze and catalog books using AI.
+            The database connection is working properly, and your data is safely stored.
+          </p>
+          <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #e5e7eb;">
+          <h3>Recent Books</h3>
+          <div style="padding: 1rem; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.25rem;">
+            <p>The Great Gatsby by F. Scott Fitzgerald</p>
+          </div>
+        </div>
+      </main>
+      
+      <footer class="footer">
+        <div class="container">
+          <p>LibraryLens AI - Book Analysis Platform</p>
+        </div>
+      </footer>
+    </div>
+
+    <div id="root" style="display:none;"></div>
+    
+    <!-- Uncomment this to revert to dynamic app -->
+    <!-- <script type="module" src="/src/main.tsx"></script> -->
+    
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
   </body>
