@@ -8,6 +8,7 @@ import Analyze from "@/pages/analyze";
 import Archives from "@/pages/archives";
 import Batch from "@/pages/batch";
 import Settings from "@/pages/settings";
+import Search from "@/pages/search";
 import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/analyze" component={Analyze} />
       <Route path="/archives" component={Archives} />
       <Route path="/batch" component={Batch} />
+      <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

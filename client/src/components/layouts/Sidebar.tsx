@@ -9,7 +9,8 @@ import {
   LayersIcon, 
   Settings,
   BookOpen, 
-  Book 
+  Book,
+  Search
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -78,6 +79,20 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
             >
               <LayersIcon className="mr-3 h-5 w-5" />
               {t('batchProcessing')}
+            </a>
+          </Link>
+          <Link href="/search">
+            <a 
+              onClick={handleNavigation}
+              className={cn(
+                "flex items-center px-4 py-3 text-sm font-medium rounded-md", 
+                location === "/search" 
+                  ? "bg-primary text-white" 
+                  : "text-neutral-800 hover:bg-primary-light hover:text-white"
+              )}
+            >
+              <Search className="mr-3 h-5 w-5" />
+              {t('searchBooks')}
             </a>
           </Link>
           <Link href="/settings">
