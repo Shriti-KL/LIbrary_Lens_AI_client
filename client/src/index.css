@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 210 64% 31%;
+  --primary-light: 210 64% 40%;
+  --primary-dark: 210 64% 22%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 34 32% 42%;
+  --secondary-light: 34 32% 52%;
+  --secondary-dark: 34 32% 32%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 45 38% 69%;
+  --accent-light: 45 38% 79%;
+  --accent-dark: 45 38% 59%;
+  --accent-foreground: 210 64% 31%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 210 64% 31%;
+  --radius: 0.5rem;
+  --chart-1: 210 64% 31%;
+  --chart-2: 34 32% 42%;
+  --chart-3: 45 38% 69%;
+  --chart-4: 210 44% 51%;
+  --chart-5: 34 22% 52%;
+  --sidebar-background: 210 64% 31%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 210 64% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 45 38% 69%;
+  --sidebar-accent-foreground: 210 64% 22%;
+  --sidebar-border: 210 54% 41%;
+  --sidebar-ring: 45 38% 69%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 210 64% 40%;
+  --primary-light: 210 64% 50%;
+  --primary-dark: 210 64% 30%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 34 32% 42%;
+  --secondary-light: 34 32% 52%;
+  --secondary-dark: 34 32% 32%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 45 38% 60%;
+  --accent-light: 45 38% 70%;
+  --accent-dark: 45 38% 50%;
+  --accent-foreground: 210 64% 31%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+  --chart-1: 210 64% 40%;
+  --chart-2: 34 32% 52%;
+  --chart-3: 45 38% 60%;
+  --chart-4: 210 44% 61%;
+  --chart-5: 34 22% 62%;
+  --sidebar-background: 210 64% 22%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 210 64% 40%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 45 38% 69%;
+  --sidebar-accent-foreground: 0 0% 0%;
+  --sidebar-border: 210 54% 31%;
+  --sidebar-ring: 45 38% 69%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Font Family Overrides */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Libre Baskerville', serif;
+}
+
+.font-serif {
+  font-family: 'Libre Baskerville', serif;
+}
+
+.font-sans {
+  font-family: 'Open Sans', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Library-themed custom styles */
+.book-spine {
+  position: relative;
+  padding-left: 12px;
+}
+
+.book-spine::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: hsl(var(--primary));
+  border-radius: 2px;
+}
+
+/* Catalog-specific styles */
+.catalog-entry {
+  font-family: 'Roboto Mono', monospace;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background-color: hsl(var(--muted));
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+}
+
+/* Progress indicator styling */
+.reading-level-indicator {
+  height: 8px;
+  background-color: hsl(var(--muted));
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.reading-level-indicator div {
+  height: 100%;
+  background-color: hsl(var(--secondary));
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+}
