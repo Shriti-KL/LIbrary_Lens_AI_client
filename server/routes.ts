@@ -5,7 +5,7 @@ import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
 import { processBookAnalysis, analyzeBookCover } from "./services/openai";
-import { enrichBookMetadata } from "./services/googleBooks";
+import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -170,10 +170,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Batch processing endpoint
   app.post("/api/books/batch", upload.array("coverImages", 10), async (req: Request, res: Response) => {
     try {
-      // Handle batch processing
-      res.status(200).json({ message: "Batch processing initiated" });
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files were uploaded" });
+      }
+      
+      // Process each image and apply book analysis
+      const results = [];
+      const processed = { success: 0, failed: 0 };
+      
+      for (const file of files) {
+        try {
+          // Convert image to base64
+          const imageBase64 = file.buffer.toString("base64");
+          
+          // Analyze cover
+          const coverAnalysis = await analyzeBookCover(imageBase64);
+          
+          // Enrich with Google Books data
+          const enrichedData = await enrichBookMetadata(coverAnalysis);
+          
+          // Process full analysis
+          const analysisResult = await processBookAnalysis({
+            ...enrichedData,
+            coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
+            options: {
+              summary: true,
+              genres: true,
+              themes: true,
+              readingLevel: true,
+              catalogEntry: true,
+            }
+          });
+          
+          // Save to storage
+          const savedBook = await storage.createBook(analysisResult as InsertBook);
+          
+          results.push({
+            filename: file.originalname,
+            status: "success",
+            book: savedBook
+          });
+          processed.success++;
+        } catch (err) {
+          results.push({
+            filename: file.originalname,
+            status: "error",
+            error: err.message
+          });
+          processed.failed++;
+        }
+      }
+      
+      res.status(200).json({
+        message: `Processed ${processed.success} books successfully, ${processed.failed} failed`,
+        processed,
+        results
+      });
     } catch (error) {
       res.status(500).json({ message: `Error processing batch: ${error.message}` });
+    }
+  });
+
+  // Google Books API integration endpoints
+  
+  // GET /api/googlebooks/search - Search books via Google Books API
+  app.get("/api/googlebooks/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+      const title = req.query.title as string;
+      const author = req.query.author as string;
+      const isbn = req.query.isbn as string;
+      const maxResults = req.query.maxResults ? parseInt(req.query.maxResults as string) : 10;
+      
+      if (!query && !title && !author && !isbn) {
+        return res.status(400).json({ message: "At least one search parameter is required" });
+      }
+      
+      const searchParams = {
+        query: query || "",
+        title,
+        author,
+        isbn,
+        maxResults
+      };
+      
+      const results = await searchBooks(searchParams);
+      res.status(200).json(results);
+    } catch (error) {
+      res.status(500).json({ message: `Error searching Google Books: ${error.message}` });
+    }
+  });
+  
+  // GET /api/googlebooks/isbn/:isbn - Get book by ISBN
+  app.get("/api/googlebooks/isbn/:isbn", async (req: Request, res: Response) => {
+    try {
+      const isbn = req.params.isbn;
+      
+      if (!isbn) {
+        return res.status(400).json({ message: "ISBN is required" });
+      }
+      
+      const book = await getBookByISBN(isbn);
+      
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+      
+      res.status(200).json(book);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching book by ISBN: ${error.message}` });
+    }
+  });
+  
+  // POST /api/googlebooks/similar - Get similar books
+  app.post("/api/googlebooks/similar", async (req: Request, res: Response) => {
+    try {
+      const bookInfo = req.body;
+      
+      if (!bookInfo || (!bookInfo.title && !bookInfo.author && !bookInfo.genres)) {
+        return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
+      }
+      
+      const similarBooks = await searchSimilarBooks(bookInfo);
+      res.status(200).json(similarBooks);
+    } catch (error) {
+      res.status(500).json({ message: `Error finding similar books: ${error.message}` });
     }
   });
 
