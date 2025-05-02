@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User schema (required for authentication)
 export const users = pgTable("users", {
@@ -66,6 +67,18 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Book = typeof books.$inferSelect;
 export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema>;
+
+// Define relations
+export const usersRelations = relations(users, ({ many }) => ({
+  books: many(books)
+}));
+
+export const booksRelations = relations(books, ({ one }) => ({
+  user: one(users, {
+    fields: [books.userId],
+    references: [users.id]
+  })
+}));
 
 // Analysis options
 export enum AnalysisOption {
