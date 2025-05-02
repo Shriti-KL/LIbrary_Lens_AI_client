@@ -43,7 +43,7 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
 
 export async function getBookByISBN(isbn: string): Promise<any | null> {
   try {
-    const books = await searchBooks({ query: `isbn:${isbn}`, isbn });
+    const books = await searchBooks({ query: `isbn:${isbn}` });
     return books.length > 0 ? books[0] : null;
   } catch (error) {
     console.error("Error fetching book by ISBN:", error);
