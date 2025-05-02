@@ -1,102 +1,146 @@
-// Minimal React component with direct rendering and minimal dependencies
+import { useState } from 'react';
+import { Switch, Route, Link } from 'wouter';
+
+const Header = () => (
+  <header className="bg-blue-700 text-white p-4 shadow-md">
+    <div className="container mx-auto flex justify-between items-center">
+      <h1 className="text-xl font-bold">LibraryLens AI</h1>
+      <span className="text-sm">Book Analysis Platform</span>
+    </div>
+  </header>
+);
+
+const Navigation = () => (
+  <nav className="bg-white border-b border-gray-200">
+    <div className="container mx-auto px-4">
+      <ul className="flex space-x-6">
+        <li>
+          <Link href="/">
+            <a className="py-3 px-2 inline-block border-b-2 border-blue-700 text-blue-700">Home</a>
+          </Link>
+        </li>
+        <li>
+          <Link href="/analyze">
+            <a className="py-3 px-2 inline-block">Analyze</a>
+          </Link>
+        </li>
+        <li>
+          <Link href="/archives">
+            <a className="py-3 px-2 inline-block">Archives</a>
+          </Link>
+        </li>
+      </ul>
+    </div>
+  </nav>
+);
+
+const Footer = () => (
+  <footer className="bg-gray-50 border-t py-6 mt-auto">
+    <div className="container mx-auto px-4">
+      <p className="text-sm text-gray-600 text-center">
+        LibraryLens AI - Book Analysis Platform
+      </p>
+    </div>
+  </footer>
+);
+
+// Simple page components
+const HomePage = () => (
+  <div className="bg-white rounded-lg shadow-sm p-6">
+    <h2 className="text-2xl font-bold mb-4">Welcome to LibraryLens AI</h2>
+    <p className="mb-4">
+      This application helps librarians analyze and catalog books using AI technology.
+      Upload a book cover or enter details to get started.
+    </p>
+    <div className="mt-8 flex justify-center">
+      <Link href="/analyze">
+        <a className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          Analyze a Book
+        </a>
+      </Link>
+    </div>
+  </div>
+);
+
+const AnalyzePage = () => (
+  <div className="bg-white rounded-lg shadow-sm p-6">
+    <h2 className="text-2xl font-bold mb-4">Book Analysis</h2>
+    <p className="mb-4">Upload a book cover or enter details to analyze.</p>
+    
+    <form className="mt-6 space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-1">Book Title</label>
+        <input 
+          type="text" 
+          className="w-full p-2 border border-gray-300 rounded-md" 
+          placeholder="Enter book title"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Author</label>
+        <input 
+          type="text" 
+          className="w-full p-2 border border-gray-300 rounded-md" 
+          placeholder="Enter author name"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium mb-1">Book Cover (optional)</label>
+        <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+          <p className="text-gray-500">Drag and drop a book cover image or click to upload</p>
+        </div>
+      </div>
+      
+      <button 
+        type="submit" 
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+      >
+        Analyze Book
+      </button>
+    </form>
+  </div>
+);
+
+const ArchivesPage = () => (
+  <div className="bg-white rounded-lg shadow-sm p-6">
+    <h2 className="text-2xl font-bold mb-4">Book Archives</h2>
+    <p className="mb-4">Your analyzed books will appear here.</p>
+    
+    <div className="mt-6 space-y-4">
+      <div className="p-4 border rounded-md">
+        <h3 className="font-bold">The Great Gatsby</h3>
+        <p className="text-sm text-gray-600">F. Scott Fitzgerald</p>
+      </div>
+    </div>
+  </div>
+);
+
 function App() {
   return (
-    <div style={{
-      fontFamily: 'Open Sans, sans-serif',
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      margin: 0,
-      padding: 0
-    }}>
-      <header style={{
-        backgroundColor: '#1d4ed8',
-        color: 'white',
-        padding: '1rem',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 1rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h1 style={{
-            fontFamily: 'Libre Baskerville, serif',
-            margin: '0',
-            fontSize: '1.5rem',
-            fontWeight: 'bold'
-          }}>LibraryLens AI</h1>
-          <span style={{ fontSize: '0.875rem' }}>Book Analysis Platform</span>
-        </div>
-      </header>
-
-      <main style={{
-        flex: '1',
-        maxWidth: '1200px',
-        margin: '2rem auto',
-        padding: '0 1rem'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          padding: '1.5rem'
-        }}>
-          <h2 style={{
-            fontFamily: 'Libre Baskerville, serif',
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginTop: 0,
-            marginBottom: '1rem'
-          }}>Welcome to LibraryLens AI</h2>
-          
-          <p style={{ marginBottom: '1rem' }}>
-            This application helps librarians analyze and catalog books using AI technology.
-            The PostgreSQL database is connected and functioning correctly.
-          </p>
-          
-          <div style={{
-            margin: '1.5rem 0',
-            borderTop: '1px solid #e5e7eb' 
-          }}></div>
-          
-          <h3 style={{
-            fontFamily: 'Libre Baskerville, serif',
-            fontSize: '1.25rem',
-            fontWeight: 'bold',
-            marginBottom: '0.75rem'
-          }}>Recent Books</h3>
-          
-          <div style={{
-            padding: '1rem', 
-            backgroundColor: '#f9fafb', 
-            border: '1px solid #e5e7eb', 
-            borderRadius: '0.25rem'
-          }}>
-            <p>The Great Gatsby by F. Scott Fitzgerald</p>
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
+      <Navigation />
+      
+      <main className="container mx-auto px-4 py-8 flex-grow">
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/analyze" component={AnalyzePage} />
+          <Route path="/archives" component={ArchivesPage} />
+          <Route>
+            <div className="text-center py-10">
+              <h2 className="text-2xl font-bold mb-2">Page Not Found</h2>
+              <p className="mb-4">The page you are looking for doesn't exist.</p>
+              <Link href="/">
+                <a className="text-blue-600 hover:underline">Go back home</a>
+              </Link>
+            </div>
+          </Route>
+        </Switch>
       </main>
-
-      <footer style={{
-        backgroundColor: '#f9fafb',
-        borderTop: '1px solid #e5e7eb',
-        padding: '1.5rem 0',
-        textAlign: 'center',
-        color: '#6b7280',
-        fontSize: '0.875rem'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 1rem'
-        }}>
-          LibraryLens AI - Book Analysis Platform
-        </div>
-      </footer>
+      
+      <Footer />
     </div>
   );
 }
