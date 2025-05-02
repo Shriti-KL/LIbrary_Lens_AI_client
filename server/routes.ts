@@ -31,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bodyData = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
         bookInfo = {
           ...bodyData,
-          options: bodyData.options ? JSON.parse(bodyData.options) : undefined
+          options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
       
