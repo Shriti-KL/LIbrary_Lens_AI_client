@@ -20,8 +20,8 @@ export default function GoogleBooksSearch({ onBookSelect, className }: GoogleBoo
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState<'general' | 'isbn' | 'title' | 'author'>('general');
   
-  // Get search mutation
-  const { searchMutation, searchByISBNMutation } = useGoogleBooks();
+  // Get search mutations
+  const { searchMutation, searchByISBNMutation, searchBooksMutation } = useGoogleBooks();
   
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

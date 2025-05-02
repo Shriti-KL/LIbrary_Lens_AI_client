@@ -15,7 +15,7 @@ interface RelatedBooksProps {
 export default function RelatedBooks({ book, className, onBookClick }: RelatedBooksProps) {
   const { t } = useLanguage();
   
-  const { similarBooksMutation } = useGoogleBooks();
+  const { similarBooksMutation, findSimilarBooksMutation } = useGoogleBooks();
   
   // Fetch similar books when book changes
   React.useEffect(() => {
