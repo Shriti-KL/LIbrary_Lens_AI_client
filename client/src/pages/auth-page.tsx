@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 import { Redirect } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +31,7 @@ const registerSchema = loginSchema.extend({
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const { user, loginMutation, registerMutation } = useAuth();
+  const { t } = useLanguage();
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -67,9 +69,9 @@ export default function AuthPage() {
         {/* Form Column */}
         <div className="flex flex-col justify-center w-full max-w-md p-8 sm:p-12 space-y-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">Library AI Assistant</h1>
+            <h1 className="text-3xl font-bold">{t('appName')}</h1>
             <p className="text-muted-foreground">
-              Sign in to access your library management tools
+              {t('authRequired')}
             </p>
           </div>
 
@@ -79,8 +81,8 @@ export default function AuthPage() {
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsTrigger value="login">{t('login')}</TabsTrigger>
+              <TabsTrigger value="register">{t('register')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="space-y-4 mt-4">
@@ -91,9 +93,9 @@ export default function AuthPage() {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>{t('username')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="username" {...field} />
+                          <Input placeholder={t('username').toLowerCase()} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -105,11 +107,11 @@ export default function AuthPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t('password')}</FormLabel>
                         <FormControl>
                           <Input 
                             type="password" 
-                            placeholder="password" 
+                            placeholder={t('password').toLowerCase()} 
                             {...field} 
                           />
                         </FormControl>
@@ -126,10 +128,10 @@ export default function AuthPage() {
                     {loginMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                        Signing In...
+                        {t('loading')}
                       </>
                     ) : (
-                      "Sign In"
+                      t('signIn')
                     )}
                   </Button>
                 </form>
@@ -144,9 +146,9 @@ export default function AuthPage() {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel>{t('username')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="username" {...field} />
+                          <Input placeholder={t('username').toLowerCase()} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -158,11 +160,11 @@ export default function AuthPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t('password')}</FormLabel>
                         <FormControl>
                           <Input 
                             type="password" 
-                            placeholder="password" 
+                            placeholder={t('password').toLowerCase()} 
                             {...field} 
                           />
                         </FormControl>
@@ -183,7 +185,7 @@ export default function AuthPage() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>I am a librarian</FormLabel>
+                          <FormLabel>{t('librarian')}</FormLabel>
                         </div>
                       </FormItem>
                     )}

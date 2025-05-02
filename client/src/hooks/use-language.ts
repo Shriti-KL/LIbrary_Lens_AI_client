@@ -64,6 +64,18 @@ const translations: Translations = {
     search: "Search",
     clear: "Clear",
     loading: "Loading...",
+    // Authentication related translations
+    login: "Login",
+    register: "Register", 
+    username: "Username",
+    password: "Password",
+    createAccount: "Create Account",
+    signIn: "Sign In",
+    signOut: "Sign Out",
+    authRequired: "Authentication Required",
+    librarian: "Librarian",
+    general: "General",
+    analysis: "Analysis",
   },
   es: {
     appName: "LibraryLens AI",
