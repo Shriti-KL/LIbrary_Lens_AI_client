@@ -47,7 +47,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/" || location === "/analyze" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
             )}
           >
             <ClipboardSignature className="mr-3 h-5 w-5" />
@@ -62,7 +62,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/archives" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
             )}
           >
             <Archive className="mr-3 h-5 w-5" />
@@ -77,7 +77,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/batch" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
             )}
           >
             <LayersIcon className="mr-3 h-5 w-5" />
@@ -92,7 +92,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/settings" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white"
+                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
             )}
           >
             <Settings className="mr-3 h-5 w-5" />
@@ -112,7 +112,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
                       handleNavigation();
                       window.location.href = `/book/${book.id}`;
                     }}
-                    className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent hover:text-neutral-800 cursor-pointer"
+                    className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
                   >
                     <Book className="mr-3 h-4 w-4" />
                     <span className="truncate">{book.title}</span>
