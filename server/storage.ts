@@ -1,6 +1,6 @@
 import { books, type Book, type InsertBook, users, type User, type InsertUser } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, like, or } from "drizzle-orm";
+import { eq, desc, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -82,23 +82,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchBooks(query: string): Promise<Book[]> {
-    // Let's do a manual search to see if we're having issues with the ORM
-    console.log("Searching for books with query:", query);
+    // Using PostgreSQL ILIKE for case-insensitive pattern matching
+    const searchPattern = `%${query}%`;
     
-    const allBooks = await db.select().from(books);
-    console.log("Total books in database:", allBooks.length);
-    
-    // Now let's do the search manually
-    const lowercaseQuery = query.toLowerCase();
-    
-    const results = allBooks.filter(book => 
-      (book.title && book.title.toLowerCase().includes(lowercaseQuery)) ||
-      (book.author && book.author.toLowerCase().includes(lowercaseQuery)) ||
-      (book.isbn && book.isbn.toLowerCase().includes(lowercaseQuery))
-    );
-    
-    console.log("Filtered books:", results.length);
-    return results;
+    // Using ilike for case-insensitive search
+    return db
+      .select()
+      .from(books)
+      .where(
+        or(
+          ilike(books.title, searchPattern),
+          ilike(books.author, searchPattern),
+          ilike(books.isbn, searchPattern)
+        )
+      );
   }
 
   async getRecentBooks(limit: number): Promise<Book[]> {
