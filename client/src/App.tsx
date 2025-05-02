@@ -11,8 +11,31 @@ import Settings from "@/pages/settings";
 import Search from "@/pages/search";
 import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
+import { useState, useEffect } from "react";
 
 function Router() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    // Simple initialization timeout to ensure components have time to load
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">LibraryLens AI</h2>
+          <p className="text-gray-600">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <Switch>
       <Route path="/" component={Analyze} />

@@ -22,8 +22,8 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useLanguage();
 
-  // Fetch recent books
-  const { data: recentBooks } = useQuery({
+  // Fetch recent books with proper typing and error handling
+  const { data: recentBooks = [] } = useQuery({
     queryKey: ['/api/books/recent'],
     enabled: !mobile, // Only fetch on desktop
   });
@@ -110,7 +110,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
             </a>
           </Link>
           
-          {!mobile && recentBooks && recentBooks.length > 0 && (
+          {!mobile && Array.isArray(recentBooks) && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
               <h3 className="px-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
                 {t('recentBooks')}
@@ -133,7 +133,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
         <div className="flex-shrink-0 flex border-t border-neutral-100 p-4">
           <div className="bg-accent-light/30 rounded-md p-4 w-full">
             <h4 className="text-sm font-semibold text-primary">AI Stats</h4>
-            <p className="text-xs text-neutral-800 mt-1">Books analyzed: {recentBooks?.length || 0}</p>
+            <p className="text-xs text-neutral-800 mt-1">Books analyzed: {Array.isArray(recentBooks) ? recentBooks.length : 0}</p>
             <p className="text-xs text-neutral-800">Version: 1.0.0</p>
           </div>
         </div>
