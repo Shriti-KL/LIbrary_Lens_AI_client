@@ -292,8 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            const analysisResult = await processBookAnalysis({
-              ...enrichedData,
+            const bookAnalysisData: BookWithAnalysisControl = {
+              ...enrichedData as BookWithAnalysisControl,
               // Use coverImage field as per the schema
               coverImage: imageBase64,
               coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
@@ -309,7 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 readingLevel: true,
                 catalogEntry: true,
               }
-            } as BookAnalysisRequest);
+            };
+            const analysisResult = await processBookAnalysis(bookAnalysisData);
             console.log("Full analysis completed successfully");
             
             // Step 4: Save to storage

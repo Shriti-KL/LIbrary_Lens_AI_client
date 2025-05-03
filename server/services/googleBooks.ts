@@ -105,17 +105,23 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
     let searchResults = [];
     
     // Check if this is an ISBN priority search (from manual entry with ISBN)
-    const isISBNPriority = bookInfo.isbnPriority === true && bookInfo.isbn;
+    const isISBNPriority = (bookInfo.isbnPriority === true || bookInfo.isbnPriority === 'true') && !!bookInfo.isbn;
+    const isISBNOnlySearch = (bookInfo.isISBNOnlySearch === 'true' || bookInfo.isISBNOnlySearch === true) && !!bookInfo.isbn;
+    const forceNewResults = !!bookInfo.forceNewAnalysis;
     
     // Log search strategy for debugging
-    console.log(`Google Books search strategy: ${isISBNPriority ? 'ISBN Priority' : 'Standard Search'}`, {
+    console.log(`Google Books search strategy:`, {
+      strategy: isISBNOnlySearch ? 'ISBN-Only Search' : isISBNPriority ? 'ISBN Priority' : 'Standard Search',
       isbn: bookInfo.isbn || "none", 
       title: bookInfo.title || "none", 
-      author: bookInfo.author || "none"
+      author: bookInfo.author || "none",
+      forceNewResults: forceNewResults,
+      isManualSubmission: bookInfo.isManualSubmission,
+      timestamp: bookInfo.requestTimestamp || "none"
     });
     
     // Handle ISBN-only or ISBN-priority search
-    if (bookInfo.isbn && (isISBNPriority || (!bookInfo.title && !bookInfo.author))) {
+    if (bookInfo.isbn && (isISBNOnlySearch || isISBNPriority || (!bookInfo.title && !bookInfo.author))) {
       console.log(`Performing ISBN search with: ${bookInfo.isbn}`);
       
       // Try to get exact match by ISBN
@@ -124,6 +130,11 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
       if (isbnResults) {
         console.log(`ISBN search successful - found book: "${isbnResults.volumeInfo?.title}"`);
         searchResults = [isbnResults];
+        
+        // For ISBN-only searches, we want to populate all fields from Google Books
+        if (isISBNOnlySearch) {
+          console.log(`ISBN-only search - prioritizing all Google Books data over any existing data`);
+        }
       } else {
         console.log(`No results found for ISBN: ${bookInfo.isbn}`);
       }
@@ -157,25 +168,62 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
     const googleBook = searchResults[0];
     const volumeInfo = googleBook.volumeInfo || {};
     
-    // Create enriched book metadata
-    const enrichedBook: BookWithAnalysisControl = {
-      ...bookInfo,
-      title: bookInfo.title || volumeInfo.title,
-      author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
-      publisher: bookInfo.publisher || volumeInfo.publisher,
-      publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
-      pageCount: bookInfo.pageCount || volumeInfo.pageCount,
-      isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
-        volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
-      coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+    // Create enriched book metadata based on search type
+    let enrichedBook: BookWithAnalysisControl;
+    
+    // For ISBN-only searches, always prioritize Google Books data over existing data
+    if (isISBNOnlySearch) {
+      enrichedBook = {
+        ...bookInfo,
+        // Prioritize Google Books data
+        title: volumeInfo.title || bookInfo.title || "",
+        author: (volumeInfo.authors ? volumeInfo.authors[0] : "") || bookInfo.author || "",
+        publisher: volumeInfo.publisher || bookInfo.publisher,
+        publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
+        pageCount: volumeInfo.pageCount || bookInfo.pageCount,
+        isbn: bookInfo.isbn, // Always keep the ISBN that was searched
+        coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
+        
+        // Include additional metadata if available
+        language: volumeInfo.language || bookInfo.language,
+        description: volumeInfo.description || bookInfo.description,
+        categories: volumeInfo.categories || bookInfo.categories,
+        
+        // Preserve analysis control flags
+        isbnPriority: bookInfo.isbnPriority,
+        isManualSubmission: bookInfo.isManualSubmission,
+        isISBNOnlySearch: bookInfo.isISBNOnlySearch,
+        forceNewAnalysis: bookInfo.forceNewAnalysis,
+        requestTimestamp: bookInfo.requestTimestamp,
+      };
       
-      // Preserve analysis control flags
-      isbnPriority: bookInfo.isbnPriority,
-      isManualSubmission: bookInfo.isManualSubmission,
-      isISBNOnlySearch: bookInfo.isISBNOnlySearch,
-      forceNewAnalysis: bookInfo.forceNewAnalysis,
-      requestTimestamp: bookInfo.requestTimestamp,
-    };
+      console.log("ISBN-only search result:", {
+        title: enrichedBook.title,
+        author: enrichedBook.author,
+        publisher: enrichedBook.publisher,
+        hasCoverImage: !!enrichedBook.coverImageUrl
+      });
+    } else {
+      // Normal approach - preserve user entered data, supplement with Google Books
+      enrichedBook = {
+        ...bookInfo,
+        title: bookInfo.title || volumeInfo.title,
+        author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
+        publisher: bookInfo.publisher || volumeInfo.publisher,
+        publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+        pageCount: bookInfo.pageCount || volumeInfo.pageCount,
+        isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
+          volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
+        coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+        
+        // Preserve analysis control flags
+        isbnPriority: bookInfo.isbnPriority,
+        isManualSubmission: bookInfo.isManualSubmission,
+        isISBNOnlySearch: bookInfo.isISBNOnlySearch,
+        forceNewAnalysis: bookInfo.forceNewAnalysis,
+        requestTimestamp: bookInfo.requestTimestamp,
+      };
+    }
     
     // Find similar books
     const similarBooks = await searchSimilarBooks(enrichedBook);
