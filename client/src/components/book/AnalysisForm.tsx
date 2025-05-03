@@ -128,25 +128,25 @@ export default function AnalysisForm({ onSubmit, isLoading, results }: AnalysisF
               htmlFor="auto-extract"
               className="text-sm font-medium text-neutral-700 cursor-pointer"
             >
-              Auto-extract details from cover
+              {t('autoExtract')}
             </label>
           </div>
 
           {isLoading && extracting && (
             <div className="flex items-center text-primary text-sm">
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              Extracting...
+              {t('extracting')}
             </div>
           )}
         </div>
 
         <div className="mt-4">
           <h4 className="text-sm font-medium text-neutral-800 flex items-center justify-between">
-            {selectedFile && autoExtract ? "Auto-extracted details" : "Enter book details"}
+            {selectedFile && autoExtract ? t('autoExtractedDetails') : t('enterDetails')}
             {isLoading && !extracting && (
               <div className="flex items-center text-primary text-sm">
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                Processing...
+                {t('processing')}
               </div>
             )}
           </h4>
