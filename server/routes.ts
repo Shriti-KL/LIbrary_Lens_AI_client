@@ -26,7 +26,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Parse and validate request data
       let bookInfo: any = {};
+      let hasCoverData = false;
       
+      // Parse the body data first
       if (req.body) {
         const bodyData = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
         bookInfo = {
@@ -37,25 +39,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If coverImage is uploaded, process it
       if (req.file) {
+        console.log("Processing uploaded cover image");
         const imageBase64 = req.file.buffer.toString("base64");
         bookInfo.coverImage = imageBase64;
+        hasCoverData = true;
         
-        // Analyze the book cover using OpenAI
-        const coverAnalysisResult = await analyzeBookCover(imageBase64);
-        bookInfo = {
-          ...bookInfo,
-          ...coverAnalysisResult,
-          coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
-        };
+        // Only analyze the cover image if title and author are not provided
+        // This ensures manual input takes priority
+        if (!bookInfo.title || !bookInfo.author || bookInfo.title.trim() === "" || bookInfo.author.trim() === "") {
+          console.log("Analyzing book cover to extract information");
+          const coverAnalysisResult = await analyzeBookCover(imageBase64);
+          
+          // Only use the analysis results for fields that weren't provided
+          bookInfo = {
+            ...bookInfo,
+            title: bookInfo.title && bookInfo.title.trim() !== "" ? bookInfo.title : coverAnalysisResult.title,
+            author: bookInfo.author && bookInfo.author.trim() !== "" ? bookInfo.author : coverAnalysisResult.author,
+            isbn: bookInfo.isbn || coverAnalysisResult.isbn,
+            publisher: bookInfo.publisher || coverAnalysisResult.publisher,
+            publishedYear: bookInfo.publishedYear || coverAnalysisResult.publishedYear,
+            coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
+          };
+        } else {
+          console.log("Using manually entered book details");
+          bookInfo.coverImageData = `data:${req.file.mimetype};base64,${imageBase64}`;
+        }
       }
+      
+      console.log("Book info before validation:", {
+        title: bookInfo.title,
+        author: bookInfo.author,
+        isbn: bookInfo.isbn
+      });
       
       // Validate the analysis request
       const validatedData = bookAnalysisSchema.parse(bookInfo);
       
       // Enrich book metadata from Google Books API if possible
+      console.log("Enriching book metadata with Google Books API");
       let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
       // Process book analysis with OpenAI
+      console.log("Processing full book analysis");
       const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
       res.status(200).json(analysisResult);

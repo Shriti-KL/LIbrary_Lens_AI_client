@@ -27,14 +27,26 @@ export function useBookAnalysis() {
         catalogEntry: boolean;
       }
     }) => {
-      // Update status for metadata
-      setAnalysisSteps(prev => ({
-        ...prev,
-        metadata: { status: "in-progress", progress: 0 }
-      }));
+      // Reset previous analysis and update status for metadata
+      setAnalysisSteps({
+        metadata: { status: "in-progress", progress: 0 },
+        summary: { status: "waiting", progress: 0 },
+        genres: { status: "waiting", progress: 0 },
+        themes: { status: "waiting", progress: 0 },
+        catalogEntry: { status: "waiting", progress: 0 },
+      });
       
       // Add options to form data
       data.formData.append("options", JSON.stringify(data.options));
+      
+      // Check if we have a title and author as a debugging log
+      const hasTitle = data.formData.get('title');
+      const hasAuthor = data.formData.get('author');
+      console.log("Analyzing book with data:", {
+        hasTitle: !!hasTitle,
+        hasAuthor: !!hasAuthor,
+        hasCoverImage: data.formData.has('coverImage')
+      });
       
       // Start request - first update metadata progress
       updateStepProgress("metadata", 50);

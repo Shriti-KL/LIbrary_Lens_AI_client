@@ -208,11 +208,20 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 // Process the full book analysis
 export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
   try {
+    // Log the incoming data for debugging
+    console.log("ProcessBookAnalysis input:", {
+      title: analysisRequest.title,
+      author: analysisRequest.author,
+      hasCoverImage: !!analysisRequest.coverImage
+    });
+    
     const bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
+      publisher: analysisRequest.publisher || null,
+      publishedYear: analysisRequest.publishedYear || null,
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage })
     };
