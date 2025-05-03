@@ -44,21 +44,20 @@ export default function Batch() {
       // Create FormData for batch upload
       const formData = new FormData();
       
-      // Add all files
-      files.forEach((file, index) => {
+      // Add all files to FormData
+      files.forEach(file => {
         formData.append(`coverImages`, file);
-        
-        // Initialize batch results
-        setBatchResults(prev => [
-          ...prev,
-          {
-            id: `batch-${Date.now()}-${index}`,
-            name: file.name,
-            status: 'pending',
-            progress: 0
-          }
-        ]);
       });
+      
+      // Initialize batch results (all at once to avoid multiple state updates)
+      const initialBatchResults = files.map((file, index) => ({
+        id: `batch-${Date.now()}-${index}`,
+        name: file.name,
+        status: 'pending' as const,
+        progress: 0
+      }));
+      
+      setBatchResults(initialBatchResults);
       
       // Make API request using the standardized apiRequest utility
       const response = await apiRequest('POST', '/api/books/batch', formData);
@@ -112,7 +111,8 @@ export default function Batch() {
           return prev.map(item => {
             // Find matching result by filename
             const matchingResult = data.results.find(
-              r => r.filename === item.name // Use name property instead of file (which is a File object)
+              (r: { filename: string; status: string; book?: any; error?: string }) => 
+                r.filename === item.name // Match on filename
             );
             
             if (matchingResult) {

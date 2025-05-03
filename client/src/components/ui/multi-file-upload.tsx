@@ -40,10 +40,11 @@ export function MultiFileUpload({
       });
       
       // Update state with new files
-      setSelectedFiles(prev => [...prev, ...newFiles]);
+      const updatedFiles = [...selectedFiles, ...newFiles];
+      setSelectedFiles(updatedFiles);
       
       // Call the parent callback with all files
-      onFilesSelect([...selectedFiles.map(f => f.file), ...acceptedFiles]);
+      onFilesSelect(updatedFiles.map(f => f.file));
     }
   }, [onFilesSelect, selectedFiles]);
 
