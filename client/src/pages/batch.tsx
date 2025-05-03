@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
 import BatchUpload from '@/components/book/BatchUpload';
+import { useLocation } from 'wouter';
 import { 
   Card, 
   CardContent,
@@ -24,12 +25,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { BookOpen, AlertCircle, ExternalLink } from 'lucide-react';
-import { useLocation } from 'wouter';
 
 export default function Batch() {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [_, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   
   // State for batch processing
   const [batchResults, setBatchResults] = useState<Array<{
@@ -245,7 +245,7 @@ export default function Batch() {
                             onClick={() => {
                               // Navigate to the book details page
                               if (item.result?.id) {
-                                navigate(`/archives?view=${item.result.id}`);
+                                setLocation(`/archives?view=${item.result.id}`);
                               }
                             }}
                           >
