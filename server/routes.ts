@@ -292,9 +292,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            const bookAnalysisData: BookWithAnalysisControl = {
-              ...enrichedData as BookWithAnalysisControl,
-              // Use coverImage field as per the schema
+            const bookAnalysisData: BookAnalysisRequest = {
+              ...(enrichedData as Partial<Book>),
+              // Set image data properly according to schema
               coverImage: imageBase64,
               coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly

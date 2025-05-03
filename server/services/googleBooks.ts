@@ -105,7 +105,7 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
     let searchResults = [];
     
     // Check if this is an ISBN priority search (from manual entry with ISBN)
-    const isISBNPriority = (bookInfo.isbnPriority === true || bookInfo.isbnPriority === 'true') && !!bookInfo.isbn;
+    const isISBNPriority = ((bookInfo.isbnPriority === true) || (String(bookInfo.isbnPriority) === 'true')) && !!bookInfo.isbn;
     const isISBNOnlySearch = (bookInfo.isISBNOnlySearch === 'true' || bookInfo.isISBNOnlySearch === true) && !!bookInfo.isbn;
     const forceNewResults = !!bookInfo.forceNewAnalysis;
     
@@ -184,10 +184,9 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
         isbn: bookInfo.isbn, // Always keep the ISBN that was searched
         coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
         
-        // Include additional metadata if available
-        language: volumeInfo.language || bookInfo.language,
-        description: volumeInfo.description || bookInfo.description,
-        categories: volumeInfo.categories || bookInfo.categories,
+        // Additional metadata might be available but not in our schema
+        // We'll extract what we can to help with analysis
+        genres: volumeInfo.categories || bookInfo.genres || [],
         
         // Preserve analysis control flags
         isbnPriority: bookInfo.isbnPriority,
