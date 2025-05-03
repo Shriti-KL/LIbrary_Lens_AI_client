@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface FileUploadProps {
   dropzoneText?: string;
   fileTypeText?: string;
   isLoading?: boolean;
+  selectedFile?: File | null; // Pass the selected file from parent for controlled behavior
 }
 
 export function FileUpload({
@@ -22,9 +23,29 @@ export function FileUpload({
   dropzoneText = 'Drag and drop your file here',
   fileTypeText = 'PNG, JPG, GIF up to 10MB',
   isLoading = false,
+  selectedFile = null,
 }: FileUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [internalFile, setInternalFile] = useState<File | null>(selectedFile);
+
+  // Effect to handle when selectedFile prop changes externally
+  useEffect(() => {
+    setInternalFile(selectedFile);
+    
+    // If the selectedFile was cleared (set to null), also clear the preview
+    if (selectedFile === null && preview !== null) {
+      setPreview(null);
+    }
+    // Only create a preview if we have a new file
+    else if (selectedFile && selectedFile.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  }, [selectedFile]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);

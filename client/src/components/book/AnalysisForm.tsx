@@ -206,6 +206,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
           fileTypeText="PNG, JPG, GIF up to 10MB"
           className="border-2 border-dashed border-primary/30"
           isLoading={isLoading || extracting}
+          selectedFile={selectedFile}
         />
         
         <div className="mt-6">
