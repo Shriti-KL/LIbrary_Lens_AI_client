@@ -148,9 +148,9 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-serif font-medium text-neutral-800 mb-4">{t('uploadCover')}</h3>
+    <Card className="shadow-sm border border-neutral-200">
+      <CardContent className="pt-6 px-6">
+        <h3 className="text-lg font-serif font-medium text-primary-dark mb-5">{t('uploadCover')}</h3>
         
         <FileUpload 
           onFileSelect={handleFileSelect}
@@ -158,21 +158,22 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
           maxSize={10 * 1024 * 1024}
           dropzoneText={t('dragDrop')}
           fileTypeText="PNG, JPG, GIF up to 10MB"
+          className="border-2 border-dashed border-primary/30"
         />
         
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-neutral-800">{t('enterDetails')}</h4>
+        <div className="mt-6">
+          <h4 className="text-sm font-medium text-primary-dark mb-3">{t('enterDetails')}</h4>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-2 space-y-3">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-3 space-y-4">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('title')}</FormLabel>
+                  <FormItem className="mb-1">
+                    <FormLabel className="text-sm font-medium">{t('title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Book title" {...field} />
+                      <Input placeholder="Book title" {...field} className="border-neutral-300" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,10 +184,10 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                 control={form.control}
                 name="author"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('author')}</FormLabel>
+                  <FormItem className="mb-1">
+                    <FormLabel className="text-sm font-medium">{t('author')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Author name" {...field} />
+                      <Input placeholder="Author name" {...field} className="border-neutral-300" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -197,10 +198,10 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                 control={form.control}
                 name="isbn"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('isbn')}</FormLabel>
+                  <FormItem className="mb-1">
+                    <FormLabel className="text-sm font-medium">{t('isbn')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="ISBN (optional)" {...field} />
+                      <Input placeholder="ISBN (optional)" {...field} className="border-neutral-300" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -211,13 +212,13 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
         </div>
       </CardContent>
       
-      <CardFooter className="bg-neutral-50 pt-6 pb-6">
-        <div className="w-full flex justify-end mt-2">
+      <CardFooter className="bg-neutral-50 px-6 py-6 border-t border-neutral-200">
+        <div className="w-full flex justify-end">
           <Button 
             type="submit" 
             onClick={form.handleSubmit(handleSubmit)}
             disabled={isLoading}
-            className="px-6"
+            className="px-6 py-2 bg-primary hover:bg-primary-dark text-white font-medium"
           >
             {isLoading ? t('processing') : t('analyzeBook')}
           </Button>

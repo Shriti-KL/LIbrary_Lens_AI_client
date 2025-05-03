@@ -58,17 +58,18 @@ export default function Analyze() {
   };
   
   return (
-    <div>
+    <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
-      <div className="mb-6 border-b border-neutral-100 pb-2">
-        <h1 className="text-2xl font-serif font-semibold text-primary">
+      <div className="mb-8 border-b border-neutral-200 pb-3">
+        <h1 className="text-2xl font-serif font-semibold text-primary-dark">
           {t('bookAnalysis')}
         </h1>
+        <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
       </div>
       
-      <div className="md:grid md:grid-cols-6 md:gap-6">
+      <div className="md:grid md:grid-cols-6 md:gap-8">
         {/* Left Column - Upload & Analysis Options */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-8">
           {/* Upload Form */}
           <AnalysisForm 
             onSubmit={handleSubmit} 
@@ -83,7 +84,7 @@ export default function Analyze() {
         </div>
         
         {/* Right Column - Results */}
-        <div className="mt-6 md:mt-0 md:col-span-4">
+        <div className="mt-8 md:mt-0 md:col-span-4">
           <BookResult 
             book={analysisMutation.data || {}}
             isLoading={analysisMutation.isPending}
