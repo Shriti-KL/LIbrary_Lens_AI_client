@@ -30,6 +30,22 @@ export default function Analyze() {
   
   // Handle form submission
   const handleSubmit = (formData: FormData) => {
+    // Force reset the mutation data to clear previous results
+    // This guarantees we won't see old data
+    analysisMutation.reset();
+    
+    // Add a random element to force a unique request
+    formData.append('forceUnique', Math.random().toString(36).substring(2));
+    
+    // Log the form data for debugging
+    const formDataDebug = {
+      title: formData.get('title'),
+      author: formData.get('author'),
+      hasImage: formData.has('coverImage')
+    };
+    console.log("Submitting analysis with form data:", formDataDebug);
+    
+    // Start the mutation with the modified form data
     analysisMutation.mutate({ formData, options });
   };
   
