@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
-import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
+import { bookAnalysisSchema, Book, InsertBook, BookWithAnalysisControl } from "@shared/schema";
 import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
@@ -283,8 +283,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...coverAnalysis, 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
-              author: coverAnalysis.author || "Unknown author"
-            });
+              author: coverAnalysis.author || "Unknown author",
+              // Add analysis control flags
+              isManualSubmission: 'false',
+              requestTimestamp: Date.now().toString()
+            } as BookWithAnalysisControl);
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis
@@ -292,8 +295,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const analysisResult = await processBookAnalysis({
               ...enrichedData,
               // Use coverImage field as per the schema
-              coverImage: `data:${file.mimetype};base64,${imageBase64}`,
+              coverImage: imageBase64,
+              coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
+              // Keep track that this is from batch processing
+              isManualSubmission: 'false',
+              forceNewAnalysis: Date.now().toString(),
+              requestTimestamp: Date.now().toString(),
               options: {
                 summary: true,
                 genres: true,
@@ -301,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 readingLevel: true,
                 catalogEntry: true,
               }
-            });
+            } as BookAnalysisRequest);
             console.log("Full analysis completed successfully");
             
             // Step 4: Save to storage

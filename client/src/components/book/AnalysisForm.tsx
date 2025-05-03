@@ -86,10 +86,15 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     formData.append('isbn', values.isbn || '');
     
     // For manual submission with ISBN only, we need to flag it specially to ensure
-    // Google Books API is used for lookup
-    if (!hasTitle && !hasAuthor && hasISBN) {
+    // Google Books API is used for lookup with priority
+    const isISBNOnlySearch = (!hasTitle && !hasAuthor && hasISBN);
+    if (isISBNOnlySearch) {
       formData.append('isISBNOnlySearch', 'true');
+      formData.append('isbnPriority', 'true');
       console.log(`Book analysis form submission ${submissionId} - ISBN-only search: ${values.isbn}`);
+    } else if (hasISBN) {
+      // Even when not ISBN-only, if ISBN is present, we can prioritize it for lookup
+      formData.append('isbnPriority', 'true');
     }
     
     // Only include the book cover if in auto-extract mode or explicitly requested
