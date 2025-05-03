@@ -103,21 +103,42 @@ export default function Batch() {
       return () => clearInterval(progressInterval);
     },
     onSuccess: (data) => {
+      console.log("Batch processing response:", data);
+      
       // Update batch results with success data
       if (Array.isArray(data.results)) {
-        setBatchResults(prev => 
-          prev.map((item, index) => ({
-            ...item,
-            status: 'complete',
-            progress: 100,
-            result: data.results[index] || {}
-          }))
-        );
+        setBatchResults(prev => {
+          // Map each result to its corresponding file using filename
+          return prev.map(item => {
+            // Find matching result by filename
+            const matchingResult = data.results.find(
+              r => r.filename === item.name // Use name property instead of file (which is a File object)
+            );
+            
+            if (matchingResult) {
+              return {
+                ...item,
+                status: matchingResult.status === 'success' ? 'complete' : 'error',
+                progress: 100,
+                result: matchingResult.book || {},
+                error: matchingResult.error
+              };
+            }
+            
+            // No matching result found
+            return {
+              ...item,
+              status: 'error',
+              progress: 100,
+              error: 'No result returned from server'
+            };
+          });
+        });
       }
       
       toast({
         title: 'Batch Processing Complete',
-        description: `Processed ${data.processed || 0} books successfully.`,
+        description: `Processed ${data.processed?.success || 0} books successfully, ${data.processed?.failed || 0} failed.`,
       });
       
       // Invalidate books query to refresh archives
@@ -181,7 +202,7 @@ export default function Batch() {
                   {batchResults.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        {item.result?.title || item.file}
+                        {item.result?.title || item.name}
                       </TableCell>
                       <TableCell>
                         {item.status === 'pending' && (
