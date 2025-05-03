@@ -49,6 +49,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Manual entry detected from content`);
         }
         
+        // Check for ISBN-only search flag - this is a special case
+        const isISBNOnlySearch = bodyData.isISBNOnlySearch === 'true';
+        if (isISBNOnlySearch && bodyData.isbn && bodyData.isbn.trim() !== "") {
+          isUserEntry = true;
+          console.log(`[${requestId}] ISBN-only search detected: ${bodyData.isbn}`);
+          
+          // For ISBN-only search, we'll prioritize Google Books API lookup
+          bookInfo.isbnPriority = true;
+        }
+        
         // Check if the client is forcing a new analysis (happens when modifying a previous result)
         const forceNewAnalysis = bodyData.forceNewAnalysis;
         if (forceNewAnalysis) {

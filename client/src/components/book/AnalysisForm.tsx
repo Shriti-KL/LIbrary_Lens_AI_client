@@ -35,6 +35,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
+  const [manualEntryMode, setManualEntryMode] = useState(false);
   
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,12 +47,36 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     },
   });
 
+  // Monitor form changes to detect manual entry
+  React.useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      // If user types in any field and we're not already in manual mode, switch to it
+      if ((value.title || value.author || value.isbn) && !manualEntryMode) {
+        console.log("Manual entry detected, switching to manual mode");
+        setManualEntryMode(true);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, manualEntryMode]);
+  
   // Handle form submission
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     // Create a unique ID for this form submission for tracking
     const submissionId = Date.now().toString();
     console.log(`Book analysis form submission ${submissionId} - Manual submission with values:`, values);
     
+    // Check if we have actual values (not just empty strings)
+    const hasTitle = values.title && values.title.trim().length > 0;
+    const hasAuthor = values.author && values.author.trim().length > 0;
+    const hasISBN = values.isbn && values.isbn.trim().length > 0;
+    
+    // If this is a manual entry (title, author, or ISBN entered)
+    // and we still have a previously uploaded file, ask if they want to clear it
+    if ((hasTitle || hasAuthor || hasISBN) && !manualEntryMode && selectedFile) {
+      setManualEntryMode(true);
+    }
+
     const formData = new FormData();
     
     // Always explicitly add form values, even if empty
@@ -60,14 +85,28 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     formData.append('author', values.author || '');
     formData.append('isbn', values.isbn || '');
     
-    // Add file if selected
-    if (selectedFile) {
+    // For manual submission with ISBN only, we need to flag it specially to ensure
+    // Google Books API is used for lookup
+    if (!hasTitle && !hasAuthor && hasISBN) {
+      formData.append('isISBNOnlySearch', 'true');
+      console.log(`Book analysis form submission ${submissionId} - ISBN-only search: ${values.isbn}`);
+    }
+    
+    // Only include the book cover if in auto-extract mode or explicitly requested
+    if (selectedFile && (!manualEntryMode || confirm("Keep using the uploaded cover image with your manual entry?"))) {
       formData.append('coverImage', selectedFile);
       console.log(`Book analysis form submission ${submissionId} - Including file: ${selectedFile.name}`);
+    } else if (manualEntryMode && selectedFile) {
+      // User chose not to use the cover, so clear it
+      setSelectedFile(null);
     }
     
     // Add a unique timestamp to force the server to treat this as a new request
     formData.append('requestTimestamp', submissionId);
+    
+    // Explicitly mark this as a manual submission
+    formData.append('isManualSubmission', 'true');
+    formData.append('forceNewAnalysis', submissionId);
     
     // Submit with analysis options
     onSubmit(formData, {
@@ -147,10 +186,35 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     }
   };
 
+  // Create a function to clear the uploaded file
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setManualEntryMode(false);
+  };
+
   return (
     <Card>
       <CardContent className="pt-6">
         <h3 className="text-lg font-serif font-medium text-neutral-800 mb-4">{t('uploadCover')}</h3>
+        
+        {/* Show a warning if we're in manual mode but still have a selected file */}
+        {manualEntryMode && selectedFile && (
+          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+            <div className="flex items-center justify-between">
+              <span>
+                File "{selectedFile.name}" will be ignored for manual search.
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearSelectedFile}
+                className="text-xs hover:bg-yellow-100"
+              >
+                Clear File
+              </Button>
+            </div>
+          </div>
+        )}
         
         <FileUpload 
           onFileSelect={handleFileSelect}

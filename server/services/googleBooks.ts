@@ -102,24 +102,54 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
 export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     let query = "";
+    let searchResults = [];
     
-    if (bookInfo.isbn) {
-      // If ISBN is available, use it for precise matching
-      query = `isbn:${bookInfo.isbn}`;
-    } else if (bookInfo.title && bookInfo.author) {
-      // Otherwise use title and author
-      query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
-    } else if (bookInfo.title) {
-      // Fall back to just title
-      query = `intitle:${bookInfo.title}`;
-    } else {
-      // Not enough information to search
-      return bookInfo;
+    // Check if this is an ISBN priority search (from manual entry with ISBN)
+    const isISBNPriority = bookInfo.isbnPriority === true && bookInfo.isbn;
+    
+    // Log search strategy for debugging
+    console.log(`Google Books search strategy: ${isISBNPriority ? 'ISBN Priority' : 'Standard Search'}`, {
+      isbn: bookInfo.isbn || "none", 
+      title: bookInfo.title || "none", 
+      author: bookInfo.author || "none"
+    });
+    
+    // Handle ISBN-only or ISBN-priority search
+    if (bookInfo.isbn && (isISBNPriority || (!bookInfo.title && !bookInfo.author))) {
+      console.log(`Performing ISBN search with: ${bookInfo.isbn}`);
+      
+      // Try to get exact match by ISBN
+      const isbnResults = await getBookByISBN(bookInfo.isbn as string);
+      
+      if (isbnResults) {
+        console.log(`ISBN search successful - found book: "${isbnResults.volumeInfo?.title}"`);
+        searchResults = [isbnResults];
+      } else {
+        console.log(`No results found for ISBN: ${bookInfo.isbn}`);
+      }
     }
     
-    const searchResults = await searchBooks({ query });
+    // If no ISBN results or not an ISBN-priority search, use standard approach
+    if (searchResults.length === 0 && !isISBNPriority) {
+      if (bookInfo.isbn) {
+        query = `isbn:${bookInfo.isbn}`;
+      } else if (bookInfo.title && bookInfo.author) {
+        query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
+      } else if (bookInfo.title) {
+        query = `intitle:${bookInfo.title}`;
+      } else {
+        // Not enough information to search
+        console.log("Not enough information for Google Books search");
+        return bookInfo;
+      }
+      
+      console.log(`Performing standard search with query: "${query}"`);
+      searchResults = await searchBooks({ query });
+      console.log(`Standard search returned ${searchResults.length} results`);
+    }
     
     if (searchResults.length === 0) {
+      console.log("No Google Books results found with any search method");
       return bookInfo;
     }
     

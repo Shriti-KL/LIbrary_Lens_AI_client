@@ -63,6 +63,14 @@ export const bookAnalysisSchema = z.object({
   deweyDecimal: z.string().nullable().optional(),
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
+  
+  // Analysis control flags
+  isManualSubmission: z.string().optional(), // 'true' or 'false'
+  isISBNOnlySearch: z.string().optional(),   // 'true' or 'false'
+  forceNewAnalysis: z.string().optional(),   // Timestamp for forcing a fresh analysis
+  isbnPriority: z.boolean().optional(),      // Flag for ISBN-first search  
+  requestTimestamp: z.string().optional(),   // Unique identifier for the request
+  
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),
