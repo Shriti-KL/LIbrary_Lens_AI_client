@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +18,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 
-// Form schema
+// Form schema - all fields optional now
 const formSchema = z.object({
   title: z.string().optional(),
   author: z.string().optional(),
@@ -28,9 +28,10 @@ const formSchema = z.object({
 interface AnalysisFormProps {
   onSubmit: (formData: FormData, options: any) => void;
   isLoading: boolean;
+  results?: any; // Results from the API for auto-fill
 }
 
-export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps) {
+export default function AnalysisForm({ onSubmit, isLoading, results }: AnalysisFormProps) {
   const { t } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
@@ -46,14 +47,24 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     },
   });
 
+  // Update form when results change
+  useEffect(() => {
+    if (results) {
+      if (results.title) form.setValue('title', results.title);
+      if (results.author) form.setValue('author', results.author);
+      if (results.isbn) form.setValue('isbn', results.isbn || '');
+      setExtracting(false);
+    }
+  }, [results, form]);
+
   // Handle form submission
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const formData = new FormData();
     
-    // Add form values
-    if (values.title) formData.append('title', values.title || '');
-    if (values.author) formData.append('author', values.author || '');
-    if (values.isbn) formData.append('isbn', values.isbn || '');
+    // Add form values - handle undefined values properly
+    if (values.title) formData.append('title', values.title);
+    if (values.author) formData.append('author', values.author);
+    if (values.isbn) formData.append('isbn', values.isbn);
     
     // Add file if selected
     if (selectedFile) {
@@ -70,23 +81,6 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     });
   };
 
-  // Auto-submit form when a file is selected
-  const handleAutoSubmit = () => {
-    if (selectedFile && autoExtract) {
-      // Just submit with the file only to auto-extract information
-      const formData = new FormData();
-      formData.append('coverImage', selectedFile);
-      
-      onSubmit(formData, {
-        summary: true,
-        genres: true,
-        themes: true,
-        readingLevel: true,
-        catalogEntry: true,
-      });
-    }
-  };
-
   // Handle file selection
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -94,21 +88,18 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     // If auto-extract is enabled, automatically submit for analysis
     if (autoExtract && !isLoading) {
       setExtracting(true);
-      // Use a small timeout to allow UI to update
-      setTimeout(() => {
-        // Create a formData with just the file
-        const formData = new FormData();
-        formData.append('coverImage', file);
-        
-        // Submit for analysis
-        onSubmit(formData, {
-          summary: true,
-          genres: true,
-          themes: true,
-          readingLevel: true,
-          catalogEntry: true,
-        });
-      }, 100);
+      // Create a formData with just the file
+      const formData = new FormData();
+      formData.append('coverImage', file);
+      
+      // Submit for analysis
+      onSubmit(formData, {
+        summary: true,
+        genres: true,
+        themes: true,
+        readingLevel: true,
+        catalogEntry: true,
+      });
     }
   };
 
@@ -125,8 +116,40 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
           fileTypeText="PNG, JPG, GIF up to 10MB"
         />
         
+        {/* Auto-extract switch */}
+        <div className="flex items-center justify-between mt-4 mb-2">
+          <div className="flex items-center space-x-2">
+            <Switch 
+              id="auto-extract" 
+              checked={autoExtract}
+              onCheckedChange={setAutoExtract}
+            />
+            <label
+              htmlFor="auto-extract"
+              className="text-sm font-medium text-neutral-700 cursor-pointer"
+            >
+              Auto-extract details from cover
+            </label>
+          </div>
+
+          {isLoading && extracting && (
+            <div className="flex items-center text-primary text-sm">
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              Extracting...
+            </div>
+          )}
+        </div>
+
         <div className="mt-4">
-          <h4 className="text-sm font-medium text-neutral-800">{t('enterDetails')}</h4>
+          <h4 className="text-sm font-medium text-neutral-800 flex items-center justify-between">
+            {selectedFile && autoExtract ? "Auto-extracted details" : "Enter book details"}
+            {isLoading && !extracting && (
+              <div className="flex items-center text-primary text-sm">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Processing...
+              </div>
+            )}
+          </h4>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-2 space-y-3">
@@ -137,7 +160,10 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                   <FormItem>
                     <FormLabel>{t('title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Book title" {...field} />
+                      <Input 
+                        placeholder={autoExtract ? "Will be auto-detected" : "Book title"} 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,7 +177,10 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                   <FormItem>
                     <FormLabel>{t('author')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Author name" {...field} />
+                      <Input 
+                        placeholder={autoExtract ? "Will be auto-detected" : "Author name"} 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -165,7 +194,10 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                   <FormItem>
                     <FormLabel>{t('isbn')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="ISBN (optional)" {...field} />
+                      <Input 
+                        placeholder={autoExtract ? "Will be auto-detected if available" : "ISBN (optional)"} 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

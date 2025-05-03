@@ -28,10 +28,22 @@ export default function Analyze() {
     }));
   };
   
+  // Reference to the analysis form component
+  const analysisFormRef = React.useRef<{
+    updateFormWithAnalysisResults: (data: any) => void;
+  } | null>(null);
+
   // Handle form submission
   const handleSubmit = (formData: FormData) => {
     analysisMutation.mutate({ formData, options });
   };
+  
+  // Update form with analysis results when they become available
+  React.useEffect(() => {
+    if (analysisMutation.data && analysisFormRef.current) {
+      analysisFormRef.current.updateFormWithAnalysisResults(analysisMutation.data);
+    }
+  }, [analysisMutation.data]);
   
   // Handle save to archive
   const handleSave = (book: Partial<Book>) => {
@@ -68,6 +80,7 @@ export default function Analyze() {
           <AnalysisForm 
             onSubmit={handleSubmit} 
             isLoading={analysisMutation.isPending}
+            results={analysisMutation.data}
           />
           
           {/* Analysis Options */}
