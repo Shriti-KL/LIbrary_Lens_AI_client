@@ -211,19 +211,15 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     // Create a unique ID for this analysis request
     const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     
-    // Extract the force unique parameter if it exists
-    const forceUnique = analysisRequest.forceUnique || analysisId;
-    
     // Log the incoming data for debugging
-    console.log(`[${analysisId}] NEW BOOK ANALYSIS REQUEST received:`, {
+    console.log(`[${analysisId}] ProcessBookAnalysis input:`, {
       title: analysisRequest.title,
       author: analysisRequest.author,
       hasCoverImage: !!analysisRequest.coverImage,
-      forceUnique: forceUnique.substring(0, 10) // Only log part of it
+      existingSummary: !!analysisRequest.summary
     });
     
-    // IMPORTANT: Create a completely fresh book object for this analysis
-    // Do not reuse ANY previous analysis data
+    // Start fresh with a new book object, ignoring any existing analysis fields
     const bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
@@ -231,18 +227,17 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       coverImageUrl: analysisRequest.coverImageUrl || null,
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
-      
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
       
-      // Force all analysis fields to be null initially
+      // Reset all analysis fields
       summary: null,
-      genres: [],
-      themes: [],
+      genres: null,
+      themes: null,
       readingLevel: null,
       catalogEntry: null,
       deweyDecimal: null,
-      metadata: { analysisId, timestamp: Date.now() }
+      metadata: {}
     };
     
     const options = analysisRequest.options || {
@@ -253,7 +248,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       catalogEntry: true,
     };
     
-    console.log(`[${analysisId}] GENERATING fresh analysis for "${bookInfo.title}" by ${bookInfo.author} with unique ID ${forceUnique.substring(0, 10)}...`);
+    console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}`);
 
     // Process book analysis in sequence
     if (options.summary) {
