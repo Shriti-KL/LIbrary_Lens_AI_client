@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
-import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
+import { bookAnalysisSchema, Book, InsertBook, BookAnalysisRequest } from "@shared/schema";
 import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
@@ -125,7 +125,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      const analysisResult = await processBookAnalysis(enrichedBookInfo);
+      
+      // Create a properly typed BookAnalysisRequest object
+      const bookAnalysisRequest: BookAnalysisRequest = {
+        title: enrichedBookInfo.title,
+        author: enrichedBookInfo.author,
+        isbn: enrichedBookInfo.isbn,
+        coverImage: (enrichedBookInfo as any).coverImage, 
+        coverImageData: (enrichedBookInfo as any).coverImageData,
+        coverImageUrl: enrichedBookInfo.coverImageUrl,
+        publisher: enrichedBookInfo.publisher,
+        publishedYear: enrichedBookInfo.publishedYear,
+        pageCount: enrichedBookInfo.pageCount,
+        summary: enrichedBookInfo.summary,
+        // Ensure genres is always a string array or null/undefined
+        genres: Array.isArray(enrichedBookInfo.genres) ? 
+          enrichedBookInfo.genres.map(g => String(g)) : null,
+        themes: enrichedBookInfo.themes,
+        readingLevel: enrichedBookInfo.readingLevel,
+        catalogEntry: enrichedBookInfo.catalogEntry,
+        deweyDecimal: enrichedBookInfo.deweyDecimal,
+        metadata: (enrichedBookInfo as any).metadata,
+        userId: (enrichedBookInfo as any).userId,
+        isUserEntry: (enrichedBookInfo as any).isUserEntry,
+        options: (analysisData.options || {}) as any
+      };
+      
+      const analysisResult = await processBookAnalysis(bookAnalysisRequest);
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
