@@ -113,9 +113,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate the analysis request
       const validatedData = bookAnalysisSchema.parse(bookInfo);
       
+      // Add the user entry flag for proper handling in Google Books API
+      const analysisData = {
+        ...validatedData,
+        isUserEntry: isUserEntry // Flag to control whether to prefer Google data or user data
+      };
+      
       // Enrich book metadata from Google Books API if possible
       console.log(`[${requestId}] Enriching book metadata with Google Books API`);
-      let enrichedBookInfo = await enrichBookMetadata(validatedData);
+      let enrichedBookInfo = await enrichBookMetadata(analysisData);
       
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
@@ -270,10 +276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Step 2: Enrich with Google Books data
             console.log("Step 2: Enriching with Google Books data...");
             const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis, 
+              ...coverAnalysis,
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
-              author: coverAnalysis.author || "Unknown author"
+              author: coverAnalysis.author || "Unknown author",
+              // This is an auto-extraction, not a manual user entry, so we can trust Google data 
+              isUserEntry: false 
             });
             console.log("Data enrichment successful");
             

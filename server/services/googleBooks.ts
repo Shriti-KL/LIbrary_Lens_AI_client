@@ -127,11 +127,33 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     const googleBook = searchResults[0];
     const volumeInfo = googleBook.volumeInfo || {};
     
+    // Determine if we should trust the Google API data over user-entered data
+    // We'll check for a good match by comparing the title similarity
+    const isTitleMatch = !bookInfo.title || !volumeInfo.title 
+      ? false
+      : (
+        // Simple similarity check - if titles share core words or are close enough
+        volumeInfo.title.toLowerCase().includes(bookInfo.title.toLowerCase()) ||
+        bookInfo.title.toLowerCase().includes(volumeInfo.title.toLowerCase()) ||
+        // Similar enough titles (at least half the words match)
+        bookInfo.title.toLowerCase().split(/\s+/)
+          .filter(word => volumeInfo.title.toLowerCase().includes(word)).length >= 
+            bookInfo.title.toLowerCase().split(/\s+/).length / 2
+      );
+    
+    // If we have a title match and this isn't a manual correction, prefer Google's data
+    const isUserManualEntered = bookInfo.isUserEntry === true;
+    const shouldUseGoogleData = isTitleMatch && !isUserManualEntered;
+    
+    console.log(`Title match: ${isTitleMatch}, Using Google data: ${shouldUseGoogleData}`);
+    
     // Create enriched book metadata
     const enrichedBook: Partial<Book> = {
       ...bookInfo,
-      title: bookInfo.title || volumeInfo.title,
-      author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
+      // Always prefer Google data for proper capitalization/spelling if it's a match
+      title: shouldUseGoogleData && volumeInfo.title ? volumeInfo.title : bookInfo.title,
+      author: shouldUseGoogleData && volumeInfo.authors ? volumeInfo.authors[0] : bookInfo.author,
+      // For the rest of the fields, prefer Google data if missing from user data
       publisher: bookInfo.publisher || volumeInfo.publisher,
       publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
       pageCount: bookInfo.pageCount || volumeInfo.pageCount,
