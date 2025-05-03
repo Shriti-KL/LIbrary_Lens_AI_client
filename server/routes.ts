@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
-import { bookAnalysisSchema, Book, InsertBook, BookAnalysisRequest } from "@shared/schema";
+import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
 import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
@@ -113,45 +113,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate the analysis request
       const validatedData = bookAnalysisSchema.parse(bookInfo);
       
-      // Add the user entry flag for proper handling in Google Books API
-      const analysisData = {
-        ...validatedData,
-        isUserEntry: isUserEntry // Flag to control whether to prefer Google data or user data
-      };
-      
       // Enrich book metadata from Google Books API if possible
       console.log(`[${requestId}] Enriching book metadata with Google Books API`);
-      let enrichedBookInfo = await enrichBookMetadata(analysisData);
+      let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      
-      // Create a properly typed BookAnalysisRequest object
-      const bookAnalysisRequest: BookAnalysisRequest = {
-        title: enrichedBookInfo.title,
-        author: enrichedBookInfo.author,
-        isbn: enrichedBookInfo.isbn,
-        coverImage: (enrichedBookInfo as any).coverImage, 
-        coverImageData: (enrichedBookInfo as any).coverImageData,
-        coverImageUrl: enrichedBookInfo.coverImageUrl,
-        publisher: enrichedBookInfo.publisher,
-        publishedYear: enrichedBookInfo.publishedYear,
-        pageCount: enrichedBookInfo.pageCount,
-        summary: enrichedBookInfo.summary,
-        // Ensure genres is always a string array or null/undefined
-        genres: Array.isArray(enrichedBookInfo.genres) ? 
-          enrichedBookInfo.genres.map(g => String(g)) : null,
-        themes: enrichedBookInfo.themes,
-        readingLevel: enrichedBookInfo.readingLevel,
-        catalogEntry: enrichedBookInfo.catalogEntry,
-        deweyDecimal: enrichedBookInfo.deweyDecimal,
-        metadata: (enrichedBookInfo as any).metadata,
-        userId: (enrichedBookInfo as any).userId,
-        isUserEntry: (enrichedBookInfo as any).isUserEntry,
-        options: (analysisData.options || {}) as any
-      };
-      
-      const analysisResult = await processBookAnalysis(bookAnalysisRequest);
+      const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
@@ -221,49 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Create book with validated data
       const bookData: InsertBook = req.body;
-      
-      // Check if this is the first save from the book analysis results
-      // If so, try one more time to get proper capitalization from Google Books
-      if (!bookData.id) { // Only try this for new books, not updates
-        try {
-          // Use Google Books to fix capitalization/spelling for all saved books
-          // Create a new object with only the fields from bookData that exist in BookAnalysisRequest
-          const analysisRequest: BookAnalysisRequest = {
-            title: bookData.title,
-            author: bookData.author,
-            isbn: bookData.isbn,
-            coverImageUrl: bookData.coverImageUrl,
-            publisher: bookData.publisher,
-            publishedYear: bookData.publishedYear,
-            pageCount: bookData.pageCount,
-            summary: bookData.summary,
-            genres: Array.isArray(bookData.genres) ? 
-              bookData.genres.map(g => String(g)) : undefined,
-            themes: bookData.themes,
-            readingLevel: bookData.readingLevel,
-            deweyDecimal: bookData.deweyDecimal,
-            userId: bookData.userId,
-            isUserEntry: false // Allow Google data to override - this is the final save
-          };
-          
-          const enhanced = await enrichBookMetadata(analysisRequest);
-          
-          // Merge the enhanced data with the original data, giving priority to enhanced 
-          // data for title and author fields
-          bookData.title = enhanced.title || bookData.title;
-          bookData.author = enhanced.author || bookData.author;
-          
-          // Also use the Google Books cover image if available and we don't have one
-          if (enhanced.coverImageUrl && (!bookData.coverImageUrl || bookData.coverImageUrl === "")) {
-            bookData.coverImageUrl = enhanced.coverImageUrl;
-          }
-        } catch (enrichError) {
-          // Don't fail the save if enhancement fails, just log the error
-          console.error("Failed to enhance book data with Google Books:", enrichError);
-        }
-      }
-      
       const newBook = await storage.createBook(bookData);
+      
       res.status(201).json(newBook);
     } catch (error) {
       res.status(500).json({ message: `Error creating book: ${error.message}` });
@@ -343,38 +270,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Step 2: Enrich with Google Books data
             console.log("Step 2: Enriching with Google Books data...");
             const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis,
+              ...coverAnalysis, 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
-              author: coverAnalysis.author || "Unknown author",
-              // This is an auto-extraction, not a manual user entry, so we can trust Google data 
-              isUserEntry: false 
+              author: coverAnalysis.author || "Unknown author"
             });
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            
-            // Create a properly typed BookAnalysisRequest object
-            const bookAnalysisRequest: BookAnalysisRequest = {
-              title: enrichedData.title,
-              author: enrichedData.author,
-              isbn: enrichedData.isbn,
-              publisher: enrichedData.publisher,
-              publishedYear: enrichedData.publishedYear,
-              pageCount: enrichedData.pageCount,
-              // Only copy string[] genre values, not the unknown type
-              genres: Array.isArray(enrichedData.genres) ? 
-                enrichedData.genres.map(g => String(g)) : undefined,
-              themes: enrichedData.themes,
-              readingLevel: enrichedData.readingLevel,
-              catalogEntry: enrichedData.catalogEntry,
-              deweyDecimal: enrichedData.deweyDecimal,
-              metadata: enrichedData.metadata,
-              isUserEntry: false,
+            const analysisResult = await processBookAnalysis({
+              ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
-              coverImageUrl: enrichedData.coverImageUrl,
+              coverImageUrl: null, // We'll store the image data directly
               options: {
                 summary: true,
                 genres: true,
@@ -382,9 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 readingLevel: true,
                 catalogEntry: true,
               }
-            };
-            
-            const analysisResult = await processBookAnalysis(bookAnalysisRequest);
+            });
             console.log("Full analysis completed successfully");
             
             // Step 4: Save to storage
