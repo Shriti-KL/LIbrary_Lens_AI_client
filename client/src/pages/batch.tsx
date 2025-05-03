@@ -31,7 +31,7 @@ export default function Batch() {
   // State for batch processing
   const [batchResults, setBatchResults] = useState<Array<{
     id: string;
-    file: string;
+    name: string;
     status: 'pending' | 'processing' | 'complete' | 'error';
     progress: number;
     result?: Partial<Book>;
@@ -53,7 +53,7 @@ export default function Batch() {
           ...prev,
           {
             id: `batch-${Date.now()}-${index}`,
-            file: file.name,
+            name: file.name,
             status: 'pending',
             progress: 0
           }
