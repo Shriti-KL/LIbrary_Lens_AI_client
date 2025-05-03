@@ -33,71 +33,63 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
 
   return (
     <div className={cn(
-      "flex flex-col border-r border-neutral-100 bg-white",
+      "flex flex-col border-r border-sidebar-border bg-blue-50/30",
       mobile ? "w-full" : "w-64"
     )}>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <nav className="mt-2 flex-1 px-4 space-y-1">
-          <div 
-            onClick={() => {
-              handleNavigation();
-              window.location.href = "/analyze";
-            }}
+          <Link 
+            to="/analyze"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/" || location === "/analyze" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
+                : "text-neutral-800 hover:bg-primary/90 hover:text-white"
             )}
           >
             <ClipboardSignature className="mr-3 h-5 w-5" />
             {t('bookAnalysis')}
-          </div>
-          <div 
-            onClick={() => {
-              handleNavigation();
-              window.location.href = "/archives";
-            }}
+          </Link>
+          <Link 
+            to="/archives"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/archives" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
+                : "text-neutral-800 hover:bg-primary/90 hover:text-white"
             )}
           >
             <Archive className="mr-3 h-5 w-5" />
             {t('bookArchive')}
-          </div>
-          <div 
-            onClick={() => {
-              handleNavigation();
-              window.location.href = "/batch";
-            }}
+          </Link>
+          <Link 
+            to="/batch"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/batch" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
+                : "text-neutral-800 hover:bg-primary/90 hover:text-white"
             )}
           >
             <LayersIcon className="mr-3 h-5 w-5" />
             {t('batchProcessing')}
-          </div>
-          <div 
-            onClick={() => {
-              handleNavigation();
-              window.location.href = "/settings";
-            }}
+          </Link>
+          <Link
+            to="/settings"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/settings" 
                 ? "bg-primary text-white" 
-                : "text-neutral-800 hover:bg-primary-light hover:text-white font-medium"
+                : "text-neutral-800 hover:bg-primary/90 hover:text-white"
             )}
           >
             <Settings className="mr-3 h-5 w-5" />
             {t('settings')}
-          </div>
+          </Link>
           
           {!mobile && recentBooks && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
@@ -106,17 +98,15 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               </h3>
               <div className="mt-2 space-y-1">
                 {recentBooks.map((book: any) => (
-                  <div 
+                  <Link 
                     key={book.id}
-                    onClick={() => {
-                      handleNavigation();
-                      window.location.href = `/book/${book.id}`;
-                    }}
-                    className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                    to={`/book/${book.id}`}
+                    onClick={handleNavigation}
+                    className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent/70 hover:text-accent-foreground cursor-pointer"
                   >
                     <Book className="mr-3 h-4 w-4" />
                     <span className="truncate">{book.title}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

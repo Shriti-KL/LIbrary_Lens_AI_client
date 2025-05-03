@@ -157,7 +157,7 @@ export default function BatchUpload({ onSubmit, isProcessing }: BatchUploadProps
         )}
       </CardContent>
       
-      <CardFooter className="bg-neutral-50 justify-end">
+      <CardFooter className="bg-blue-50/50 justify-end border-t border-blue-100">
         <Button
           onClick={processBatch}
           disabled={batchFiles.length === 0 || isProcessing}

@@ -60,18 +60,8 @@ export default function Batch() {
         ]);
       });
       
-      // Make API request
-      const response = await fetch('/api/books/batch', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
-      }
-      
+      // Make API request using the standardized apiRequest utility
+      const response = await apiRequest('POST', '/api/books/batch', formData, true);
       return await response.json();
     },
     onMutate: () => {
