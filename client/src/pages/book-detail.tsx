@@ -378,11 +378,18 @@ export default function BookDetail() {
                         {t('themes')}
                       </h3>
                       <ul className="list-disc pl-5 space-y-1">
-                        {book.themes.map((theme: string, index: number) => (
-                          <li key={index} className="text-neutral-700">
-                            {theme}
-                          </li>
-                        ))}
+                        {book.themes.map((theme: any, index: number) => {
+                          // Handle both string and object themes
+                          const themeText = typeof theme === 'string' 
+                            ? theme 
+                            : (theme.theme || theme.description || JSON.stringify(theme));
+                            
+                          return (
+                            <li key={index} className="text-neutral-700">
+                              {themeText}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
