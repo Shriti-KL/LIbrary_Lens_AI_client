@@ -208,13 +208,18 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 // Process the full book analysis
 export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
   try {
+    // Create a unique ID for this analysis request
+    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
     // Log the incoming data for debugging
-    console.log("ProcessBookAnalysis input:", {
+    console.log(`[${analysisId}] ProcessBookAnalysis input:`, {
       title: analysisRequest.title,
       author: analysisRequest.author,
-      hasCoverImage: !!analysisRequest.coverImage
+      hasCoverImage: !!analysisRequest.coverImage,
+      existingSummary: !!analysisRequest.summary
     });
     
+    // Start fresh with a new book object, ignoring any existing analysis fields
     const bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
@@ -223,7 +228,16 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
       // Handle the cover image data if provided
-      ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage })
+      ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
+      
+      // Reset all analysis fields
+      summary: null,
+      genres: null,
+      themes: null,
+      readingLevel: null,
+      catalogEntry: null,
+      deweyDecimal: null,
+      metadata: {}
     };
     
     const options = analysisRequest.options || {
@@ -233,6 +247,8 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       readingLevel: true,
       catalogEntry: true,
     };
+    
+    console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}`);
 
     // Process book analysis in sequence
     if (options.summary) {

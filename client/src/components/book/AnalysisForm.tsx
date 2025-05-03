@@ -48,17 +48,26 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
 
   // Handle form submission
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    // Create a unique ID for this form submission for tracking
+    const submissionId = Date.now().toString();
+    console.log(`Book analysis form submission ${submissionId} - Manual submission with values:`, values);
+    
     const formData = new FormData();
     
-    // Add form values
-    if (values.title) formData.append('title', values.title || '');
-    if (values.author) formData.append('author', values.author || '');
-    if (values.isbn) formData.append('isbn', values.isbn || '');
+    // Always explicitly add form values, even if empty
+    // This ensures we're passing the user's exact input to the server
+    formData.append('title', values.title || '');
+    formData.append('author', values.author || '');
+    formData.append('isbn', values.isbn || '');
     
     // Add file if selected
     if (selectedFile) {
       formData.append('coverImage', selectedFile);
+      console.log(`Book analysis form submission ${submissionId} - Including file: ${selectedFile.name}`);
     }
+    
+    // Add a unique timestamp to force the server to treat this as a new request
+    formData.append('requestTimestamp', submissionId);
     
     // Submit with analysis options
     onSubmit(formData, {
@@ -91,14 +100,26 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     
+    // Reset the form values when a new file is uploaded
+    form.reset({
+      title: '',
+      author: '',
+      isbn: '',
+    });
+    
     // If auto-extract is enabled, automatically submit for analysis
     if (autoExtract && !isLoading) {
       setExtracting(true);
       // Use a small timeout to allow UI to update
       setTimeout(() => {
+        // Create a unique ID for this auto submission
+        const submissionId = `auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        console.log(`Book analysis form submission ${submissionId} - Auto-extract with file: ${file.name}`);
+        
         // Create a formData with just the file
         const formData = new FormData();
         formData.append('coverImage', file);
+        formData.append('requestTimestamp', submissionId);
         
         // Submit for analysis
         onSubmit(formData, {

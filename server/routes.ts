@@ -27,10 +27,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse and validate request data
       let bookInfo: any = {};
       let hasCoverData = false;
+      let isUserEntry = false;
+      
+      // Generate a unique ID for this analysis request for tracking
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      console.log(`[${requestId}] Starting book analysis`);
       
       // Parse the body data first
       if (req.body) {
         const bodyData = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+        
+        // Check if user has entered title or author manually
+        if (bodyData.title && bodyData.title.trim() !== "" || 
+            bodyData.author && bodyData.author.trim() !== "") {
+          isUserEntry = true;
+          console.log(`[${requestId}] Manual entry detected`);
+        }
+        
         bookInfo = {
           ...bodyData,
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
@@ -39,50 +52,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If coverImage is uploaded, process it
       if (req.file) {
-        console.log("Processing uploaded cover image");
+        console.log(`[${requestId}] Processing uploaded cover image`);
         const imageBase64 = req.file.buffer.toString("base64");
         bookInfo.coverImage = imageBase64;
         hasCoverData = true;
         
         // Only analyze the cover image if title and author are not provided
         // This ensures manual input takes priority
-        if (!bookInfo.title || !bookInfo.author || bookInfo.title.trim() === "" || bookInfo.author.trim() === "") {
-          console.log("Analyzing book cover to extract information");
+        if (!isUserEntry) {
+          console.log(`[${requestId}] No manual entry, analyzing book cover to extract information`);
           const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
           // Only use the analysis results for fields that weren't provided
           bookInfo = {
             ...bookInfo,
-            title: bookInfo.title && bookInfo.title.trim() !== "" ? bookInfo.title : coverAnalysisResult.title,
-            author: bookInfo.author && bookInfo.author.trim() !== "" ? bookInfo.author : coverAnalysisResult.author,
-            isbn: bookInfo.isbn || coverAnalysisResult.isbn,
-            publisher: bookInfo.publisher || coverAnalysisResult.publisher,
-            publishedYear: bookInfo.publishedYear || coverAnalysisResult.publishedYear,
+            title: coverAnalysisResult.title || "Unknown Title",
+            author: coverAnalysisResult.author || "Unknown Author",
+            isbn: coverAnalysisResult.isbn || null,
+            publisher: coverAnalysisResult.publisher || null,
+            publishedYear: coverAnalysisResult.publishedYear || null,
             coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
           };
         } else {
-          console.log("Using manually entered book details");
+          console.log(`[${requestId}] Using manually entered book details`);
           bookInfo.coverImageData = `data:${req.file.mimetype};base64,${imageBase64}`;
+          
+          // Clear any previous analysis fields to force regeneration
+          bookInfo = {
+            ...bookInfo,
+            summary: null,
+            genres: null,
+            themes: null,
+            readingLevel: null,
+            catalogEntry: null,
+            deweyDecimal: null,
+            metadata: null
+          };
         }
       }
       
-      console.log("Book info before validation:", {
+      console.log(`[${requestId}] Book info before validation:`, {
         title: bookInfo.title,
         author: bookInfo.author,
-        isbn: bookInfo.isbn
+        isbn: bookInfo.isbn,
+        isUserEntry: isUserEntry
       });
       
       // Validate the analysis request
       const validatedData = bookAnalysisSchema.parse(bookInfo);
       
       // Enrich book metadata from Google Books API if possible
-      console.log("Enriching book metadata with Google Books API");
+      console.log(`[${requestId}] Enriching book metadata with Google Books API`);
       let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
       // Process book analysis with OpenAI
-      console.log("Processing full book analysis");
+      console.log(`[${requestId}] Processing full book analysis with OpenAI`);
       const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
+      console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
     } catch (error) {
       console.error("Book analysis error:", error);
