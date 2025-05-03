@@ -211,15 +211,17 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
         </div>
       </CardContent>
       
-      <CardFooter className="bg-neutral-50">
-        <Button 
-          type="submit" 
-          className="ml-auto"
-          onClick={form.handleSubmit(handleSubmit)}
-          disabled={isLoading}
-        >
-          {isLoading ? t('processing') : t('analyzeBook')}
-        </Button>
+      <CardFooter className="bg-neutral-50 pt-6 pb-6">
+        <div className="w-full flex justify-end mt-2">
+          <Button 
+            type="submit" 
+            onClick={form.handleSubmit(handleSubmit)}
+            disabled={isLoading}
+            className="px-6"
+          >
+            {isLoading ? t('processing') : t('analyzeBook')}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
