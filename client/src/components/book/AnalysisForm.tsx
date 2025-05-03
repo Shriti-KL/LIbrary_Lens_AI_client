@@ -208,7 +208,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
           dropzoneText={t('dragDrop')}
           fileTypeText="PNG, JPG, GIF up to 10MB"
           className="border-2 border-dashed border-primary/30"
-          isLoading={isLoading || extracting}
+          isLoading={(isLoading || extracting) && !!selectedFile}
           selectedFile={selectedFile}
         />
         
