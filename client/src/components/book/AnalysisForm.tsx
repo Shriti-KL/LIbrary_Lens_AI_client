@@ -15,11 +15,13 @@ import {
   FormMessage
 } from '@/components/ui/form';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Loader2 } from 'lucide-react';
 
 // Form schema
 const formSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  author: z.string().min(1, 'Author is required'),
+  title: z.string().optional(),
+  author: z.string().optional(),
   isbn: z.string().optional(),
 });
 
@@ -31,6 +33,8 @@ interface AnalysisFormProps {
 export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps) {
   const { t } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [autoExtract, setAutoExtract] = useState(true);
+  const [extracting, setExtracting] = useState(false);
   
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,9 +51,9 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     const formData = new FormData();
     
     // Add form values
-    formData.append('title', values.title);
-    formData.append('author', values.author);
-    if (values.isbn) formData.append('isbn', values.isbn);
+    if (values.title) formData.append('title', values.title || '');
+    if (values.author) formData.append('author', values.author || '');
+    if (values.isbn) formData.append('isbn', values.isbn || '');
     
     // Add file if selected
     if (selectedFile) {
@@ -66,9 +70,46 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     });
   };
 
+  // Auto-submit form when a file is selected
+  const handleAutoSubmit = () => {
+    if (selectedFile && autoExtract) {
+      // Just submit with the file only to auto-extract information
+      const formData = new FormData();
+      formData.append('coverImage', selectedFile);
+      
+      onSubmit(formData, {
+        summary: true,
+        genres: true,
+        themes: true,
+        readingLevel: true,
+        catalogEntry: true,
+      });
+    }
+  };
+
   // Handle file selection
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
+    
+    // If auto-extract is enabled, automatically submit for analysis
+    if (autoExtract && !isLoading) {
+      setExtracting(true);
+      // Use a small timeout to allow UI to update
+      setTimeout(() => {
+        // Create a formData with just the file
+        const formData = new FormData();
+        formData.append('coverImage', file);
+        
+        // Submit for analysis
+        onSubmit(formData, {
+          summary: true,
+          genres: true,
+          themes: true,
+          readingLevel: true,
+          catalogEntry: true,
+        });
+      }, 100);
+    }
   };
 
   return (
