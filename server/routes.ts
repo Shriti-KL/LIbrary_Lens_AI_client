@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
-import { bookAnalysisSchema, Book, InsertBook, BookWithAnalysisControl } from "@shared/schema";
+import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
 import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
@@ -47,16 +47,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                  (bodyData.author && bodyData.author.trim() !== "")) {
           isUserEntry = true;
           console.log(`[${requestId}] Manual entry detected from content`);
-        }
-        
-        // Check for ISBN-only search flag - this is a special case
-        const isISBNOnlySearch = bodyData.isISBNOnlySearch === 'true';
-        if (isISBNOnlySearch && bodyData.isbn && bodyData.isbn.trim() !== "") {
-          isUserEntry = true;
-          console.log(`[${requestId}] ISBN-only search detected: ${bodyData.isbn}`);
-          
-          // For ISBN-only search, we'll prioritize Google Books API lookup
-          bookInfo.isbnPriority = true;
         }
         
         // Check if the client is forcing a new analysis (happens when modifying a previous result)
@@ -283,25 +273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...coverAnalysis, 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
-              author: coverAnalysis.author || "Unknown author",
-              // Add analysis control flags
-              isManualSubmission: 'false',
-              requestTimestamp: Date.now().toString()
-            } as BookWithAnalysisControl);
+              author: coverAnalysis.author || "Unknown author"
+            });
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            const bookAnalysisData: BookAnalysisRequest = {
-              ...(enrichedData as Partial<Book>),
-              // Set image data properly according to schema
-              coverImage: imageBase64,
-              coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
+            const analysisResult = await processBookAnalysis({
+              ...enrichedData,
+              // Use coverImage field as per the schema
+              coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
-              // Keep track that this is from batch processing
-              isManualSubmission: 'false',
-              forceNewAnalysis: Date.now().toString(),
-              requestTimestamp: Date.now().toString(),
               options: {
                 summary: true,
                 genres: true,
@@ -309,8 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 readingLevel: true,
                 catalogEntry: true,
               }
-            };
-            const analysisResult = await processBookAnalysis(bookAnalysisData);
+            });
             console.log("Full analysis completed successfully");
             
             // Step 4: Save to storage

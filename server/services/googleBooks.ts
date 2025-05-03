@@ -1,4 +1,4 @@
-import { Book, BookWithAnalysisControl } from "@shared/schema";
+import { Book } from "@shared/schema";
 
 // Google Books API endpoint
 const GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes";
@@ -99,68 +99,27 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
   }
 }
 
-export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Promise<BookWithAnalysisControl> {
+export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     let query = "";
-    let searchResults = [];
     
-    // Check if this is an ISBN priority search (from manual entry with ISBN)
-    const isISBNPriority = ((bookInfo.isbnPriority === true) || (String(bookInfo.isbnPriority) === 'true')) && !!bookInfo.isbn;
-    const isISBNOnlySearch = (bookInfo.isISBNOnlySearch === 'true' || bookInfo.isISBNOnlySearch === true) && !!bookInfo.isbn;
-    const forceNewResults = !!bookInfo.forceNewAnalysis;
-    
-    // Log search strategy for debugging
-    console.log(`Google Books search strategy:`, {
-      strategy: isISBNOnlySearch ? 'ISBN-Only Search' : isISBNPriority ? 'ISBN Priority' : 'Standard Search',
-      isbn: bookInfo.isbn || "none", 
-      title: bookInfo.title || "none", 
-      author: bookInfo.author || "none",
-      forceNewResults: forceNewResults,
-      isManualSubmission: bookInfo.isManualSubmission,
-      timestamp: bookInfo.requestTimestamp || "none"
-    });
-    
-    // Handle ISBN-only or ISBN-priority search
-    if (bookInfo.isbn && (isISBNOnlySearch || isISBNPriority || (!bookInfo.title && !bookInfo.author))) {
-      console.log(`Performing ISBN search with: ${bookInfo.isbn}`);
-      
-      // Try to get exact match by ISBN
-      const isbnResults = await getBookByISBN(bookInfo.isbn as string);
-      
-      if (isbnResults) {
-        console.log(`ISBN search successful - found book: "${isbnResults.volumeInfo?.title}"`);
-        searchResults = [isbnResults];
-        
-        // For ISBN-only searches, we want to populate all fields from Google Books
-        if (isISBNOnlySearch) {
-          console.log(`ISBN-only search - prioritizing all Google Books data over any existing data`);
-        }
-      } else {
-        console.log(`No results found for ISBN: ${bookInfo.isbn}`);
-      }
+    if (bookInfo.isbn) {
+      // If ISBN is available, use it for precise matching
+      query = `isbn:${bookInfo.isbn}`;
+    } else if (bookInfo.title && bookInfo.author) {
+      // Otherwise use title and author
+      query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
+    } else if (bookInfo.title) {
+      // Fall back to just title
+      query = `intitle:${bookInfo.title}`;
+    } else {
+      // Not enough information to search
+      return bookInfo;
     }
     
-    // If no ISBN results or not an ISBN-priority search, use standard approach
-    if (searchResults.length === 0 && !isISBNPriority) {
-      if (bookInfo.isbn) {
-        query = `isbn:${bookInfo.isbn}`;
-      } else if (bookInfo.title && bookInfo.author) {
-        query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
-      } else if (bookInfo.title) {
-        query = `intitle:${bookInfo.title}`;
-      } else {
-        // Not enough information to search
-        console.log("Not enough information for Google Books search");
-        return bookInfo;
-      }
-      
-      console.log(`Performing standard search with query: "${query}"`);
-      searchResults = await searchBooks({ query });
-      console.log(`Standard search returned ${searchResults.length} results`);
-    }
+    const searchResults = await searchBooks({ query });
     
     if (searchResults.length === 0) {
-      console.log("No Google Books results found with any search method");
       return bookInfo;
     }
     
@@ -168,61 +127,18 @@ export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Pro
     const googleBook = searchResults[0];
     const volumeInfo = googleBook.volumeInfo || {};
     
-    // Create enriched book metadata based on search type
-    let enrichedBook: BookWithAnalysisControl;
-    
-    // For ISBN-only searches, always prioritize Google Books data over existing data
-    if (isISBNOnlySearch) {
-      enrichedBook = {
-        ...bookInfo,
-        // Prioritize Google Books data
-        title: volumeInfo.title || bookInfo.title || "",
-        author: (volumeInfo.authors ? volumeInfo.authors[0] : "") || bookInfo.author || "",
-        publisher: volumeInfo.publisher || bookInfo.publisher,
-        publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
-        pageCount: volumeInfo.pageCount || bookInfo.pageCount,
-        isbn: bookInfo.isbn, // Always keep the ISBN that was searched
-        coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
-        
-        // Additional metadata might be available but not in our schema
-        // We'll extract what we can to help with analysis
-        genres: volumeInfo.categories || bookInfo.genres || [],
-        
-        // Preserve analysis control flags
-        isbnPriority: bookInfo.isbnPriority,
-        isManualSubmission: bookInfo.isManualSubmission,
-        isISBNOnlySearch: bookInfo.isISBNOnlySearch,
-        forceNewAnalysis: bookInfo.forceNewAnalysis,
-        requestTimestamp: bookInfo.requestTimestamp,
-      };
-      
-      console.log("ISBN-only search result:", {
-        title: enrichedBook.title,
-        author: enrichedBook.author,
-        publisher: enrichedBook.publisher,
-        hasCoverImage: !!enrichedBook.coverImageUrl
-      });
-    } else {
-      // Normal approach - preserve user entered data, supplement with Google Books
-      enrichedBook = {
-        ...bookInfo,
-        title: bookInfo.title || volumeInfo.title,
-        author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
-        publisher: bookInfo.publisher || volumeInfo.publisher,
-        publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
-        pageCount: bookInfo.pageCount || volumeInfo.pageCount,
-        isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
-          volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
-        coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
-        
-        // Preserve analysis control flags
-        isbnPriority: bookInfo.isbnPriority,
-        isManualSubmission: bookInfo.isManualSubmission,
-        isISBNOnlySearch: bookInfo.isISBNOnlySearch,
-        forceNewAnalysis: bookInfo.forceNewAnalysis,
-        requestTimestamp: bookInfo.requestTimestamp,
-      };
-    }
+    // Create enriched book metadata
+    const enrichedBook: Partial<Book> = {
+      ...bookInfo,
+      title: bookInfo.title || volumeInfo.title,
+      author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
+      publisher: bookInfo.publisher || volumeInfo.publisher,
+      publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+      pageCount: bookInfo.pageCount || volumeInfo.pageCount,
+      isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
+        volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
+      coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+    };
     
     // Find similar books
     const similarBooks = await searchSimilarBooks(enrichedBook);

@@ -63,14 +63,6 @@ export const bookAnalysisSchema = z.object({
   deweyDecimal: z.string().nullable().optional(),
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
-  
-  // Analysis control flags
-  isManualSubmission: z.string().optional(), // 'true' or 'false'
-  isISBNOnlySearch: z.string().optional(),   // 'true' or 'false'
-  forceNewAnalysis: z.string().optional(),   // Timestamp for forcing a fresh analysis
-  isbnPriority: z.boolean().optional(),      // Flag for ISBN-first search  
-  requestTimestamp: z.string().optional(),   // Unique identifier for the request
-  
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),
@@ -87,18 +79,6 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Book = typeof books.$inferSelect;
 export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema>;
-
-// Extended interface for analysis control flags
-export interface BookAnalysisControl {
-  isManualSubmission?: string; 
-  isISBNOnlySearch?: string;   
-  forceNewAnalysis?: string;   
-  isbnPriority?: boolean;      
-  requestTimestamp?: string;   
-}
-
-// Extended Book type with analysis control flags
-export type BookWithAnalysisControl = Partial<Book> & BookAnalysisControl;
 
 // Analysis options
 export enum AnalysisOption {

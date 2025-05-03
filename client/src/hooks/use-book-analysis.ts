@@ -42,20 +42,10 @@ export function useBookAnalysis() {
       // Check if we have a title and author as a debugging log
       const hasTitle = data.formData.get('title');
       const hasAuthor = data.formData.get('author');
-      const hasISBN = data.formData.get('isbn');
-      const isManual = data.formData.get('isManualSubmission') === 'true';
-      const isISBNSearch = data.formData.get('isISBNOnlySearch') === 'true';
-      const isbnPriority = data.formData.get('isbnPriority') === 'true';
-      
       console.log("Analyzing book with data:", {
         hasTitle: !!hasTitle,
         hasAuthor: !!hasAuthor,
-        hasISBN: !!hasISBN,
-        isManualSubmission: isManual,
-        isISBNOnlySearch: isISBNSearch,
-        isbnPriority,
-        hasCoverImage: data.formData.has('coverImage'),
-        requestTimestamp: data.formData.get('requestTimestamp')
+        hasCoverImage: data.formData.has('coverImage')
       });
       
       // Start request - first update metadata progress
