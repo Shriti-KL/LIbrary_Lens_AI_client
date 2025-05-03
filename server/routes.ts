@@ -217,7 +217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Step 3: Processing complete book analysis...");
             const analysisResult = await processBookAnalysis({
               ...enrichedData,
-              coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
+              // Use coverImage field as per the schema
+              coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
               options: {
                 summary: true,

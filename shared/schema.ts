@@ -48,8 +48,21 @@ export const insertBookSchema = createInsertSchema(books)
 export const bookAnalysisSchema = z.object({
   title: z.string().optional(),
   author: z.string().optional(),
-  isbn: z.string().optional(),
-  coverImage: z.string().optional(), // base64 encoded image
+  isbn: z.string().nullable().optional(),
+  coverImage: z.string().optional(), // base64 encoded image for URL
+  coverImageData: z.string().optional(), // base64 encoded image data with mimetype prefix
+  coverImageUrl: z.string().nullable().optional(), // External URL for cover image
+  publisher: z.string().nullable().optional(),
+  publishedYear: z.number().nullable().optional(),
+  pageCount: z.number().nullable().optional(),
+  summary: z.string().nullable().optional(),
+  genres: z.array(z.string()).nullable().optional(),
+  themes: z.any().nullable().optional(),
+  readingLevel: z.string().nullable().optional(),
+  catalogEntry: z.string().nullable().optional(),
+  deweyDecimal: z.string().nullable().optional(),
+  metadata: z.any().optional(),
+  userId: z.number().nullable().optional(),
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),

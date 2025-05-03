@@ -74,8 +74,9 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       ],
     });
 
-    return response.choices[0].message.content.trim();
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    return content ? content.trim() : "No summary available";
+  } catch (error: any) {
     console.error("Error generating book summary:", error);
     throw new Error(`Failed to generate book summary: ${error.message}`);
   }
@@ -210,7 +211,10 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     const bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
-      isbn: analysisRequest.isbn || "",
+      isbn: analysisRequest.isbn || null,
+      coverImageUrl: analysisRequest.coverImageUrl || null,
+      // Handle the cover image data if provided
+      ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage })
     };
     
     const options = analysisRequest.options || {
