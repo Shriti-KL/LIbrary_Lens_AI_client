@@ -36,6 +36,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [isDragDropping, setIsDragDropping] = useState(false);
+  const [hasAnalysisCompleted, setHasAnalysisCompleted] = useState(false);
   
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -169,10 +170,28 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   
   // Reset extracting state when main loading state changes to false
   useEffect(() => {
+    // When an analysis completes (loading changes from true to false)
     if (!isLoading && extracting) {
       setExtracting(false);
+      setHasAnalysisCompleted(true);
     }
-  }, [isLoading]);
+    
+    // When not loading and analysis has completed, mark that we need to reset for the next analysis
+    if (!isLoading && hasAnalysisCompleted) {
+      // Clear the form for the next book
+      form.reset({
+        title: '',
+        author: '',
+        isbn: '',
+      });
+      
+      // Clear the selected file too
+      setSelectedFile(null);
+      
+      // Reset state for next analysis
+      setHasAnalysisCompleted(false);
+    }
+  }, [isLoading, extracting, hasAnalysisCompleted, form]);
 
   return (
     <Card className="shadow-sm border border-neutral-200">
