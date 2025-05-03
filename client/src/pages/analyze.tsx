@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
 import { Book } from '@shared/schema';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
@@ -60,25 +59,11 @@ export default function Analyze() {
   
   return (
     <div>
-      {/* Tab Navigation */}
-      <div className="mb-6 border-b border-neutral-100">
-        <Tabs defaultValue="single">
-          <TabsList className="bg-transparent border-b-0">
-            <TabsTrigger 
-              value="single" 
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-            >
-              {t('bookAnalysis')}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="batch" 
-              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none"
-              disabled
-            >
-              {t('batchProcessing')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Page Title */}
+      <div className="mb-6 border-b border-neutral-100 pb-2">
+        <h1 className="text-2xl font-serif font-semibold text-primary">
+          {t('bookAnalysis')}
+        </h1>
       </div>
       
       <div className="md:grid md:grid-cols-6 md:gap-6">
