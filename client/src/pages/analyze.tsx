@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
 import { Book } from '@shared/schema';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 export default function Analyze() {
   const { t } = useLanguage();
-  const { analysisMutation, saveBookMutation, analysisSteps } = useBookAnalysis();
+  const { analysisMutation, saveBookMutation, analysisSteps, resetAnalysis } = useBookAnalysis();
   
   // Analysis options state
   const [options, setOptions] = useState({
@@ -60,11 +62,31 @@ export default function Analyze() {
   return (
     <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
-      <div className="mb-8 border-b border-neutral-200 pb-3">
-        <h1 className="text-2xl font-serif font-semibold text-primary-dark">
-          {t('bookAnalysis')}
-        </h1>
-        <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
+      <div className="mb-8 border-b border-neutral-200 pb-3 flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold text-primary-dark flex items-center gap-2">
+            {t('bookAnalysis')}
+            {analysisMutation.data && Object.keys(analysisMutation.data).length > 0 && (
+              <span className="text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                Active Analysis
+              </span>
+            )}
+          </h1>
+          <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
+        </div>
+        
+        {/* Reset Button - only show when there's analysis data */}
+        {analysisMutation.data && Object.keys(analysisMutation.data).length > 0 && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-neutral-600 border-neutral-300 hover:bg-neutral-100"
+            onClick={() => resetAnalysis()}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            New Analysis
+          </Button>
+        )}
       </div>
       
       <div className="md:grid md:grid-cols-6 md:gap-8">

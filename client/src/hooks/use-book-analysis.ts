@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { BookAnalysisRequest, Book } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,8 +15,10 @@ export function useBookAnalysis() {
   
   const { toast } = useToast();
   
-  // Analysis mutation
+  // Analysis mutation with persistent cache
   const analysisMutation = useMutation({
+    mutationKey: ['bookAnalysis'], // Adding a key makes it queryable
+    gcTime: 1000 * 60 * 30, // Cache results for 30 minutes
     mutationFn: async (data: {
       formData: FormData,
       options: {
@@ -25,8 +27,13 @@ export function useBookAnalysis() {
         themes: boolean;
         readingLevel: boolean;
         catalogEntry: boolean;
-      }
+      },
+      resetCache?: boolean // Optional flag to force reset cache
     }) => {
+      // If resetCache is true, clear previous cache
+      if (data.resetCache) {
+        queryClient.removeQueries({ queryKey: ['bookAnalysis'] });
+      }
       // Reset previous analysis and update status for metadata
       setAnalysisSteps({
         metadata: { status: "in-progress", progress: 0 },
@@ -127,6 +134,8 @@ export function useBookAnalysis() {
         title: "Book Saved",
         description: "The book has been saved to your archive.",
       });
+      // Invalidate books query to refresh archives, but DO NOT clear analysis cache
+      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
     },
     onError: (error) => {
       toast({
@@ -148,9 +157,23 @@ export function useBookAnalysis() {
     }));
   }
   
+  // Function to manually reset analysis data
+  const resetAnalysis = () => {
+    queryClient.removeQueries({ queryKey: ['bookAnalysis'] });
+    // Reset steps
+    setAnalysisSteps({
+      metadata: { status: "waiting", progress: 0 },
+      summary: { status: "waiting", progress: 0 },
+      genres: { status: "waiting", progress: 0 },
+      themes: { status: "waiting", progress: 0 },
+      catalogEntry: { status: "waiting", progress: 0 },
+    });
+  };
+
   return {
     analysisMutation,
     saveBookMutation,
     analysisSteps,
+    resetAnalysis,
   };
 }
