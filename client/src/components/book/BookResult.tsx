@@ -260,7 +260,7 @@ export default function BookResult({
                 <div className="mt-1 flex flex-wrap gap-1">
                   {Array.isArray(book.genres) && book.genres.length > 0 ? (
                     book.genres.map((genre, index) => (
-                      <Badge key={index} variant="secondary" className="bg-primary-light text-white">
+                      <Badge key={index} variant="secondary" className="bg-secondary text-white">
                         {genre}
                       </Badge>
                     ))
@@ -274,7 +274,7 @@ export default function BookResult({
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-neutral-500">{t('readingLevel')}</h4>
                   <div className="mt-1 flex items-center">
-                    <div className="w-full bg-neutral-100 rounded-full h-2">
+                    <div className="w-full bg-blue-100/50 rounded-full h-2">
                       <div 
                         className="bg-secondary h-2 rounded-full" 
                         style={{ 
@@ -348,7 +348,7 @@ export default function BookResult({
         </div>
       </CardContent>
       
-      <CardFooter className="bg-neutral-50 justify-between">
+      <CardFooter className="bg-blue-50/50 justify-between border-t border-blue-100">
         <Button 
           variant="outline" 
           onClick={handleExport}
