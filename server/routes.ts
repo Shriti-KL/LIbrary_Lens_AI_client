@@ -195,8 +195,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Create book with validated data
       const bookData: InsertBook = req.body;
-      const newBook = await storage.createBook(bookData);
       
+      // Check if this is the first save from the book analysis results
+      // If so, try one more time to get proper capitalization from Google Books
+      if (!bookData.id) { // Only try this for new books, not updates
+        try {
+          // Use Google Books to fix capitalization/spelling for all saved books
+          // Create a new object with only the fields from bookData that exist in BookAnalysisRequest
+          const analysisRequest: BookAnalysisRequest = {
+            title: bookData.title,
+            author: bookData.author,
+            isbn: bookData.isbn,
+            coverImageUrl: bookData.coverImageUrl,
+            publisher: bookData.publisher,
+            publishedYear: bookData.publishedYear,
+            pageCount: bookData.pageCount,
+            summary: bookData.summary,
+            genres: Array.isArray(bookData.genres) ? 
+              bookData.genres.map(g => String(g)) : undefined,
+            themes: bookData.themes,
+            readingLevel: bookData.readingLevel,
+            deweyDecimal: bookData.deweyDecimal,
+            userId: bookData.userId,
+            isUserEntry: false // Allow Google data to override - this is the final save
+          };
+          
+          const enhanced = await enrichBookMetadata(analysisRequest);
+          
+          // Merge the enhanced data with the original data, giving priority to enhanced 
+          // data for title and author fields
+          bookData.title = enhanced.title || bookData.title;
+          bookData.author = enhanced.author || bookData.author;
+          
+          // Also use the Google Books cover image if available and we don't have one
+          if (enhanced.coverImageUrl && (!bookData.coverImageUrl || bookData.coverImageUrl === "")) {
+            bookData.coverImageUrl = enhanced.coverImageUrl;
+          }
+        } catch (enrichError) {
+          // Don't fail the save if enhancement fails, just log the error
+          console.error("Failed to enhance book data with Google Books:", enrichError);
+        }
+      }
+      
+      const newBook = await storage.createBook(bookData);
       res.status(201).json(newBook);
     } catch (error) {
       res.status(500).json({ message: `Error creating book: ${error.message}` });
@@ -287,11 +328,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            const analysisResult = await processBookAnalysis({
-              ...enrichedData,
+            
+            // Create a properly typed BookAnalysisRequest object
+            const bookAnalysisRequest: BookAnalysisRequest = {
+              title: enrichedData.title,
+              author: enrichedData.author,
+              isbn: enrichedData.isbn,
+              publisher: enrichedData.publisher,
+              publishedYear: enrichedData.publishedYear,
+              pageCount: enrichedData.pageCount,
+              // Only copy string[] genre values, not the unknown type
+              genres: Array.isArray(enrichedData.genres) ? 
+                enrichedData.genres.map(g => String(g)) : undefined,
+              themes: enrichedData.themes,
+              readingLevel: enrichedData.readingLevel,
+              catalogEntry: enrichedData.catalogEntry,
+              deweyDecimal: enrichedData.deweyDecimal,
+              metadata: enrichedData.metadata,
+              isUserEntry: false,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
-              coverImageUrl: null, // We'll store the image data directly
+              coverImageUrl: enrichedData.coverImageUrl,
               options: {
                 summary: true,
                 genres: true,
@@ -299,7 +356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 readingLevel: true,
                 catalogEntry: true,
               }
-            });
+            };
+            
+            const analysisResult = await processBookAnalysis(bookAnalysisRequest);
             console.log("Full analysis completed successfully");
             
             // Step 4: Save to storage

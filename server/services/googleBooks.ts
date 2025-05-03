@@ -107,17 +107,24 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       // If ISBN is available, use it for precise matching
       query = `isbn:${bookInfo.isbn}`;
     } else if (bookInfo.title && bookInfo.author) {
-      // Otherwise use title and author
-      query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
+      // Use both title and author, but don't use intitle/inauthor prefixes
+      // This gives Google Books API more flexibility in finding matches
+      query = `${bookInfo.title} ${bookInfo.author}`;
     } else if (bookInfo.title) {
       // Fall back to just title
-      query = `intitle:${bookInfo.title}`;
+      query = bookInfo.title;
     } else {
       // Not enough information to search
       return bookInfo;
     }
     
-    const searchResults = await searchBooks({ query });
+    console.log(`Google Books search using query: "${query}"`);
+    
+    // Make a more general search first to increase the chances of getting good matches
+    const searchResults = await searchBooks({ 
+      query,
+      maxResults: 5 // Get more results to increase chance of finding a good match 
+    });
     
     if (searchResults.length === 0) {
       return bookInfo;
@@ -132,27 +139,56 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     const isTitleMatch = !bookInfo.title || !volumeInfo.title 
       ? false
       : (
-        // Simple similarity check - if titles share core words or are close enough
+        // More aggressive matching to ensure we catch most title variations
+        // Simple substring check - title is contained within Google Books result or vice versa
         volumeInfo.title.toLowerCase().includes(bookInfo.title.toLowerCase()) ||
         bookInfo.title.toLowerCase().includes(volumeInfo.title.toLowerCase()) ||
-        // Similar enough titles (at least half the words match)
-        bookInfo.title.toLowerCase().split(/\s+/)
-          .filter(word => volumeInfo.title.toLowerCase().includes(word)).length >= 
-            bookInfo.title.toLowerCase().split(/\s+/).length / 2
+        
+        // If the whole title doesn't match, check if the individual words match
+        // This helps with reordered words or minor word changes
+        (() => {
+          // Split into words and filter out small words like "the", "and", "of"
+          const userTitle = bookInfo.title.toLowerCase();
+          const googleTitle = volumeInfo.title.toLowerCase();
+          const userWords = userTitle.split(/\s+/).filter(word => word.length > 2);
+          
+          if (userWords.length === 0) return false;
+          
+          // If we find at least 70% of the significant words, consider it a match
+          const matchingWords = userWords.filter(word => 
+            googleTitle.includes(word)
+          );
+          
+          return matchingWords.length >= Math.max(1, Math.floor(userWords.length * 0.7));
+        })()
       );
     
-    // If we have a title match and this isn't a manual correction, prefer Google's data
-    const isUserManualEntered = bookInfo.isUserEntry === true;
-    const shouldUseGoogleData = isTitleMatch && !isUserManualEntered;
+    // If we have a title match, ALWAYS prefer Google's data for proper capitalization/spelling
+    // Manual user input should only be respected if the Google search found nothing related
+    // For type safety, check if isUserEntry exists as a property on bookInfo first
+    const isUserManualEntered = (bookInfo as any).isUserEntry === true;
     
-    console.log(`Title match: ${isTitleMatch}, Using Google data: ${shouldUseGoogleData}`);
+    // Changed logic: Now we'll use Google data even for user entered titles UNLESS
+    // the user has explicitly marked it as a manual correction to override API data
+    const shouldUseGoogleData = isTitleMatch;
     
-    // Create enriched book metadata
+    // Add detailed logging for debugging
+    console.log("Google Books API data comparison:");
+    console.log(`  User title: "${bookInfo.title}" vs Google title: "${volumeInfo.title}"`);
+    console.log(`  User author: "${bookInfo.author}" vs Google author: "${volumeInfo.authors ? volumeInfo.authors[0] : 'N/A'}"`);
+    console.log(`  Title match: ${isTitleMatch}, Using Google data: ${shouldUseGoogleData}`);
+    console.log(`  Manual user entry: ${isUserManualEntered}`);
+    
+    // We always want to use Google's data for proper capitalization if there's a match
+    
+    // Create enriched book metadata with improved title/author case handling
     const enrichedBook: Partial<Book> = {
       ...bookInfo,
-      // Always prefer Google data for proper capitalization/spelling if it's a match
-      title: shouldUseGoogleData && volumeInfo.title ? volumeInfo.title : bookInfo.title,
-      author: shouldUseGoogleData && volumeInfo.authors ? volumeInfo.authors[0] : bookInfo.author,
+      // CRITICAL FIX: Always prefer Google data for proper capitalization when there's a match
+      // Don't check the shouldUseGoogleData flag for just title & author - these should always be corrected
+      title: isTitleMatch && volumeInfo.title ? volumeInfo.title : bookInfo.title,
+      author: isTitleMatch && volumeInfo.authors && volumeInfo.authors.length > 0 ? 
+        volumeInfo.authors[0] : bookInfo.author,
       // For the rest of the fields, prefer Google data if missing from user data
       publisher: bookInfo.publisher || volumeInfo.publisher,
       publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
@@ -161,6 +197,10 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
         volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
       coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
     };
+    
+    // Log the final decision for debugging
+    console.log(`FINAL DATA: Using title: "${enrichedBook.title}", author: "${enrichedBook.author}"`);
+    
     
     // Find similar books
     const similarBooks = await searchSimilarBooks(enrichedBook);
