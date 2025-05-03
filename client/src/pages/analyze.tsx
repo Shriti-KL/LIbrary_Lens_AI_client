@@ -52,6 +52,8 @@ export default function Analyze() {
     analysisMutation.mutate({ formData, options });
   };
   
+
+  
   // Handle save to archive
   const handleSave = (book: Partial<Book>) => {
     saveBookMutation.mutate(book);
