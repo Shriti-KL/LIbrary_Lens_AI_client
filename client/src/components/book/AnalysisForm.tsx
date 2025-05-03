@@ -118,32 +118,45 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     // If auto-extract is enabled, automatically submit for analysis
     if (autoExtract && !isLoading) {
       setExtracting(true);
-      // Use a small timeout to allow UI to update
-      setTimeout(() => {
-        // Create a unique ID for this auto submission
-        const submissionId = `auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        console.log(`Book analysis form submission ${submissionId} - Auto-extract with file: ${file.name}`);
-        
-        // Create a formData with just the file
-        const formData = new FormData();
-        formData.append('coverImage', file);
-        formData.append('requestTimestamp', submissionId);
-        
-        // Explicitly mark this as NOT a manual submission (auto-extraction)
-        formData.append('isManualSubmission', 'false');
-        
-        // If we had previous results, force a new analysis
-        formData.append('forceNewAnalysis', submissionId);
-        
-        // Submit for analysis
-        onSubmit(formData, {
-          summary: true,
-          genres: true,
-          themes: true,
-          readingLevel: true,
-          catalogEntry: true,
-        });
-      }, 100);
+      // Create a unique ID for this auto submission
+      const submissionId = `auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      console.log(`Book analysis form submission ${submissionId} - Auto-extract with file: ${file.name}`);
+      
+      // Create a formData with just the file
+      const formData = new FormData();
+      formData.append('coverImage', file);
+      formData.append('requestTimestamp', submissionId);
+      
+      // Add a null title and author to indicate we need backend extraction
+      formData.append('title', '');
+      formData.append('author', '');
+      console.log(`Submitting analysis with form data:`, {
+        title: null,
+        author: null,
+        hasImage: true
+      });
+      
+      // Log analysis parameters for debugging
+      console.log(`Analyzing book with data:`, {
+        hasTitle: false,
+        hasAuthor: false,
+        hasCoverImage: true
+      });
+      
+      // Explicitly mark this as NOT a manual submission (auto-extraction)
+      formData.append('isManualSubmission', 'false');
+      
+      // If we had previous results, force a new analysis
+      formData.append('forceNewAnalysis', submissionId);
+      
+      // Submit for analysis
+      onSubmit(formData, {
+        summary: true,
+        genres: true,
+        themes: true,
+        readingLevel: true,
+        catalogEntry: true,
+      });
     }
   };
 

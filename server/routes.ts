@@ -69,13 +69,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookInfo.coverImage = imageBase64;
         hasCoverData = true;
         
-        // Only analyze the cover image if title and author are not provided
-        // This ensures manual input takes priority
-        if (!isUserEntry) {
-          console.log(`[${requestId}] No manual entry, analyzing book cover to extract information`);
+        // Determine if we need to analyze the cover image based on complete data
+        const hasTitle = bookInfo.title && bookInfo.title.trim() !== '';
+        const hasAuthor = bookInfo.author && bookInfo.author.trim() !== '';
+        
+        // If we have empty title/author fields OR explicit auto-extract mode
+        if ((!hasTitle && !hasAuthor) || !isUserEntry) {
+          console.log(`[${requestId}] Analyzing book cover to extract information`);
+          console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
+          
           const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
-          // Only use the analysis results for fields that weren't provided
+          // Use the analysis results for fields that weren't provided
           bookInfo = {
             ...bookInfo,
             title: coverAnalysisResult.title || "Unknown Title",
