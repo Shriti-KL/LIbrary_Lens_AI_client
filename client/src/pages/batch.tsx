@@ -22,11 +22,14 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookOpen, AlertCircle, ExternalLink } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export default function Batch() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [_, navigate] = useLocation();
   
   // State for batch processing
   const [batchResults, setBatchResults] = useState<Array<{
@@ -196,6 +199,7 @@ export default function Batch() {
                     <TableHead>{t('title')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('progress')}</TableHead>
+                    <TableHead>{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -231,6 +235,41 @@ export default function Batch() {
                             {item.progress}%
                           </span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {item.status === 'complete' && item.result?.id && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
+                            onClick={() => {
+                              // Navigate to the book details page
+                              if (item.result?.id) {
+                                navigate(`/archives?view=${item.result.id}`);
+                              }
+                            }}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            {t('viewDetails')}
+                          </Button>
+                        )}
+                        {item.status === 'error' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              // Show detailed error
+                              toast({
+                                title: t('error'),
+                                description: item.error || t('unknownError'),
+                                variant: 'destructive'
+                              });
+                            }}
+                          >
+                            {t('viewError')}
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
