@@ -70,8 +70,8 @@ export function FileUpload({
         className={cn(
           'flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors',
           isDragActive 
-            ? 'border-primary bg-primary/5' 
-            : 'border-neutral-100 hover:border-primary/50',
+            ? 'border-primary bg-primary/10' 
+            : 'border-neutral-300 hover:border-primary/60 bg-blue-50/50',
           'cursor-pointer'
         )}
       >
@@ -94,18 +94,18 @@ export function FileUpload({
               </button>
             </div>
           ) : (
-            <svg className="mx-auto h-12 w-12 text-neutral-300" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <svg className="mx-auto h-12 w-12 text-primary/60" stroke="currentColor" fill="none" viewBox="0 0 48 48">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
-          <div className="flex text-sm text-neutral-500">
+          <div className="flex text-sm text-neutral-700">
             <label className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-light">
               <span>Upload a file</span>
               <input {...getInputProps()} />
             </label>
             <p className="pl-1">or drag and drop</p>
           </div>
-          <p className="text-xs text-neutral-500">{fileTypeText}</p>
+          <p className="text-xs text-neutral-600">{fileTypeText}</p>
           {error && <p className="text-xs text-destructive mt-2">{error}</p>}
         </div>
       </div>
