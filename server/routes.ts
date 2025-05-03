@@ -113,9 +113,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate the analysis request
       const validatedData = bookAnalysisSchema.parse(bookInfo);
       
-      // Enrich book metadata from Google Books API if possible
+      // Mark this as a user entry for the enrichment process
+      validatedData.isUserEntry = isUserEntry;
+      
+      // Always enrich book metadata from Google Books API to get proper spelling and capitalization
       console.log(`[${requestId}] Enriching book metadata with Google Books API`);
       let enrichedBookInfo = await enrichBookMetadata(validatedData);
+      
+      // Log what got corrected from Google Books data
+      if (enrichedBookInfo.title !== validatedData.title) {
+        console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
+      }
+      
+      if (enrichedBookInfo.author !== validatedData.author) {
+        console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
+      }
       
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
@@ -273,8 +285,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...coverAnalysis, 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
-              author: coverAnalysis.author || "Unknown author"
+              author: coverAnalysis.author || "Unknown author",
+              // This is from cover analysis, not user input
+              isUserEntry: true
             });
+            
+            // Log what got corrected from Google Books data
+            if (enrichedData.title !== coverAnalysis.title) {
+              console.log(`Title was corrected: "${coverAnalysis.title}" → "${enrichedData.title}"`);
+            }
+            
+            if (enrichedData.author !== coverAnalysis.author) {
+              console.log(`Author was corrected: "${coverAnalysis.author}" → "${enrichedData.author}"`);
+            }
+            
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis

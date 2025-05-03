@@ -101,6 +101,11 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
 
 export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
+    // Flag to indicate if this was a user submission (should use Google data)
+    const isUserSubmission = (bookInfo as any).isUserEntry === true;
+    
+    console.log(`Enriching book metadata for "${bookInfo.title}" by "${bookInfo.author}". User submission: ${isUserSubmission}`);
+    
     let query = "";
     
     if (bookInfo.isbn) {
@@ -120,6 +125,7 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     const searchResults = await searchBooks({ query });
     
     if (searchResults.length === 0) {
+      console.log(`No Google Books results found for: ${query}`);
       return bookInfo;
     }
     
@@ -127,18 +133,30 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     const googleBook = searchResults[0];
     const volumeInfo = googleBook.volumeInfo || {};
     
+    console.log(`Found Google Books match: "${volumeInfo.title}" by "${volumeInfo.authors?.[0] || 'Unknown'}"`);
+    
     // Create enriched book metadata
     const enrichedBook: Partial<Book> = {
       ...bookInfo,
-      title: bookInfo.title || volumeInfo.title,
-      author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
-      publisher: bookInfo.publisher || volumeInfo.publisher,
-      publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
-      pageCount: bookInfo.pageCount || volumeInfo.pageCount,
-      isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
-        volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
-      coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+      // Always prefer Google Books data for title and author if available
+      title: volumeInfo.title || bookInfo.title, 
+      author: (volumeInfo.authors ? volumeInfo.authors[0] : null) || bookInfo.author,
+      publisher: volumeInfo.publisher || bookInfo.publisher,
+      publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
+      pageCount: volumeInfo.pageCount || bookInfo.pageCount,
+      isbn: (volumeInfo.industryIdentifiers ? 
+        volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null) || bookInfo.isbn,
+      coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
     };
+    
+    // Log what data was corrected
+    if (enrichedBook.title !== bookInfo.title) {
+      console.log(`Corrected title from "${bookInfo.title}" to "${enrichedBook.title}"`);
+    }
+    
+    if (enrichedBook.author !== bookInfo.author) {
+      console.log(`Corrected author from "${bookInfo.author}" to "${enrichedBook.author}"`);
+    }
     
     // Find similar books
     const similarBooks = await searchSimilarBooks(enrichedBook);

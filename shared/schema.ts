@@ -63,6 +63,7 @@ export const bookAnalysisSchema = z.object({
   deweyDecimal: z.string().nullable().optional(),
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
+  isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),
