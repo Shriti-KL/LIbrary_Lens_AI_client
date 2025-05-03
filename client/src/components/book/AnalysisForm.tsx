@@ -35,6 +35,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
+  const [isDragDropping, setIsDragDropping] = useState(false);
   
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -107,6 +108,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   // Handle file selection
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
+    setIsDragDropping(false);
     
     // Reset the form values when a new file is uploaded
     form.reset({
@@ -149,16 +151,28 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       // If we had previous results, force a new analysis
       formData.append('forceNewAnalysis', submissionId);
       
-      // Submit for analysis
-      onSubmit(formData, {
-        summary: true,
-        genres: true,
-        themes: true,
-        readingLevel: true,
-        catalogEntry: true,
-      });
+      try {
+        // Submit for analysis
+        onSubmit(formData, {
+          summary: true,
+          genres: true,
+          themes: true,
+          readingLevel: true,
+          catalogEntry: true,
+        });
+      } catch (error) {
+        console.error("Error submitting file for analysis:", error);
+        setExtracting(false);
+      }
     }
   };
+  
+  // Reset extracting state when main loading state changes to false
+  useEffect(() => {
+    if (!isLoading && extracting) {
+      setExtracting(false);
+    }
+  }, [isLoading]);
 
   return (
     <Card className="shadow-sm border border-neutral-200">
@@ -172,6 +186,7 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
           dropzoneText={t('dragDrop')}
           fileTypeText="PNG, JPG, GIF up to 10MB"
           className="border-2 border-dashed border-primary/30"
+          isLoading={isLoading || extracting}
         />
         
         <div className="mt-6">
