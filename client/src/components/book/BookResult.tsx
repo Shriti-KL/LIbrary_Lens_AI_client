@@ -307,8 +307,8 @@ export default function BookResult({
               <h4 className="text-sm font-medium text-neutral-600 uppercase tracking-wider">{t('majorThemes')}</h4>
               <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {book.themes.map((theme, index) => (
-                  <div key={index} className="bg-accent/20 p-4 rounded-lg">
-                    <h5 className="font-medium text-primary">
+                  <div key={index} className="bg-accent/20 p-4 rounded-lg border border-accent/40 shadow-sm">
+                    <h5 className="font-medium text-secondary-dark">
                       {typeof theme === 'object' && theme !== null && 'theme' in theme
                         ? theme.theme as string
                         : typeof theme === 'string' ? theme : `Theme ${index + 1}`}
@@ -328,7 +328,7 @@ export default function BookResult({
           {book.catalogEntry && (
             <div>
               <h4 className="text-sm font-medium text-neutral-600 uppercase tracking-wider">{t('catalogEntry')}</h4>
-              <div className="mt-2 p-4 bg-neutral-50 rounded-lg font-mono text-sm whitespace-pre-wrap">
+              <div className="mt-2 p-4 bg-blue-50/80 rounded-lg font-mono text-sm whitespace-pre-wrap border border-blue-100 shadow-sm">
                 {book.catalogEntry}
               </div>
             </div>
