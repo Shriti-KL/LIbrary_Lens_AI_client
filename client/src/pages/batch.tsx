@@ -61,7 +61,7 @@ export default function Batch() {
       });
       
       // Make API request using the standardized apiRequest utility
-      const response = await apiRequest('POST', '/api/books/batch', formData, true);
+      const response = await apiRequest('POST', '/api/books/batch', formData);
       return await response.json();
     },
     onMutate: () => {

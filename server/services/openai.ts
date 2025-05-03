@@ -15,14 +15,14 @@ export async function analyzeBookCover(image: string): Promise<any> {
       messages: [
         {
           role: "system",
-          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata. Return a JSON object with title, author, publisher (if visible), and a brief description of the cover design."
+          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate."
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Analyze this book cover image and extract the book title, author, and any other relevant information. Format as JSON."
+              text: "Analyze this book cover image and extract the following information with high accuracy:\n1. Book title (exact as shown)\n2. Author name (full name as shown)\n3. Publisher (if visible)\n4. ISBN (if visible)\n5. Publication year (if visible)\n6. Brief description of cover design\n\nRespond with a JSON object with keys: title, author, publisher, isbn, publishedYear, coverDescription. Use null for any fields not visible or unclear. Be as accurate as possible with the visible text on the cover."
             },
             {
               type: "image_url",
@@ -34,9 +34,17 @@ export async function analyzeBookCover(image: string): Promise<any> {
         },
       ],
       response_format: { type: "json_object" },
+      temperature: 0.1, // Lower temperature for more accurate extraction
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const result = JSON.parse(response.choices[0].message.content);
+    
+    // Ensure we have at least a title and author
+    if (!result.title && !result.author) {
+      throw new Error("Could not extract title or author from book cover");
+    }
+    
+    return result;
   } catch (error) {
     console.error("Error analyzing book cover:", error);
     throw new Error(`Failed to analyze book cover: ${error.message}`);

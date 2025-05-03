@@ -180,44 +180,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       const processed = { success: 0, failed: 0 };
       
+      // Process files sequentially for better error handling
       for (const file of files) {
         try {
+          console.log(`Processing file: ${file.originalname}`);
+          
+          // Check if file is an image
+          if (!file.mimetype.startsWith('image/')) {
+            throw new Error("File is not an image");
+          }
+          
           // Convert image to base64
           const imageBase64 = file.buffer.toString("base64");
           
-          // Analyze cover
-          const coverAnalysis = await analyzeBookCover(imageBase64);
+          // Get file size in MB for logging
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          console.log(`Image size: ${fileSizeMB}MB`);
           
-          // Enrich with Google Books data
-          const enrichedData = await enrichBookMetadata(coverAnalysis);
-          
-          // Process full analysis
-          const analysisResult = await processBookAnalysis({
-            ...enrichedData,
-            coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
-            options: {
-              summary: true,
-              genres: true,
-              themes: true,
-              readingLevel: true,
-              catalogEntry: true,
-            }
-          });
-          
-          // Save to storage
-          const savedBook = await storage.createBook(analysisResult as InsertBook);
-          
+          try {
+            // Step 1: Analyze cover using OpenAI Vision
+            console.log("Step 1: Analyzing book cover with OpenAI Vision...");
+            const coverAnalysis = await analyzeBookCover(imageBase64);
+            console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
+            
+            // Step 2: Enrich with Google Books data
+            console.log("Step 2: Enriching with Google Books data...");
+            const enrichedData = await enrichBookMetadata({
+              ...coverAnalysis, 
+              // Ensure title and author are available for Google Books search
+              title: coverAnalysis.title || "Unknown title",
+              author: coverAnalysis.author || "Unknown author"
+            });
+            console.log("Data enrichment successful");
+            
+            // Step 3: Process full analysis
+            console.log("Step 3: Processing complete book analysis...");
+            const analysisResult = await processBookAnalysis({
+              ...enrichedData,
+              coverImageData: `data:${file.mimetype};base64,${imageBase64}`,
+              coverImageUrl: null, // We'll store the image data directly
+              options: {
+                summary: true,
+                genres: true,
+                themes: true,
+                readingLevel: true,
+                catalogEntry: true,
+              }
+            });
+            console.log("Full analysis completed successfully");
+            
+            // Step 4: Save to storage
+            console.log("Step 4: Saving book to database...");
+            const bookData: InsertBook = {
+              ...analysisResult as InsertBook,
+              // Ensure required fields are not undefined
+              title: analysisResult.title || file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension if no title found
+              author: analysisResult.author || "Unknown",
+              userId: req.user?.id || null
+            };
+            
+            const savedBook = await storage.createBook(bookData);
+            console.log(`Book saved with ID: ${savedBook.id}`);
+            
+            results.push({
+              filename: file.originalname,
+              status: "success",
+              book: savedBook
+            });
+            processed.success++;
+          } catch (analysisError) {
+            console.error("Error in analysis process:", analysisError);
+            results.push({
+              filename: file.originalname,
+              status: "error",
+              error: analysisError.message
+            });
+            processed.failed++;
+          }
+        } catch (fileError) {
+          console.error("Error processing file:", fileError);
           results.push({
-            filename: file.originalname,
-            status: "success",
-            book: savedBook
-          });
-          processed.success++;
-        } catch (err) {
-          results.push({
-            filename: file.originalname,
+            filename: file.originalname || "unknown",
             status: "error",
-            error: err.message
+            error: fileError.message
           });
           processed.failed++;
         }
@@ -229,7 +274,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         results
       });
     } catch (error) {
-      res.status(500).json({ message: `Error processing batch: ${error.message}` });
+      console.error("Fatal error in batch processing:", error);
+      res.status(500).json({ 
+        message: `Error processing batch: ${error.message}`,
+        error: error.stack
+      });
     }
   });
 
