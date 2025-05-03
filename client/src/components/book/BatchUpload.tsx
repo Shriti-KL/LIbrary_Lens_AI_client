@@ -49,6 +49,7 @@ export default function BatchUpload({ onSubmit, isProcessing }: BatchUploadProps
           className="mb-6"
           dropzoneText="Drag and drop multiple book covers here"
           fileTypeText="PNG, JPG, GIF up to 10MB each"
+          isLoading={isProcessing}
         />
         
         {selectedFiles.length > 0 && (

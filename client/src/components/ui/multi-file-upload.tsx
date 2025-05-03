@@ -11,6 +11,7 @@ interface MultiFileUploadProps {
   children?: React.ReactNode;
   dropzoneText?: string;
   fileTypeText?: string;
+  isLoading?: boolean;
 }
 
 export function MultiFileUpload({
@@ -21,6 +22,7 @@ export function MultiFileUpload({
   children,
   dropzoneText = 'Drag and drop your files here',
   fileTypeText = 'PNG, JPG, GIF up to 10MB',
+  isLoading = false,
 }: MultiFileUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<{
     file: File;
@@ -72,7 +74,7 @@ export function MultiFileUpload({
     };
   }, [selectedFiles]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject } = useDropzone({
     onDrop,
     accept: {
       [acceptedFileTypes]: []
@@ -99,26 +101,40 @@ export function MultiFileUpload({
       <div
         {...getRootProps()}
         className={cn(
-          'flex justify-center px-6 py-6 border-2 border-dashed rounded-md transition-colors',
-          isDragActive 
-            ? 'border-primary bg-blue-100/80 text-primary-dark' 
-            : 'border-primary/40 hover:border-primary bg-blue-50/80 text-primary-dark',
-          'cursor-pointer'
+          'flex justify-center px-6 py-6 border-2 border-dashed rounded-md transition-all',
+          isLoading
+            ? 'border-amber-500 bg-amber-50 text-amber-700 cursor-wait'
+            : isDragActive 
+              ? 'border-primary bg-primary/10 text-primary-dark scale-[1.02] shadow-md' 
+              : isDragReject
+                ? 'border-red-500 bg-red-50 text-red-600'
+                : 'border-primary/40 hover:border-primary hover:bg-primary/5 bg-blue-50/80 text-primary-dark',
+          isLoading ? 'cursor-wait' : 'cursor-pointer'
         )}
       >
         <div className="space-y-1 text-center">
-          <svg className="mx-auto h-12 w-12 text-primary/60" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <div className="flex text-sm text-neutral-700">
-            <label className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-light">
-              <span>Upload files</span>
-              <input {...getInputProps()} />
-            </label>
-            <p className="pl-1">or drag and drop</p>
-          </div>
-          <p className="text-xs text-neutral-600">{fileTypeText}</p>
-          {error && <p className="text-xs text-destructive mt-2">{error}</p>}
+          {isLoading ? (
+            <div className="mx-auto flex flex-col items-center justify-center py-2">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <p className="mt-3 text-sm font-medium text-primary">Processing files...</p>
+              <p className="text-xs text-neutral-600 mt-1">This may take a few moments</p>
+            </div>
+          ) : (
+            <>
+              <svg className="mx-auto h-12 w-12 text-primary/60" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <div className="flex text-sm text-neutral-700">
+                <label className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-light">
+                  <span>Upload files</span>
+                  <input {...getInputProps()} disabled={isLoading} />
+                </label>
+                <p className="pl-1">or drag and drop</p>
+              </div>
+              <p className="text-xs text-neutral-600">{fileTypeText}</p>
+              {error && <p className="text-xs text-destructive mt-2">{error}</p>}
+            </>
+          )}
         </div>
       </div>
       
