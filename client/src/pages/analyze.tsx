@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
 import { Book } from '@shared/schema';
@@ -8,7 +8,16 @@ import BookResult from '@/components/book/BookResult';
 
 export default function Analyze() {
   const { t } = useLanguage();
-  const { analysisMutation, saveBookMutation, analysisSteps } = useBookAnalysis();
+  const { 
+    analysisMutation, 
+    saveBookMutation, 
+    analysisSteps, 
+    getCurrentData,
+    clearAnalysisData 
+  } = useBookAnalysis();
+  
+  // State to track the current book data (from mutation or localStorage)
+  const [bookData, setBookData] = useState<Partial<Book>>({});
   
   // Analysis options state
   const [options, setOptions] = useState({
@@ -52,9 +61,21 @@ export default function Analyze() {
     analysisMutation.mutate({ formData, options });
   };
   
+  // Effect to sync bookData with the current state (either from mutation or localStorage)
+  useEffect(() => {
+    // Get data from either the active mutation or localStorage
+    const currentData = getCurrentData();
+    if (currentData) {
+      setBookData(currentData);
+    }
+  }, [analysisMutation.data, getCurrentData]);
+  
   // Handle save to archive
   const handleSave = (book: Partial<Book>) => {
     saveBookMutation.mutate(book);
+    
+    // After saving, clear the persisted data too
+    clearAnalysisData();
   };
   
   return (
@@ -86,7 +107,7 @@ export default function Analyze() {
         {/* Right Column - Results */}
         <div className="mt-8 md:mt-0 md:col-span-4">
           <BookResult 
-            book={analysisMutation.data || {}}
+            book={bookData}
             isLoading={analysisMutation.isPending}
             onSave={handleSave}
             loadingSteps={analysisSteps}
