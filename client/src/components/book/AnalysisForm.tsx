@@ -82,9 +82,17 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
   // Auto-submit form when a file is selected
   const handleAutoSubmit = () => {
     if (selectedFile && autoExtract) {
-      // Just submit with the file only to auto-extract information
+      // Create a unique ID for this auto submission
+      const submissionId = `auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      console.log(`Book analysis form submission ${submissionId} - Auto-extract triggered`);
+      
+      // Create form data with the file only to auto-extract information
       const formData = new FormData();
       formData.append('coverImage', selectedFile);
+      formData.append('requestTimestamp', submissionId);
+      
+      // This is NOT a manual submission
+      formData.append('isManualSubmission', 'false');
       
       onSubmit(formData, {
         summary: true,
@@ -120,6 +128,12 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
         const formData = new FormData();
         formData.append('coverImage', file);
         formData.append('requestTimestamp', submissionId);
+        
+        // Explicitly mark this as NOT a manual submission (auto-extraction)
+        formData.append('isManualSubmission', 'false');
+        
+        // If we had previous results, force a new analysis
+        formData.append('forceNewAnalysis', submissionId);
         
         // Submit for analysis
         onSubmit(formData, {

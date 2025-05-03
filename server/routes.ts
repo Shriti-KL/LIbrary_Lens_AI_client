@@ -37,11 +37,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body) {
         const bodyData = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
         
-        // Check if user has entered title or author manually
-        if (bodyData.title && bodyData.title.trim() !== "" || 
-            bodyData.author && bodyData.author.trim() !== "") {
+        // Check for isManualSubmission flag, which is explicitly set by the client
+        if (bodyData.isManualSubmission === 'true') {
           isUserEntry = true;
-          console.log(`[${requestId}] Manual entry detected`);
+          console.log(`[${requestId}] Manual submission explicitly marked`);
+        }
+        // Also check if user has entered title or author manually as a fallback
+        else if ((bodyData.title && bodyData.title.trim() !== "") || 
+                 (bodyData.author && bodyData.author.trim() !== "")) {
+          isUserEntry = true;
+          console.log(`[${requestId}] Manual entry detected from content`);
+        }
+        
+        // Check if the client is forcing a new analysis (happens when modifying a previous result)
+        const forceNewAnalysis = bodyData.forceNewAnalysis;
+        if (forceNewAnalysis) {
+          console.log(`[${requestId}] Force new analysis flag detected with timestamp: ${forceNewAnalysis}`);
+          isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
         bookInfo = {

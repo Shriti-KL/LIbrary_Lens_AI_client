@@ -30,6 +30,26 @@ export default function Analyze() {
   
   // Handle form submission
   const handleSubmit = (formData: FormData) => {
+    // Log what data we're submitting for debugging
+    const title = formData.get('title') as string;
+    const author = formData.get('author') as string;
+    const hasImage = formData.has('coverImage');
+    
+    console.log("Submitting analysis with form data:", {
+      title: title || null,
+      author: author || null,
+      hasImage
+    });
+    
+    // Add a flag to explicitly mark this as a manual submission
+    formData.append('isManualSubmission', 'true');
+    
+    // Reset the mutation data if we already have results
+    if (analysisMutation.data) {
+      // Force a reset by adding a unique timestamp
+      formData.append('forceNewAnalysis', Date.now().toString());
+    }
+    
     analysisMutation.mutate({ formData, options });
   };
   
