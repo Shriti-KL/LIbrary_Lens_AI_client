@@ -88,6 +88,18 @@ export type Book = typeof books.$inferSelect;
 export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema>;
 
+// Extended interface for analysis control flags
+export interface BookAnalysisControl {
+  isManualSubmission?: string; 
+  isISBNOnlySearch?: string;   
+  forceNewAnalysis?: string;   
+  isbnPriority?: boolean;      
+  requestTimestamp?: string;   
+}
+
+// Extended Book type with analysis control flags
+export type BookWithAnalysisControl = Partial<Book> & BookAnalysisControl;
+
 // Analysis options
 export enum AnalysisOption {
   Summary = "summary",

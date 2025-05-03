@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { Book, BookAnalysisRequest, AnalysisOption } from "@shared/schema";
+import { Book, BookAnalysisRequest, AnalysisOption, BookWithAnalysisControl } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
@@ -206,29 +206,39 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 }
 
 // Process the full book analysis
-export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
+export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<BookWithAnalysisControl> {
   try {
     // Create a unique ID for this analysis request
     const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    
+    // Check if this is a manual submission
+    const isManualSubmission = analysisRequest.isManualSubmission === 'true';
+    const isISBNOnlySearch = analysisRequest.isISBNOnlySearch === 'true';
+    const forceNewAnalysis = analysisRequest.forceNewAnalysis || Date.now().toString();
     
     // Log the incoming data for debugging
     console.log(`[${analysisId}] ProcessBookAnalysis input:`, {
       title: analysisRequest.title,
       author: analysisRequest.author,
+      isbn: analysisRequest.isbn,
+      isManualSubmission,
+      isISBNOnlySearch,
       hasCoverImage: !!analysisRequest.coverImage,
-      existingSummary: !!analysisRequest.summary
+      existingSummary: !!analysisRequest.summary,
+      forceNewAnalysis
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
-    const bookInfo: Partial<Book> = {
+    const bookInfo: BookWithAnalysisControl = {
+      // Book metadata
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
-      // Handle the cover image data if provided
-      ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
+      // Handle the cover image data if provided and not manual mode with ISBN
+      ...(analysisRequest.coverImage && !isManualSubmission && { coverImageUrl: analysisRequest.coverImage }),
       
       // Reset all analysis fields
       summary: null,
@@ -237,7 +247,14 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       readingLevel: null,
       catalogEntry: null,
       deweyDecimal: null,
-      metadata: {}
+      metadata: {},
+      
+      // Control flags
+      isManualSubmission: analysisRequest.isManualSubmission,
+      isISBNOnlySearch: analysisRequest.isISBNOnlySearch,
+      forceNewAnalysis,
+      isbnPriority: isManualSubmission && !!analysisRequest.isbn,
+      requestTimestamp: Date.now().toString()
     };
     
     const options = analysisRequest.options || {
@@ -248,7 +265,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       catalogEntry: true,
     };
     
-    console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}`);
+    console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}. Manual mode: ${isManualSubmission}, ISBN search: ${isISBNOnlySearch}`);
 
     // Process book analysis in sequence
     if (options.summary) {
@@ -268,7 +285,11 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       bookInfo.readingLevel = readingLevelInfo.level;
       bookInfo.metadata = {
         ...(bookInfo.metadata || {}),
-        readingLevelScore: readingLevelInfo.score
+        readingLevelScore: readingLevelInfo.score,
+        analysisId,
+        analysisDate: new Date().toISOString(),
+        manualSubmission: isManualSubmission,
+        isbnSearch: isISBNOnlySearch
       };
     }
     

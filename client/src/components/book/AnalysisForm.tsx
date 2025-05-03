@@ -197,18 +197,25 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       <CardContent className="pt-6">
         <h3 className="text-lg font-serif font-medium text-neutral-800 mb-4">{t('uploadCover')}</h3>
         
-        {/* Show a warning if we're in manual mode but still have a selected file */}
-        {manualEntryMode && selectedFile && (
-          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+        {/* File display and management */}
+        {selectedFile && (
+          <div className={`mb-3 p-2 ${manualEntryMode ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'} border rounded-md text-sm ${manualEntryMode ? 'text-yellow-800' : 'text-blue-800'}`}>
             <div className="flex items-center justify-between">
-              <span>
-                File "{selectedFile.name}" will be ignored for manual search.
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">
+                  {manualEntryMode ? '⚠️' : '📷'}
+                </span>
+                <span>
+                  {manualEntryMode 
+                    ? `"${selectedFile.name}" will be ignored for manual search.` 
+                    : `Using "${selectedFile.name}" for auto-extraction`}
+                </span>
+              </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={clearSelectedFile}
-                className="text-xs hover:bg-yellow-100"
+                className={`text-xs hover:${manualEntryMode ? 'bg-yellow-100' : 'bg-blue-100'}`}
               >
                 Clear File
               </Button>
@@ -226,6 +233,11 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
         
         <div className="mt-4">
           <h4 className="text-sm font-medium text-neutral-800">{t('enterDetails')}</h4>
+          <p className="text-xs text-neutral-500 mb-2">
+            {manualEntryMode 
+              ? "Enter book details manually. ISBN lookup can automatically fill in information."
+              : "Either upload a cover image for automatic extraction or manually enter book details below."}
+          </p>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="mt-2 space-y-3">
@@ -262,11 +274,34 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                 name="isbn"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('isbn')}</FormLabel>
+                    <div className="flex justify-between">
+                      <FormLabel>{t('isbn')}</FormLabel>
+                      {manualEntryMode && field.value && (
+                        <span className="text-xs text-blue-600 font-medium">ISBN lookup enabled</span>
+                      )}
+                    </div>
                     <FormControl>
-                      <Input placeholder="ISBN (optional)" {...field} />
+                      <Input 
+                        placeholder="ISBN (optional)" 
+                        {...field} 
+                        className={field.value && manualEntryMode ? "border-blue-200 focus-visible:ring-blue-300" : ""}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          // When ISBN is entered and we're in manual mode, 
+                          // make it visually clear this will be used for lookup
+                          if (e.target.value && !manualEntryMode) {
+                            setManualEntryMode(true);
+                            console.log("ISBN entry detected, switching to manual mode");
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
+                    {field.value && manualEntryMode && (
+                      <p className="text-xs text-neutral-500 mt-1">
+                        Enter ISBN-10 or ISBN-13 for automatic Google Books lookup
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />

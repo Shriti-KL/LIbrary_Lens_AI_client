@@ -1,4 +1,4 @@
-import { Book } from "@shared/schema";
+import { Book, BookWithAnalysisControl } from "@shared/schema";
 
 // Google Books API endpoint
 const GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes";
@@ -99,7 +99,7 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
   }
 }
 
-export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+export async function enrichBookMetadata(bookInfo: BookWithAnalysisControl): Promise<BookWithAnalysisControl> {
   try {
     let query = "";
     let searchResults = [];
@@ -158,7 +158,7 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     const volumeInfo = googleBook.volumeInfo || {};
     
     // Create enriched book metadata
-    const enrichedBook: Partial<Book> = {
+    const enrichedBook: BookWithAnalysisControl = {
       ...bookInfo,
       title: bookInfo.title || volumeInfo.title,
       author: bookInfo.author || (volumeInfo.authors ? volumeInfo.authors[0] : ""),
@@ -168,6 +168,13 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
         volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null),
       coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+      
+      // Preserve analysis control flags
+      isbnPriority: bookInfo.isbnPriority,
+      isManualSubmission: bookInfo.isManualSubmission,
+      isISBNOnlySearch: bookInfo.isISBNOnlySearch,
+      forceNewAnalysis: bookInfo.forceNewAnalysis,
+      requestTimestamp: bookInfo.requestTimestamp,
     };
     
     // Find similar books
