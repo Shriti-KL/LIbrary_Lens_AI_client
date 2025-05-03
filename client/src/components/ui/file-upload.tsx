@@ -70,8 +70,8 @@ export function FileUpload({
         className={cn(
           'flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors',
           isDragActive 
-            ? 'border-primary bg-primary/10' 
-            : 'border-neutral-300 hover:border-primary/60 bg-blue-50/50',
+            ? 'border-primary bg-blue-100/80 text-primary-dark' 
+            : 'border-primary/40 hover:border-primary bg-blue-50/80 text-primary-dark',
           'cursor-pointer'
         )}
       >
