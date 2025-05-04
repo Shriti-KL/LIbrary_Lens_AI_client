@@ -134,6 +134,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
       }
       
+      // For manual entries without a cover image, fetch from Google Books if we found a match
+      if (!req.file && enrichedBookInfo.coverImageUrl) {
+        console.log(`[${requestId}] Using cover image from Google Books: ${enrichedBookInfo.coverImageUrl}`);
+        
+        try {
+          // Fetch the cover image from Google Books API
+          const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
+          
+          if (imageResponse.ok) {
+            const imageBuffer = await imageResponse.arrayBuffer();
+            const base64Image = Buffer.from(imageBuffer).toString('base64');
+            
+            // Determine image type from URL
+            const imageType = enrichedBookInfo.coverImageUrl.endsWith('.jpg') || 
+                             enrichedBookInfo.coverImageUrl.endsWith('.jpeg') 
+                             ? 'image/jpeg' : 'image/png';
+            
+            // Add the image to the book info
+            enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
+            console.log(`[${requestId}] Successfully fetched cover image from Google Books`);
+          }
+        } catch (error) {
+          console.error(`[${requestId}] Error fetching cover image from Google Books:`, error);
+        }
+      }
+      
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
       const analysisResult = await processBookAnalysis(enrichedBookInfo);

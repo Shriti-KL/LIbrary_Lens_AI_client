@@ -88,30 +88,33 @@ export default function Analyze() {
         <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
       </div>
       
-      <div className="md:grid md:grid-cols-6 md:gap-8">
-        {/* Left Column - Upload & Analysis Options */}
-        <div className="md:col-span-2 space-y-8">
-          {/* Upload Form */}
-          <AnalysisForm 
-            onSubmit={handleSubmit} 
-            isLoading={analysisMutation.isPending}
-          />
+      {/* Main Content Card */}
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+        <div className="md:grid md:grid-cols-6 md:gap-8">
+          {/* Left Column - Upload & Analysis Options */}
+          <div className="md:col-span-2 space-y-8">
+            {/* Upload Form */}
+            <AnalysisForm 
+              onSubmit={handleSubmit} 
+              isLoading={analysisMutation.isPending}
+            />
+            
+            {/* Analysis Options */}
+            <AnalysisOptions 
+              options={options}
+              onOptionChange={handleOptionChange}
+            />
+          </div>
           
-          {/* Analysis Options */}
-          <AnalysisOptions 
-            options={options}
-            onOptionChange={handleOptionChange}
-          />
-        </div>
-        
-        {/* Right Column - Results */}
-        <div className="mt-8 md:mt-0 md:col-span-4">
-          <BookResult 
-            book={bookData}
-            isLoading={analysisMutation.isPending}
-            onSave={handleSave}
-            loadingSteps={analysisSteps}
-          />
+          {/* Right Column - Results */}
+          <div className="mt-8 md:mt-0 md:col-span-4">
+            <BookResult 
+              book={bookData}
+              isLoading={analysisMutation.isPending}
+              onSave={handleSave}
+              loadingSteps={analysisSteps}
+            />
+          </div>
         </div>
       </div>
     </div>
