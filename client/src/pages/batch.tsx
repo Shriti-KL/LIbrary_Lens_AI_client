@@ -180,7 +180,7 @@ export default function Batch() {
   };
   
   return (
-    <div className="max-w-7xl mx-auto pb-12 space-y-6">
+    <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
       <div className="mb-8 border-b border-neutral-200 pb-3">
         <h1 className="text-2xl font-serif font-semibold text-primary-dark">
@@ -189,7 +189,7 @@ export default function Batch() {
         <p className="text-neutral-600 mt-1">Process multiple books at once</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 mb-8">
         <BatchUpload 
           onSubmit={handleBatchSubmit}
           isProcessing={batchMutation.isPending}
@@ -319,7 +319,7 @@ export default function Batch() {
       
       {/* Empty State */}
       {!batchMutation.isPending && batchResults.length === 0 && (
-        <Card className="mt-6">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="bg-primary/10 rounded-full p-3">
               <BookOpen className="h-10 w-10 text-primary" />
