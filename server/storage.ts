@@ -87,9 +87,19 @@ export class DatabaseStorage implements IStorage {
   }
   
   async clearAllBooks(): Promise<number> {
-    // Delete all books and return the count of deleted records
-    const result = await db.delete(books).returning({ id: books.id });
-    return result.length;
+    // Use a direct SQL query to ensure all books are deleted
+    // The Drizzle ORM call seems to be failing silently
+    try {
+      console.log("Executing clearAllBooks operation...");
+      const { rows } = await db.execute(
+        'DELETE FROM books RETURNING id;'
+      );
+      console.log(`Successfully deleted ${rows.length} books`);
+      return rows.length;
+    } catch (error) {
+      console.error("Error in clearAllBooks:", error);
+      throw error;
+    }
   }
 
   async searchBooks(query: string): Promise<Book[]> {
