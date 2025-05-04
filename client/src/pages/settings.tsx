@@ -90,9 +90,23 @@ export default function Settings() {
       }
     },
     onSuccess: (data) => {
-      // Invalidate book queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
+      // Reset all book-related caches to empty arrays
+      queryClient.setQueryData(['/api/books'], []);
+      queryClient.setQueryData(['/api/books/recent'], []);
+      
+      // Also invalidate any potential search queries or other book-related queries
+      queryClient.invalidateQueries({ predicate: (query) => {
+        const queryKey = Array.isArray(query.queryKey) ? query.queryKey[0] : query.queryKey;
+        return typeof queryKey === 'string' && (
+          queryKey.includes('/api/books') || 
+          queryKey.includes('/api/googlebooks')
+        );
+      }});
+      
+      // Force the page to reload to ensure all book data is cleared from UI
+      window.setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
       
       toast({
         title: "Data Cleared",

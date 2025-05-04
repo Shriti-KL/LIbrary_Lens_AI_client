@@ -286,16 +286,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      console.log("Clearing all books from database...");
+      
+      // First set the response content type
+      res.setHeader('Content-Type', 'application/json');
+      
+      // Execute the database operation
       const deletedCount = await storage.clearAllBooks();
       
-      // Ensure we set the content-type header correctly
-      res.setHeader('Content-Type', 'application/json');
+      console.log(`Successfully deleted ${deletedCount} books`);
+      
+      // Return the response
       return res.status(200).json({ 
         success: true,
         message: `Successfully deleted all books`,
         count: deletedCount
       });
     } catch (error) {
+      console.error("Error when clearing books:", error);
+      
       res.setHeader('Content-Type', 'application/json');
       return res.status(500).json({ 
         success: false, 
