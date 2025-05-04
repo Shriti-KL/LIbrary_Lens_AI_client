@@ -43,12 +43,6 @@ export default function Analyze() {
     
     // Log this action
     console.log("Analyze page mounted: cleared previous analysis data");
-    
-    // Show toast to indicate a fresh analysis
-    toast({
-      title: "Ready for New Analysis",
-      description: "Start by uploading a book cover or entering book details",
-    });
   }, []);
   
   // Effect to sync bookData with the current state (from the mutation only)
