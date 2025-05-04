@@ -148,26 +148,31 @@ export default function Batch() {
       queryClient.invalidateQueries({ queryKey: ['/api/books'] });
     },
     onError: (error) => {
-      // Mark all as error
-      setBatchResults(prev => 
-        prev.map(item => ({
-          ...item,
-          status: 'error',
-          error: error.message
-        }))
-      );
-      
       toast({
         title: 'Batch Processing Failed',
         description: error.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
+      
+      // Update all items in processing to error
+      setBatchResults(prev => 
+        prev.map(item => 
+          item.status === 'processing' 
+            ? {
+                ...item,
+                status: 'error',
+                progress: 100,
+                error: error.message
+              }
+            : item
+        )
+      );
     }
   });
   
   // Handle batch submission
   const handleBatchSubmit = (files: File[]) => {
-    // Clear previous results
+    // Reset batch results
     setBatchResults([]);
     
     // Process the batch
@@ -175,11 +180,21 @@ export default function Batch() {
   };
   
   return (
-    <div className="space-y-6">
-      <BatchUpload 
-        onSubmit={handleBatchSubmit}
-        isProcessing={batchMutation.isPending}
-      />
+    <div className="max-w-7xl mx-auto pb-12 space-y-6">
+      {/* Page Title */}
+      <div className="mb-8 border-b border-neutral-200 pb-3">
+        <h1 className="text-2xl font-serif font-semibold text-primary-dark">
+          {t('batchProcessing')}
+        </h1>
+        <p className="text-neutral-600 mt-1">Process multiple books at once</p>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+        <BatchUpload 
+          onSubmit={handleBatchSubmit}
+          isProcessing={batchMutation.isPending}
+        />
+      </div>
       
       {/* Batch Results */}
       {batchResults.length > 0 && (
