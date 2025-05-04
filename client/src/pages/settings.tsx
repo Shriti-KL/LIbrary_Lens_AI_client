@@ -3,6 +3,8 @@ import { useLanguage } from '@/hooks/use-language';
 import { useToast } from '@/hooks/use-toast';
 import { Language } from '@/hooks/use-language';
 import { ThemeProvider, useTheme } from "next-themes";
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Card, 
   CardContent, 
@@ -24,6 +26,16 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   CheckCircle2,
   Globe,
   Moon,
@@ -31,12 +43,16 @@ import {
   Settings2,
   Sun,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function Settings() {
   const { t, language, changeLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  
+  // Show confirmation dialog state
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
   
   // API settings
   const [apiKeys, setApiKeys] = useState({
@@ -52,6 +68,36 @@ export default function Settings() {
     defaultReadingLevel: true,
     defaultCatalogEntry: true,
     batchLimit: 10
+  });
+  
+  // Clear all books mutation
+  const clearBooksMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', '/api/books?confirm=true');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate book queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
+      
+      toast({
+        title: "Data Cleared",
+        description: `Successfully removed ${data.count} books from your library.`,
+        action: (
+          <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
+            <CheckCircle2 className="h-5 w-5 text-white" />
+          </div>
+        ),
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to clear books: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   });
   
   // Handle language change
@@ -78,17 +124,44 @@ export default function Settings() {
     });
   };
   
-  // Handle clear data
+  // Open confirmation dialog
   const handleClearData = () => {
-    // In a real app, this would clear all analyzed books
-    toast({
-      title: "Data Cleared",
-      description: "All analyzed books have been removed.",
-    });
+    setClearDialogOpen(true);
+  };
+  
+  // Confirm and execute data clearing
+  const confirmClearData = () => {
+    clearBooksMutation.mutate();
+    setClearDialogOpen(false);
   };
   
   return (
     <div className="space-y-6">
+      {/* Confirmation Dialog for Clear All Books */}
+      <AlertDialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete ALL books from your library. 
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmClearData}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Delete All Books
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <Tabs defaultValue="general" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="general">

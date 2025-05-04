@@ -273,6 +273,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: `Error deleting book: ${error.message}` });
     }
   });
+  
+  // DELETE /api/books - Clear all books
+  app.delete("/api/books", async (req: Request, res: Response) => {
+    try {
+      // This is a destructive operation, so we should check for confirmation
+      const { confirm } = req.query;
+      
+      if (confirm !== 'true') {
+        return res.status(400).json({ 
+          message: "This operation will delete ALL books. Confirm by adding ?confirm=true to the request."
+        });
+      }
+      
+      const deletedCount = await storage.clearAllBooks();
+      
+      res.status(200).json({ 
+        message: `Successfully deleted all books`,
+        count: deletedCount
+      });
+    } catch (error) {
+      res.status(500).json({ message: `Error clearing books: ${error.message}` });
+    }
+  });
 
   // Batch processing endpoint
   app.post("/api/books/batch", upload.array("coverImages", 10), async (req: Request, res: Response) => {
