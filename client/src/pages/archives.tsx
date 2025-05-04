@@ -75,6 +75,12 @@ export default function Archives() {
   const [viewBookId, setViewBookId] = useState<number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   
+  // Filter states
+  const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  
   // Check for view parameter in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -86,7 +92,7 @@ export default function Archives() {
   }, []);
   
   // Fetch books
-  const { data: books = [], isLoading } = useQuery({
+  const { data: books = [], isLoading } = useQuery<Book[]>({
     queryKey: ['/api/books'],
   });
   
@@ -122,14 +128,73 @@ export default function Archives() {
     // For now, we'll use client-side filtering
   };
   
-  // Filter books based on search query
-  const filteredBooks = searchQuery.trim() === '' 
-    ? books
-    : books.filter((book: Book) => 
+  // Extract unique authors, genres, themes from books
+  const uniqueAuthors = useMemo(() => {
+    if (!Array.isArray(books)) return [];
+    const authors = new Set<string>();
+    books.forEach((book: Book) => {
+      if (book.author) authors.add(book.author);
+    });
+    return Array.from(authors).sort();
+  }, [books]);
+
+  const uniqueGenres = useMemo(() => {
+    if (!Array.isArray(books)) return [];
+    const genres = new Set<string>();
+    books.forEach((book: Book) => {
+      if (Array.isArray(book.genres)) {
+        book.genres.forEach(genre => genres.add(genre));
+      }
+    });
+    return Array.from(genres).sort();
+  }, [books]);
+
+  // Extract themes - handle both string themes and object themes with name property
+  const uniqueThemes = useMemo(() => {
+    if (!Array.isArray(books)) return [];
+    const themes = new Set<string>();
+    books.forEach((book: Book) => {
+      if (Array.isArray(book.themes)) {
+        book.themes.forEach((theme: any) => {
+          // Handle both string themes and object themes with name property
+          const themeName = typeof theme === 'string' ? theme : theme?.name;
+          if (themeName) themes.add(themeName);
+        });
+      }
+    });
+    return Array.from(themes).sort();
+  }, [books]);
+
+  // Filter books based on search query and selected filters
+  const filteredBooks = useMemo(() => {
+    if (!Array.isArray(books)) return [];
+    
+    return books.filter((book: Book) => {
+      // Text search filter
+      const matchesSearch = searchQuery.trim() === '' || 
         book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (book.isbn && book.isbn.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+        (book.isbn && book.isbn.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      // Author filter
+      const matchesAuthor = selectedAuthors.length === 0 || 
+        selectedAuthors.includes(book.author);
+      
+      // Genre filter
+      const matchesGenre = selectedGenres.length === 0 || 
+        (Array.isArray(book.genres) && book.genres.some(genre => 
+          selectedGenres.includes(genre)));
+      
+      // Theme filter - handle both string themes and object themes with name property
+      const matchesTheme = selectedThemes.length === 0 || 
+        (Array.isArray(book.themes) && book.themes.some((theme: any) => {
+          const themeName = typeof theme === 'string' ? theme : theme?.name;
+          return themeName && selectedThemes.includes(themeName);
+        }));
+      
+      return matchesSearch && matchesAuthor && matchesGenre && matchesTheme;
+    });
+  }, [books, searchQuery, selectedAuthors, selectedGenres, selectedThemes]);
   
   // Handle delete book
   const handleDeleteBook = (book: Book) => {
@@ -156,20 +221,255 @@ export default function Archives() {
       <Card>
         
         <CardContent>
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex space-x-2 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={`${t('search')}...`}
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button type="submit">{t('search')}</Button>
-          </form>
+          {/* Search and Filters */}
+          <div className="mb-6">
+            {/* Search Form */}
+            <form onSubmit={handleSearch} className="flex space-x-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder={`${t('search')}...`}
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button 
+                type="button" 
+                variant={filtersOpen ? "default" : "outline"}
+                onClick={() => setFiltersOpen(!filtersOpen)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {t('filters')}
+                {(selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0) && 
+                  <Badge variant="secondary" className="ml-2">
+                    {selectedAuthors.length + selectedGenres.length + selectedThemes.length}
+                  </Badge>
+                }
+              </Button>
+              <Button type="submit">{t('search')}</Button>
+            </form>
+            
+            {/* Filter Panel */}
+            {filtersOpen && (
+              <div className="mt-4 p-4 border rounded-md bg-muted/30">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Authors Filter */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t('author')}
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between font-normal"
+                        >
+                          {selectedAuthors.length > 0 
+                            ? `${selectedAuthors.length} selected`
+                            : "Select authors"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search authors..." />
+                          <CommandList>
+                            <CommandEmpty>No authors found</CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-auto">
+                              {uniqueAuthors.map((author) => (
+                                <CommandItem
+                                  key={author}
+                                  onSelect={() => {
+                                    setSelectedAuthors(
+                                      selectedAuthors.includes(author)
+                                        ? selectedAuthors.filter(a => a !== author)
+                                        : [...selectedAuthors, author]
+                                    );
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={`h-4 w-4 ${
+                                        selectedAuthors.includes(author) ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    <span>{author}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Genres Filter */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t('genres')}
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between font-normal"
+                        >
+                          {selectedGenres.length > 0 
+                            ? `${selectedGenres.length} selected`
+                            : "Select genres"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search genres..." />
+                          <CommandList>
+                            <CommandEmpty>No genres found</CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-auto">
+                              {uniqueGenres.map((genre) => (
+                                <CommandItem
+                                  key={genre}
+                                  onSelect={() => {
+                                    setSelectedGenres(
+                                      selectedGenres.includes(genre)
+                                        ? selectedGenres.filter(g => g !== genre)
+                                        : [...selectedGenres, genre]
+                                    );
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={`h-4 w-4 ${
+                                        selectedGenres.includes(genre) ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    <span>{genre}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Themes Filter */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      {t('themes')}
+                    </label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between font-normal"
+                        >
+                          {selectedThemes.length > 0 
+                            ? `${selectedThemes.length} selected`
+                            : "Select themes"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search themes..." />
+                          <CommandList>
+                            <CommandEmpty>No themes found</CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-auto">
+                              {uniqueThemes.map((theme) => (
+                                <CommandItem
+                                  key={theme}
+                                  onSelect={() => {
+                                    setSelectedThemes(
+                                      selectedThemes.includes(theme)
+                                        ? selectedThemes.filter(t => t !== theme)
+                                        : [...selectedThemes, theme]
+                                    );
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Check
+                                      className={`h-4 w-4 ${
+                                        selectedThemes.includes(theme) ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    <span>{theme}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                {/* Active Filters */}
+                {(selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0) && (
+                  <div className="mt-4">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedAuthors.map((author) => (
+                        <Badge variant="secondary" key={`author-${author}`} className="py-1 px-2">
+                          <span className="font-normal">Author: {author}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 ml-1 p-0"
+                            onClick={() => setSelectedAuthors(selectedAuthors.filter(a => a !== author))}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                      {selectedGenres.map((genre) => (
+                        <Badge variant="secondary" key={`genre-${genre}`} className="py-1 px-2">
+                          <span className="font-normal">Genre: {genre}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 ml-1 p-0"
+                            onClick={() => setSelectedGenres(selectedGenres.filter(g => g !== genre))}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                      {selectedThemes.map((theme) => (
+                        <Badge variant="secondary" key={`theme-${theme}`} className="py-1 px-2">
+                          <span className="font-normal">Theme: {theme}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 ml-1 p-0"
+                            onClick={() => setSelectedThemes(selectedThemes.filter(t => t !== theme))}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-2 h-8 text-xs"
+                      onClick={() => {
+                        setSelectedAuthors([]);
+                        setSelectedGenres([]);
+                        setSelectedThemes([]);
+                      }}
+                    >
+                      Clear all filters
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           
           {/* Books Table */}
           {isLoading ? (
@@ -257,8 +557,8 @@ export default function Archives() {
                 {t('noResults')}
               </h3>
               <p className="mt-2 text-sm text-neutral-500">
-                {searchQuery.trim() !== '' 
-                  ? `No books matching "${searchQuery}"`
+                {searchQuery.trim() !== '' || selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0 
+                  ? "No books match your filter criteria"
                   : 'No books have been analyzed yet'
                 }
               </p>
@@ -269,6 +569,16 @@ export default function Archives() {
         <CardFooter className="flex justify-between">
           <div className="text-sm text-neutral-500">
             {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'} found
+            {(selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0) && (
+              <>
+                {' '}<span className="text-muted-foreground">with</span>{' '}
+                {[
+                  selectedAuthors.length > 0 && `${selectedAuthors.length} author${selectedAuthors.length > 1 ? 's' : ''}`,
+                  selectedGenres.length > 0 && `${selectedGenres.length} genre${selectedGenres.length > 1 ? 's' : ''}`,
+                  selectedThemes.length > 0 && `${selectedThemes.length} theme${selectedThemes.length > 1 ? 's' : ''}`
+                ].filter(Boolean).join(', ')}
+              </>
+            )}
           </div>
         </CardFooter>
       </Card>
@@ -411,22 +721,33 @@ export default function Archives() {
                         <h4 className="text-sm font-medium text-neutral-600 uppercase tracking-wider">{t('readingLevel')}</h4>
                         <div className="mt-2 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-neutral-700">Age Range</p>
-                              <p className="text-sm text-neutral-600">{book.readingLevel.ageRange}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-neutral-700">Grade Level</p>
-                              <p className="text-sm text-neutral-600">{book.readingLevel.gradeLevel}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-neutral-700">Complexity</p>
-                              <p className="text-sm text-neutral-600">{book.readingLevel.complexity}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-neutral-700">Lexile Measure</p>
-                              <p className="text-sm text-neutral-600">{book.readingLevel.lexileMeasure || 'N/A'}</p>
-                            </div>
+                            {typeof book.readingLevel === 'object' ? (
+                              <>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-700">Age Range</p>
+                                  <p className="text-sm text-neutral-600">{book.readingLevel.ageRange}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-700">Grade Level</p>
+                                  <p className="text-sm text-neutral-600">{book.readingLevel.gradeLevel}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-700">Complexity</p>
+                                  <p className="text-sm text-neutral-600">{book.readingLevel.complexity}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-700">Lexile Measure</p>
+                                  <p className="text-sm text-neutral-600">
+                                    {book.readingLevel.lexileMeasure || 'N/A'}
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="col-span-2">
+                                <p className="text-sm font-medium text-neutral-700">Reading Level</p>
+                                <p className="text-sm text-neutral-600">{book.readingLevel.toString()}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
