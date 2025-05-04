@@ -16,6 +16,7 @@ export interface IStorage {
   createBook(book: InsertBook): Promise<Book>;
   updateBook(id: number, book: Partial<InsertBook>): Promise<Book | undefined>;
   deleteBook(id: number): Promise<boolean>;
+  clearAllBooks(): Promise<number>; // Clear all books and return count of deleted books
   searchBooks(query: string): Promise<Book[]>;
   getRecentBooks(limit: number): Promise<Book[]>;
   
@@ -83,6 +84,12 @@ export class DatabaseStorage implements IStorage {
   async deleteBook(id: number): Promise<boolean> {
     const result = await db.delete(books).where(eq(books.id, id)).returning({ id: books.id });
     return result.length > 0;
+  }
+  
+  async clearAllBooks(): Promise<number> {
+    // Delete all books and return the count of deleted records
+    const result = await db.delete(books).returning({ id: books.id });
+    return result.length;
   }
 
   async searchBooks(query: string): Promise<Book[]> {
