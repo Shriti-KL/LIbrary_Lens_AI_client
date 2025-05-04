@@ -197,8 +197,9 @@ export function useBookAnalysis() {
   // State to track saved analysis data
   const [savedAnalysisData, setSavedAnalysisData] = useState<any>(null);
   
-  // Load saved data on first render
-  useEffect(() => {
+  // Load saved data on first render - no longer automatically restores on component mount
+  // Instead, we expose a restoreSavedAnalysis method that can be called explicitly
+  const restoreSavedAnalysis = () => {
     const savedData = getAnalysisFromStorage();
     if (savedData) {
       // Initialize with data from the previous session
@@ -213,8 +214,10 @@ export function useBookAnalysis() {
         themes: { status: "complete", progress: 100 },
         catalogEntry: { status: "complete", progress: 100 },
       });
+      return true;
     }
-  }, []);
+    return false;
+  };
   
   // Function to get the current analysis data (either from mutation or storage)
   const getCurrentAnalysisData = () => {
@@ -233,5 +236,6 @@ export function useBookAnalysis() {
     analysisSteps,
     clearAnalysisData: clearAnalysisState,
     getCurrentData: getCurrentAnalysisData,
+    restoreSavedAnalysis,
   };
 }

@@ -5,18 +5,25 @@ import { Book } from '@shared/schema';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Analyze() {
   const { t } = useLanguage();
+  const { toast } = useToast();
+  
+  // Get the book analysis hook functions
   const { 
     analysisMutation, 
     saveBookMutation, 
     analysisSteps, 
     getCurrentData,
-    clearAnalysisData 
+    clearAnalysisData,
+    restoreSavedAnalysis 
   } = useBookAnalysis();
   
-  // State to track the current book data (from mutation or localStorage)
+  // State to track the current book data 
   const [bookData, setBookData] = useState<Partial<Book>>({});
   
   // Analysis options state
@@ -28,6 +35,30 @@ export default function Analyze() {
     catalogEntry: true,
   });
   
+  // Clear previous data when the component mounts
+  useEffect(() => {
+    // Clear any previous analysis data to ensure a fresh start
+    clearAnalysisData();
+    setBookData({});
+    
+    // Log this action
+    console.log("Analyze page mounted: cleared previous analysis data");
+    
+    // Show toast to indicate a fresh analysis
+    toast({
+      title: "Ready for New Analysis",
+      description: "Start by uploading a book cover or entering book details",
+    });
+  }, []);
+  
+  // Effect to sync bookData with the current state (from the mutation only)
+  useEffect(() => {
+    if (analysisMutation.data) {
+      console.log("Setting book data from new analysis result");
+      setBookData(analysisMutation.data);
+    }
+  }, [analysisMutation.data]);
+  
   // Handle option change
   const handleOptionChange = (id: string, checked: boolean) => {
     setOptions(prev => ({
@@ -38,12 +69,16 @@ export default function Analyze() {
   
   // Handle form submission
   const handleSubmit = (formData: FormData) => {
+    // Always clear any existing data first
+    clearAnalysisData();
+    setBookData({});
+    
     // Log what data we're submitting for debugging
     const title = formData.get('title') as string;
     const author = formData.get('author') as string;
     const hasImage = formData.has('coverImage');
     
-    console.log("Submitting analysis with form data:", {
+    console.log("Submitting analysis with fresh form data:", {
       title: title || null,
       author: author || null,
       hasImage
@@ -52,23 +87,12 @@ export default function Analyze() {
     // Add a flag to explicitly mark this as a manual submission
     formData.append('isManualSubmission', 'true');
     
-    // Reset the mutation data if we already have results
-    if (analysisMutation.data) {
-      // Force a reset by adding a unique timestamp
-      formData.append('forceNewAnalysis', Date.now().toString());
-    }
+    // Add a unique timestamp to force a fresh analysis
+    formData.append('forceNewAnalysis', Date.now().toString());
     
+    // Submit the form data for analysis
     analysisMutation.mutate({ formData, options });
   };
-  
-  // Effect to sync bookData with the current state (either from mutation or localStorage)
-  useEffect(() => {
-    // Get data from either the active mutation or localStorage
-    const currentData = getCurrentData();
-    if (currentData) {
-      setBookData(currentData);
-    }
-  }, [analysisMutation.data, getCurrentData]);
   
   // Handle save to archive
   const handleSave = (book: Partial<Book>) => {
@@ -76,16 +100,42 @@ export default function Analyze() {
     
     // After saving, clear the persisted data too
     clearAnalysisData();
+    setBookData({});
+  };
+  
+  // Handle clearing analysis
+  const handleClearAnalysis = () => {
+    clearAnalysisData();
+    setBookData({});
+    
+    toast({
+      title: "Analysis Cleared",
+      description: "Ready for a new book analysis",
+    });
   };
   
   return (
     <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
-      <div className="mb-8 border-b border-neutral-200 pb-3">
-        <h1 className="text-2xl font-serif font-semibold text-primary-dark">
-          {t('bookAnalysis')}
-        </h1>
-        <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
+      <div className="mb-8 border-b border-neutral-200 pb-3 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold text-primary-dark">
+            {t('bookAnalysis')}
+          </h1>
+          <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
+        </div>
+        
+        {/* Clear Analysis Button */}
+        {Object.keys(bookData).length > 0 && (
+          <Button
+            variant="outline"
+            onClick={handleClearAnalysis}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear Analysis
+          </Button>
+        )}
       </div>
       
       {/* Main Content Card */}
