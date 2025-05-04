@@ -288,12 +288,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const deletedCount = await storage.clearAllBooks();
       
-      res.status(200).json({ 
+      // Ensure we set the content-type header correctly
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({ 
+        success: true,
         message: `Successfully deleted all books`,
         count: deletedCount
       });
     } catch (error) {
-      res.status(500).json({ message: `Error clearing books: ${error.message}` });
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({ 
+        success: false, 
+        message: `Error clearing books: ${error.message}` 
+      });
     }
   });
 

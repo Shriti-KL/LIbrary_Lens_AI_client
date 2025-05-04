@@ -73,8 +73,21 @@ export default function Settings() {
   // Clear all books mutation
   const clearBooksMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('DELETE', '/api/books?confirm=true');
-      return response.json();
+      try {
+        const response = await apiRequest('DELETE', '/api/books?confirm=true');
+        
+        // Check if the response has JSON content
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          return await response.json();
+        } else {
+          // If the response is not JSON, return a default success object
+          return { success: true, count: 0 };
+        }
+      } catch (error) {
+        console.error("Error in clearBooksMutation:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       // Invalidate book queries to refresh the UI
@@ -83,7 +96,7 @@ export default function Settings() {
       
       toast({
         title: "Data Cleared",
-        description: `Successfully removed ${data.count} books from your library.`,
+        description: `Successfully removed ${data?.count || 'all'} books from your library.`,
         action: (
           <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center">
             <CheckCircle2 className="h-5 w-5 text-white" />
