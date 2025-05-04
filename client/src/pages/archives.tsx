@@ -78,7 +78,9 @@ export default function Archives() {
         title: 'Book Deleted',
         description: 'The book has been successfully deleted.',
       });
+      // Invalidate both book list endpoints
       queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
       setBookToDelete(null);
     },
     onError: (error) => {
