@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { useLanguage } from '@/hooks/use-language';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -15,10 +15,12 @@ import {
 interface SidebarProps {
   mobile?: boolean;
   onNavigate?: () => void;
+  // Optional guard navigation function for the Analyze page
+  guardNavigation?: (path: string) => void;
 }
 
-export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
-  const [location] = useLocation();
+export function Sidebar({ mobile = false, onNavigate, guardNavigation }: SidebarProps) {
+  const [location, setLocation] = useLocation();
   const { t } = useLanguage();
 
   // Fetch recent books
@@ -33,8 +35,19 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
     enabled: !mobile, // Only fetch on desktop
   });
 
-  const handleNavigation = () => {
+  // Handle navigation with guard for the Analyze page
+  const handleNavigation = (path: string) => {
+    // Call parent callback if provided
     if (onNavigate) onNavigate();
+    
+    // If we have a guard function and we're on the analyze page,
+    // use it to guard navigation
+    if (guardNavigation && (location === '/analyze' || location === '/')) {
+      guardNavigation(path);
+    } else {
+      // Otherwise, navigate directly
+      setLocation(path);
+    }
   };
 
   return (
@@ -44,9 +57,8 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
     )}>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <nav className="mt-2 flex-1 px-4 space-y-1">
-          <Link 
-            to="/analyze"
-            onClick={handleNavigation}
+          <div
+            onClick={() => handleNavigation("/analyze")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/" || location === "/analyze" 
@@ -56,10 +68,9 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <ClipboardSignature className="mr-3 h-5 w-5" />
             {t('bookAnalysis')}
-          </Link>
-          <Link 
-            to="/archives"
-            onClick={handleNavigation}
+          </div>
+          <div 
+            onClick={() => handleNavigation("/archives")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/archives" 
@@ -69,10 +80,9 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <Archive className="mr-3 h-5 w-5" />
             {t('bookArchive')}
-          </Link>
-          <Link 
-            to="/batch"
-            onClick={handleNavigation}
+          </div>
+          <div 
+            onClick={() => handleNavigation("/batch")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/batch" 
@@ -82,10 +92,9 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <LayersIcon className="mr-3 h-5 w-5" />
             {t('batchProcessing')}
-          </Link>
-          <Link
-            to="/settings"
-            onClick={handleNavigation}
+          </div>
+          <div
+            onClick={() => handleNavigation("/settings")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/settings" 
@@ -95,7 +104,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <Settings className="mr-3 h-5 w-5" />
             {t('settings')}
-          </Link>
+          </div>
           
           {!mobile && recentBooks && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
@@ -104,15 +113,14 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               </h3>
               <div className="mt-2 space-y-1">
                 {recentBooks.map((book: any) => (
-                  <Link 
+                  <div 
                     key={book.id}
-                    to={`/book/${book.id}`}
-                    onClick={handleNavigation}
+                    onClick={() => handleNavigation(`/book/${book.id}`)}
                     className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent/70 hover:text-accent-foreground cursor-pointer"
                   >
                     <Book className="mr-3 h-4 w-4" />
                     <span className="truncate">{book.title}</span>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </div>
