@@ -9,7 +9,8 @@ import {
   LayersIcon, 
   Settings,
   BookOpen, 
-  Book 
+  Book,
+  TagsIcon
 } from 'lucide-react';
 import { GuardedLink, useNavigationGuard } from '@/lib/navigation-guard';
 
@@ -78,6 +79,19 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <Archive className="mr-3 h-5 w-5" />
             {t('bookArchive')}
+          </a>
+          <a 
+            href="/genres"
+            onClick={handleGuardedNavigation("/genres")}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
+              location === "/genres" 
+                ? "bg-primary text-white" 
+                : "text-neutral-800 hover:bg-primary/90 hover:text-white"
+            )}
+          >
+            <TagsIcon className="mr-3 h-5 w-5" />
+            Browse by Genre
           </a>
           <a
             href="/batch" 
