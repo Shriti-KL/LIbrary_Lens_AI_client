@@ -1,17 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
 import { Book } from '@shared/schema';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
+import { useNavigationGuard } from '@/lib/navigation-guard';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertCircle } from 'lucide-react';
 
 export default function Analyze() {
   const { t } = useLanguage();
-  const { toast } = useToast();
+  const [location, navigate] = useLocation();
+  const { registerGuard, unregisterGuard } = useNavigationGuard();
   
   // Get the book analysis hook functions
   const { 
@@ -25,6 +36,10 @@ export default function Analyze() {
   
   // State to track the current book data 
   const [bookData, setBookData] = useState<Partial<Book>>({});
+  
+  // State for navigation confirmation dialog
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   
   // Analysis options state
   const [options, setOptions] = useState({
@@ -52,6 +67,58 @@ export default function Analyze() {
       setBookData(analysisMutation.data);
     }
   }, [analysisMutation.data]);
+  
+  // Before unload handler for browser navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only show warning if there's unsaved analysis data
+      if (Object.keys(bookData).length > 0 && !saveBookMutation.isSuccess) {
+        // Standard browser dialog
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [bookData, saveBookMutation.isSuccess]);
+  
+  // Register navigation guard
+  useEffect(() => {
+    // Function to check if navigation should be prevented
+    const navigationGuard = (to: string) => {
+      if (Object.keys(bookData).length > 0 && !saveBookMutation.isSuccess) {
+        // Show the confirmation dialog
+        setShowLeaveConfirm(true);
+        setPendingNavigation(to);
+        return false; // Prevent navigation
+      }
+      return true; // Allow navigation
+    };
+    
+    // Register the guard
+    registerGuard('analyze-page', navigationGuard);
+    
+    // Clean up function to unregister the guard
+    return () => unregisterGuard('analyze-page');
+  }, [bookData, saveBookMutation.isSuccess, registerGuard, unregisterGuard]);
+  
+  // Confirm navigation handler
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      clearAnalysisData();
+      navigate(pendingNavigation);
+    }
+    setShowLeaveConfirm(false);
+    setPendingNavigation(null);
+  };
+  
+  // Cancel navigation handler
+  const cancelNavigation = () => {
+    setShowLeaveConfirm(false);
+    setPendingNavigation(null);
+  };
   
   // Handle option change
   const handleOptionChange = (id: string, checked: boolean) => {
@@ -97,70 +164,74 @@ export default function Analyze() {
     setBookData({});
   };
   
-  // Handle clearing analysis
-  const handleClearAnalysis = () => {
-    clearAnalysisData();
-    setBookData({});
-    
-    toast({
-      title: "Analysis Cleared",
-      description: "Ready for a new book analysis",
-    });
-  };
-  
   return (
-    <div className="max-w-7xl mx-auto pb-12">
-      {/* Page Title */}
-      <div className="mb-8 border-b border-neutral-200 pb-3 flex justify-between items-center">
-        <div>
+    <>
+      {/* Navigation Confirmation Dialog */}
+      <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Unsaved Analysis
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Your current book analysis hasn't been saved to the archive. 
+              Leaving this page will discard all analysis results.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelNavigation}>
+              Stay on Page
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmNavigation}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              Discard and Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <div className="max-w-7xl mx-auto pb-12">
+        {/* Page Title */}
+        <div className="mb-8 border-b border-neutral-200 pb-3">
           <h1 className="text-2xl font-serif font-semibold text-primary-dark">
             {t('bookAnalysis')}
           </h1>
           <p className="text-neutral-600 mt-1">AI-powered insights and classification</p>
         </div>
         
-        {/* Clear Analysis Button */}
-        {Object.keys(bookData).length > 0 && (
-          <Button
-            variant="outline"
-            onClick={handleClearAnalysis}
-            className="gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Clear Analysis
-          </Button>
-        )}
-      </div>
-      
-      {/* Main Content Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-        <div className="md:grid md:grid-cols-6 md:gap-8">
-          {/* Left Column - Upload & Analysis Options */}
-          <div className="md:col-span-2 space-y-8">
-            {/* Upload Form */}
-            <AnalysisForm 
-              onSubmit={handleSubmit} 
-              isLoading={analysisMutation.isPending}
-            />
+        {/* Main Content Card */}
+        <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
+          <div className="md:grid md:grid-cols-6 md:gap-8">
+            {/* Left Column - Upload & Analysis Options */}
+            <div className="md:col-span-2 space-y-8">
+              {/* Upload Form */}
+              <AnalysisForm 
+                onSubmit={handleSubmit} 
+                isLoading={analysisMutation.isPending}
+              />
+              
+              {/* Analysis Options */}
+              <AnalysisOptions 
+                options={options}
+                onOptionChange={handleOptionChange}
+              />
+            </div>
             
-            {/* Analysis Options */}
-            <AnalysisOptions 
-              options={options}
-              onOptionChange={handleOptionChange}
-            />
-          </div>
-          
-          {/* Right Column - Results */}
-          <div className="mt-8 md:mt-0 md:col-span-4">
-            <BookResult 
-              book={bookData}
-              isLoading={analysisMutation.isPending}
-              onSave={handleSave}
-              loadingSteps={analysisSteps}
-            />
+            {/* Right Column - Results */}
+            <div className="mt-8 md:mt-0 md:col-span-4">
+              <BookResult 
+                book={bookData}
+                isLoading={analysisMutation.isPending}
+                onSave={handleSave}
+                loadingSteps={analysisSteps}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -14,6 +14,7 @@ import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { NavigationGuardProvider } from "./lib/navigation-guard";
 
 function Router() {
   return (
@@ -36,9 +37,11 @@ function App() {
       <AuthProvider>
         <ThemeProvider attribute="class">
           <TooltipProvider>
-            <AppLayout>
-              <Router />
-            </AppLayout>
+            <NavigationGuardProvider>
+              <AppLayout>
+                <Router />
+              </AppLayout>
+            </NavigationGuardProvider>
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

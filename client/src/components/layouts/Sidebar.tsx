@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Link } from 'wouter';
+import { useLocation } from 'wouter';
 import { useLanguage } from '@/hooks/use-language';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import {
   BookOpen, 
   Book 
 } from 'lucide-react';
+import { GuardedLink, useNavigationGuard } from '@/lib/navigation-guard';
 
 interface SidebarProps {
   mobile?: boolean;
@@ -20,6 +21,7 @@ interface SidebarProps {
 export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useLanguage();
+  const { attemptNavigation } = useNavigationGuard();
 
   // Fetch recent books
   const { data: recentBooks = [] } = useQuery<any[]>({
@@ -37,6 +39,13 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
     if (onNavigate) onNavigate();
   };
 
+  // Used for links that should be guarded by navigation guard
+  const handleGuardedNavigation = (to: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onNavigate) onNavigate();
+    attemptNavigation(to);
+  };
+
   return (
     <div className={cn(
       "flex flex-col border-r border-sidebar-border bg-blue-50/30",
@@ -44,9 +53,9 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
     )}>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <nav className="mt-2 flex-1 px-4 space-y-1">
-          <Link 
-            to="/analyze"
-            onClick={handleNavigation}
+          <a 
+            href="/analyze"
+            onClick={handleGuardedNavigation("/analyze")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/" || location === "/analyze" 
@@ -56,10 +65,10 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <ClipboardSignature className="mr-3 h-5 w-5" />
             {t('bookAnalysis')}
-          </Link>
-          <Link 
-            to="/archives"
-            onClick={handleNavigation}
+          </a>
+          <a 
+            href="/archives"
+            onClick={handleGuardedNavigation("/archives")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/archives" 
@@ -69,10 +78,10 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <Archive className="mr-3 h-5 w-5" />
             {t('bookArchive')}
-          </Link>
-          <Link 
-            to="/batch"
-            onClick={handleNavigation}
+          </a>
+          <a
+            href="/batch" 
+            onClick={handleGuardedNavigation("/batch")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/batch" 
@@ -82,10 +91,10 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <LayersIcon className="mr-3 h-5 w-5" />
             {t('batchProcessing')}
-          </Link>
-          <Link
-            to="/settings"
-            onClick={handleNavigation}
+          </a>
+          <a
+            href="/settings"
+            onClick={handleGuardedNavigation("/settings")}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/settings" 
@@ -95,7 +104,7 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           >
             <Settings className="mr-3 h-5 w-5" />
             {t('settings')}
-          </Link>
+          </a>
           
           {!mobile && recentBooks && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
@@ -104,15 +113,15 @@ export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
               </h3>
               <div className="mt-2 space-y-1">
                 {recentBooks.map((book: any) => (
-                  <Link 
+                  <a 
                     key={book.id}
-                    to={`/book/${book.id}`}
-                    onClick={handleNavigation}
+                    href={`/book/${book.id}`}
+                    onClick={handleGuardedNavigation(`/book/${book.id}`)}
                     className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent/70 hover:text-accent-foreground cursor-pointer"
                   >
                     <Book className="mr-3 h-4 w-4" />
                     <span className="truncate">{book.title}</span>
-                  </Link>
+                  </a>
                 ))}
               </div>
             </div>
