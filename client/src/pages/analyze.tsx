@@ -1,24 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
-import { useNavigationGuard } from '@/hooks/use-navigation-guard';
 import { Book } from '@shared/schema';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
 import { Button } from '@/components/ui/button';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export default function Analyze() {
   const { t } = useLanguage();
@@ -46,23 +35,6 @@ export default function Analyze() {
     catalogEntry: true,
   });
   
-  // Function to check if there is unsaved data
-  const hasUnsavedData = useCallback(() => {
-    // If there's analysis data but it hasn't been saved
-    return Object.keys(bookData).length > 0 && !bookData.id;
-  }, [bookData]);
-  
-  // Set up navigation guard
-  const { 
-    showNavigationConfirmation,
-    confirmNavigation,
-    cancelNavigation,
-    guardNavigation
-  } = useNavigationGuard(() => {
-    // Clear data before navigating away
-    clearAnalysisData();
-  });
-  
   // Clear previous data when the component mounts
   useEffect(() => {
     // Clear any previous analysis data to ensure a fresh start
@@ -71,7 +43,13 @@ export default function Analyze() {
     
     // Log this action
     console.log("Analyze page mounted: cleared previous analysis data");
-  }, [clearAnalysisData]);
+    
+    // Show toast to indicate a fresh analysis
+    toast({
+      title: "Ready for New Analysis",
+      description: "Start by uploading a book cover or entering book details",
+    });
+  }, []);
   
   // Effect to sync bookData with the current state (from the mutation only)
   useEffect(() => {
@@ -80,28 +58,6 @@ export default function Analyze() {
       setBookData(analysisMutation.data);
     }
   }, [analysisMutation.data]);
-  
-  // Set up the navigation protection effect
-  useEffect(() => {
-    // Prepare a cleanup function to handle browser navigation events
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (hasUnsavedData()) {
-        // Standard way to show a confirmation dialog when closing/navigating away
-        const message = "You have unsaved changes. Are you sure you want to leave?";
-        event.preventDefault();
-        event.returnValue = message;
-        return message;
-      }
-    };
-    
-    // Add the event listener
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [hasUnsavedData]);
   
   // Handle option change
   const handleOptionChange = (id: string, checked: boolean) => {
@@ -158,60 +114,8 @@ export default function Analyze() {
     });
   };
   
-  // Custom navigation handler that can be passed to components like the Sidebar
-  const handleNavigation = useCallback((path: string) => {
-    guardNavigation(path, hasUnsavedData());
-  }, [guardNavigation, hasUnsavedData]);
-  
-  // Create a reference to this component's instance for the AppLayout to access
-  useEffect(() => {
-    // Add guard navigation function to the analyze-page element
-    const analyzeElement = document.getElementById('analyze-page');
-    if (analyzeElement) {
-      (analyzeElement as any).__guardNavigation = handleNavigation;
-    }
-    
-    return () => {
-      // Clean up the reference when component unmounts
-      const analyzeElement = document.getElementById('analyze-page');
-      if (analyzeElement) {
-        delete (analyzeElement as any).__guardNavigation;
-      }
-    };
-  }, [handleNavigation]);
-
   return (
-    <div id="analyze-page" className="max-w-7xl mx-auto pb-12">
-      {/* Navigation Confirmation Dialog */}
-      <AlertDialog 
-        open={showNavigationConfirmation} 
-        onOpenChange={() => cancelNavigation()}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Unsaved Analysis
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You have an unsaved book analysis. If you leave now, all your analysis data will be lost.
-              Do you want to continue?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelNavigation}>
-              Stay on This Page
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmNavigation}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Discard Analysis & Leave
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
+    <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
       <div className="mb-8 border-b border-neutral-200 pb-3 flex justify-between items-center">
         <div>

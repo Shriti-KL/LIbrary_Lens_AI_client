@@ -15,12 +15,10 @@ import {
 interface SidebarProps {
   mobile?: boolean;
   onNavigate?: () => void;
-  // Optional guard navigation function for the Analyze page
-  guardNavigation?: (path: string) => void;
 }
 
-export function Sidebar({ mobile = false, onNavigate, guardNavigation }: SidebarProps) {
-  const [location, setLocation] = useLocation();
+export function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
+  const [location] = useLocation();
   const { t } = useLanguage();
 
   // Fetch recent books
@@ -35,19 +33,8 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
     enabled: !mobile, // Only fetch on desktop
   });
 
-  // Handle navigation with guard for the Analyze page
-  const handleNavigation = (path: string) => {
-    // Call parent callback if provided
+  const handleNavigation = () => {
     if (onNavigate) onNavigate();
-    
-    // If we have a guard function and we're on the analyze page,
-    // use it to guard navigation
-    if (guardNavigation && (location === '/analyze' || location === '/')) {
-      guardNavigation(path);
-    } else {
-      // Otherwise, navigate directly
-      setLocation(path);
-    }
   };
 
   return (
@@ -57,8 +44,9 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
     )}>
       <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
         <nav className="mt-2 flex-1 px-4 space-y-1">
-          <div
-            onClick={() => handleNavigation("/analyze")}
+          <Link 
+            to="/analyze"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/" || location === "/analyze" 
@@ -68,9 +56,10 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
           >
             <ClipboardSignature className="mr-3 h-5 w-5" />
             {t('bookAnalysis')}
-          </div>
-          <div 
-            onClick={() => handleNavigation("/archives")}
+          </Link>
+          <Link 
+            to="/archives"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/archives" 
@@ -80,9 +69,10 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
           >
             <Archive className="mr-3 h-5 w-5" />
             {t('bookArchive')}
-          </div>
-          <div 
-            onClick={() => handleNavigation("/batch")}
+          </Link>
+          <Link 
+            to="/batch"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/batch" 
@@ -92,9 +82,10 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
           >
             <LayersIcon className="mr-3 h-5 w-5" />
             {t('batchProcessing')}
-          </div>
-          <div
-            onClick={() => handleNavigation("/settings")}
+          </Link>
+          <Link
+            to="/settings"
+            onClick={handleNavigation}
             className={cn(
               "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer", 
               location === "/settings" 
@@ -104,7 +95,7 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
           >
             <Settings className="mr-3 h-5 w-5" />
             {t('settings')}
-          </div>
+          </Link>
           
           {!mobile && recentBooks && recentBooks.length > 0 && (
             <div className="pt-6 pb-3">
@@ -113,14 +104,15 @@ export function Sidebar({ mobile = false, onNavigate, guardNavigation }: Sidebar
               </h3>
               <div className="mt-2 space-y-1">
                 {recentBooks.map((book: any) => (
-                  <div 
+                  <Link 
                     key={book.id}
-                    onClick={() => handleNavigation(`/book/${book.id}`)}
+                    to={`/book/${book.id}`}
+                    onClick={handleNavigation}
                     className="group flex items-center px-4 py-2 text-sm font-medium text-neutral-800 rounded-md hover:bg-accent/70 hover:text-accent-foreground cursor-pointer"
                   >
                     <Book className="mr-3 h-4 w-4" />
                     <span className="truncate">{book.title}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
