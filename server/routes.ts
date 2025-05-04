@@ -523,57 +523,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // GET /api/books/genres - Get all genres and books by genre
-  app.get("/api/books/genres", async (req: Request, res: Response) => {
-    try {
-      // Get all books
-      const books = await storage.getBooks();
-      
-      // Create a map of genre -> books
-      const genreMap: { [genre: string]: any[] } = {};
-      
-      // Process all books
-      books.forEach(book => {
-        // Skip books without genres
-        if (!book.genres || !Array.isArray(book.genres) || book.genres.length === 0) {
-          return;
-        }
-        
-        // Add each book to its genres
-        book.genres.forEach((genre: string) => {
-          if (!genreMap[genre]) {
-            genreMap[genre] = [];
-          }
-          
-          // Add book to this genre if not already present
-          if (!genreMap[genre].some((b: any) => b.id === book.id)) {
-            genreMap[genre].push(book);
-          }
-        });
-      });
-      
-      // Convert to an array of genre objects
-      const genres = Object.keys(genreMap).map(genre => ({
-        name: genre,
-        count: genreMap[genre].length,
-        books: genreMap[genre].map(book => ({
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          coverImageUrl: book.coverImageUrl
-        }))
-      }));
-      
-      // Sort genres by count (most books first)
-      genres.sort((a, b) => b.count - a.count);
-      
-      res.status(200).json(genres);
-    } catch (error) {
-      console.error("Error fetching books by genre:", error);
-      res.status(500).json({ message: `Error fetching books by genre: ${error.message}` });
-    }
-  });
-  
   // Google Books API integration endpoints
   
   // GET /api/googlebooks/search - Search books via Google Books API

@@ -10,7 +10,6 @@ import Batch from "@/pages/batch";
 import Settings from "@/pages/settings";
 import AuthPage from "@/pages/auth-page";
 import BookDetail from "@/pages/book-detail";
-import Genres from "@/pages/genres";
 import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -23,7 +22,6 @@ function Router() {
       <ProtectedRoute path="/" component={Analyze} />
       <ProtectedRoute path="/analyze" component={Analyze} />
       <ProtectedRoute path="/archives" component={Archives} />
-      <ProtectedRoute path="/genres" component={Genres} />
       <ProtectedRoute path="/batch" component={Batch} />
       <ProtectedRoute path="/settings" component={Settings} />
       <ProtectedRoute path="/book/:id" component={BookDetail} />
