@@ -106,7 +106,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="md:hidden">
-                <Sidebar mobile onNavigate={() => setIsMobileMenuOpen(false)} />
+                <Sidebar 
+                  mobile 
+                  onNavigate={() => setIsMobileMenuOpen(false)}
+                  guardNavigation={window.location.pathname === '/' || window.location.pathname === '/analyze' ? 
+                    (path: string) => {
+                      // Check if the Analyze page is rendered and has guardNavigation method
+                      const analyzeComponent = document.getElementById('analyze-page');
+                      if (analyzeComponent && (analyzeComponent as any).__guardNavigation) {
+                        (analyzeComponent as any).__guardNavigation(path);
+                      } else {
+                        setLocation(path);
+                      }
+                    } : undefined
+                  }
+                />
                 
                 {/* Mobile user info and logout */}
                 {user && (
@@ -142,7 +156,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Hidden on mobile */}
         <div className="hidden md:block">
-          <Sidebar />
+          <Sidebar 
+            guardNavigation={window.location.pathname === '/' || window.location.pathname === '/analyze' ? 
+              (path: string) => {
+                // Check if the Analyze page is rendered and has guardNavigation method
+                const analyzeComponent = document.getElementById('analyze-page');
+                if (analyzeComponent && (analyzeComponent as any).__guardNavigation) {
+                  (analyzeComponent as any).__guardNavigation(path);
+                } else {
+                  setLocation(path);
+                }
+              } : undefined
+            }
+          />
         </div>
 
         {/* Main Content */}

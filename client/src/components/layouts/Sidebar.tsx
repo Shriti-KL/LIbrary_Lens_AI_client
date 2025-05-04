@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { useLanguage } from '@/hooks/use-language';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';

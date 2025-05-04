@@ -163,8 +163,25 @@ export default function Analyze() {
     guardNavigation(path, hasUnsavedData());
   }, [guardNavigation, hasUnsavedData]);
   
+  // Create a reference to this component's instance for the AppLayout to access
+  useEffect(() => {
+    // Add guard navigation function to the analyze-page element
+    const analyzeElement = document.getElementById('analyze-page');
+    if (analyzeElement) {
+      (analyzeElement as any).__guardNavigation = handleNavigation;
+    }
+    
+    return () => {
+      // Clean up the reference when component unmounts
+      const analyzeElement = document.getElementById('analyze-page');
+      if (analyzeElement) {
+        delete (analyzeElement as any).__guardNavigation;
+      }
+    };
+  }, [handleNavigation]);
+
   return (
-    <div className="max-w-7xl mx-auto pb-12">
+    <div id="analyze-page" className="max-w-7xl mx-auto pb-12">
       {/* Navigation Confirmation Dialog */}
       <AlertDialog 
         open={showNavigationConfirmation} 

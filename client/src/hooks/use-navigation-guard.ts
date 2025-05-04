@@ -19,38 +19,38 @@ export function useNavigationGuard(onConfirm?: () => void): NavigationGuardHook 
   const [showNavigationConfirmation, setShowNavigationConfirmation] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
 
-  // Handle confirming navigation
-  const confirmNavigation = useCallback(() => {
-    if (pendingPath) {
-      // Run the optional callback if provided
-      if (onConfirm) {
-        onConfirm();
-      }
-      
-      // Navigate to pending location
-      setLocation(pendingPath);
-      
-      // Reset state
-      setShowNavigationConfirmation(false);
-      setPendingPath(null);
-    }
-  }, [pendingPath, setLocation, onConfirm]);
-
-  // Handle canceling navigation
-  const cancelNavigation = useCallback(() => {
-    setShowNavigationConfirmation(false);
-    setPendingPath(null);
-  }, []);
-
-  // Guard navigation based on whether there are unsaved changes
   const guardNavigation = useCallback((path: string, hasUnsavedChanges: boolean) => {
     if (hasUnsavedChanges) {
-      setPendingPath(path);
+      // Show confirmation dialog
       setShowNavigationConfirmation(true);
+      setPendingPath(path);
     } else {
+      // Navigate directly if no unsaved changes
       setLocation(path);
     }
   }, [setLocation]);
+
+  const confirmNavigation = useCallback(() => {
+    // Run any cleanup tasks before navigation
+    if (onConfirm) {
+      onConfirm();
+    }
+    
+    // Reset the confirmation state
+    setShowNavigationConfirmation(false);
+    
+    // Proceed with navigation
+    if (pendingPath) {
+      setLocation(pendingPath);
+      setPendingPath(null);
+    }
+  }, [onConfirm, pendingPath, setLocation]);
+
+  const cancelNavigation = useCallback(() => {
+    // Reset the confirmation state without navigating
+    setShowNavigationConfirmation(false);
+    setPendingPath(null);
+  }, []);
 
   return {
     showNavigationConfirmation,
