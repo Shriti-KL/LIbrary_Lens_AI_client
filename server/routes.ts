@@ -230,9 +230,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/books - Create a new book
   app.post("/api/books", async (req: Request, res: Response) => {
     try {
-      // Create book with validated data
+      // Get the raw book data from the request
       const bookData: InsertBook = req.body;
-      const newBook = await storage.createBook(bookData);
+      
+      // Always enrich with Google Books API to ensure proper spelling and capitalization
+      let enrichedData = bookData;
+      
+      // Only attempt to enrich if we have at least a title or ISBN
+      if (bookData.title || bookData.isbn) {
+        try {
+          // Mark as a user entry to prioritize Google Books data
+          const tempData = { ...bookData, isUserEntry: true };
+          enrichedData = await enrichBookMetadata(tempData);
+          
+          // Log what was corrected
+          if (enrichedData.title !== bookData.title) {
+            console.log(`Book creation: Title corrected from "${bookData.title}" to "${enrichedData.title}"`);
+          }
+          
+          if (enrichedData.author !== bookData.author) {
+            console.log(`Book creation: Author corrected from "${bookData.author}" to "${enrichedData.author}"`);
+          }
+        } catch (enrichError) {
+          console.error("Error enriching book data before creation:", enrichError);
+          // Continue with original data if enrichment fails
+        }
+      }
+      
+      // Create book with enriched data
+      const newBook = await storage.createBook(enrichedData);
       
       res.status(201).json(newBook);
     } catch (error) {
@@ -246,6 +272,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const bookData: Partial<InsertBook> = req.body;
       
+      // If title or author is being updated, try to enrich with Google Books API
+      if (bookData.title || bookData.author || bookData.isbn) {
+        try {
+          // Get current book data first to merge with updates
+          const currentBook = await storage.getBook(id);
+          
+          if (currentBook) {
+            // Prepare full book data with updated fields
+            const fullBookData = {
+              ...currentBook,
+              ...bookData,
+              isUserEntry: true // Mark as user entry to prioritize Google data
+            };
+            
+            // Enrich with Google Books API
+            const enrichedData = await enrichBookMetadata(fullBookData);
+            
+            // Log what was corrected
+            if (enrichedData.title !== fullBookData.title) {
+              console.log(`Book update: Title corrected from "${fullBookData.title}" to "${enrichedData.title}"`);
+              bookData.title = enrichedData.title;
+            }
+            
+            if (enrichedData.author !== fullBookData.author) {
+              console.log(`Book update: Author corrected from "${fullBookData.author}" to "${enrichedData.author}"`);
+              bookData.author = enrichedData.author;
+            }
+            
+            // Copy other enriched data if not explicitly set in the update
+            if (enrichedData.isbn && !bookData.isbn) {
+              bookData.isbn = enrichedData.isbn;
+            }
+            
+            if (enrichedData.publisher && !bookData.publisher) {
+              bookData.publisher = enrichedData.publisher;
+            }
+            
+            if (enrichedData.publishedYear && !bookData.publishedYear) {
+              bookData.publishedYear = enrichedData.publishedYear;
+            }
+            
+            if (enrichedData.pageCount && !bookData.pageCount) {
+              bookData.pageCount = enrichedData.pageCount;
+            }
+            
+            if (enrichedData.coverImageUrl && !bookData.coverImageUrl) {
+              bookData.coverImageUrl = enrichedData.coverImageUrl;
+            }
+          }
+        } catch (enrichError) {
+          console.error("Error enriching book data during update:", enrichError);
+          // Continue with original data if enrichment fails
+        }
+      }
+      
+      // Update with possibly enriched data
       const updatedBook = await storage.updateBook(id, bookData);
       
       if (!updatedBook) {

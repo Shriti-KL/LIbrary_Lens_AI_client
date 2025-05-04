@@ -99,6 +99,137 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
   }
 }
 
+// Function to calculate similarity between two strings
+function stringSimilarity(str1: string, str2: string): number {
+  // Convert both strings to lowercase
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  
+  // If the strings are identical, return 1
+  if (s1 === s2) return 1.0;
+  
+  // If either string is empty, return 0
+  if (s1.length === 0 || s2.length === 0) return 0.0;
+  
+  // Calculate the Levenshtein distance
+  const matrix: number[][] = [];
+  
+  // Initialize the matrix
+  for (let i = 0; i <= s1.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= s2.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  // Fill the matrix
+  for (let i = 1; i <= s1.length; i++) {
+    for (let j = 1; j <= s2.length; j++) {
+      const cost = s1.charAt(i - 1) === s2.charAt(j - 1) ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // deletion
+        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j - 1] + cost // substitution
+      );
+    }
+  }
+  
+  // Calculate similarity from distance
+  const distance = matrix[s1.length][s2.length];
+  const maxLength = Math.max(s1.length, s2.length);
+  
+  // Return a similarity score between 0 and 1
+  return 1 - distance / maxLength;
+}
+
+// Function to try various search strategies
+async function tryMultipleSearchStrategies(bookInfo: Partial<Book>): Promise<any[]> {
+  let allResults: any[] = [];
+  
+  // Strategy 1: If ISBN is available, use it for precise matching
+  if (bookInfo.isbn) {
+    try {
+      const isbnResults = await searchBooks({ query: `isbn:${bookInfo.isbn}` });
+      if (isbnResults.length > 0) {
+        console.log("Found results using ISBN search strategy");
+        return isbnResults; // ISBN match is very precise, return immediately
+      }
+    } catch (error) {
+      console.error("Error in ISBN search strategy:", error);
+    }
+  }
+  
+  // Strategy 2: Use exact title and author in quotes
+  if (bookInfo.title && bookInfo.author) {
+    try {
+      const exactQuery = `"${bookInfo.title}" "author:${bookInfo.author}"`;
+      const exactResults = await searchBooks({ query: exactQuery });
+      if (exactResults.length > 0) {
+        console.log("Found results using exact title and author search strategy");
+        allResults = [...allResults, ...exactResults];
+        
+        // If we found good results, return them
+        if (exactResults.length >= 3) return exactResults;
+      }
+    } catch (error) {
+      console.error("Error in exact title and author search strategy:", error);
+    }
+  }
+  
+  // Strategy 3: Try standard intitle + inauthor combination
+  if (bookInfo.title && bookInfo.author) {
+    try {
+      const standardQuery = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
+      const standardResults = await searchBooks({ query: standardQuery });
+      if (standardResults.length > 0) {
+        console.log("Found results using standard title and author search strategy");
+        allResults = [...allResults, ...standardResults];
+        
+        // If we found good results, return them
+        if (standardResults.length >= 3) return standardResults;
+      }
+    } catch (error) {
+      console.error("Error in standard title and author search strategy:", error);
+    }
+  }
+  
+  // Strategy 4: Title only search
+  if (bookInfo.title) {
+    try {
+      const titleQuery = `intitle:${bookInfo.title}`;
+      const titleResults = await searchBooks({ query: titleQuery, maxResults: 5 });
+      if (titleResults.length > 0) {
+        console.log("Found results using title-only search strategy");
+        allResults = [...allResults, ...titleResults];
+      }
+    } catch (error) {
+      console.error("Error in title-only search strategy:", error);
+    }
+  }
+  
+  // Strategy 5: Author only search (if we still don't have results)
+  if (bookInfo.author && allResults.length < 2) {
+    try {
+      const authorQuery = `inauthor:${bookInfo.author}`;
+      const authorResults = await searchBooks({ query: authorQuery, maxResults: 3 });
+      if (authorResults.length > 0) {
+        console.log("Found results using author-only search strategy");
+        allResults = [...allResults, ...authorResults];
+      }
+    } catch (error) {
+      console.error("Error in author-only search strategy:", error);
+    }
+  }
+  
+  // Remove duplicates (based on id)
+  const uniqueResults = allResults.filter((book, index, self) => 
+    index === self.findIndex(b => b.id === book.id)
+  );
+  
+  return uniqueResults;
+}
+
 export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     // Flag to indicate if this was a user submission (should use Google data)
@@ -106,34 +237,43 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     
     console.log(`Enriching book metadata for "${bookInfo.title}" by "${bookInfo.author}". User submission: ${isUserSubmission}`);
     
-    let query = "";
-    
-    if (bookInfo.isbn) {
-      // If ISBN is available, use it for precise matching
-      query = `isbn:${bookInfo.isbn}`;
-    } else if (bookInfo.title && bookInfo.author) {
-      // Otherwise use title and author
-      query = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
-    } else if (bookInfo.title) {
-      // Fall back to just title
-      query = `intitle:${bookInfo.title}`;
-    } else {
-      // Not enough information to search
-      return bookInfo;
-    }
-    
-    const searchResults = await searchBooks({ query });
+    // Search using multiple strategies
+    const searchResults = await tryMultipleSearchStrategies(bookInfo);
     
     if (searchResults.length === 0) {
-      console.log(`No Google Books results found for: ${query}`);
+      console.log(`No Google Books results found for book: "${bookInfo.title}" by "${bookInfo.author}"`);
       return bookInfo;
     }
     
-    // Get the first result
-    const googleBook = searchResults[0];
-    const volumeInfo = googleBook.volumeInfo || {};
+    // Rank results based on similarity to the input
+    let bestMatch = searchResults[0];
+    let highestScore = 0;
     
-    console.log(`Found Google Books match: "${volumeInfo.title}" by "${volumeInfo.authors?.[0] || 'Unknown'}"`);
+    for (const result of searchResults) {
+      const volumeInfo = result.volumeInfo || {};
+      const resultTitle = volumeInfo.title || "";
+      const resultAuthor = (volumeInfo.authors ? volumeInfo.authors[0] : "") || "";
+      
+      // Calculate similarity scores
+      const titleScore = bookInfo.title ? stringSimilarity(bookInfo.title, resultTitle) : 0;
+      const authorScore = bookInfo.author ? stringSimilarity(bookInfo.author, resultAuthor) : 0;
+      
+      // Weight the scores (title is slightly more important)
+      const combinedScore = titleScore * 0.6 + authorScore * 0.4;
+      
+      // Log for debugging
+      console.log(`Match score for "${resultTitle}" by "${resultAuthor}": ${combinedScore.toFixed(2)}`);
+      
+      if (combinedScore > highestScore) {
+        highestScore = combinedScore;
+        bestMatch = result;
+      }
+    }
+    
+    // Get the best matching result
+    const volumeInfo = bestMatch.volumeInfo || {};
+    
+    console.log(`Best Google Books match: "${volumeInfo.title}" by "${volumeInfo.authors?.[0] || 'Unknown'}" (score: ${highestScore.toFixed(2)})`);
     
     // Create enriched book metadata
     const enrichedBook: Partial<Book> = {
