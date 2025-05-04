@@ -144,8 +144,9 @@ export default function Batch() {
         description: `Processed ${data.processed?.success || 0} books successfully, ${data.processed?.failed || 0} failed.`,
       });
       
-      // Invalidate books query to refresh archives
+      // Invalidate books query to refresh archives and recent books
       queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
     },
     onError: (error) => {
       toast({

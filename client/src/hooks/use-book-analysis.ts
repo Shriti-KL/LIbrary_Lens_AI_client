@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Book } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -169,6 +169,10 @@ export function useBookAnalysis() {
       
       // Clear the stored analysis result since it's now saved in the database
       clearAnalysisFromStorage();
+      
+      // Invalidate queries to update the book list immediately
+      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
     },
     onError: (error) => {
       toast({

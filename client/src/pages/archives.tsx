@@ -119,14 +119,16 @@ export default function Archives() {
   };
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto pb-12">
+      {/* Page Title */}
+      <div className="mb-8 border-b border-neutral-200 pb-3">
+        <h1 className="text-2xl font-serif font-semibold text-primary-dark">
+          {t('bookArchive')}
+        </h1>
+        <p className="text-neutral-600 mt-1">View, search, and manage your analyzed books</p>
+      </div>
+      
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-serif">{t('bookArchive')}</CardTitle>
-          <CardDescription>
-            View, search, and manage your analyzed books
-          </CardDescription>
-        </CardHeader>
         
         <CardContent>
           {/* Search */}
