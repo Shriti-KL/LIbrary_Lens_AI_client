@@ -267,16 +267,16 @@ export default function Archives() {
                           className="w-full justify-between font-normal"
                         >
                           {selectedAuthors.length > 0 
-                            ? `${selectedAuthors.length} selected`
-                            : "Select authors"}
+                            ? `${selectedAuthors.length} ${t('selected')}`
+                            : t('selectAuthors')}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search authors..." />
+                          <CommandInput placeholder={`${t('search')} ${t('author')}...`} />
                           <CommandList>
-                            <CommandEmpty>No authors found</CommandEmpty>
+                            <CommandEmpty>{`${t('noResults')}`}</CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-auto">
                               {uniqueAuthors.map((author) => (
                                 <CommandItem
@@ -318,8 +318,8 @@ export default function Archives() {
                           className="w-full justify-between font-normal"
                         >
                           {selectedGenres.length > 0 
-                            ? `${selectedGenres.length} selected`
-                            : "Select genres"}
+                            ? `${selectedGenres.length} ${t('selected')}`
+                            : t('selectGenres')}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -369,8 +369,8 @@ export default function Archives() {
                           className="w-full justify-between font-normal"
                         >
                           {selectedThemes.length > 0 
-                            ? `${selectedThemes.length} selected`
-                            : "Select themes"}
+                            ? `${selectedThemes.length} ${t('selected')}`
+                            : t('selectThemes')}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
@@ -463,7 +463,7 @@ export default function Archives() {
                         setSelectedThemes([]);
                       }}
                     >
-                      Clear all filters
+                      {t('clearFilters')}
                     </Button>
                   </div>
                 )}
