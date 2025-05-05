@@ -170,7 +170,7 @@ export default function Settings() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Are you sure?
+              {t('areYouSure')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action will permanently delete ALL books from your library. 
