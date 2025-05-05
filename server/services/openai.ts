@@ -134,9 +134,9 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 
     const result = JSON.parse(response.choices[0].message.content);
     return Array.isArray(result.genres) ? result.genres : [];
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting book genres:", error);
-    throw new Error(`Failed to extract book genres: ${error.message}`);
+    throw new Error(`Failed to extract book genres: ${error.message || String(error)}`);
   }
 }
 
@@ -178,9 +178,9 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 
     const result = JSON.parse(response.choices[0].message.content);
     return Array.isArray(result.themes) ? result.themes : [];
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting book themes:", error);
-    throw new Error(`Failed to extract book themes: ${error.message}`);
+    throw new Error(`Failed to extract book themes: ${error.message || String(error)}`);
   }
 }
 
@@ -222,9 +222,9 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
     });
 
     return JSON.parse(response.choices[0].message.content);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error assessing reading level:", error);
-    throw new Error(`Failed to assess reading level: ${error.message}`);
+    throw new Error(`Failed to assess reading level: ${error.message || String(error)}`);
   }
 }
 
@@ -277,9 +277,9 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
     });
 
     return response.choices[0].message.content.trim();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating catalog entry:", error);
-    throw new Error(`Failed to generate catalog entry: ${error.message}`);
+    throw new Error(`Failed to generate catalog entry: ${error.message || String(error)}`);
   }
 }
 
@@ -366,7 +366,7 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
       location: bookInfo.location || extractedData.location || null,
       publisher: bookInfo.publisher || extractedData.publisher || null,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting missing bibliographic data:", error);
     return bookInfo; // Return original book info on error
   }
@@ -387,7 +387,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
-    const bookInfo: Partial<Book> = {
+    let bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
@@ -505,8 +505,9 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     }
     
     // Check if we have all required bibliographic data, if not use AI to fill missing fields
-    const fieldsToCheck = ['pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher'];
-    const missingFields = fieldsToCheck.filter(field => !bookInfo[field]);
+    const fieldsToCheck = ['pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher'] as const;
+    const missingFields = fieldsToCheck.filter(field => 
+      !bookInfo[field as keyof typeof bookInfo]);
     
     if (missingFields.length > 0) {
       console.log(`Missing bibliographic fields detected: ${missingFields.join(', ')}. Attempting to extract using AI.`);
@@ -514,8 +515,8 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     }
 
     return bookInfo;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error processing book analysis:", error);
-    throw new Error(`Failed to process book analysis: ${error.message}`);
+    throw new Error(`Failed to process book analysis: ${error.message || String(error)}`);
   }
 }
