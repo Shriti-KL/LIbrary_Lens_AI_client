@@ -310,12 +310,12 @@ export default function Settings() {
                 <Label htmlFor="openai-key">OpenAI API Key</Label>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 font-mono text-sm p-2 border rounded-md bg-neutral-50">
-                    {apiKeys.openai ? '••••••••••••••••••••••' : 'No API key set'}
+                    {apiKeys.openai ? '••••••••••••••••••••••' : t('noApiKeySet')}
                   </div>
-                  <Button variant="outline" size="sm">Update</Button>
+                  <Button variant="outline" size="sm">{t('update')}</Button>
                 </div>
                 <p className="text-xs text-neutral-500">
-                  The OpenAI API key is configured through environment variables
+                  {t('openaiApiKeyDescription')}
                 </p>
               </div>
               
@@ -323,12 +323,12 @@ export default function Settings() {
                 <Label htmlFor="google-books-key">Google Books API Key</Label>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 font-mono text-sm p-2 border rounded-md bg-neutral-50">
-                    {apiKeys.googleBooks ? '••••••••••••••••••••••' : 'No API key set'}
+                    {apiKeys.googleBooks ? '••••••••••••••••••••••' : t('noApiKeySet')}
                   </div>
-                  <Button variant="outline" size="sm">Update</Button>
+                  <Button variant="outline" size="sm">{t('update')}</Button>
                 </div>
                 <p className="text-xs text-neutral-500">
-                  The Google Books API key is configured through environment variables
+                  {t('googleBooksApiKeyDescription')}
                 </p>
               </div>
             </CardContent>
@@ -430,7 +430,7 @@ export default function Settings() {
               <Separator />
               
               <div className="space-y-2">
-                <Label htmlFor="batch-limit">Batch Processing Limit</Label>
+                <Label htmlFor="batch-limit">{t('batchProcessingLimit')}</Label>
                 <Select 
                   value={analysisSettings.batchLimit.toString()} 
                   onValueChange={(value) => 
@@ -438,17 +438,17 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger id="batch-limit">
-                    <SelectValue placeholder="Select limit" />
+                    <SelectValue placeholder={t('selectLimit')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5 books</SelectItem>
-                    <SelectItem value="10">10 books</SelectItem>
-                    <SelectItem value="20">20 books</SelectItem>
-                    <SelectItem value="50">50 books</SelectItem>
+                    <SelectItem value="5">5 {t('booksCount')}</SelectItem>
+                    <SelectItem value="10">10 {t('booksCount')}</SelectItem>
+                    <SelectItem value="20">20 {t('booksCount')}</SelectItem>
+                    <SelectItem value="50">50 {t('booksCount')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-neutral-500">
-                  Maximum number of books to process in a single batch
+                  {t('batchProcessingLimitDescription')}
                 </p>
               </div>
             </CardContent>
