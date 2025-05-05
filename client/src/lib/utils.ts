@@ -140,15 +140,9 @@ interface BookMetadata {
   [key: string]: any; // Allow for other dynamic properties
 }
 
-export function exportBookToPDF(book: Book): void {
-  // Create a new PDF with standard A4 size (German DIN A4)
-  const doc = new jsPDF({
-    unit: 'mm',
-    format: 'a4',
-  });
-  
-  // Start position - German bibliographic entries typically start near the top of the page
-  let yPos = 20;
+// Format a single book for PDF export - returns the ending Y position
+export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
+  let yPos = startY;
   
   // --- 1. Author's name in bold ---
   // Format: "Sorg, Marion:"
@@ -421,11 +415,96 @@ export function exportBookToPDF(book: Book): void {
     }
   }
   
-  // Remove the footer page numbers for this style of catalog entry
-  // German bibliographic entries typically don't have page numbers for single-page entries
+  return yPos; // Return the final Y position
+}
+
+// Export a single book to PDF
+export function exportBookToPDF(book: Book): void {
+  // Create a new PDF with standard A4 size (German DIN A4)
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+  });
+  
+  // Format book entry
+  formatBookEntryForPDF(doc, book);
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
   const safeFilename = book.title.replace(/[/\\?%*:|"<>]/g, '-');
   doc.save(`${safeFilename || 'book'}.pdf`);
+}
+
+// Export multiple books to a single PDF
+export function exportMultipleBooksToSinglePDF(books: Book[]): void {
+  if (!books || books.length === 0) return;
+  
+  // Create a new PDF with standard A4 size (German DIN A4)
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+  });
+  
+  // Add cover page
+  doc.setFont("times", "bold");
+  doc.setFontSize(18);
+  doc.text("Buchkatalog", 105, 30, { align: 'center' });
+  
+  const today = new Date().toLocaleDateString('de-DE', {
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric'
+  });
+  
+  doc.setFont("times", "normal");
+  doc.setFontSize(12);
+  doc.text(`Erstellt am ${today}`, 105, 40, { align: 'center' });
+  doc.text(`${books.length} Bücher`, 105, 48, { align: 'center' });
+  
+  // Add table of contents
+  doc.setFont("times", "bold");
+  doc.setFontSize(14);
+  doc.text("Inhaltsverzeichnis", 15, 70);
+  
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
+  let tocY = 80;
+  
+  books.forEach((book, index) => {
+    doc.text(`${index + 1}. ${book.title}`, 20, tocY);
+    tocY += 6;
+    
+    // Add a new page if table of contents gets too long
+    if (tocY > 260 && index < books.length - 1) {
+      doc.addPage();
+      tocY = 20;
+    }
+  });
+  
+  // Process each book
+  for (let i = 0; i < books.length; i++) {
+    // Add a new page for each book
+    doc.addPage();
+    
+    // Add book entry number as header
+    doc.setFont("times", "bold");
+    doc.setFontSize(10);
+    doc.text(`Buch ${i + 1} von ${books.length}`, 15, 10);
+    
+    // Format current book starting at y=20
+    formatBookEntryForPDF(doc, books[i]);
+  }
+  
+  // Add page numbers
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("times", "italic");
+    doc.setFontSize(9);
+    doc.text(`Seite ${i} von ${pageCount}`, 195, 287, { align: 'right' });
+  }
+  
+  // Generate a timestamped filename
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  doc.save(`Buchkatalog_${timestamp}.pdf`);
 }
