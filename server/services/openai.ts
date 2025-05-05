@@ -37,7 +37,18 @@ export async function analyzeBookCover(image: string): Promise<any> {
       temperature: 0.1, // Lower temperature for more accurate extraction
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content returned from book cover analysis");
+    }
+    
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Error parsing book cover JSON:", parseError);
+      throw new Error("Failed to parse book cover analysis results");
+    }
     
     // Ensure we have at least a title and author
     if (!result.title && !result.author) {
@@ -45,9 +56,9 @@ export async function analyzeBookCover(image: string): Promise<any> {
     }
     
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing book cover:", error);
-    throw new Error(`Failed to analyze book cover: ${error.message}`);
+    throw new Error(`Failed to analyze book cover: ${error.message || String(error)}`);
   }
 }
 
@@ -92,7 +103,7 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
     return content ? content.trim() : "No summary available";
   } catch (error: any) {
     console.error("Error generating book summary:", error);
-    throw new Error(`Failed to generate book summary: ${error.message}`);
+    throw new Error(`Failed to generate book summary: ${error.message || String(error)}`);
   }
 }
 
@@ -132,8 +143,16 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    return Array.isArray(result.genres) ? result.genres : [];
+    const content = response.choices[0].message.content;
+    if (!content) return [];
+    
+    try {
+      const result = JSON.parse(content);
+      return Array.isArray(result.genres) ? result.genres : [];
+    } catch (parseError) {
+      console.error("Error parsing genres JSON:", parseError);
+      return [];
+    }
   } catch (error: any) {
     console.error("Error extracting book genres:", error);
     throw new Error(`Failed to extract book genres: ${error.message || String(error)}`);
@@ -176,8 +195,16 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    return Array.isArray(result.themes) ? result.themes : [];
+    const content = response.choices[0].message.content;
+    if (!content) return [];
+    
+    try {
+      const result = JSON.parse(content);
+      return Array.isArray(result.themes) ? result.themes : [];
+    } catch (parseError) {
+      console.error("Error parsing themes JSON:", parseError);
+      return [];
+    }
   } catch (error: any) {
     console.error("Error extracting book themes:", error);
     throw new Error(`Failed to extract book themes: ${error.message || String(error)}`);
@@ -221,7 +248,15 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       response_format: { type: "json_object" },
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) return { level: "Unbekannt", score: 5 };
+    
+    try {
+      return JSON.parse(content);
+    } catch (parseError) {
+      console.error("Error parsing reading level JSON:", parseError);
+      return { level: "Unbekannt", score: 5 };
+    }
   } catch (error: any) {
     console.error("Error assessing reading level:", error);
     throw new Error(`Failed to assess reading level: ${error.message || String(error)}`);
@@ -276,7 +311,8 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       ],
     });
 
-    return response.choices[0].message.content.trim();
+    const content = response.choices[0].message.content;
+    return content ? content.trim() : "Keine Kataloginformationen verfügbar";
   } catch (error: any) {
     console.error("Error generating catalog entry:", error);
     throw new Error(`Failed to generate catalog entry: ${error.message || String(error)}`);
@@ -353,8 +389,20 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
       response_format: { type: "json_object" },
     });
 
-    const extractedData = JSON.parse(response.choices[0].message.content);
-    console.log("AI extracted bibliographic data:", extractedData);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from AI for bibliographic data extraction");
+      return bookInfo;
+    }
+    
+    let extractedData;
+    try {
+      extractedData = JSON.parse(content);
+      console.log("AI extracted bibliographic data:", extractedData);
+    } catch (parseError) {
+      console.error("Error parsing bibliographic data JSON:", parseError);
+      return bookInfo;
+    }
 
     // Merge the extracted data with the book info, only using AI data where we lack actual data
     return {
@@ -486,20 +534,29 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       if (illustratorMatch && illustratorMatch[1]) {
         // Add illustrator to contributors if not already present
         const illustratorName = illustratorMatch[1].trim();
-        if (!bookInfo.contributors || !Array.isArray(bookInfo.contributors)) {
-          bookInfo.contributors = [];
-        }
+        
+        // Initialize contributors array if it doesn't exist or isn't an array
+        // Use type assertion to handle the unknown type
+        const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
+          ? [...(bookInfo.contributors as {role: string, name: string}[])] 
+          : [];
         
         // Check if this illustrator is already in contributors
-        const hasIllustrator = bookInfo.contributors.some((c: any) => 
+        const hasIllustrator = contributors.some((c: any) => 
           c.role === 'illustrator' && c.name === illustratorName
         );
         
         if (!hasIllustrator) {
-          bookInfo.contributors.push({
+          contributors.push({
             role: 'illustrator',
             name: illustratorName
           });
+          
+          // Update the book info with the new contributors array
+          bookInfo = {
+            ...bookInfo,
+            contributors
+          };
         }
       }
     }
