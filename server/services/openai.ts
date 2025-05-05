@@ -175,130 +175,30 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 // Generate a library catalog entry
 export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<string> {
   try {
-    // Build a comprehensive context including all available book information
-    const context = `
-      Title: ${bookInfo.title || 'Unknown'}
-      Author: ${bookInfo.author || 'Unknown'}
-      Publisher: ${bookInfo.publisher || 'Unknown'}
-      Year: ${bookInfo.publishedYear || 'Unknown'}
-      Pages: ${bookInfo.pageCount || 'Unknown'}
-      ISBN: ${bookInfo.isbn || 'Unknown'}
-      Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : (bookInfo.genres || 'Unknown')}
-      Summary: ${bookInfo.summary || 'Unknown'}
-      
-      # Extended Bibliographic Information
-      Dimensions: ${(bookInfo as any).dimensions || "Unbekannt"}
-      Edition: ${(bookInfo as any).edition || "1. Auflage"}
-      Language: ${(bookInfo as any).language || "Deutsch"}
-      Location: ${(bookInfo as any).location || (bookInfo.publisher ? `${bookInfo.publisher.split(',')[0]}` : "Unbekannt")}
-      Binding: ${(bookInfo as any).binding || "Festeinb."}
-      Price: ${(bookInfo as any).price || "EUR 19.95"}
-      Series: ${(bookInfo as any).series || ""}
-      
-      # Additional Contributors
-      ${(bookInfo as any).contributors && Array.isArray((bookInfo as any).contributors) && (bookInfo as any).contributors.length > 0 
-        ? `Contributors: ${(bookInfo as any).contributors.map((c: any) => `${c.role}: ${c.name}`).join(', ')}` 
-        : ""}
-    `;
-    
-    // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+    const context = `Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: MODEL,
       messages: [
         {
           role: "system",
-          content: `Du bist ein professioneller Bibliothekar, der standardisierte Katalogeinträge nach bibliothekarischen Konventionen erstellt.
-          
-          Format für einen deutschen Bibliothekskatalog:
-          
-          Autor: [Nachname], [Vorname]: 
-          Titel / [Autor]; [weitere Beitragende] - [Auflage]. - [Ort]: [Verlag], [Jahr]. - [Seitenzahl]; [Dimensionen] 
-          ISBN [ISBN-Nummer] [Bindung] : [Preis]
-          
-          [Beschreibung/Zusammenfassung]
-          
-          [Dewey-Dezimalklassifikation]`
+          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in German language."
         },
         {
           role: "user",
-          content: `Erstelle einen formalen Bibliothekskatalog-Eintrag auf Deutsch für dieses Buch gemäß den deutschen Katalogisierungskonventionen. Füge eine Dewey-Dezimalklassifikation hinzu, wenn möglich.
-          
-          Bitte setze den Autor fett (mit ** umgeben). 
-          Achte auf korrekte Formatierung mit Auflage, Ort, Verlag, Seitenzahl, Dimensionen und Preisangabe.
-          
-          Bei Hardcover-Büchern, gib "Festeinb." statt "gebunden" oder "Hardcover" an.
-          Bei Taschenbüchern, gib "brosch." statt "Paperback" oder "Taschenbuch" an.
-          
-          Buch-Details:
-          ${context}`
+          content: `Create a formal library catalog entry in German for this book following standard German cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
         }
       ],
     });
 
-    // Extract the catalog entry and save it
-    const catalogEntry = response.choices[0].message.content.trim();
-    
-    // Also extract and save additional bibliographic information if not already available
-    // This helps ensure we capture all metadata that wasn't found through Google Books API
-    if (!(bookInfo as any).dimensions || !(bookInfo as any).edition || !(bookInfo as any).binding) {
-      try {
-        const metadataResponse = await openai.chat.completions.create({
-          model: "gpt-4o", // The newest OpenAI model is "gpt-4o" which was released May 13, 2024
-          messages: [
-            {
-              role: "system",
-              content: "Extract structured bibliographic data from catalog entries or book information"
-            },
-            {
-              role: "user",
-              content: `Extract these bibliographic details from the catalog entry and book information. Return as JSON with these fields:
-              dimensions: physical dimensions (e.g., "22 cm")
-              edition: edition information (e.g., "1. Aufl.")
-              binding: binding type (e.g., "Festeinb." or "brosch.")
-              price: price information (e.g., "EUR 19.95")
-              location: publication location
-              contributors: array of {role, name} for any illustrators, editors, translators mentioned
-              
-              CATALOG ENTRY:
-              ${catalogEntry}
-              
-              BOOK INFORMATION:
-              ${context}`
-            }
-          ],
-          response_format: { type: "json_object" }
-        });
-        
-        // Parse the structured data
-        const extractedData = JSON.parse(metadataResponse.choices[0].message.content);
-        
-        // Update the book info with any extracted metadata (only if fields are missing)
-        if (!bookInfo.dimensions && extractedData.dimensions) {
-          (bookInfo as any).dimensions = extractedData.dimensions;
-        }
-        if (!(bookInfo as any).edition && extractedData.edition) {
-          (bookInfo as any).edition = extractedData.edition;
-        }
-        if (!(bookInfo as any).binding && extractedData.binding) {
-          (bookInfo as any).binding = extractedData.binding;
-        }
-        if (!(bookInfo as any).price && extractedData.price) {
-          (bookInfo as any).price = extractedData.price;
-        }
-        if (!(bookInfo as any).location && extractedData.location) {
-          (bookInfo as any).location = extractedData.location;
-        }
-        if (!(bookInfo as any).contributors && extractedData.contributors && extractedData.contributors.length > 0) {
-          (bookInfo as any).contributors = extractedData.contributors;
-        }
-        
-        console.log("Extracted additional metadata:", extractedData);
-      } catch (err) {
-        console.error("Error extracting extended bibliographic data:", err);
-      }
-    }
-    
-    return catalogEntry;
+    return response.choices[0].message.content.trim();
   } catch (error) {
     console.error("Error generating catalog entry:", error);
     throw new Error(`Failed to generate catalog entry: ${error.message}`);
@@ -316,33 +216,19 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       title: analysisRequest.title,
       author: analysisRequest.author,
       hasCoverImage: !!analysisRequest.coverImage,
-      existingSummary: !!analysisRequest.summary,
-      hasExtendedBiblio: !!(analysisRequest.dimensions || analysisRequest.edition || analysisRequest.contributors)
+      existingSummary: !!analysisRequest.summary
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
     const bookInfo: Partial<Book> = {
-      // Basic bibliographic data
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
-      pageCount: analysisRequest.pageCount || null,
-      
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
-      
-      // Extended bibliographic data
-      dimensions: analysisRequest.dimensions || null,
-      edition: analysisRequest.edition || null,
-      language: analysisRequest.language || null,
-      location: analysisRequest.location || null,
-      binding: analysisRequest.binding || null,
-      price: analysisRequest.price || null,
-      series: analysisRequest.series || null,
-      contributors: analysisRequest.contributors || [],
       
       // Reset all analysis fields
       summary: null,
@@ -360,7 +246,6 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       themes: true,
       readingLevel: true,
       catalogEntry: true,
-      extendedBibliography: true
     };
     
     console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}`);

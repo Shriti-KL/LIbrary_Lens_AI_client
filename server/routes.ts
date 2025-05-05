@@ -466,7 +466,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 themes: true,
                 readingLevel: true,
                 catalogEntry: true,
-                extendedBibliography: true
               }
             });
             console.log("Full analysis completed successfully");

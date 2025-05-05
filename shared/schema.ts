@@ -31,26 +31,10 @@ export const books = pgTable("books", {
   readingLevel: text("reading_level"),
   deweyDecimal: text("dewey_decimal"),
   catalogEntry: text("catalog_entry"),
-  
-  // Additional bibliographic fields
-  dimensions: text("dimensions"),           // Physical dimensions (e.g., "22 cm")
-  edition: text("edition"),                 // Edition information (e.g., "1. Auflage")
-  language: text("language"),               // Language of the book (e.g., "German")
-  location: text("location"),               // Publication location (e.g., "München")
-  contributors: jsonb("contributors").default([]).notNull(), // Additional contributors (illustrators, etc.)
-  binding: text("binding"),                 // Binding type (e.g., "Festeinb.", "Hardcover")
-  price: text("price"),                     // Price information (e.g., "EUR 19.95")
-  series: text("series"),                   // Series information
-  
-  // Arrays of data
   genres: jsonb("genres").default([]).notNull(),
   themes: jsonb("themes").default([]).notNull(),
   similarBooks: jsonb("similar_books").default([]).notNull(),
-  
-  // Catch-all field for any additional metadata
-  metadata: jsonb("metadata").default({}).notNull(),
-  
-  // Relations and timestamps
+  metadata: jsonb("metadata").default({}).notNull(), // Additional metadata
   userId: integer("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -62,56 +46,30 @@ export const insertBookSchema = createInsertSchema(books)
 
 // For book upload/analysis request
 export const bookAnalysisSchema = z.object({
-  // Basic book information
   title: z.string().optional(),
   author: z.string().optional(),
   isbn: z.string().nullable().optional(),
-  
-  // Cover image related fields
   coverImage: z.string().optional(), // base64 encoded image for URL
   coverImageData: z.string().optional(), // base64 encoded image data with mimetype prefix
   coverImageUrl: z.string().nullable().optional(), // External URL for cover image
-  
-  // Standard bibliographic data
   publisher: z.string().nullable().optional(),
   publishedYear: z.number().nullable().optional(),
   pageCount: z.number().nullable().optional(),
   summary: z.string().nullable().optional(),
-  
-  // Classification data
   genres: z.array(z.string()).nullable().optional(),
   themes: z.any().nullable().optional(),
   readingLevel: z.string().nullable().optional(),
   catalogEntry: z.string().nullable().optional(),
   deweyDecimal: z.string().nullable().optional(),
-  
-  // Extended bibliographic data for complete catalog entries
-  dimensions: z.string().nullable().optional(),       // Physical dimensions (e.g., "22 cm")
-  edition: z.string().nullable().optional(),          // Edition information (e.g., "1. Auflage")
-  language: z.string().nullable().optional(),         // Language of the book
-  location: z.string().nullable().optional(),         // Publication location (e.g., "München")
-  contributors: z.array(z.object({                   // Additional contributors like illustrators
-    role: z.string(),
-    name: z.string()
-  })).nullable().optional(),
-  binding: z.string().nullable().optional(),          // Binding type (e.g., "Festeinb.", "Hardcover")
-  price: z.string().nullable().optional(),            // Price information (e.g., "EUR 19.95")
-  series: z.string().nullable().optional(),           // Series information
-  
-  // System fields
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
-  
-  // Analysis options
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),
     themes: z.boolean().default(true),
     readingLevel: z.boolean().default(true),
     catalogEntry: z.boolean().default(true),
-    // Added extended options
-    extendedBibliography: z.boolean().default(true), // Get complete bibliographic data
   }).optional(),
 });
 

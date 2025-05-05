@@ -256,49 +256,6 @@ export default function BookResult({
                   <h4 className="text-sm font-medium text-primary-dark/70">{t('pages')}</h4>
                   <p className="mt-1 text-sm text-neutral-700">{book.pageCount || 'N/A'}</p>
                 </div>
-                
-                {/* Extended bibliographic details */}
-                {(book as any).edition && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('edition')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).edition}</p>
-                  </div>
-                )}
-                
-                {(book as any).dimensions && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('dimensions')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).dimensions}</p>
-                  </div>
-                )}
-                
-                {(book as any).binding && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).binding}</p>
-                  </div>
-                )}
-                
-                {(book as any).location && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('location')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).location}</p>
-                  </div>
-                )}
-                
-                {(book as any).language && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('language')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).language}</p>
-                  </div>
-                )}
-                
-                {(book as any).price && (
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('price')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{(book as any).price}</p>
-                  </div>
-                )}
               </div>
               
               <div className="mt-5">
@@ -315,23 +272,6 @@ export default function BookResult({
                   )}
                 </div>
               </div>
-              
-              {/* Contributors display (illustrators, editors, translators) */}
-              {(book as any).contributors && Array.isArray((book as any).contributors) && (book as any).contributors.length > 0 && (
-                <div className="mt-5">
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('contributors')}</h4>
-                  <div className="mt-2 space-y-1">
-                    {(book as any).contributors.map((contributor: any, index: number) => (
-                      <div key={index} className="flex items-center text-sm">
-                        <span className="font-medium text-neutral-700">{contributor.name}</span>
-                        {contributor.role && (
-                          <span className="ml-2 text-neutral-500">({contributor.role})</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               
               {book.readingLevel && (
                 <div className="mt-5">
