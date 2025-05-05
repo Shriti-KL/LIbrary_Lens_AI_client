@@ -199,52 +199,67 @@ export function exportBookToPDF(book: Book): void {
   // --- 3. Publication information ---
   // Format: "- 1. Auflage. - Location : Publisher, Year. - Pages : Illustrations ; Size"
   
-  // Create publication details string
-  let publicationInfo = '- 1. Auflage.'; // Standard edition info for new books
+  // Create publication details string with edition information
+  let publicationInfo = '';
+  
+  // Use the actual edition field if available, otherwise use default
+  const editionInfo = (book as any).edition || '1. Auflage';
+  publicationInfo = `- ${editionInfo}`; 
   
   // Add location and publisher
-  if (book.publisher) {
-    // Try to extract location from publisher string or use default
-    let location = 'München'; // Default location if none found
-    let publisher = book.publisher;
-    
-    // If publisher includes comma, first part might be location
-    if (book.publisher.includes(',')) {
-      const parts = book.publisher.split(',');
-      location = parts[0].trim();
-      publisher = parts.slice(1).join(',').trim();
+  let location = (book as any).location || 'München'; // Use location field if available
+  let publisher = book.publisher || 'Verlag';
+  
+  // If location is not explicitly set but publisher includes comma, first part might be location
+  if (!(book as any).location && book.publisher && book.publisher.includes(',')) {
+    const parts = book.publisher.split(',');
+    location = parts[0].trim();
+    publisher = parts.slice(1).join(',').trim();
+  }
+  
+  // If catalog entry contains location explicitly, use that
+  if (!location && book.catalogEntry && book.catalogEntry.includes('-')) {
+    const locationMatch = book.catalogEntry.match(/\-\s+([^:]+)\s+:/);
+    if (locationMatch && locationMatch[1]) {
+      location = locationMatch[1].trim();
     }
-    
-    // If catalog entry contains location explicitly, use that
-    if (book.catalogEntry && book.catalogEntry.includes('-')) {
-      const locationMatch = book.catalogEntry.match(/\-\s+([^:]+)\s+:/);
-      if (locationMatch && locationMatch[1]) {
-        location = locationMatch[1].trim();
-      }
-    }
-    
-    publicationInfo += ` - ${location} : ${publisher}`;
-    
-    // Add year
-    if (book.publishedYear) {
-      publicationInfo += `, ${book.publishedYear}`;
-    } else {
-      publicationInfo += ', 2025'; // Default to current year if not specified
-    }
+  }
+  
+  publicationInfo += ` - ${location} : ${publisher}`;
+  
+  // Add year
+  if (book.publishedYear) {
+    publicationInfo += `, ${book.publishedYear}`;
+  } else {
+    const currentYear = new Date().getFullYear();
+    publicationInfo += `, ${currentYear}`; // Default to current year if not specified
   }
   
   // Add physical description - pages
   if (book.pageCount) {
     publicationInfo += `. - ${book.pageCount} Seiten`;
   } else {
-    publicationInfo += '. - 127 Seiten'; // Default page count
+    publicationInfo += '. - 256 Seiten'; // Default page count
   }
   
   // Add illustration information
-  publicationInfo += ' : Illustrationen, farbig';
+  // Check if we have contributors with illustrator role
+  let hasIllustrators = false;
+  if ((book as any).contributors && Array.isArray((book as any).contributors)) {
+    hasIllustrators = (book as any).contributors.some((c: any) => 
+      c.role && c.role.toLowerCase().includes('illustr'));
+  }
   
-  // Add size
-  publicationInfo += ' ; 22 cm';
+  // If we have illustrators or if catalog entry mentions illustrations, add illustration info
+  if (hasIllustrators || (book.catalogEntry && 
+      (book.catalogEntry.toLowerCase().includes('illustr') || 
+       book.catalogEntry.toLowerCase().includes('abb.')))) {
+    publicationInfo += ' : Illustrationen, farbig';
+  }
+  
+  // Add physical dimensions
+  const dimensions = (book as any).dimensions || '22 cm';
+  publicationInfo += ` ; ${dimensions}`;
   
   // Split the publication info text for proper wrapping with hanging indent
   const pubLines = doc.splitTextToSize(publicationInfo, 170);
@@ -262,16 +277,26 @@ export function exportBookToPDF(book: Book): void {
     
     let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price
-    if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
-      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
+    // Add binding type and price using actual field data if available
+    const binding = (book as any).binding || 'Festeinb.';
+    const price = (book as any).price || 'EUR 19.95';
+    
+    // Use actual binding and price if available
+    if (binding && price) {
+      isbnLine += ` ${binding} : ${price}`;
+    }
+    // Otherwise, try to extract from catalog entry 
+    else if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
+      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|brosch)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
       if (priceMatch) {
         isbnLine += ` ${priceMatch[0].trim()}`;
       } else {
         isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
       }
-    } else {
-      isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
+    } 
+    // Final fallback to default format
+    else {
+      isbnLine += ' Festeinb. : EUR 19.95';
     }
     
     doc.text(isbnLine, 15, yPos);

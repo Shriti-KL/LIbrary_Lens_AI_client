@@ -316,19 +316,33 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       title: analysisRequest.title,
       author: analysisRequest.author,
       hasCoverImage: !!analysisRequest.coverImage,
-      existingSummary: !!analysisRequest.summary
+      existingSummary: !!analysisRequest.summary,
+      hasExtendedBiblio: !!(analysisRequest.dimensions || analysisRequest.edition || analysisRequest.contributors)
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
     const bookInfo: Partial<Book> = {
+      // Basic bibliographic data
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
+      pageCount: analysisRequest.pageCount || null,
+      
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
+      
+      // Extended bibliographic data
+      dimensions: analysisRequest.dimensions || null,
+      edition: analysisRequest.edition || null,
+      language: analysisRequest.language || null,
+      location: analysisRequest.location || null,
+      binding: analysisRequest.binding || null,
+      price: analysisRequest.price || null,
+      series: analysisRequest.series || null,
+      contributors: analysisRequest.contributors || [],
       
       // Reset all analysis fields
       summary: null,
@@ -346,6 +360,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       themes: true,
       readingLevel: true,
       catalogEntry: true,
+      extendedBibliography: true
     };
     
     console.log(`[${analysisId}] Starting fresh analysis for "${bookInfo.title}" by ${bookInfo.author}`);
