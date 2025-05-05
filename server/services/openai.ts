@@ -150,7 +150,7 @@ ${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON object with a "genres" property that contains an array of strings with only the genre names in ${languageName}.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON object with a "genres" property that contains an array of strings with only the genre names in ${languageName}.\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
