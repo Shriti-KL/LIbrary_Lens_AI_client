@@ -65,11 +65,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary expert who creates concise, informative book summaries for library catalogs in German. Focus on plot, main themes, and significance. Your responses should always be in German regardless of the input language."
+          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance."
         },
         {
           role: "user",
-          content: `Create a concise, informative summary in German for the following book that would be appropriate for a library catalog. Keep it under 250 words. Response must be in German.\n\n${context}`
+          content: `Create a concise, informative summary for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
         }
       ],
     });
@@ -94,11 +94,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a German library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Your responses should be in German regardless of the input language."
+          content: "You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book."
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in German.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -124,11 +124,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a German literary analysis expert specializing in identifying themes and motifs in books. Your responses should be in German regardless of the input language."
+          content: "You are a literary analysis expert specializing in identifying themes and motifs in books."
         },
         {
           role: "user",
-          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in German. Return as a JSON array with objects containing 'name' and 'description' properties. All text must be in German.\n\n${context}`
+          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -155,11 +155,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a German education specialist who assesses reading levels for books. Your responses should be in German regardless of the input language."
+          content: "You are an education specialist who assesses reading levels for books."
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book in German terms. Return a JSON object with these fields in German: 'ageRange' (age range like 'Alter 8-10'), 'gradeLevel' (grade level like 'Klasse 3-4'), 'complexity' (complexity assessment in German), 'lexileMeasure' (Lexile measure if applicable), and 'level' (overall level assessment in German). All text must be in German.\n\n${context}`
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string like 'Grade 4-5' or 'Ages 12-14'), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -189,11 +189,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a professional German librarian who creates standardized catalog entries following German library catalog conventions. Your responses should always be in German regardless of the input language."
+          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions."
         },
         {
           role: "user",
-          content: `Create a formal library catalog entry in German for this book following standard German cataloging conventions. Include a Dewey Decimal classification if possible. Response must be in German.\n\n${context}`
+          content: `Create a formal library catalog entry for this book following standard cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
         }
       ],
     });
@@ -265,7 +265,11 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     
     if (options.readingLevel) {
       const readingLevelInfo = await assessReadingLevel(bookInfo);
-      bookInfo.readingLevel = readingLevelInfo; // Store the complete reading level information
+      bookInfo.readingLevel = readingLevelInfo.level;
+      bookInfo.metadata = {
+        ...(bookInfo.metadata || {}),
+        readingLevelScore: readingLevelInfo.score
+      };
     }
     
     if (options.catalogEntry) {
