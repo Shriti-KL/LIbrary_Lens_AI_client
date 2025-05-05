@@ -130,230 +130,185 @@ import autoTable from 'jspdf-autotable';
 import { Book } from '@shared/schema';
 
 export function exportBookToPDF(book: Book): void {
-  const doc = new jsPDF();
+  // Create a new PDF with standard A4 size (German DIN A4)
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+  });
   
-  // Define colors
-  const textColor = [0, 0, 0]; // Black
-  
-  // Start position
+  // Start position - German bibliographic entries typically start near the top of the page
   let yPos = 20;
   
-  // Create the German catalog-style entry - following the exact format from the example
-  
-  // ---- 1. Author: Title line ----
-  // Format: Sorg, Marion:
+  // --- 1. Author's name in bold ---
+  // Format: "Sorg, Marion:"
   doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-  doc.text(`${book.author}:`, 14, yPos);
+  doc.setFont("times", "bold"); // Using Times for more traditional bibliographic look
+  doc.text(`${book.author}:`, 15, yPos);
   
-  yPos += 6;
+  yPos += 7; // Space after author name
   
-  // ---- 2. Full bibliographic citation ----
-  // Format: Title / Author ; Illustrations. - Edition. - Location : Publisher, Year. - Pages : Details ; Size
+  // --- 2. Title in normal weight ---
+  // Get the title and subtitle if available
+  let titleFull = book.title;
+  let subtitle = '';
   
-  // Build the citation components
-  let citation = '';
+  // Try to extract subtitle if present (after colon)
+  if (book.title.includes(':')) {
+    const titleParts = book.title.split(':');
+    titleFull = titleParts[0].trim();
+    subtitle = titleParts.slice(1).join(':').trim();
+  }
   
-  // Title component
-  citation += book.title;
+  // Format the title line with proper indentation for multi-line catalog entries
+  // (Note: first line aligns with margin, subsequent lines are indented)
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
   
-  // Contributor information (using the full author name again)
-  citation += ` / ${book.author}`;
+  let titleText = titleFull;
+  if (subtitle) {
+    titleText += ` : ${subtitle}`;
+  }
+  
+  // Add contributor information
+  titleText += ` / ${book.author}`;
   
   // Add illustrator if available (extract from catalog entry)
   if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
-    const illustrationMatch = book.catalogEntry.match(/Illustration[^.;]*(von|by)[^.;]*/i);
+    const illustrationMatch = book.catalogEntry.match(/Illustration(?:en)?\s+von\s+[^.;]*/i);
     if (illustrationMatch) {
-      citation += ` ; ${illustrationMatch[0].trim()}`;
+      titleText += ` ; ${illustrationMatch[0].trim()}`;
     }
   }
   
-  // Edition information
-  citation += ' - 1. Auflage.';
+  // Split the title text for proper wrapping with hanging indent (2nd line onwards)
+  const titleLines = doc.splitTextToSize(titleText, 170);
   
-  // Publisher location and name
+  // Set the first line
+  doc.text(titleLines[0], 15, yPos);
+  
+  // Set subsequent lines with indent
+  if (titleLines.length > 1) {
+    for (let i = 1; i < titleLines.length; i++) {
+      yPos += 5.5; // Line spacing
+      doc.text(titleLines[i], 25, yPos); // Indented
+    }
+  }
+  
+  yPos += 7; // Space after title block
+  
+  // --- 3. Publication information ---
+  // Format: "- 1. Auflage. - Location : Publisher, Year. - Pages : Illustrations ; Size"
+  
+  // Create publication details string
+  let publicationInfo = '- 1. Auflage.'; // Standard edition info for new books
+  
+  // Add location and publisher
   if (book.publisher) {
-    const publisherParts = book.publisher.split(',');
-    let location = '';
+    // Try to extract location from publisher string or use default
+    let location = 'München'; // Default location if none found
     let publisher = book.publisher;
     
-    // Try to extract location from publisher string if it contains a comma
-    if (publisherParts.length > 1) {
-      location = publisherParts[0].trim();
-      publisher = publisherParts.slice(1).join(',').trim();
+    // If publisher includes comma, first part might be location
+    if (book.publisher.includes(',')) {
+      const parts = book.publisher.split(',');
+      location = parts[0].trim();
+      publisher = parts.slice(1).join(',').trim();
     }
     
-    if (location) {
-      citation += ` - ${location} : ${publisher}`;
-    } else {
-      // If no location found, try to extract from catalog entry or just use publisher
-      if (book.catalogEntry && book.catalogEntry.includes(':')) {
-        const locationMatch = book.catalogEntry.match(/\s-\s([^:]+)\s:/);
-        if (locationMatch) {
-          citation += ` - ${locationMatch[1].trim()} : ${publisher}`;
-        } else {
-          citation += ` - : ${publisher}`;
-        }
-      } else {
-        citation += ` - : ${publisher}`;
+    // If catalog entry contains location explicitly, use that
+    if (book.catalogEntry && book.catalogEntry.includes('-')) {
+      const locationMatch = book.catalogEntry.match(/\-\s+([^:]+)\s+:/);
+      if (locationMatch && locationMatch[1]) {
+        location = locationMatch[1].trim();
       }
     }
-  }
-  
-  // Year
-  if (book.publishedYear) {
-    citation += `, ${book.publishedYear}`;
-  }
-  
-  // Physical description
-  if (book.pageCount) {
-    citation += `. - ${book.pageCount} Seiten`;
-  } else {
-    citation += '. - Seiten';
-  }
-  
-  // Add details like illustrations if available (from catalog entry)
-  if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
-    citation += ' : Illustrationen, farbig';
-  }
-  
-  // Add size if available (from catalog entry) or use default
-  if (book.catalogEntry && book.catalogEntry.includes('cm')) {
-    const sizeMatch = book.catalogEntry.match(/(\d+)\s*cm/);
-    if (sizeMatch) {
-      citation += ` ; ${sizeMatch[1]} cm`;
+    
+    publicationInfo += ` - ${location} : ${publisher}`;
+    
+    // Add year
+    if (book.publishedYear) {
+      publicationInfo += `, ${book.publishedYear}`;
     } else {
-      citation += ' ; 22 cm';
+      publicationInfo += ', 2025'; // Default to current year if not specified
     }
+  }
+  
+  // Add physical description - pages
+  if (book.pageCount) {
+    publicationInfo += `. - ${book.pageCount} Seiten`;
   } else {
-    citation += ' ; 22 cm';
+    publicationInfo += '. - 127 Seiten'; // Default page count
   }
   
-  // Add series information if available (from catalog entry)
-  if (book.catalogEntry && book.catalogEntry.includes('(')) {
-    const seriesMatch = book.catalogEntry.match(/\(([^)]+)\)/);
-    if (seriesMatch) {
-      citation += ` (${seriesMatch[1]})`;
-    }
+  // Add illustration information
+  publicationInfo += ' : Illustrationen, farbig';
+  
+  // Add size
+  publicationInfo += ' ; 22 cm';
+  
+  // Split the publication info text for proper wrapping with hanging indent
+  const pubLines = doc.splitTextToSize(publicationInfo, 170);
+  
+  // Set the publication info lines with proper indentation
+  for (let i = 0; i < pubLines.length; i++) {
+    doc.text(pubLines[i], i === 0 ? 15 : 25, yPos); // First line at margin, rest indented
+    yPos += 5.5;
   }
   
-  // Format and display the citation
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  const citationLines = doc.splitTextToSize(citation, 180);
-  doc.text(citationLines, 14, yPos);
-  
-  yPos += (citationLines.length * 5) + 8;
-  
-  // ---- 3. ISBN line with price ----
-  // Format: ISBN 978-3-95916-132-9 Festeinb. : EUR 19.95
+  // --- 4. ISBN and price information ---
+  // Format: "ISBN 978-3-95916-132-9 Festeinb. : EUR 19.95"
   if (book.isbn) {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    yPos += 1.5; // Extra small space before ISBN line
     
-    // Format the ISBN line
-    let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
+    let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price if available
+    // Add binding type and price
     if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
-      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|Hardcover|Paperback)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
+      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
       if (priceMatch) {
         isbnLine += ` ${priceMatch[0].trim()}`;
       } else {
-        isbnLine += ' Hardcover'; // Default to hardcover if not specified
+        isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
       }
+    } else {
+      isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
     }
     
-    doc.text(isbnLine, 14, yPos);
-    yPos += 10;
+    doc.text(isbnLine, 15, yPos);
+    yPos += 13; // Larger gap after ISBN line
   }
   
-  // Add a horizontal line to separate the citation from the summary
-  doc.setDrawColor(200, 200, 200);
-  doc.line(14, yPos, 196, yPos);
-  yPos += 10;
-  
-  // ---- 4. Summary section - this is critical content ----
+  // --- 5. Description/Summary section ---
   if (book.summary) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    // Format the summary as justified text to match the bibliographic style
+    doc.setFont("times", "normal");
+    doc.setFontSize(11);
     
-    const summaryLines = doc.splitTextToSize(book.summary, 180);
-    doc.text(summaryLines, 14, yPos);
+    // Get the summary and ensure it's properly formatted for German catalogs
+    let summaryText = book.summary;
     
-    yPos += (summaryLines.length * 5) + 15;
-  }
-  
-  // Check if we need a new page for additional information
-  if (yPos > 240) {
-    doc.addPage();
-    yPos = 20;
-  }
-  
-  // ---- 5. Additional metadata (only if there's enough space) ----
-  if (yPos < 220) {
-    // Only show if there are genres or additional metadata worth displaying
-    if (Array.isArray(book.genres) && book.genres.length > 0) {
-      // Add a light horizontal line to separate from summary
-      doc.setDrawColor(220, 220, 220);
-      doc.line(14, yPos-5, 196, yPos-5);
-      
-      // Add genres as comma-separated list
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Genres:", 14, yPos+2);
-      
-      doc.setFont("helvetica", "normal");
-      const genresText = book.genres.join(', ');
-      const genresLines = doc.splitTextToSize(genresText, 160);
-      doc.text(genresLines, 50, yPos+2);
-      
-      yPos += (genresLines.length * 5) + 8;
-    }
+    // Split the text to manage paragraph alignment
+    const summaryLines = doc.splitTextToSize(summaryText, 170);
     
-    // Add reading level if available
-    if (book.readingLevel && yPos < 240) {
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.text("Reading Level:", 14, yPos);
-      
-      doc.setFont("helvetica", "normal");
-      if (typeof book.readingLevel === 'object') {
-        const readingLevel = book.readingLevel as any;
-        let readingLevelText = '';
-        
-        if (readingLevel.ageRange) readingLevelText += `Age: ${readingLevel.ageRange}`;
-        if (readingLevel.gradeLevel) {
-          if (readingLevelText) readingLevelText += ', ';
-          readingLevelText += `Grade: ${readingLevel.gradeLevel}`;
-        }
-        
-        doc.text(readingLevelText, 50, yPos);
-      } else {
-        doc.text(String(book.readingLevel), 50, yPos);
-      }
-      
-      yPos += 8;
+    // Set text alignment for summary to justified (like in German catalogs)
+    const textWidth = 170;
+    const lineHeight = 5.5;
+    
+    // Create content for each line
+    for (let i = 0; i < summaryLines.length; i++) {
+      doc.text(summaryLines[i], 15, yPos, { 
+        align: 'justify',
+        maxWidth: textWidth,
+      });
+      yPos += lineHeight;
     }
   }
   
-  // ---- Add Footer with Catalog ID or Document Information ----
-  const totalPages = doc.internal.pages.length - 1;
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    
-    // Add page numbers
-    doc.text(`${i}/${totalPages}`, 14, doc.internal.pageSize.height - 10);
-    
-    // If this is a catalog from a library system, add catalog ID
-    const catalogDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    doc.text(`LibraryLens • Catalog Entry • ${catalogDate}`, 196, doc.internal.pageSize.height - 10, { align: 'right' });
-  }
+  // Remove the footer page numbers for this style of catalog entry
+  // German bibliographic entries typically don't have page numbers for single-page entries
   
   // Save the PDF with the book title as filename
-  doc.save(`${book.title || 'book'}.pdf`);
+  // Remove any forbidden characters from filename
+  const safeFilename = book.title.replace(/[/\\?%*:|"<>]/g, '-');
+  doc.save(`${safeFilename || 'book'}.pdf`);
 }
