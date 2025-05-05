@@ -658,7 +658,7 @@ export default function Archives() {
                         <div className="mt-4 grid grid-cols-2 gap-4">
                           <div>
                             <h4 className="text-sm font-medium text-neutral-500">{t('isbn')}</h4>
-                            <p className="mt-1 text-sm text-neutral-800">{book.isbn || 'N/A'}</p>
+                            <p className="mt-1 text-sm text-neutral-800">{book.isbn ? formatISBN(book.isbn) : 'N/A'}</p>
                           </div>
                           <div>
                             <h4 className="text-sm font-medium text-neutral-500">{t('published')}</h4>

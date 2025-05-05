@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { parseErrorMessage } from '@/lib/utils';
+import { parseErrorMessage, formatISBN } from '@/lib/utils';
 import { useLanguage } from '@/hooks/use-language';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
@@ -271,7 +271,7 @@ export default function BookDetail() {
               <div className="space-y-3">
                 <div>
                   <h4 className="text-sm font-medium text-neutral-500">{t('isbn')}</h4>
-                  <p className="text-sm">{book.isbn || t('notAvailable')}</p>
+                  <p className="text-sm">{book.isbn ? formatISBN(book.isbn) : t('notAvailable')}</p>
                 </div>
                 
                 <div>
