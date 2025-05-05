@@ -15,7 +15,7 @@ export async function analyzeBookCover(image: string): Promise<any> {
       messages: [
         {
           role: "system",
-          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate."
+          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate. Respond in German language."
         },
         {
           role: "user",
@@ -65,11 +65,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance."
+          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in German language."
         },
         {
           role: "user",
-          content: `Create a concise, informative summary for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
+          content: `Create a concise, informative summary in German for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
         }
       ],
     });
@@ -94,11 +94,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book."
+          content: "You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in German language."
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in German.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -124,11 +124,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary analysis expert specializing in identifying themes and motifs in books."
+          content: "You are a literary analysis expert specializing in identifying themes and motifs in books. Always respond in German language."
         },
         {
           role: "user",
-          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
+          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in German. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -155,7 +155,7 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are an education specialist who assesses reading levels for books."
+          content: "You are an education specialist who assesses reading levels for books. Always respond in German language."
         },
         {
           role: "user",
@@ -189,7 +189,7 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions."
+          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in German language."
         },
         {
           role: "user",
