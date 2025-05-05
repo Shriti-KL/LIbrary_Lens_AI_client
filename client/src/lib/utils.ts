@@ -172,8 +172,12 @@ export function exportBookToPDF(book: Book): void {
   // Add contributor information
   titleText += ` / ${book.author}`;
   
-  // Add illustrator if available (extract from catalog entry)
-  if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
+  // Add illustrator if available from contributors or catalog entry
+  if (book.contributors && Array.isArray(book.contributors) && 
+      book.contributors.some((c: any) => c.role === 'illustrator')) {
+    const illustrator = book.contributors.find((c: any) => c.role === 'illustrator');
+    titleText += ` ; Illustrationen von ${illustrator.name}`;
+  } else if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
     const illustrationMatch = book.catalogEntry.match(/Illustration(?:en)?\s+von\s+[^.;]*/i);
     if (illustrationMatch) {
       titleText += ` ; ${illustrationMatch[0].trim()}`;
@@ -200,23 +204,23 @@ export function exportBookToPDF(book: Book): void {
   // Format: "- 1. Auflage. - Location : Publisher, Year. - Pages : Illustrations ; Size"
   
   // Create publication details string
-  let publicationInfo = '- 1. Auflage.'; // Standard edition info for new books
+  let publicationInfo = book.edition ? `- ${book.edition}` : '- 1. Auflage.'; // Use book edition or default
   
   // Add location and publisher
   if (book.publisher) {
-    // Try to extract location from publisher string or use default
-    let location = 'München'; // Default location if none found
+    // Determine location using book.location field first, then fallbacks
+    let location = book.location || 'München'; // Use explicit location if available, default otherwise
     let publisher = book.publisher;
     
-    // If publisher includes comma, first part might be location
-    if (book.publisher.includes(',')) {
+    // If no explicit location but publisher includes comma, first part might be location
+    if (!book.location && book.publisher.includes(',')) {
       const parts = book.publisher.split(',');
       location = parts[0].trim();
       publisher = parts.slice(1).join(',').trim();
     }
     
-    // If catalog entry contains location explicitly, use that
-    if (book.catalogEntry && book.catalogEntry.includes('-')) {
+    // If still no location and catalog entry contains location explicitly, use that
+    if (!book.location && book.catalogEntry && book.catalogEntry.includes('-')) {
       const locationMatch = book.catalogEntry.match(/\-\s+([^:]+)\s+:/);
       if (locationMatch && locationMatch[1]) {
         location = locationMatch[1].trim();
