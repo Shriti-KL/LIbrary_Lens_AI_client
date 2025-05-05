@@ -20,7 +20,7 @@ import {
 import { AlertCircle } from 'lucide-react';
 
 export default function Analyze() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [location, navigate] = useLocation();
   const { registerGuard, unregisterGuard } = useNavigationGuard();
   
@@ -142,7 +142,8 @@ export default function Analyze() {
     console.log("Submitting analysis with fresh form data:", {
       title: title || null,
       author: author || null,
-      hasImage
+      hasImage,
+      language
     });
     
     // Add a flag to explicitly mark this as a manual submission
@@ -150,6 +151,9 @@ export default function Analyze() {
     
     // Add a unique timestamp to force a fresh analysis
     formData.append('forceNewAnalysis', Date.now().toString());
+    
+    // Add the current language to ensure content is generated in the correct language
+    formData.append('language', language);
     
     // Submit the form data for analysis
     analysisMutation.mutate({ formData, options });
