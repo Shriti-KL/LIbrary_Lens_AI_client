@@ -240,11 +240,26 @@ export function exportBookToPDF(book: Book): void {
     publicationInfo += '. - 127 Seiten'; // Default page count
   }
   
-  // Add illustration information
-  publicationInfo += ' : Illustrationen, farbig';
+  // Add illustration information if we have contributors with illustrator role
+  if (book.contributors && Array.isArray(book.contributors) && 
+      book.contributors.some((c: any) => c.role === 'illustrator')) {
+    const illustrator = book.contributors.find((c: any) => c.role === 'illustrator');
+    publicationInfo += ` : Illustrationen von ${illustrator.name}`;
+  } else {
+    publicationInfo += ' : Illustrationen, farbig';
+  }
   
-  // Add size
-  publicationInfo += ' ; 22 cm';
+  // Add binding information if available
+  if (book.binding) {
+    publicationInfo += `, ${book.binding}`;
+  }
+  
+  // Add size/dimensions if available
+  if (book.dimensions) {
+    publicationInfo += ` ; ${book.dimensions}`;
+  } else {
+    publicationInfo += ' ; 22 cm';
+  }
   
   // Split the publication info text for proper wrapping with hanging indent
   const pubLines = doc.splitTextToSize(publicationInfo, 170);
@@ -263,14 +278,19 @@ export function exportBookToPDF(book: Book): void {
     let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
     
     // Add binding type and price
-    if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
-      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
+    if (book.binding) {
+      // If we have explicit binding information, use it
+      isbnLine += ` ${book.binding} : EUR 19.95`;
+    } else if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
+      // Try to extract binding and price from catalog entry
+      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|Broschiert|Taschenbuch|Hardcover|Gebunden)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
       if (priceMatch) {
         isbnLine += ` ${priceMatch[0].trim()}`;
       } else {
         isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
       }
     } else {
+      // Default
       isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
     }
     

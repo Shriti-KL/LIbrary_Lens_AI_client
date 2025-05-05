@@ -249,7 +249,47 @@ export default function BookResult({
                   <h4 className="text-sm font-medium text-primary-dark/70">{t('pages')}</h4>
                   <p className="mt-1 text-sm text-neutral-700">{book.pageCount || 'N/A'}</p>
                 </div>
+                
+                {/* Additional bibliographic details */}
+                {book.edition && (
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('edition')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.edition}</p>
+                  </div>
+                )}
+                {book.dimensions && (
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('dimensions')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.dimensions}</p>
+                  </div>
+                )}
+                {book.binding && (
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.binding}</p>
+                  </div>
+                )}
+                {book.location && (
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('location')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.location}</p>
+                  </div>
+                )}
               </div>
+              
+              {/* Contributors section (illustrators, editors, etc.) */}
+              {book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0 && (
+                <div className="mt-5">
+                  <h4 className="text-sm font-medium text-primary-dark/70">{t('contributors')}</h4>
+                  <div className="mt-2">
+                    {book.contributors.map((contributor: any, index: number) => (
+                      <p key={index} className="text-sm text-neutral-700">
+                        <span className="font-medium">{contributor.role}: </span>{contributor.name}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="mt-5">
                 <h4 className="text-sm font-medium text-primary-dark/70">{t('genres')}</h4>
