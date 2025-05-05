@@ -130,22 +130,19 @@ import autoTable from 'jspdf-autotable';
 import { Book } from '@shared/schema';
 
 export function exportBookToPDF(book: Book): void {
-  // Get current language from localStorage to ensure PDF uses correct language
-  const savedLanguage = localStorage.getItem("preferredLanguage") || "de";
-  const isGerman = savedLanguage === "de";
-  
-  // Create a new PDF with standard A4 size
+  // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
   });
   
-  // Start position
+  // Start position - German bibliographic entries typically start near the top of the page
   let yPos = 20;
   
   // --- 1. Author's name in bold ---
+  // Format: "Sorg, Marion:"
   doc.setFontSize(12);
-  doc.setFont("times", "bold");
+  doc.setFont("times", "bold"); // Using Times for more traditional bibliographic look
   doc.text(`${book.author}:`, 15, yPos);
   
   yPos += 7; // Space after author name
@@ -163,6 +160,7 @@ export function exportBookToPDF(book: Book): void {
   }
   
   // Format the title line with proper indentation for multi-line catalog entries
+  // (Note: first line aligns with margin, subsequent lines are indented)
   doc.setFont("times", "normal");
   doc.setFontSize(11);
   
@@ -199,16 +197,15 @@ export function exportBookToPDF(book: Book): void {
   yPos += 7; // Space after title block
   
   // --- 3. Publication information ---
-  // Create publication details string with language-appropriate formatting
+  // Format: "- 1. Auflage. - Location : Publisher, Year. - Pages : Illustrations ; Size"
   
-  // Edition information based on language
-  let editionText = isGerman ? '1. Auflage' : '1st Edition';
-  let publicationInfo = `- ${editionText}.`;
+  // Create publication details string
+  let publicationInfo = '- 1. Auflage.'; // Standard edition info for new books
   
   // Add location and publisher
   if (book.publisher) {
     // Try to extract location from publisher string or use default
-    let location = isGerman ? 'München' : 'Munich'; // Default location if none found
+    let location = 'München'; // Default location if none found
     let publisher = book.publisher;
     
     // If publisher includes comma, first part might be location
@@ -232,21 +229,19 @@ export function exportBookToPDF(book: Book): void {
     if (book.publishedYear) {
       publicationInfo += `, ${book.publishedYear}`;
     } else {
-      publicationInfo += ', 2025';
+      publicationInfo += ', 2025'; // Default to current year if not specified
     }
   }
   
   // Add physical description - pages
-  const pagesText = isGerman ? 'Seiten' : 'pages';
   if (book.pageCount) {
-    publicationInfo += `. - ${book.pageCount} ${pagesText}`;
+    publicationInfo += `. - ${book.pageCount} Seiten`;
   } else {
-    publicationInfo += `. - 127 ${pagesText}`;
+    publicationInfo += '. - 127 Seiten'; // Default page count
   }
   
   // Add illustration information
-  const illustrationsText = isGerman ? 'Illustrationen, farbig' : 'Illustrations, color';
-  publicationInfo += ` : ${illustrationsText}`;
+  publicationInfo += ' : Illustrationen, farbig';
   
   // Add size
   publicationInfo += ' ; 22 cm';
@@ -261,23 +256,22 @@ export function exportBookToPDF(book: Book): void {
   }
   
   // --- 4. ISBN and price information ---
+  // Format: "ISBN 978-3-95916-132-9 Festeinb. : EUR 19.95"
   if (book.isbn) {
     yPos += 1.5; // Extra small space before ISBN line
     
     let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price based on language
+    // Add binding type and price
     if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
-      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|Hardcover|Paperback)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
+      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
       if (priceMatch) {
         isbnLine += ` ${priceMatch[0].trim()}`;
       } else {
-        // Default price format based on language
-        isbnLine += isGerman ? ' Festeinb. : EUR 19.95' : ' Hardcover : EUR 19.95';
+        isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
       }
     } else {
-      // Default price format based on language
-      isbnLine += isGerman ? ' Festeinb. : EUR 19.95' : ' Hardcover : EUR 19.95';
+      isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
     }
     
     doc.text(isbnLine, 15, yPos);
@@ -286,17 +280,17 @@ export function exportBookToPDF(book: Book): void {
   
   // --- 5. Description/Summary section ---
   if (book.summary) {
-    // Format the summary as justified text
+    // Format the summary as justified text to match the bibliographic style
     doc.setFont("times", "normal");
     doc.setFontSize(11);
     
-    // Get the summary
+    // Get the summary and ensure it's properly formatted for German catalogs
     let summaryText = book.summary;
     
     // Split the text to manage paragraph alignment
     const summaryLines = doc.splitTextToSize(summaryText, 170);
     
-    // Set text alignment for summary to justified
+    // Set text alignment for summary to justified (like in German catalogs)
     const textWidth = 170;
     const lineHeight = 5.5;
     
@@ -310,18 +304,8 @@ export function exportBookToPDF(book: Book): void {
     }
   }
   
-  // Add footer if we're not using German catalog style
-  if (!isGerman) {
-    // Add page numbers for non-German formats
-    const pageCount = doc.internal.pages.length - 1;
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Page ${i} of ${pageCount}`, 15, doc.internal.pageSize.height - 10);
-      doc.text('LibraryLens AI', 190, doc.internal.pageSize.height - 10, { align: 'right' });
-    }
-  }
+  // Remove the footer page numbers for this style of catalog entry
+  // German bibliographic entries typically don't have page numbers for single-page entries
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
