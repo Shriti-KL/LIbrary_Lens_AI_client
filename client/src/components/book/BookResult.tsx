@@ -263,7 +263,7 @@ export default function BookResult({
                 <div className="mt-2 flex flex-wrap gap-2">
                   {Array.isArray(book.genres) && book.genres.length > 0 ? (
                     book.genres.map((genre, index) => (
-                      <Badge key={index} variant="secondary" className="bg-secondary-light text-white px-3 py-1">
+                      <Badge key={index} variant="outline" className="bg-primary-light/20 text-primary-dark border-primary/30 px-3 py-1 font-medium">
                         {genre}
                       </Badge>
                     ))
