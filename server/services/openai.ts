@@ -54,6 +54,20 @@ export async function analyzeBookCover(image: string): Promise<any> {
 // Generate a summary for a book
 export async function generateBookSummary(bookInfo: Partial<Book>): Promise<string> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
@@ -65,11 +79,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in German language."
+          content: `You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Create a concise, informative summary in German for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
+          content: `Create a concise, informative summary in ${languageName} for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
         }
       ],
     });
@@ -85,6 +99,20 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 // Extract genres for a book
 export async function extractBookGenres(bookInfo: Partial<Book>): Promise<string[]> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
@@ -94,11 +122,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in German language."
+          content: `You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in German.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in ${languageName}.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -115,6 +143,20 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 // Extract themes for a book
 export async function extractBookThemes(bookInfo: Partial<Book>): Promise<any[]> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
@@ -124,11 +166,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary analysis expert specializing in identifying themes and motifs in books. Always respond in German language."
+          content: `You are a literary analysis expert specializing in identifying themes and motifs in books. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in German. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
+          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in ${languageName}. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -145,6 +187,20 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 // Determine reading level for a book
 export async function assessReadingLevel(bookInfo: Partial<Book>): Promise<any> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
@@ -155,11 +211,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are an education specialist who assesses reading levels for books. Always respond in German language."
+          content: `You are an education specialist who assesses reading levels for books. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in German like 'Klasse 4-5' or 'Alter 12-14'), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse 4-5' or 'Alter 12-14' for German), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -175,6 +231,20 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 // Generate a library catalog entry
 export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<string> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
@@ -189,11 +259,11 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in German language."
+          content: `You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Create a formal library catalog entry in German for this book following standard German cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
+          content: `Create a formal library catalog entry in ${languageName} for this book following standard cataloging conventions for ${languageName}. Include a Dewey Decimal classification if possible.\n\n${context}`
         }
       ],
     });
@@ -229,6 +299,9 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       publishedYear: analysisRequest.publishedYear || null,
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
+      
+      // Include the language parameter
+      language: analysisRequest.language || "de",
       
       // Reset all analysis fields
       summary: null,
