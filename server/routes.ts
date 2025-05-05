@@ -56,8 +56,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
+        // Get language preference from the form data (default to German if not provided)
+        const language = bodyData.language || 'de';
+        console.log(`[${requestId}] Language preference: ${language}`);
+        
         bookInfo = {
           ...bodyData,
+          language, // Ensure language is passed to the analysis
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
