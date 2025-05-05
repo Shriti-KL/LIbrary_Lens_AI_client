@@ -123,3 +123,111 @@ export function cleanISBNForSearch(isbn: string | null): string {
   if (!isbn) return '';
   return isbn.replace(/[^\dX]/gi, '');
 }
+
+// Generate a PDF export for a book
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Book } from '@shared/schema';
+
+export function exportBookToPDF(book: Book): void {
+  const doc = new jsPDF();
+  
+  // Add title
+  const title = book.title || 'Book Details';
+  doc.setFontSize(20);
+  doc.setTextColor(0, 51, 102); // Primary color
+  doc.text(title, 14, 22);
+  
+  // Add author
+  if (book.author) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`by ${book.author}`, 14, 32);
+  }
+  
+  // Add horizontal line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, 36, 196, 36);
+  
+  // Add metadata
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  
+  const metadata = [
+    ['ISBN', book.isbn ? formatISBN(book.isbn) : 'N/A'],
+    ['Publisher', book.publisher || 'N/A'],
+    ['Published Year', book.publishedYear?.toString() || 'N/A'],
+    ['Page Count', book.pageCount?.toString() || 'N/A'],
+    ['Reading Level', book.readingLevel?.toString() || 'N/A'],
+    ['Dewey Decimal', book.deweyDecimal || 'N/A'],
+  ];
+  
+  autoTable(doc, {
+    startY: 40,
+    head: [['Property', 'Value']],
+    body: metadata,
+    theme: 'grid',
+    headStyles: { fillColor: [0, 51, 102], textColor: 255 },
+    styles: { overflow: 'linebreak' },
+    columnStyles: { 0: { cellWidth: 40 } },
+  });
+  
+  // Add summary if exists
+  if (book.summary) {
+    const currentY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 51, 102);
+    doc.text('Summary', 14, currentY);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    
+    const textLines = doc.splitTextToSize(book.summary, 180);
+    doc.text(textLines, 14, currentY + 8);
+  }
+  
+  // Add genres if exist
+  if (Array.isArray(book.genres) && book.genres.length > 0) {
+    let currentY = book.summary 
+      ? (doc as any).lastAutoTable.finalY + doc.splitTextToSize(book.summary, 180).length * 7 + 15
+      : (doc as any).lastAutoTable.finalY + 10;
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 51, 102);
+    doc.text('Genres', 14, currentY);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(book.genres.join(', '), 14, currentY + 8);
+  }
+  
+  // Add catalog entry if exists
+  if (book.catalogEntry) {
+    // Add a new page if needed
+    if (doc.internal.getCurrentPageInfo().pageNumber > 1 || 
+        doc.internal.pageSize.getHeight() - (doc as any).lastAutoTable.finalY < 100) {
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(0, 51, 102);
+      doc.text('Catalog Entry', 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
+      doc.text(catalogLines, 14, 30);
+    } else {
+      const currentY = (doc as any).lastAutoTable.finalY + 30;
+      doc.setFontSize(14);
+      doc.setTextColor(0, 51, 102);
+      doc.text('Catalog Entry', 14, currentY);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
+      doc.text(catalogLines, 14, currentY + 8);
+    }
+  }
+  
+  // Save the PDF
+  doc.save(`${book.title || 'book'}.pdf`);
+}

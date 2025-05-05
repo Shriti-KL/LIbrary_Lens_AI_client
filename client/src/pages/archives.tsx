@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN } from '@/lib/utils';
+import { formatISBN, exportBookToPDF } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,7 +66,7 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, ChevronsUpDown, Filter, Search, Eye, Edit, Trash2, BookX, X, Tag } from 'lucide-react';
+import { Check, ChevronsUpDown, Filter, Search, Eye, Edit, Trash2, BookX, X, Tag, FileText } from 'lucide-react';
 
 export default function Archives() {
   const { t } = useLanguage();
@@ -534,6 +534,14 @@ export default function Archives() {
                             onClick={() => window.location.href = `/archives?view=${book.id}`}
                           >
                             <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            title={t('export')}
+                            onClick={() => exportBookToPDF(book)}
+                          >
+                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
