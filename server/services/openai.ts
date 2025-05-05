@@ -60,16 +60,29 @@ ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 
+    // Default to German if no language specified
+    const language = bookInfo.language || "de";
+    
+    // Create different system prompts based on language
+    let systemPrompt = "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance.";
+    let userPrompt = `Create a concise, informative summary for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`;
+    
+    // Add language instruction
+    if (language === "de") {
+      systemPrompt = "Du bist ein Literaturexperte, der prägnante, informative Buchzusammenfassungen für Bibliothekskataloge erstellt. Konzentriere dich auf die Handlung, die Hauptthemen und die Bedeutung des Buches.";
+      userPrompt = `Erstelle eine prägnante, informative Zusammenfassung für das folgende Buch, die für einen Bibliothekskatalog geeignet wäre. Halte sie unter 250 Wörtern.\n\n${context}`;
+    }
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance."
+          content: systemPrompt
         },
         {
           role: "user",
-          content: `Create a concise, informative summary for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
+          content: userPrompt
         }
       ],
     });
