@@ -159,7 +159,7 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string like 'Grade 4-5' or 'Ages 12-14'), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in German like 'Klasse 4-5' or 'Alter 12-14'), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
@@ -193,7 +193,7 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
         },
         {
           role: "user",
-          content: `Create a formal library catalog entry for this book following standard cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
+          content: `Create a formal library catalog entry in German for this book following standard German cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
         }
       ],
     });
