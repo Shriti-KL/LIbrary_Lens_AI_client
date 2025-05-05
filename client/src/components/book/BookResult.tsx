@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
+import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
   CardContent, 
@@ -39,16 +40,8 @@ export default function BookResult({
 
   // Handle export results
   const handleExport = () => {
-    const bookData = JSON.stringify(book, null, 2);
-    const blob = new Blob([bookData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${book.title || 'book'}-analysis.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Use the same PDF export function used in Archives page
+    exportBookToPDF(book as Book);
   };
 
   // If still loading, show loading state
