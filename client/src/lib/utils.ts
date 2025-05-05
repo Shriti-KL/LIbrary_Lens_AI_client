@@ -129,6 +129,17 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Book } from '@shared/schema';
 
+// Define an interface for the book metadata for better type safety
+interface BookMetadata {
+  categories?: string[];
+  averageRating?: number;
+  ratingsCount?: number;
+  printType?: string;
+  maturityRating?: string;
+  readingLevelScore?: number;
+  [key: string]: any; // Allow for other dynamic properties
+}
+
 export function exportBookToPDF(book: Book): void {
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
@@ -169,15 +180,39 @@ export function exportBookToPDF(book: Book): void {
     titleText += ` : ${subtitle}`;
   }
   
-  // Add contributor information
+  // Add main contributor information
   titleText += ` / ${book.author}`;
   
-  // Add illustrator if available from contributors or catalog entry
-  if (book.contributors && Array.isArray(book.contributors) && 
-      book.contributors.some((c: any) => c.role === 'illustrator')) {
-    const illustrator = book.contributors.find((c: any) => c.role === 'illustrator');
-    titleText += ` ; Illustrationen von ${illustrator.name}`;
-  } else if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
+  // Add all contributors with their roles from the contributors array
+  if (book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0) {
+    // Process each contributor by role
+    const illustrators = book.contributors.filter((c: any) => c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
+    const translators = book.contributors.filter((c: any) => c.role.toLowerCase() === 'translator' || c.role.toLowerCase().includes('übersetz'));
+    const editors = book.contributors.filter((c: any) => c.role.toLowerCase() === 'editor' || c.role.toLowerCase().includes('herausgeb'));
+    const coAuthors = book.contributors.filter((c: any) => c.role.toLowerCase() === 'co-author' || c.role.toLowerCase().includes('mitautor'));
+    
+    // Add co-authors first
+    if (coAuthors.length > 0) {
+      titleText += `, ${coAuthors.map((c: any) => c.name).join(', ')}`;
+    }
+    
+    // Add editors
+    if (editors.length > 0) {
+      titleText += ` ; ${editors.length > 1 ? 'Hrsg.' : 'Hrsg.'} ${editors.map((c: any) => c.name).join(', ')}`;
+    }
+    
+    // Add translators
+    if (translators.length > 0) {
+      titleText += ` ; ${translators.length > 1 ? 'Übers.' : 'Übers.'} ${translators.map((c: any) => c.name).join(', ')}`;
+    }
+    
+    // Add illustrators
+    if (illustrators.length > 0) {
+      titleText += ` ; ${illustrators.length > 1 ? 'Illustrationen von' : 'Illustration von'} ${illustrators.map((c: any) => c.name).join(', ')}`;
+    }
+  } 
+  // Fallback to catalog entry if no contributors array but catalog mentions illustrators
+  else if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
     const illustrationMatch = book.catalogEntry.match(/Illustration(?:en)?\s+von\s+[^.;]*/i);
     if (illustrationMatch) {
       titleText += ` ; ${illustrationMatch[0].trim()}`;
@@ -245,12 +280,37 @@ export function exportBookToPDF(book: Book): void {
   }
   
   // Add illustration information if we have contributors with illustrator role
-  if (book.contributors && Array.isArray(book.contributors) && 
-      book.contributors.some((c: any) => c.role === 'illustrator')) {
-    const illustrator = book.contributors.find((c: any) => c.role === 'illustrator');
-    publicationInfo += ` : Illustrationen von ${illustrator.name}`;
-  } else {
-    publicationInfo += ' : Illustrationen, farbig';
+  if (book.contributors && Array.isArray(book.contributors)) {
+    const illustrators = book.contributors.filter((c: any) => 
+      c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
+    
+    if (illustrators.length > 0) {
+      if (illustrators.length === 1) {
+        publicationInfo += ` : Illustrationen von ${illustrators[0].name}`;
+      } else {
+        publicationInfo += ` : Illustrationen von ${illustrators.map((c: any) => c.name).join(', ')}`;
+      }
+    } else {
+      // Check if the book has any visual content indication in its metadata
+      const metadata = book.metadata as BookMetadata || {};
+      if (metadata && metadata.printType === 'BOOK' && book.genres) {
+        // For children's books, picture books, comics, etc., assume illustrations
+        const hasVisuals = Array.isArray(book.genres) && book.genres.some((genre: string) => 
+          genre.toLowerCase().includes('bilder') || 
+          genre.toLowerCase().includes('comic') || 
+          genre.toLowerCase().includes('kinder'));
+          
+        if (hasVisuals) {
+          publicationInfo += ' : Illustrationen, farbig';
+        }
+      }
+    }
+  }
+  
+  // Add series information if available
+  if (book.series) {
+    // Format with parentheses as is common in German bibliographies
+    publicationInfo += ` (${book.series})`;
   }
   
   // Add binding information if available
@@ -262,7 +322,11 @@ export function exportBookToPDF(book: Book): void {
   if (book.dimensions) {
     publicationInfo += ` ; ${book.dimensions}`;
   } else {
-    publicationInfo += ' ; 22 cm';
+    // Only add default dimensions for physical books (or if binding indicates physical)
+    const metadata = book.metadata as BookMetadata || {};
+    if (book.binding || (metadata && metadata.printType === 'BOOK')) {
+      publicationInfo += ' ; 21 cm';
+    }
   }
   
   // Split the publication info text for proper wrapping with hanging indent
@@ -274,32 +338,61 @@ export function exportBookToPDF(book: Book): void {
     yPos += 5.5;
   }
   
-  // --- 4. ISBN and price information ---
-  // Format: "ISBN 978-3-95916-132-9 Festeinb. : EUR 19.95"
+  // --- 4. ISBN, Dewey Decimal, and price information ---
+  // Format: "ISBN 978-3-95916-132-9 - Dewey: 823.92 - Festeinb. : EUR 19.95"
   if (book.isbn) {
     yPos += 1.5; // Extra small space before ISBN line
     
     let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price
-    if (book.binding) {
-      // If we have explicit binding information, use it
-      isbnLine += ` ${book.binding} : EUR 19.95`;
-    } else if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
-      // Try to extract binding and price from catalog entry
-      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|Broschiert|Taschenbuch|Hardcover|Gebunden)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
-      if (priceMatch) {
-        isbnLine += ` ${priceMatch[0].trim()}`;
-      } else {
-        isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
-      }
-    } else {
-      // Default
-      isbnLine += ' Festeinb. : EUR 19.95'; // Default price format
+    // Add Dewey Decimal if available
+    if (book.deweyDecimal) {
+      isbnLine += ` - Dewey: ${book.deweyDecimal}`;
     }
     
-    doc.text(isbnLine, 15, yPos);
-    yPos += 13; // Larger gap after ISBN line
+    // Add binding type and price
+    const bindingInfo = book.binding || 
+                        (book.metadata && book.metadata.printType === 'BOOK' ? 'Festeinband' : null);
+    
+    // Check if we can extract price from catalog entry
+    let priceInfo = null;
+    if (book.catalogEntry) {
+      const priceMatch = book.catalogEntry.match(/EUR\s*\d+[,.]?\d*/i);
+      if (priceMatch) {
+        priceInfo = priceMatch[0].trim();
+      }
+    }
+    
+    // Add binding and price info
+    if (bindingInfo) {
+      isbnLine += ` - ${bindingInfo}`;
+      if (priceInfo) {
+        isbnLine += ` : ${priceInfo}`;
+      } else {
+        isbnLine += ' : EUR 19,95'; // Default price format with German decimal comma
+      }
+    }
+    
+    // If we still don't have binding info but have price info
+    else if (priceInfo) {
+      isbnLine += ` - ${priceInfo}`;
+    }
+    
+    // Split ISBN line for proper wrapping if needed
+    const isbnLines = doc.splitTextToSize(isbnLine, 170);
+    for (let i = 0; i < isbnLines.length; i++) {
+      doc.text(isbnLines[i], i === 0 ? 15 : 25, yPos); // First line at margin, rest indented
+      yPos += 5.5;
+    }
+    
+    yPos += 7.5; // Larger gap after ISBN line
+  }
+  
+  // --- 5. Series information if not already included ---
+  if (book.series && !publicationInfo.includes(book.series)) {
+    const seriesLine = `    (${book.series})`;
+    doc.text(seriesLine, 15, yPos);
+    yPos += 8; // Gap after series line
   }
   
   // --- 5. Description/Summary section ---

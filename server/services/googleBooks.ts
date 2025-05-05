@@ -320,6 +320,109 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     
     console.log(`Best Google Books match: "${volumeInfo.title}" by "${volumeInfo.authors?.[0] || 'Unknown'}" (score: ${highestScore.toFixed(2)})`);
     
+    // Parse dimensions from physical description if available
+    let extractedDimensions = null;
+    let extractedBinding = null;
+    let extractedSeries = null;
+    let extractedLocation = null;
+    
+    // Extract dimensions and binding from description if available
+    if (volumeInfo.description) {
+      // Look for dimension patterns like "24 x 15 cm" or "15cm x 24cm" or similar
+      const dimensionsRegex = /(\d+(?:[,.]\d+)?)\s*(?:x|×)\s*(\d+(?:[,.]\d+)?)\s*(?:cm|mm)/i;
+      const dimensionsMatch = volumeInfo.description.match(dimensionsRegex);
+      if (dimensionsMatch) {
+        extractedDimensions = `${dimensionsMatch[1]} x ${dimensionsMatch[2]} cm`;
+      }
+      
+      // Look for binding information
+      const bindingRegex = /(hardcover|hardbound|hardback|paperback|taschenbuch|gebunden|broschiert|festeinband)/i;
+      const bindingMatch = volumeInfo.description.match(bindingRegex);
+      if (bindingMatch) {
+        extractedBinding = bindingMatch[1];
+        // Capitalize first letter
+        extractedBinding = extractedBinding.charAt(0).toUpperCase() + extractedBinding.slice(1);
+      }
+      
+      // Look for series information
+      const seriesRegex = /(series|serie|reihe):\s*([^.,;:]+)/i;
+      const seriesMatch = volumeInfo.description.match(seriesRegex);
+      if (seriesMatch) {
+        extractedSeries = seriesMatch[2].trim();
+      }
+    }
+    
+    // Parse location from publisher info
+    if (volumeInfo.publisher) {
+      // Some publishers include location like "Berlin: Springer" or "Springer, Berlin"
+      const locationRegex = /^([A-Z][a-zA-Z\s]+):\s*|,\s*([A-Z][a-zA-Z\s]+)$/;
+      const locationMatch = volumeInfo.publisher.match(locationRegex);
+      if (locationMatch) {
+        extractedLocation = (locationMatch[1] || locationMatch[2]).trim();
+        // Remove the location from the publisher name
+        const cleanedPublisher = volumeInfo.publisher.replace(locationRegex, '').trim();
+        volumeInfo.publisher = cleanedPublisher;
+      }
+    }
+    
+    // Extract edition information from subtitle or volumeInfo
+    let extractedEdition = null;
+    if (volumeInfo.subtitle) {
+      const editionRegex = /(\d+(?:st|nd|rd|th)|erste[rnms]?|zweite[rnms]?|dritte[rnms]?)\s*(?:aufl(?:age)?|ausg(?:abe)?|ed(?:ition)?)/i;
+      const editionMatch = volumeInfo.subtitle.match(editionRegex);
+      if (editionMatch) {
+        extractedEdition = editionMatch[0];
+      }
+    }
+    
+    // Extract any contributors/illustrators from volumeInfo
+    const extractedContributors = [];
+    
+    // First, check if we have the primary author
+    if (volumeInfo.authors && volumeInfo.authors.length > 0) {
+      // Add co-authors
+      if (volumeInfo.authors.length > 1) {
+        for (let i = 1; i < volumeInfo.authors.length; i++) {
+          extractedContributors.push({
+            role: "co-author",
+            name: volumeInfo.authors[i]
+          });
+        }
+      }
+    }
+    
+    // Check for illustrators in contributors if provided by the API
+    if (volumeInfo.contributors) {
+      for (const contributor of volumeInfo.contributors) {
+        if (contributor.role && contributor.name) {
+          extractedContributors.push({
+            role: contributor.role.toLowerCase(),
+            name: contributor.name
+          });
+        }
+      }
+    }
+    
+    // Also check description for illustrator mentions
+    if (volumeInfo.description) {
+      const illustratorRegex = /illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;:]+)/i;
+      const illustratorMatch = volumeInfo.description.match(illustratorRegex);
+      if (illustratorMatch) {
+        const illustratorName = illustratorMatch[1].trim();
+        // Check if this illustrator is already in the list
+        const hasIllustrator = extractedContributors.some(c => 
+          c.role === 'illustrator' && c.name === illustratorName
+        );
+        
+        if (!hasIllustrator) {
+          extractedContributors.push({
+            role: 'illustrator',
+            name: illustratorName
+          });
+        }
+      }
+    }
+    
     // Create enriched book metadata
     const enrichedBook: Partial<Book> = {
       ...bookInfo,
@@ -331,18 +434,18 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       pageCount: volumeInfo.pageCount || bookInfo.pageCount,
       coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
       
-      // Extract additional bibliographic details
-      dimensions: volumeInfo.dimensions || bookInfo.dimensions,
-      edition: volumeInfo.contentVersion ? `${volumeInfo.contentVersion} Edition` : bookInfo.edition,
+      // Extract additional bibliographic details, including our newly extracted ones
+      dimensions: bookInfo.dimensions || extractedDimensions || volumeInfo.dimensions,
+      edition: bookInfo.edition || extractedEdition || (volumeInfo.contentVersion ? `${volumeInfo.contentVersion} Edition` : null),
+      binding: bookInfo.binding || extractedBinding,
+      series: bookInfo.series || extractedSeries,
+      location: bookInfo.location || extractedLocation,
       language: volumeInfo.language || bookInfo.language || "de",
       
-      // Store additional contributors in metadata
-      ...(volumeInfo.authors && volumeInfo.authors.length > 1 ? {
-        contributors: volumeInfo.authors.slice(1).map((name: string) => ({ 
-          role: "co-author", 
-          name 
-        }))
-      } : {}),
+      // Add extracted contributors
+      ...(extractedContributors.length > 0 ? {
+        contributors: [...(Array.isArray(bookInfo.contributors) ? bookInfo.contributors : []), ...extractedContributors]
+      } : bookInfo.contributors ? { contributors: bookInfo.contributors } : {}),
       
       // Merge the metadata object
       metadata: {
