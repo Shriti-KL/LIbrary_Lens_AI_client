@@ -173,17 +173,16 @@ export default function Settings() {
               {t('areYouSure')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action will permanently delete ALL books from your library. 
-              This cannot be undone.
+              {t('deleteAllBooksWarning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClearData}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Yes, Delete All Books
+              {t('confirmDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -279,7 +278,7 @@ export default function Settings() {
                   onClick={handleClearData}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Clear All Analyzed Books
+                  {t('clearAllBooks')}
                 </Button>
               </div>
             </CardContent>
