@@ -221,9 +221,13 @@ export async function extractBookThemes(bookInfo: Partial<Book>): Promise<any[]>
     
     const languageName = languageNames[language] || languageNames.de;
     
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Create context with more information
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    console.log(`Extracting themes for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
@@ -234,25 +238,51 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
         },
         {
           role: "user",
-          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in ${languageName}. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
+          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in ${languageName}. Return as a JSON object containing a "themes" array with objects containing 'theme' and 'description' properties.\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
-    if (!content) return [];
+    if (!content) {
+      console.log("No content returned from OpenAI for themes");
+      return [];
+    }
+    
+    console.log(`OpenAI themes response: ${content}`);
     
     try {
       const result = JSON.parse(content);
-      return Array.isArray(result.themes) ? result.themes : [];
+      
+      if (Array.isArray(result.themes)) {
+        return result.themes;
+      } else if (Array.isArray(result)) {
+        // Handle case where it might return a direct array
+        return result;
+      } else {
+        // Check if we have objects in the response with theme/description keys
+        const potentialThemesArray = Object.values(result).find(value => 
+          Array.isArray(value) && 
+          value.length > 0 && 
+          typeof value[0] === 'object' && 
+          'theme' in value[0]
+        );
+        
+        if (potentialThemesArray && Array.isArray(potentialThemesArray)) {
+          return potentialThemesArray;
+        }
+        
+        console.log("No valid themes array found in the response");
+        return [];
+      }
     } catch (parseError) {
       console.error("Error parsing themes JSON:", parseError);
       return [];
     }
   } catch (error: any) {
     console.error("Error extracting book themes:", error);
-    throw new Error(`Failed to extract book themes: ${error.message || String(error)}`);
+    return []; // Return empty array instead of throwing to avoid breaking the analysis
   }
 }
 
@@ -273,10 +303,14 @@ export async function assessReadingLevel(bookInfo: Partial<Book>): Promise<any> 
     
     const languageName = languageNames[language] || languageNames.de;
     
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Create context with more information
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
-${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    console.log(`Assessing reading level for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
@@ -287,24 +321,55 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse 4-5' or 'Alter 12-14' for German), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse 4-5' or 'Alter 12-14' for German), and 'score' (a number from 1-10 representing complexity).\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
-    if (!content) return { level: "Unbekannt", score: 5 };
+    if (!content) {
+      console.log("No content returned from OpenAI for reading level");
+      return { level: "Unbekannt", score: 5 };
+    }
+    
+    console.log(`OpenAI reading level response: ${content}`);
     
     try {
-      return JSON.parse(content);
+      const result = JSON.parse(content);
+      
+      // Check if we have the expected fields
+      if (result && 'level' in result && 'score' in result) {
+        return {
+          level: result.level,
+          score: Number(result.score) || 5
+        };
+      }
+      
+      // Look for alternative structure
+      if (result && typeof result === 'object') {
+        // Try to extract level and score from any fields that might contain them
+        const level = result.level || result.readingLevel || result.reading_level || "Unbekannt";
+        let score = result.score || result.complexity || result.readingScore || 5;
+        
+        // Make sure score is a number between 1-10
+        score = Number(score);
+        if (isNaN(score) || score < 1 || score > 10) {
+          score = 5;
+        }
+        
+        return { level, score };
+      }
+      
+      console.log("Could not find valid reading level information in the response");
+      return { level: "Unbekannt", score: 5 };
     } catch (parseError) {
       console.error("Error parsing reading level JSON:", parseError);
       return { level: "Unbekannt", score: 5 };
     }
   } catch (error: any) {
     console.error("Error assessing reading level:", error);
-    throw new Error(`Failed to assess reading level: ${error.message || String(error)}`);
+    return { level: "Unbekannt", score: 5 }; // Return default values instead of throwing
   }
 }
 
@@ -326,7 +391,7 @@ export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<str
     const languageName = languageNames[language] || languageNames.de;
     
     // Collect all available bibliographic information
-    const context = `Title: ${bookInfo.title || 'Unknown'}
+    let contextText = `Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
@@ -342,6 +407,8 @@ ${bookInfo.contributors && Array.isArray(bookInfo.contributors) && bookInfo.cont
   : ''}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 
+    console.log(`Generating catalog entry for "${bookInfo.title}" by "${bookInfo.author}"`);
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -351,16 +418,22 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
         },
         {
           role: "user",
-          content: `Create a formal library catalog entry in ${languageName} for this book following standard cataloging conventions for ${languageName}. Include a Dewey Decimal classification if possible.\n\n${context}`
+          content: `Create a formal library catalog entry in ${languageName} for this book following standard cataloging conventions for ${languageName}. Include a Dewey Decimal classification if possible.\n\n${contextText}`
         }
       ],
     });
 
     const content = response.choices[0].message.content;
-    return content ? content.trim() : "Keine Kataloginformationen verfügbar";
+    if (!content) {
+      console.log("No content returned from OpenAI for catalog entry");
+      return "Keine Kataloginformationen verfügbar";
+    }
+    
+    console.log(`Generated catalog entry with length: ${content.length} characters`);
+    return content.trim();
   } catch (error: any) {
     console.error("Error generating catalog entry:", error);
-    throw new Error(`Failed to generate catalog entry: ${error.message || String(error)}`);
+    return "Keine Kataloginformationen verfügbar"; // Return default instead of throwing
   }
 }
 
