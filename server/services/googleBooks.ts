@@ -320,7 +320,132 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     
     console.log(`Best Google Books match: "${volumeInfo.title}" by "${volumeInfo.authors?.[0] || 'Unknown'}" (score: ${highestScore.toFixed(2)})`);
     
-    // Create enriched book metadata
+    // Extract dimensions from physical description if available
+    let dimensions = null;
+    if (volumeInfo.dimensions) {
+      dimensions = volumeInfo.dimensions;
+    } else if (volumeInfo.description && volumeInfo.description.match(/\d+\s*cm/)) {
+      // Try to extract dimensions from description
+      const dimensionMatch = volumeInfo.description.match(/(\d+)\s*x\s*(\d+)\s*cm/);
+      if (dimensionMatch) {
+        dimensions = `${dimensionMatch[1]}x${dimensionMatch[2]} cm`;
+      } else {
+        const simpleDimMatch = volumeInfo.description.match(/(\d+)\s*cm/);
+        if (simpleDimMatch) {
+          dimensions = `${simpleDimMatch[1]} cm`;
+        }
+      }
+    }
+    
+    // Extract edition information
+    let edition = null;
+    if (volumeInfo.description && volumeInfo.description.includes('edition')) {
+      const editionMatch = volumeInfo.description.match(/(\d+(?:st|nd|rd|th)\s+edition|first\s+edition|second\s+edition|third\s+edition|fourth\s+edition)/i);
+      if (editionMatch) {
+        edition = editionMatch[1];
+      }
+    }
+    
+    // Extract additional contributors (illustrators, translators, etc.)
+    let contributors = [];
+    if (volumeInfo.description && 
+        (volumeInfo.description.includes('illustration') || 
+         volumeInfo.description.includes('illustrator') ||
+         volumeInfo.description.includes('translated'))) {
+      // Try to find illustrated by or illustrations by
+      const illustratorMatch = volumeInfo.description.match(/illustrations?\s+by\s+([^,.;]+)/i) || 
+                              volumeInfo.description.match(/illustrated\s+by\s+([^,.;]+)/i);
+      if (illustratorMatch && illustratorMatch[1]) {
+        contributors.push({
+          role: 'illustrator',
+          name: illustratorMatch[1].trim()
+        });
+      }
+      
+      // Try to find translator information
+      const translatorMatch = volumeInfo.description.match(/translated\s+by\s+([^,.;]+)/i);
+      if (translatorMatch && translatorMatch[1]) {
+        contributors.push({
+          role: 'translator',
+          name: translatorMatch[1].trim()
+        });
+      }
+    }
+    
+    // Extract more detailed categories/genres
+    const detailedGenres: string[] = [];
+    if (volumeInfo.categories && volumeInfo.categories.length > 0) {
+      // Split compound categories (e.g., "Fiction / Fantasy / Epic")
+      volumeInfo.categories.forEach((category: string) => {
+        const splitCategories = category.split(/\s*\/\s*/);
+        splitCategories.forEach((genre: string) => {
+          if (genre.trim()) {
+            detailedGenres.push(genre.trim());
+          }
+        });
+      });
+      
+      // Remove duplicates - using a simple approach to avoid Set conversion issues
+      const uniqueGenres: string[] = [];
+      detailedGenres.forEach(genre => {
+        if (!uniqueGenres.includes(genre)) {
+          uniqueGenres.push(genre);
+        }
+      });
+      
+      // Replace with unique genres
+      detailedGenres.length = 0;
+      uniqueGenres.forEach(genre => detailedGenres.push(genre));
+    }
+    
+    // Extract language information
+    let language: string | null = null;
+    if (volumeInfo.language) {
+      // Map language codes to full names
+      const languageMap: Record<string, string> = {
+        'en': 'English',
+        'de': 'German',
+        'fr': 'French',
+        'es': 'Spanish',
+        'it': 'Italian',
+        'zh': 'Chinese'
+      };
+      language = languageMap[volumeInfo.language] || volumeInfo.language;
+    }
+    
+    // Extract publisher location if possible
+    let location: string | null = null;
+    if (volumeInfo.publisher) {
+      // Try to extract location from publisher format "City: Publisher"
+      const publisherMatch = volumeInfo.publisher.match(/^([^:]+):\s*(.*)/);
+      if (publisherMatch) {
+        location = publisherMatch[1].trim();
+      }
+    }
+    
+    // Try to determine binding type and price if not already available
+    let binding: string | null = bookInfo.binding || null;
+    let price: string | null = bookInfo.price || null;
+    
+    // If we have a hardcover, default to "Festeinb." for German catalog format
+    if (!binding && volumeInfo.description && 
+        (volumeInfo.description.includes('hardcover') || 
+         volumeInfo.description.includes('hardback') ||
+         volumeInfo.description.includes('gebunden'))) {
+      binding = 'Festeinb.';
+    } else if (!binding) {
+      binding = 'Broschiert'; // Default to paperback if not specified
+    }
+    
+    // Default price if not available (for catalog formatting)
+    if (!price && volumeInfo.description && volumeInfo.description.match(/EUR\s*\d+[.,]\d+/)) {
+      const priceMatch = volumeInfo.description.match(/EUR\s*(\d+[.,]\d+)/);
+      if (priceMatch) {
+        price = `EUR ${priceMatch[1]}`;
+      }
+    }
+    
+    // Create enriched book metadata with extended information
     const enrichedBook: Partial<Book> = {
       ...bookInfo,
       // Always prefer Google Books data for title and author if available
@@ -330,6 +455,17 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
       pageCount: volumeInfo.pageCount || bookInfo.pageCount,
       coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
+      
+      // Additional bibliographic data
+      dimensions: dimensions || (bookInfo as any).dimensions || null,
+      edition: edition || (bookInfo as any).edition || null,
+      contributors: contributors.length > 0 ? contributors : (bookInfo as any).contributors || [],
+      language: language || (bookInfo as any).language || null,
+      genres: detailedGenres.length > 0 ? detailedGenres : (bookInfo.genres || []),
+      location: location || (bookInfo as any).location || null,
+      binding: binding || (bookInfo as any).binding || null,
+      price: price || (bookInfo as any).price || null,
+      series: (bookInfo as any).series || null
     };
     
     // Special handling for ISBN to preserve user-entered format when possible
