@@ -64,11 +64,6 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     formData.append('author', values.author || '');
     formData.append('isbn', values.isbn || '');
     
-    // Add current language preference for AI-generated content
-    const { currentLanguage } = useLanguage();
-    formData.append('language', currentLanguage);
-    console.log(`Book analysis form submission ${submissionId} - Using language: ${currentLanguage}`);
-    
     // Add file if selected
     if (selectedFile) {
       formData.append('coverImage', selectedFile);
@@ -99,11 +94,6 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       const formData = new FormData();
       formData.append('coverImage', selectedFile);
       formData.append('requestTimestamp', submissionId);
-      
-      // Add current language preference for AI-generated content
-      const { currentLanguage } = useLanguage();
-      formData.append('language', currentLanguage);
-      console.log(`Book analysis form auto-submit ${submissionId} - Using language: ${currentLanguage}`);
       
       // This is NOT a manual submission
       formData.append('isManualSubmission', 'false');
@@ -142,19 +132,13 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       formData.append('coverImage', file);
       formData.append('requestTimestamp', submissionId);
       
-      // Add current language preference for AI-generated content
-      const { currentLanguage } = useLanguage();
-      formData.append('language', currentLanguage);
-      console.log(`Book analysis form submission ${submissionId} - Using language: ${currentLanguage}`);
-      
       // Add a null title and author to indicate we need backend extraction
       formData.append('title', '');
       formData.append('author', '');
       console.log(`Submitting analysis with form data:`, {
         title: null,
         author: null,
-        hasImage: true,
-        language: currentLanguage
+        hasImage: true
       });
       
       // Log analysis parameters for debugging

@@ -162,14 +162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process book analysis with OpenAI
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      
-      // Get the preferred language for AI-generated content (default to German)
-      const language = req.body.language || "de";
-      console.log(`[${requestId}] Using language "${language}" for AI content generation`);
-      
-      // Add language to the book info for AI processing
-      enrichedBookInfo.language = language;
-      
       const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
@@ -463,14 +455,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Step 3: Process full analysis
             console.log("Step 3: Processing complete book analysis...");
-            
-            // Get the preferred language for AI-generated content (default to German)
-            const language = req.body.language || "de";
-            console.log(`Using language "${language}" for AI content generation in batch processing`);
-            
             const analysisResult = await processBookAnalysis({
               ...enrichedData,
-              language: language, // Set language preference for AI content
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly

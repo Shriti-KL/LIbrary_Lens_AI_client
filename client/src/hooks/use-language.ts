@@ -364,11 +364,5 @@ export function useLanguage() {
     }
   }, []);
   
-  // Return both language (for backward compatibility) and currentLanguage
-  return { 
-    language, 
-    currentLanguage: language, // Added this to be more explicit in naming
-    changeLanguage, 
-    t 
-  };
+  return { language, changeLanguage, t };
 }

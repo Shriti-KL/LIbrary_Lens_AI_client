@@ -64,7 +64,6 @@ export const bookAnalysisSchema = z.object({
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
-  language: z.string().optional(), // Language for AI-generated content (default: "de")
   options: z.object({
     summary: z.boolean().default(true),
     genres: z.boolean().default(true),
