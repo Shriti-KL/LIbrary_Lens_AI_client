@@ -43,8 +43,37 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
 
 export async function getBookByISBN(isbn: string): Promise<any | null> {
   try {
-    const books = await searchBooks({ query: `isbn:${isbn}` });
-    return books.length > 0 ? books[0] : null;
+    // Store the original ISBN format
+    const originalISBN = isbn;
+    
+    // Clean the ISBN for search by removing hyphens
+    const cleanedISBN = isbn.replace(/[^\dX]/gi, '');
+    
+    // Search using the cleaned ISBN
+    const books = await searchBooks({ query: `isbn:${cleanedISBN}` });
+    
+    if (books.length > 0) {
+      // Use the original ISBN format in the result
+      const result = books[0];
+      if (result.volumeInfo && result.volumeInfo.industryIdentifiers) {
+        const isbn13 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13");
+        const isbn10 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10");
+        
+        if (isbn13 || isbn10) {
+          // Check which ISBN type matches our input (regardless of format)
+          if (cleanedISBN.length === 13 && isbn13) {
+            // Use the original format instead of the API's format
+            isbn13.originalFormat = originalISBN;
+          } else if (cleanedISBN.length === 10 && isbn10) {
+            // Use the original format instead of the API's format
+            isbn10.originalFormat = originalISBN;
+          }
+        }
+      }
+      return result;
+    }
+    
+    return null;
   } catch (error) {
     console.error("Error fetching book by ISBN:", error);
     throw new Error(`Failed to fetch book by ISBN: ${error.message}`);
@@ -150,9 +179,25 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>): Promise<any
   // Strategy 1: If ISBN is available, use it for precise matching
   if (bookInfo.isbn) {
     try {
-      const isbnResults = await searchBooks({ query: `isbn:${bookInfo.isbn}` });
+      // Clean the ISBN for search by removing hyphens and other non-alphanumeric characters
+      const cleanedISBN = bookInfo.isbn.replace(/[^\dX]/gi, '');
+      
+      // Store the original format to preserve it
+      const originalISBN = bookInfo.isbn;
+      
+      // Search using the cleaned ISBN
+      const isbnResults = await searchBooks({ query: `isbn:${cleanedISBN}` });
+      
       if (isbnResults.length > 0) {
         console.log("Found results using ISBN search strategy");
+        
+        // Add the original ISBN format to the results for later use
+        isbnResults.forEach(result => {
+          if (result.volumeInfo && result.volumeInfo.industryIdentifiers) {
+            result.originalISBNFormat = originalISBN;
+          }
+        });
+        
         return isbnResults; // ISBN match is very precise, return immediately
       }
     } catch (error) {
@@ -284,10 +329,22 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       publisher: volumeInfo.publisher || bookInfo.publisher,
       publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
       pageCount: volumeInfo.pageCount || bookInfo.pageCount,
-      isbn: (volumeInfo.industryIdentifiers ? 
-        volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13" || id.type === "ISBN_10")?.identifier : null) || bookInfo.isbn,
       coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
     };
+    
+    // Special handling for ISBN to preserve user-entered format when possible
+    if (bookInfo.isbn) {
+      // Keep the original ISBN if it already exists and is valid
+      enrichedBook.isbn = bookInfo.isbn;
+    } else if (volumeInfo.industryIdentifiers) {
+      // Otherwise, get the ISBN from Google Books
+      const isbn13 = volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13");
+      const isbn10 = volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10");
+      
+      // Prefer ISBN-13 over ISBN-10
+      enrichedBook.isbn = (isbn13 ? isbn13.identifier : null) || 
+                           (isbn10 ? isbn10.identifier : null);
+    }
     
     // Log what data was corrected
     if (enrichedBook.title !== bookInfo.title) {

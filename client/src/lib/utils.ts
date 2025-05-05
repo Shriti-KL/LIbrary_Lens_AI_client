@@ -66,3 +66,60 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1048576).toFixed(1) + ' MB';
 }
+
+// Format ISBN with proper hyphens
+export function formatISBN(isbn: string | null): string {
+  if (!isbn) return '';
+  
+  // Remove all non-digit and non-X characters (ISBN-10 can end with X)
+  const cleanISBN = isbn.replace(/[^\dX]/gi, '');
+  
+  // If it's not a valid length for ISBN-10 or ISBN-13, return as is
+  if (cleanISBN.length !== 10 && cleanISBN.length !== 13) {
+    return isbn;
+  }
+  
+  // Format ISBN-10: e.g., 1-234-56789-X
+  if (cleanISBN.length === 10) {
+    return `${cleanISBN.substring(0, 1)}-${cleanISBN.substring(1, 4)}-${cleanISBN.substring(4, 9)}-${cleanISBN.substring(9, 10)}`;
+  }
+  
+  // Format ISBN-13: e.g., 978-3-16-148410-0
+  // Common prefixes for ISBN-13 (978 or 979)
+  const prefix = cleanISBN.substring(0, 3);
+  // Next section is typically the language/country group (1-5 digits)
+  // For standard formatting, let's use common group lengths
+  
+  // Examples of group lengths for major languages:
+  // English (0, 1): 978-0-... or 978-1-...
+  // German (3): 978-3-...
+  // French (2): 978-2-...
+  
+  // Use a simplified approach that works for most common ISBNs
+  let formattedISBN: string;
+  
+  if (cleanISBN.startsWith('978') || cleanISBN.startsWith('979')) {
+    // Check for common language groups
+    if (cleanISBN.startsWith('9780') || cleanISBN.startsWith('9781')) {
+      // English language books (usually 978-0 or 978-1)
+      formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 4)}-${cleanISBN.substring(4, 8)}-${cleanISBN.substring(8, 12)}-${cleanISBN.substring(12, 13)}`;
+    } else if (cleanISBN.startsWith('9783')) {
+      // German language books (usually 978-3)
+      formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 4)}-${cleanISBN.substring(4, 10)}-${cleanISBN.substring(10, 12)}-${cleanISBN.substring(12, 13)}`;
+    } else {
+      // Default pattern for other language groups
+      formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 5)}-${cleanISBN.substring(5, 11)}-${cleanISBN.substring(11, 12)}-${cleanISBN.substring(12, 13)}`;
+    }
+  } else {
+    // Fall back to a generic chunking if the ISBN-13 doesn't start with 978 or 979
+    formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 6)}-${cleanISBN.substring(6, 9)}-${cleanISBN.substring(9, 12)}-${cleanISBN.substring(12, 13)}`;
+  }
+  
+  return formattedISBN;
+}
+
+// Remove hyphens and other non-alphanumeric characters from ISBN for searching
+export function cleanISBNForSearch(isbn: string | null): string {
+  if (!isbn) return '';
+  return isbn.replace(/[^\dX]/gi, '');
+}
