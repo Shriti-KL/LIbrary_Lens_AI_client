@@ -64,6 +64,8 @@ const translations: Translations = {
     confirm: "Confirm",
     search: "Search",
     clear: "Clear",
+    close: "Close",
+    view: "View",
     loading: "Loading...",
     // Filter-related translations
     filters: "Filters",

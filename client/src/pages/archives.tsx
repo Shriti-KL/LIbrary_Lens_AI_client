@@ -325,9 +325,9 @@ export default function Archives() {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search genres..." />
+                          <CommandInput placeholder={`${t('search')} ${t('genres')}...`} />
                           <CommandList>
-                            <CommandEmpty>No genres found</CommandEmpty>
+                            <CommandEmpty>{`${t('noResults')}`}</CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-auto">
                               {uniqueGenres.map((genre) => (
                                 <CommandItem
@@ -376,9 +376,9 @@ export default function Archives() {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search themes..." />
+                          <CommandInput placeholder={`${t('search')} ${t('themes')}...`} />
                           <CommandList>
-                            <CommandEmpty>No themes found</CommandEmpty>
+                            <CommandEmpty>{`${t('noResults')}`}</CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-auto">
                               {uniqueThemes.map((theme) => (
                                 <CommandItem
@@ -415,7 +415,7 @@ export default function Archives() {
                     <div className="flex flex-wrap gap-2">
                       {selectedAuthors.map((author) => (
                         <Badge variant="secondary" key={`author-${author}`} className="py-1 px-2">
-                          <span className="font-normal">Author: {author}</span>
+                          <span className="font-normal">{t('authorFilter')} {author}</span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -428,7 +428,7 @@ export default function Archives() {
                       ))}
                       {selectedGenres.map((genre) => (
                         <Badge variant="secondary" key={`genre-${genre}`} className="py-1 px-2">
-                          <span className="font-normal">Genre: {genre}</span>
+                          <span className="font-normal">{t('genreFilter')} {genre}</span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -441,7 +441,7 @@ export default function Archives() {
                       ))}
                       {selectedThemes.map((theme) => (
                         <Badge variant="secondary" key={`theme-${theme}`} className="py-1 px-2">
-                          <span className="font-normal">Theme: {theme}</span>
+                          <span className="font-normal">{t('themeFilter')} {theme}</span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -558,8 +558,8 @@ export default function Archives() {
               </h3>
               <p className="mt-2 text-sm text-neutral-500">
                 {searchQuery.trim() !== '' || selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0 
-                  ? "No books match your filter criteria"
-                  : 'No books have been analyzed yet'
+                  ? t('noFilterResults')
+                  : t('noBooks')
                 }
               </p>
             </div>
@@ -568,14 +568,14 @@ export default function Archives() {
         
         <CardFooter className="flex justify-between">
           <div className="text-sm text-neutral-500">
-            {filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'} found
+            {filteredBooks.length} {filteredBooks.length === 1 ? t('bookCount') : t('booksCount')} {t('found')}
             {(selectedAuthors.length > 0 || selectedGenres.length > 0 || selectedThemes.length > 0) && (
               <>
-                {' '}<span className="text-muted-foreground">with</span>{' '}
+                {' '}<span className="text-muted-foreground">{t('with')}</span>{' '}
                 {[
-                  selectedAuthors.length > 0 && `${selectedAuthors.length} author${selectedAuthors.length > 1 ? 's' : ''}`,
-                  selectedGenres.length > 0 && `${selectedGenres.length} genre${selectedGenres.length > 1 ? 's' : ''}`,
-                  selectedThemes.length > 0 && `${selectedThemes.length} theme${selectedThemes.length > 1 ? 's' : ''}`
+                  selectedAuthors.length > 0 && `${selectedAuthors.length} ${t('author')}${selectedAuthors.length > 1 ? 's' : ''}`,
+                  selectedGenres.length > 0 && `${selectedGenres.length} ${t('genres').toLowerCase()}${selectedGenres.length > 1 ? '' : ''}`,
+                  selectedThemes.length > 0 && `${selectedThemes.length} ${t('themes').toLowerCase()}${selectedThemes.length > 1 ? '' : ''}`
                 ].filter(Boolean).join(', ')}
               </>
             )}
@@ -616,7 +616,7 @@ export default function Archives() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-serif">
-              {books.find((b: Book) => b.id === viewBookId)?.title || 'Book Details'}
+              {books.find((b: Book) => b.id === viewBookId)?.title || t('results')}
             </DialogTitle>
             <div className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
               <X className="h-4 w-4" onClick={() => setDetailDialogOpen(false)} />
@@ -723,29 +723,38 @@ export default function Archives() {
                           <div className="grid grid-cols-2 gap-4">
                             {typeof book.readingLevel === 'object' ? (
                               <>
-                                <div>
-                                  <p className="text-sm font-medium text-neutral-700">Age Range</p>
-                                  <p className="text-sm text-neutral-600">{book.readingLevel.ageRange}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-neutral-700">Grade Level</p>
-                                  <p className="text-sm text-neutral-600">{book.readingLevel.gradeLevel}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-neutral-700">Complexity</p>
-                                  <p className="text-sm text-neutral-600">{book.readingLevel.complexity}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-neutral-700">Lexile Measure</p>
-                                  <p className="text-sm text-neutral-600">
-                                    {book.readingLevel.lexileMeasure || 'N/A'}
-                                  </p>
-                                </div>
+                                {/* Use optional chaining with type safety */}
+                                {(book.readingLevel as any)?.ageRange && (
+                                  <div>
+                                    <p className="text-sm font-medium text-neutral-700">Age Range</p>
+                                    <p className="text-sm text-neutral-600">{(book.readingLevel as any).ageRange}</p>
+                                  </div>
+                                )}
+                                {(book.readingLevel as any)?.gradeLevel && (
+                                  <div>
+                                    <p className="text-sm font-medium text-neutral-700">Grade Level</p>
+                                    <p className="text-sm text-neutral-600">{(book.readingLevel as any).gradeLevel}</p>
+                                  </div>
+                                )}
+                                {(book.readingLevel as any)?.complexity && (
+                                  <div>
+                                    <p className="text-sm font-medium text-neutral-700">Complexity</p>
+                                    <p className="text-sm text-neutral-600">{(book.readingLevel as any).complexity}</p>
+                                  </div>
+                                )}
+                                {(book.readingLevel as any)?.lexileMeasure && (
+                                  <div>
+                                    <p className="text-sm font-medium text-neutral-700">Lexile Measure</p>
+                                    <p className="text-sm text-neutral-600">
+                                      {(book.readingLevel as any).lexileMeasure}
+                                    </p>
+                                  </div>
+                                )}
                               </>
                             ) : (
                               <div className="col-span-2">
-                                <p className="text-sm font-medium text-neutral-700">Reading Level</p>
-                                <p className="text-sm text-neutral-600">{book.readingLevel.toString()}</p>
+                                <p className="text-sm font-medium text-neutral-700">{t('readingLevel')}</p>
+                                <p className="text-sm text-neutral-600">{String(book.readingLevel)}</p>
                               </div>
                             )}
                           </div>
