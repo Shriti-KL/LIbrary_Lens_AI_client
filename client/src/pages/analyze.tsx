@@ -134,9 +134,6 @@ export default function Analyze() {
     clearAnalysisData();
     setBookData({});
     
-    // Get current language preference
-    const { currentLanguage } = useLanguage();
-    
     // Log what data we're submitting for debugging
     const title = formData.get('title') as string;
     const author = formData.get('author') as string;

@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, AlertCircle, ExternalLink } from 'lucide-react';
 
 export default function Batch() {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   
@@ -51,6 +51,9 @@ export default function Batch() {
       files.forEach(file => {
         formData.append(`coverImages`, file);
       });
+      
+      // Add language preference (default is 'de' for German)
+      formData.append('language', currentLanguage);
       
       // Initialize batch results (all at once to avoid multiple state updates)
       const initialBatchResults = files.map((file, index) => ({
@@ -176,7 +179,7 @@ export default function Batch() {
     // Reset batch results
     setBatchResults([]);
     
-    // Process the batch
+    // Add language info to FormData during the mutation
     batchMutation.mutate(files);
   };
   
