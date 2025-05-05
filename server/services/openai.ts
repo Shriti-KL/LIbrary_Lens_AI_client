@@ -283,6 +283,95 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
   }
 }
 
+// Extract missing bibliographic fields from AI
+export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+  try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Collect all available bibliographic information
+    const context = `Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    // Identify missing fields
+    const missingFields = [];
+    if (!bookInfo.pageCount) missingFields.push('pageCount');
+    if (!bookInfo.binding) missingFields.push('binding');
+    if (!bookInfo.dimensions) missingFields.push('dimensions');
+    if (!bookInfo.edition) missingFields.push('edition');
+    if (!bookInfo.location) missingFields.push('location');
+    if (!bookInfo.publisher) missingFields.push('publisher');
+
+    // Skip if we have all the fields
+    if (missingFields.length === 0) {
+      console.log("All bibliographic fields are present, skipping AI extraction");
+      return bookInfo;
+    }
+
+    console.log(`Attempting to extract missing bibliographic fields: ${missingFields.join(', ')}`);
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional librarian specialized in bibliographic data. Always respond in ${languageName} and provide JSON format.`
+        },
+        {
+          role: "user",
+          content: `Based on the available information, provide educated estimates for the missing bibliographic data for this book. Return a JSON object with: 
+          - pageCount (number of pages, just the number)
+          - binding (e.g., "Hardcover", "Taschenbuch", etc.)
+          - dimensions (e.g., "15 x 21 cm")
+          - edition (e.g., "1. Auflage", "Erste Ausgabe", etc.)
+          - location (publisher's location, e.g., "Berlin", "Frankfurt", etc.)
+          - publisher (if missing)
+          
+          Only include fields that can be reasonably estimated based on the information provided. If you can't estimate a field with reasonable confidence, leave it as null.
+          
+          Available information:
+          ${context}`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const extractedData = JSON.parse(response.choices[0].message.content);
+    console.log("AI extracted bibliographic data:", extractedData);
+
+    // Merge the extracted data with the book info, only using AI data where we lack actual data
+    return {
+      ...bookInfo,
+      pageCount: bookInfo.pageCount || extractedData.pageCount || null,
+      binding: bookInfo.binding || extractedData.binding || null,
+      dimensions: bookInfo.dimensions || extractedData.dimensions || null,
+      edition: bookInfo.edition || extractedData.edition || null,
+      location: bookInfo.location || extractedData.location || null,
+      publisher: bookInfo.publisher || extractedData.publisher || null,
+    };
+  } catch (error) {
+    console.error("Error extracting missing bibliographic data:", error);
+    return bookInfo; // Return original book info on error
+  }
+}
+
 // Process the full book analysis
 export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
   try {
@@ -413,6 +502,15 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
           });
         }
       }
+    }
+    
+    // Check if we have all required bibliographic data, if not use AI to fill missing fields
+    const fieldsToCheck = ['pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher'];
+    const missingFields = fieldsToCheck.filter(field => !bookInfo[field]);
+    
+    if (missingFields.length > 0) {
+      console.log(`Missing bibliographic fields detected: ${missingFields.join(', ')}. Attempting to extract using AI.`);
+      bookInfo = await extractMissingBibliographicData(bookInfo);
     }
 
     return bookInfo;
