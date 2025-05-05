@@ -14,6 +14,7 @@ import { Download, Save } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
+import { formatISBN } from '@/lib/utils';
 
 interface BookResultProps {
   book: Partial<Book>;
@@ -241,7 +242,7 @@ export default function BookResult({
               <div className="mt-5 grid grid-cols-2 gap-5">
                 <div>
                   <h4 className="text-sm font-medium text-primary-dark/70">{t('isbn')}</h4>
-                  <p className="mt-1 text-sm text-neutral-700">{book.isbn || 'N/A'}</p>
+                  <p className="mt-1 text-sm text-neutral-700">{book.isbn ? formatISBN(book.isbn) : 'N/A'}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-primary-dark/70">{t('published')}</h4>
