@@ -628,7 +628,7 @@ export default function Archives() {
               {/* Get the book object from the books array */}
               {(() => {
                 const book = books.find((b: Book) => b.id === viewBookId);
-                if (!book) return <div className="text-center py-10">Book not found</div>;
+                if (!book) return <div className="text-center py-10">{t('bookNotFound')}</div>;
                 
                 return (
                   <div className="grid grid-cols-1 gap-6 py-4">
@@ -726,25 +726,25 @@ export default function Archives() {
                                 {/* Use optional chaining with type safety */}
                                 {(book.readingLevel as any)?.ageRange && (
                                   <div>
-                                    <p className="text-sm font-medium text-neutral-700">Age Range</p>
+                                    <p className="text-sm font-medium text-neutral-700">{t('ageRange')}</p>
                                     <p className="text-sm text-neutral-600">{(book.readingLevel as any).ageRange}</p>
                                   </div>
                                 )}
                                 {(book.readingLevel as any)?.gradeLevel && (
                                   <div>
-                                    <p className="text-sm font-medium text-neutral-700">Grade Level</p>
+                                    <p className="text-sm font-medium text-neutral-700">{t('gradeLevel')}</p>
                                     <p className="text-sm text-neutral-600">{(book.readingLevel as any).gradeLevel}</p>
                                   </div>
                                 )}
                                 {(book.readingLevel as any)?.complexity && (
                                   <div>
-                                    <p className="text-sm font-medium text-neutral-700">Complexity</p>
+                                    <p className="text-sm font-medium text-neutral-700">{t('complexity')}</p>
                                     <p className="text-sm text-neutral-600">{(book.readingLevel as any).complexity}</p>
                                   </div>
                                 )}
                                 {(book.readingLevel as any)?.lexileMeasure && (
                                   <div>
-                                    <p className="text-sm font-medium text-neutral-700">Lexile Measure</p>
+                                    <p className="text-sm font-medium text-neutral-700">{t('lexileMeasure')}</p>
                                     <p className="text-sm text-neutral-600">
                                       {(book.readingLevel as any).lexileMeasure}
                                     </p>

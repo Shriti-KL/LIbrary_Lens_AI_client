@@ -83,6 +83,10 @@ const translations: Translations = {
     themeFilter: "Theme:",
     noFilterResults: "No books match your filter criteria",
     noBooks: "No books have been analyzed yet",
+    ageRange: "Age Range",
+    gradeLevel: "Grade Level",
+    complexity: "Complexity",
+    lexileMeasure: "Lexile Measure",
     // Authentication related translations
     login: "Login",
     register: "Register", 
@@ -254,7 +258,28 @@ const translations: Translations = {
     confirm: "Bestätigen",
     search: "Suchen",
     clear: "Löschen",
+    close: "Schließen",
+    view: "Ansehen",
     loading: "Laden...",
+    filters: "Filter",
+    selectAuthors: "Autoren auswählen",
+    selectGenres: "Genres auswählen",
+    selectThemes: "Themen auswählen",
+    clearFilters: "Alle Filter löschen",
+    selected: "ausgewählt",
+    bookCount: "Buch",
+    booksCount: "Bücher",
+    found: "gefunden",
+    with: "mit",
+    authorFilter: "Autor:",
+    genreFilter: "Genre:",
+    themeFilter: "Thema:",
+    noFilterResults: "Keine Bücher entsprechen Ihren Filterkriterien",
+    noBooks: "Es wurden noch keine Bücher analysiert",
+    ageRange: "Altersbereich",
+    gradeLevel: "Klassenstufe",
+    complexity: "Komplexität",
+    lexileMeasure: "Lexile-Maß",
   },
   zh: {
     appName: "LibraryLens AI",
@@ -312,7 +337,7 @@ const translations: Translations = {
 };
 
 export function useLanguage() {
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>("de");
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
@@ -330,6 +355,10 @@ export function useLanguage() {
     const savedLanguage = localStorage.getItem("preferredLanguage") as Language;
     if (savedLanguage && Object.keys(translations).includes(savedLanguage)) {
       setLanguage(savedLanguage);
+    } else {
+      // Set German as default if no preference is saved
+      setLanguage("de");
+      localStorage.setItem("preferredLanguage", "de");
     }
   }, []);
   
