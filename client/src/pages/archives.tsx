@@ -682,6 +682,18 @@ export default function Archives() {
                           </div>
                         </div>
                         
+                        <div className="mt-6">
+                          <Button
+                            onClick={() => exportBookToPDF(book)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                          >
+                            <FileText className="h-4 w-4" />
+                            {t('exportToPDF')}
+                          </Button>
+                        </div>
+                        
                         <div className="mt-4">
                           <h4 className="text-sm font-medium text-neutral-500">{t('genres')}</h4>
                           <div className="mt-1 flex flex-wrap gap-1">

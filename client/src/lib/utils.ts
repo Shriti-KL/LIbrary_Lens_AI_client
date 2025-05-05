@@ -203,9 +203,11 @@ export function exportBookToPDF(book: Book): void {
   
   // Add catalog entry if exists
   if (book.catalogEntry) {
-    // Add a new page if needed
-    if (doc.internal.getCurrentPageInfo().pageNumber > 1 || 
-        doc.internal.pageSize.getHeight() - (doc as any).lastAutoTable.finalY < 100) {
+    // Check available space
+    const currentY = (doc as any).lastAutoTable.finalY;
+    const availableSpace = doc.internal.pageSize.getHeight() - currentY;
+    
+    if (availableSpace < 100) {
       doc.addPage();
       doc.setFontSize(14);
       doc.setTextColor(0, 51, 102);
@@ -216,15 +218,14 @@ export function exportBookToPDF(book: Book): void {
       const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
       doc.text(catalogLines, 14, 30);
     } else {
-      const currentY = (doc as any).lastAutoTable.finalY + 30;
       doc.setFontSize(14);
       doc.setTextColor(0, 51, 102);
-      doc.text('Catalog Entry', 14, currentY);
+      doc.text('Catalog Entry', 14, currentY + 30);
       
       doc.setFontSize(10);
       doc.setTextColor(0, 0, 0);
       const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
-      doc.text(catalogLines, 14, currentY + 8);
+      doc.text(catalogLines, 14, currentY + 38);
     }
   }
   
