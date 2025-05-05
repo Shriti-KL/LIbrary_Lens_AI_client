@@ -56,16 +56,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
-        // Get language preference from the form data (default to German if not provided)
-        // Make sure it's a string to avoid Zod validation errors
-        const language = bodyData.language ? 
-            (Array.isArray(bodyData.language) ? bodyData.language[0].toString() : bodyData.language.toString()) : 
-            'de';
-        console.log(`[${requestId}] Language preference: ${language}`);
-        
         bookInfo = {
           ...bodyData,
-          language, // Ensure language is passed to the analysis as a string
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
