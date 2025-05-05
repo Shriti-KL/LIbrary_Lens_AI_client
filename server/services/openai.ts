@@ -245,6 +245,7 @@ export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<str
     
     const languageName = languageNames[language] || languageNames.de;
     
+    // Collect all available bibliographic information
     const context = `Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
@@ -252,6 +253,13 @@ ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
 ${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
 ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
+${bookInfo.dimensions ? `Dimensions: ${bookInfo.dimensions}` : ''}
+${bookInfo.edition ? `Edition: ${bookInfo.edition}` : ''}
+${bookInfo.binding ? `Binding: ${bookInfo.binding}` : ''}
+${bookInfo.series ? `Series: ${bookInfo.series}` : ''}
+${bookInfo.contributors && Array.isArray(bookInfo.contributors) && bookInfo.contributors.length > 0 
+  ? `Contributors: ${bookInfo.contributors.map((c: any) => `${c.name} (${c.role})`).join(', ')}` 
+  : ''}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 
     const response = await openai.chat.completions.create({
@@ -352,6 +360,58 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       const deweyMatch = bookInfo.catalogEntry.match(/Dewey:\s*([0-9.]+)/i);
       if (deweyMatch && deweyMatch[1]) {
         bookInfo.deweyDecimal = deweyMatch[1];
+      }
+      
+      // Extract other bibliographic details from catalog entry if not already present
+      if (!bookInfo.dimensions) {
+        const dimensionsMatch = bookInfo.catalogEntry.match(/(\d+\s*[xX]\s*\d+\s*(?:cm|mm))/);
+        if (dimensionsMatch && dimensionsMatch[1]) {
+          bookInfo.dimensions = dimensionsMatch[1];
+        }
+      }
+      
+      if (!bookInfo.edition) {
+        const editionMatch = bookInfo.catalogEntry.match(/((?:\d+(?:st|nd|rd|th)|Erste[rnms]?|Zweite[rnms]?|Dritte[rnms]?|Vierte[rnms]?)[\s\-.](?:Aufl(?:age)?|Ausg(?:abe)?|Ed(?:ition)?))/i);
+        if (editionMatch && editionMatch[1]) {
+          bookInfo.edition = editionMatch[1];
+        }
+      }
+      
+      if (!bookInfo.publisher && !bookInfo.location) {
+        const publisherMatch = bookInfo.catalogEntry.match(/([A-Z][a-zA-Z\s]+)\s*:\s*([A-Z][a-zA-Z\s]+)/);
+        if (publisherMatch) {
+          bookInfo.location = publisherMatch[1].trim();
+          bookInfo.publisher = publisherMatch[2].trim();
+        }
+      }
+      
+      if (!bookInfo.binding) {
+        const bindingMatch = bookInfo.catalogEntry.match(/(Hardcover|Gebunden|Broschiert|Taschenbuch|Paperback|Festeinband)/i);
+        if (bindingMatch && bindingMatch[1]) {
+          bookInfo.binding = bindingMatch[1];
+        }
+      }
+      
+      // Check for illustrator information
+      const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
+      if (illustratorMatch && illustratorMatch[1]) {
+        // Add illustrator to contributors if not already present
+        const illustratorName = illustratorMatch[1].trim();
+        if (!bookInfo.contributors || !Array.isArray(bookInfo.contributors)) {
+          bookInfo.contributors = [];
+        }
+        
+        // Check if this illustrator is already in contributors
+        const hasIllustrator = bookInfo.contributors.some((c: any) => 
+          c.role === 'illustrator' && c.name === illustratorName
+        );
+        
+        if (!hasIllustrator) {
+          bookInfo.contributors.push({
+            role: 'illustrator',
+            name: illustratorName
+          });
+        }
       }
     }
 

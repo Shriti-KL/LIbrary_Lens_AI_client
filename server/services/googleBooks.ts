@@ -330,6 +330,29 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
       pageCount: volumeInfo.pageCount || bookInfo.pageCount,
       coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
+      
+      // Extract additional bibliographic details
+      dimensions: volumeInfo.dimensions || bookInfo.dimensions,
+      edition: volumeInfo.contentVersion ? `${volumeInfo.contentVersion} Edition` : bookInfo.edition,
+      language: volumeInfo.language || bookInfo.language || "de",
+      
+      // Store additional contributors in metadata
+      ...(volumeInfo.authors && volumeInfo.authors.length > 1 ? {
+        contributors: volumeInfo.authors.slice(1).map((name: string) => ({ 
+          role: "co-author", 
+          name 
+        }))
+      } : {}),
+      
+      // Merge the metadata object
+      metadata: {
+        ...(bookInfo.metadata || {}),
+        ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
+        ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
+        ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {}),
+        ...(volumeInfo.printType ? { printType: volumeInfo.printType } : {}),
+        ...(volumeInfo.maturityRating ? { maturityRating: volumeInfo.maturityRating } : {})
+      }
     };
     
     // Special handling for ISBN to preserve user-entered format when possible
