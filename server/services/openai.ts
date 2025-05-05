@@ -62,6 +62,7 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 
     // Default to German if no language specified
     const language = bookInfo.language || "de";
+    console.log(`Generating book summary in language: ${language}`);
     
     // Create different system prompts based on language
     let systemPrompt = "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance.";
@@ -69,6 +70,7 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
     
     // Add language instruction
     if (language === "de") {
+      console.log("Using German prompts for book summary generation");
       systemPrompt = "Du bist ein Literaturexperte, der prägnante, informative Buchzusammenfassungen für Bibliothekskataloge erstellt. Konzentriere dich auf die Handlung, die Hauptthemen und die Bedeutung des Buches.";
       userPrompt = `Erstelle eine prägnante, informative Zusammenfassung für das folgende Buch, die für einen Bibliothekskatalog geeignet wäre. Halte sie unter 250 Wörtern.\n\n${context}`;
     }
