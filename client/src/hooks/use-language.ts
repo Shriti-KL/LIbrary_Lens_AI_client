@@ -87,6 +87,7 @@ const translations: Translations = {
     gradeLevel: "Grade Level",
     complexity: "Complexity",
     lexileMeasure: "Lexile Measure",
+    bookNotFound: "Book not found",
     // Authentication related translations
     login: "Login",
     register: "Register", 
@@ -280,6 +281,7 @@ const translations: Translations = {
     gradeLevel: "Klassenstufe",
     complexity: "Komplexität",
     lexileMeasure: "Lexile-Maß",
+    bookNotFound: "Buch nicht gefunden",
   },
   zh: {
     appName: "LibraryLens AI",
