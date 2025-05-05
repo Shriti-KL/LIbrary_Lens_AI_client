@@ -133,255 +133,225 @@ export function exportBookToPDF(book: Book): void {
   const doc = new jsPDF();
   
   // Define colors
-  const primaryColor = [0, 51, 102]; // Dark blue
   const textColor = [0, 0, 0]; // Black
   
-  // ---- Header section with library name ----
+  // Start position
+  let yPos = 20;
+  
+  // Create the German catalog-style entry - following the exact format from the example
+  
+  // ---- 1. Author: Title line ----
+  // Format: Sorg, Marion:
   doc.setFontSize(12);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
   doc.setFont("helvetica", "bold");
-  doc.text("LibraryLens AI - Library Catalog", 14, 15);
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  doc.text(`${book.author}:`, 14, yPos);
   
-  // Add a horizontal line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(14, 18, 196, 18);
+  yPos += 6;
   
-  // ---- Catalog Entry Format ----
-  // This is the primary section showing the catalog entry in library format
+  // ---- 2. Full bibliographic citation ----
+  // Format: Title / Author ; Illustrations. - Edition. - Location : Publisher, Year. - Pages : Details ; Size
   
-  let yPos = 25; // Start position for catalog
+  // Build the citation components
+  let citation = '';
   
-  // If catalog entry exists, use it as the primary content
-  if (book.catalogEntry) {
-    doc.setFontSize(12);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFont("helvetica", "bold");
-    doc.text("Catalog Entry", 14, yPos);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    
-    // Format the catalog entry text
-    const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
-    doc.text(catalogLines, 14, yPos + 8);
-    
-    // Update position
-    yPos = yPos + 8 + (catalogLines.length * 5) + 10;
-  } 
-  // If no catalog entry exists, create a formatted citation style header
-  else {
-    // Create bibliography-style citation format
-    // Format: Author: Title / Additional info. - Edition. - Location: Publisher, Year. Pages: Details; Size. (Series)
-    
-    // First line: Author: Title
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    
-    const authorTitleLine = `${book.author}: ${book.title}`;
-    doc.text(authorTitleLine, 14, yPos);
-    
-    // Second line: Publication details
-    let pubDetails = '';
-    if (book.publisher) {
-      pubDetails += book.publisher;
-      if (book.publishedYear) pubDetails += `, ${book.publishedYear}`;
-    } else if (book.publishedYear) {
-      pubDetails += book.publishedYear;
+  // Title component
+  citation += book.title;
+  
+  // Contributor information (using the full author name again)
+  citation += ` / ${book.author}`;
+  
+  // Add illustrator if available (extract from catalog entry)
+  if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
+    const illustrationMatch = book.catalogEntry.match(/Illustration[^.;]*(von|by)[^.;]*/i);
+    if (illustrationMatch) {
+      citation += ` ; ${illustrationMatch[0].trim()}`;
     }
-    
-    // Add page details if available
-    if (book.pageCount) {
-      if (pubDetails) pubDetails += '. ';
-      pubDetails += `${book.pageCount} pages`;
-    }
-    
-    // Add details like illustrations if available (assuming from catalog entry)
-    if (book.catalogEntry && book.catalogEntry.includes('Illustrations')) {
-      const illustrationsMatch = book.catalogEntry.match(/illustrations[^.;]*/i);
-      if (illustrationsMatch) {
-        if (pubDetails) pubDetails += ': ';
-        pubDetails += illustrationsMatch[0].trim();
-      }
-    }
-    
-    // Format and display publication details
-    if (pubDetails) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(pubDetails, 30, yPos + 6);
-      yPos += 6;
-    }
-    
-    // Third line: ISBN
-    if (book.isbn) {
-      yPos += 6;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      const isbnLine = `ISBN ${formatISBN(book.isbn)}`;
-      
-      if (book.deweyDecimal) {
-        doc.text(`${isbnLine} - Dewey: ${book.deweyDecimal}`, 30, yPos);
-      } else {
-        doc.text(isbnLine, 30, yPos);
-      }
-    }
-    
-    yPos += 12;
   }
   
-  // ---- Summary Section ----
-  if (book.summary) {
-    // Check if we need a new page
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
+  // Edition information
+  citation += ' - 1. Auflage.';
+  
+  // Publisher location and name
+  if (book.publisher) {
+    const publisherParts = book.publisher.split(',');
+    let location = '';
+    let publisher = book.publisher;
+    
+    // Try to extract location from publisher string if it contains a comma
+    if (publisherParts.length > 1) {
+      location = publisherParts[0].trim();
+      publisher = publisherParts.slice(1).join(',').trim();
     }
     
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text("Summary", 14, yPos);
+    if (location) {
+      citation += ` - ${location} : ${publisher}`;
+    } else {
+      // If no location found, try to extract from catalog entry or just use publisher
+      if (book.catalogEntry && book.catalogEntry.includes(':')) {
+        const locationMatch = book.catalogEntry.match(/\s-\s([^:]+)\s:/);
+        if (locationMatch) {
+          citation += ` - ${locationMatch[1].trim()} : ${publisher}`;
+        } else {
+          citation += ` - : ${publisher}`;
+        }
+      } else {
+        citation += ` - : ${publisher}`;
+      }
+    }
+  }
+  
+  // Year
+  if (book.publishedYear) {
+    citation += `, ${book.publishedYear}`;
+  }
+  
+  // Physical description
+  if (book.pageCount) {
+    citation += `. - ${book.pageCount} Seiten`;
+  } else {
+    citation += '. - Seiten';
+  }
+  
+  // Add details like illustrations if available (from catalog entry)
+  if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
+    citation += ' : Illustrationen, farbig';
+  }
+  
+  // Add size if available (from catalog entry) or use default
+  if (book.catalogEntry && book.catalogEntry.includes('cm')) {
+    const sizeMatch = book.catalogEntry.match(/(\d+)\s*cm/);
+    if (sizeMatch) {
+      citation += ` ; ${sizeMatch[1]} cm`;
+    } else {
+      citation += ' ; 22 cm';
+    }
+  } else {
+    citation += ' ; 22 cm';
+  }
+  
+  // Add series information if available (from catalog entry)
+  if (book.catalogEntry && book.catalogEntry.includes('(')) {
+    const seriesMatch = book.catalogEntry.match(/\(([^)]+)\)/);
+    if (seriesMatch) {
+      citation += ` (${seriesMatch[1]})`;
+    }
+  }
+  
+  // Format and display the citation
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  const citationLines = doc.splitTextToSize(citation, 180);
+  doc.text(citationLines, 14, yPos);
+  
+  yPos += (citationLines.length * 5) + 8;
+  
+  // ---- 3. ISBN line with price ----
+  // Format: ISBN 978-3-95916-132-9 Festeinb. : EUR 19.95
+  if (book.isbn) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
     
+    // Format the ISBN line
+    let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
+    
+    // Add binding type and price if available
+    if (book.catalogEntry && book.catalogEntry.includes('EUR')) {
+      const priceMatch = book.catalogEntry.match(/(Festeinb|Kart|Pb|Hardcover|Paperback)[.:]?\s*:?\s*EUR\s*\d+[,.]?\d*/i);
+      if (priceMatch) {
+        isbnLine += ` ${priceMatch[0].trim()}`;
+      } else {
+        isbnLine += ' Hardcover'; // Default to hardcover if not specified
+      }
+    }
+    
+    doc.text(isbnLine, 14, yPos);
+    yPos += 10;
+  }
+  
+  // Add a horizontal line to separate the citation from the summary
+  doc.setDrawColor(200, 200, 200);
+  doc.line(14, yPos, 196, yPos);
+  yPos += 10;
+  
+  // ---- 4. Summary section - this is critical content ----
+  if (book.summary) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     
     const summaryLines = doc.splitTextToSize(book.summary, 180);
-    doc.text(summaryLines, 14, yPos + 5);
+    doc.text(summaryLines, 14, yPos);
     
     yPos += (summaryLines.length * 5) + 15;
   }
   
-  // ---- Bibliographic Details Table ----
-  // Check if we need a new page
-  if (yPos > 200) {
+  // Check if we need a new page for additional information
+  if (yPos > 240) {
     doc.addPage();
     yPos = 20;
   }
   
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text("Bibliographic Details", 14, yPos);
-  
-  // Create metadata array for table
-  const metadata = [
-    ['Title', book.title],
-    ['Author', book.author],
-    ['ISBN', book.isbn ? formatISBN(book.isbn) : 'N/A'],
-    ['Publisher', book.publisher || 'N/A'],
-    ['Year', book.publishedYear?.toString() || 'N/A'],
-    ['Pages', book.pageCount?.toString() || 'N/A']
-  ];
-  
-  // Add dewey decimal if available
-  if (book.deweyDecimal) {
-    metadata.push(['Dewey Decimal', book.deweyDecimal]);
-  }
-  
-  // Create a clean table for bibliographic data
-  autoTable(doc, {
-    startY: yPos + 5,
-    head: [],
-    body: metadata,
-    theme: 'plain',
-    styles: {
-      fontSize: 9,
-      cellPadding: 3
-    },
-    columnStyles: {
-      0: {
-        fontStyle: 'bold',
-        cellWidth: 40
-      }
-    }
-  });
-  
-  // Get new Y position after the table
-  yPos = (doc as any).lastAutoTable.finalY + 10;
-  
-  // ---- Genres Section ----
-  if (Array.isArray(book.genres) && book.genres.length > 0) {
-    // Check if we need a new page
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
+  // ---- 5. Additional metadata (only if there's enough space) ----
+  if (yPos < 220) {
+    // Only show if there are genres or additional metadata worth displaying
+    if (Array.isArray(book.genres) && book.genres.length > 0) {
+      // Add a light horizontal line to separate from summary
+      doc.setDrawColor(220, 220, 220);
+      doc.line(14, yPos-5, 196, yPos-5);
+      
+      // Add genres as comma-separated list
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Genres:", 14, yPos+2);
+      
+      doc.setFont("helvetica", "normal");
+      const genresText = book.genres.join(', ');
+      const genresLines = doc.splitTextToSize(genresText, 160);
+      doc.text(genresLines, 50, yPos+2);
+      
+      yPos += (genresLines.length * 5) + 8;
     }
     
-    // Create a table for genres
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Genres']],
-      body: book.genres.map(genre => [genre]),
-      theme: 'plain',
-      headStyles: {
-        fillColor: primaryColor,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      styles: {
-        fontSize: 9
-      }
-    });
-    
-    // Update Y position
-    yPos = (doc as any).lastAutoTable.finalY + 10;
-  }
-  
-  // ---- Reading Level Section (if available) ----
-  if (book.readingLevel) {
-    // Check if we need a new page
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    let readingLevelData = [];
-    
-    if (typeof book.readingLevel === 'object') {
-      const readingLevel = book.readingLevel as any;
-      if (readingLevel.ageRange) readingLevelData.push(['Age Range', readingLevel.ageRange]);
-      if (readingLevel.gradeLevel) readingLevelData.push(['Grade Level', readingLevel.gradeLevel]);
-      if (readingLevel.complexity) readingLevelData.push(['Complexity', readingLevel.complexity]);
-      if (readingLevel.lexileMeasure) readingLevelData.push(['Lexile Measure', readingLevel.lexileMeasure]);
-    } else {
-      readingLevelData.push(['Reading Level', String(book.readingLevel)]);
-    }
-    
-    if (readingLevelData.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Reading Level', '']],
-        body: readingLevelData,
-        theme: 'plain',
-        headStyles: {
-          fillColor: primaryColor,
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        styles: {
-          fontSize: 9
-        },
-        columnStyles: {
-          0: {
-            fontStyle: 'bold',
-            cellWidth: 40
-          }
+    // Add reading level if available
+    if (book.readingLevel && yPos < 240) {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Reading Level:", 14, yPos);
+      
+      doc.setFont("helvetica", "normal");
+      if (typeof book.readingLevel === 'object') {
+        const readingLevel = book.readingLevel as any;
+        let readingLevelText = '';
+        
+        if (readingLevel.ageRange) readingLevelText += `Age: ${readingLevel.ageRange}`;
+        if (readingLevel.gradeLevel) {
+          if (readingLevelText) readingLevelText += ', ';
+          readingLevelText += `Grade: ${readingLevel.gradeLevel}`;
         }
-      });
+        
+        doc.text(readingLevelText, 50, yPos);
+      } else {
+        doc.text(String(book.readingLevel), 50, yPos);
+      }
+      
+      yPos += 8;
     }
   }
   
-  // ---- Add Footer with Page Numbers ----
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  // ---- Add Footer with Catalog ID or Document Information ----
+  const totalPages = doc.internal.pages.length - 1;
+  for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 10);
-    doc.text('Generated by LibraryLens AI', 196 - 50, doc.internal.pageSize.height - 10, { align: 'right' });
+    doc.setTextColor(100, 100, 100);
+    
+    // Add page numbers
+    doc.text(`${i}/${totalPages}`, 14, doc.internal.pageSize.height - 10);
+    
+    // If this is a catalog from a library system, add catalog ID
+    const catalogDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    doc.text(`LibraryLens • Catalog Entry • ${catalogDate}`, 196, doc.internal.pageSize.height - 10, { align: 'right' });
   }
   
   // Save the PDF with the book title as filename
