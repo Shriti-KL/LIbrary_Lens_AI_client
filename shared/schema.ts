@@ -35,6 +35,17 @@ export const books = pgTable("books", {
   themes: jsonb("themes").default([]).notNull(),
   similarBooks: jsonb("similar_books").default([]).notNull(),
   metadata: jsonb("metadata").default({}).notNull(), // Additional metadata
+  
+  // Physical book properties
+  dimensions: text("dimensions"),         // Physical dimensions (e.g., "21 x 15 cm")
+  edition: text("edition"),               // Edition information (e.g., "First Edition")
+  language: text("language").default("de"), // Language of the content (de, en, fr, es, zh)
+  location: text("location"),             // Library location (e.g., "Main Library, Section B")
+  binding: text("binding"),               // Binding type (e.g., "Hardcover", "Paperback")
+  price: text("price"),                   // Price information
+  series: text("series"),                 // Series information
+  contributors: jsonb("contributors").default([]), // Other contributors (editors, translators, etc.)
+  
   userId: integer("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
