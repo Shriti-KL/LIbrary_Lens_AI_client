@@ -563,8 +563,8 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
       
-      // Include the language parameter
-      language: analysisRequest.language || "de",
+      // Include the language parameter (ensure it's a string)
+      language: typeof analysisRequest.language === 'string' ? analysisRequest.language : "de",
       
       // Reset all analysis fields
       summary: null,

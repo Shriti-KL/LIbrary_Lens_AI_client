@@ -153,7 +153,8 @@ export default function Analyze() {
     formData.append('forceNewAnalysis', Date.now().toString());
     
     // Add the current language to ensure content is generated in the correct language
-    formData.append('language', language);
+    // Ensure we're sending a string and not an array to avoid Zod validation errors
+    formData.set('language', language.toString());
     
     // Submit the form data for analysis
     analysisMutation.mutate({ formData, options });
