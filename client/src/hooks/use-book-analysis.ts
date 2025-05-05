@@ -11,6 +11,7 @@ const STORAGE_KEY_TIMESTAMP = 'book_analysis_timestamp';
 
 export function useBookAnalysis() {
   const { toast } = useToast();
+  const { language } = useLanguage();
 
   // Initialize state for analysis steps
   const [analysisSteps, setAnalysisSteps] = useState({
@@ -76,13 +77,17 @@ export function useBookAnalysis() {
       // Add options to form data
       data.formData.append("options", JSON.stringify(data.options));
       
+      // Add language to form data for localized AI generation
+      data.formData.append("language", language);
+      
       // Check if we have a title and author as a debugging log
       const hasTitle = data.formData.get('title');
       const hasAuthor = data.formData.get('author');
       console.log("Analyzing book with data:", {
         hasTitle: !!hasTitle,
         hasAuthor: !!hasAuthor,
-        hasCoverImage: data.formData.has('coverImage')
+        hasCoverImage: data.formData.has('coverImage'),
+        language: language
       });
       
       // Start request - first update metadata progress
