@@ -210,7 +210,7 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>{t('general')} {t('settings')}</CardTitle>
               <CardDescription>
-                Manage your application preferences and appearance
+                {t('generalSettingsDescription')}
               </CardDescription>
             </CardHeader>
             
@@ -267,9 +267,9 @@ export default function Settings() {
               
               {/* Data Management */}
               <div>
-                <h3 className="text-lg font-medium mb-2">Data Management</h3>
+                <h3 className="text-lg font-medium mb-2">{t('dataManagement')}</h3>
                 <p className="text-sm text-neutral-500 mb-4">
-                  Manage your application data and clear analysis history
+                  {t('dataManagementDescription')}
                 </p>
                 
                 <Button 
@@ -301,7 +301,7 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>API {t('settings')}</CardTitle>
               <CardDescription>
-                Configure API keys and external service connections
+                {t('apiSettingsDescription')}
               </CardDescription>
             </CardHeader>
             
@@ -351,13 +351,13 @@ export default function Settings() {
             <CardHeader>
               <CardTitle>{t('analysis')} {t('settings')}</CardTitle>
               <CardDescription>
-                Configure default analysis options and behavior
+                {t('analysisSettingsDescription')}
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-6">
               <div>
-                <h3 className="text-md font-medium mb-2">Default Analysis Options</h3>
+                <h3 className="text-md font-medium mb-2">{t('defaultAnalysisOptions')}</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
