@@ -290,28 +290,62 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       return bookInfo;
     }
     
-    // Rank results based on similarity to the input
+    // Rank results based on similarity to the input and edition information
     let bestMatch = searchResults[0];
     let highestScore = 0;
+    let firstEditionMatch = null;
     
+    // First pass: identify if any results contain first edition information
     for (const result of searchResults) {
       const volumeInfo = result.volumeInfo || {};
-      const resultTitle = volumeInfo.title || "";
-      const resultAuthor = (volumeInfo.authors ? volumeInfo.authors[0] : "") || "";
       
-      // Calculate similarity scores
-      const titleScore = bookInfo.title ? stringSimilarity(bookInfo.title, resultTitle) : 0;
-      const authorScore = bookInfo.author ? stringSimilarity(bookInfo.author, resultAuthor) : 0;
+      // Check for first edition indicators
+      const isFirstEdition = 
+        (volumeInfo.subtitle && /(?:1|erste|first|1st)(?:\.|\s+)?\s*(?:aufl(?:age)?|ed(?:ition)?|ausg(?:abe)?)/i.test(volumeInfo.subtitle)) ||
+        (volumeInfo.description && /(?:1|erste|first|1st)(?:\.|\s+)?\s*(?:aufl(?:age)?|ed(?:ition)?|ausg(?:abe)?)/i.test(volumeInfo.description));
       
-      // Weight the scores (title is slightly more important)
-      const combinedScore = titleScore * 0.6 + authorScore * 0.4;
-      
-      // Log for debugging
-      console.log(`Match score for "${resultTitle}" by "${resultAuthor}": ${combinedScore.toFixed(2)}`);
-      
-      if (combinedScore > highestScore) {
-        highestScore = combinedScore;
-        bestMatch = result;
+      if (isFirstEdition) {
+        firstEditionMatch = result;
+        // We might want to break here, but let's continue to log all scores for debugging
+      }
+    }
+    
+    // If we found a first edition match and this is a title-only search, prioritize it
+    const isTitleOnlySearch = bookInfo.title && !bookInfo.isbn && (!bookInfo.author || bookInfo.author.trim() === '');
+    if (firstEditionMatch && isTitleOnlySearch) {
+      console.log("First edition match found and prioritized for title-only search");
+      bestMatch = firstEditionMatch;
+    } 
+    // Otherwise use similarity scoring
+    else {
+      for (const result of searchResults) {
+        const volumeInfo = result.volumeInfo || {};
+        const resultTitle = volumeInfo.title || "";
+        const resultAuthor = (volumeInfo.authors ? volumeInfo.authors[0] : "") || "";
+        
+        // Calculate similarity scores
+        const titleScore = bookInfo.title ? stringSimilarity(bookInfo.title, resultTitle) : 0;
+        const authorScore = bookInfo.author ? stringSimilarity(bookInfo.author, resultAuthor) : 0;
+        
+        // Weight the scores (title is slightly more important)
+        const combinedScore = titleScore * 0.6 + authorScore * 0.4;
+        
+        // Bonus for first editions when present
+        const editionBonus = 
+          (volumeInfo.subtitle && /(?:1|erste|first|1st)(?:\.|\s+)?\s*(?:aufl(?:age)?|ed(?:ition)?|ausg(?:abe)?)/i.test(volumeInfo.subtitle)) ||
+          (volumeInfo.description && /(?:1|erste|first|1st)(?:\.|\s+)?\s*(?:aufl(?:age)?|ed(?:ition)?|ausg(?:abe)?)/i.test(volumeInfo.description))
+            ? 0.15  // Add 15% bonus for first editions
+            : 0;
+        
+        const finalScore = combinedScore + editionBonus;
+        
+        // Log for debugging
+        console.log(`Match score for "${resultTitle}" by "${resultAuthor}": ${finalScore.toFixed(2)}${editionBonus > 0 ? ' (first edition bonus applied)' : ''}`);
+        
+        if (finalScore > highestScore) {
+          highestScore = finalScore;
+          bestMatch = result;
+        }
       }
     }
     

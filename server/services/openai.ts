@@ -124,9 +124,22 @@ export async function extractBookGenres(bookInfo: Partial<Book>): Promise<string
     
     const languageName = languageNames[language] || languageNames.de;
     
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Add more context data to improve genre extraction
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
+
+    // Include metadata from Google Books if available
+    if (bookInfo.metadata && typeof bookInfo.metadata === 'object') {
+      const metadata = bookInfo.metadata as Record<string, any>;
+      if (metadata.categories && Array.isArray(metadata.categories)) {
+        contextText += `\nGoogle Books Categories: ${metadata.categories.join(', ')}`;
+      }
+    }
+
+    console.log(`Extracting genres for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
@@ -137,25 +150,57 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in ${languageName}.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON object with a "genres" property that contains an array of strings with only the genre names in ${languageName}.\n\n${context}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
     const content = response.choices[0].message.content;
-    if (!content) return [];
+    if (!content) {
+      console.log("No content returned from OpenAI for genres");
+      return [];
+    }
+    
+    console.log(`OpenAI genre response: ${content}`);
     
     try {
       const result = JSON.parse(content);
-      return Array.isArray(result.genres) ? result.genres : [];
+      
+      if (Array.isArray(result.genres)) {
+        return result.genres;
+      } else if (result.genres && typeof result.genres === 'string') {
+        // Handle case where it might return a comma-separated string instead of array
+        return result.genres.split(',').map((genre: string) => genre.trim());
+      } else {
+        // Handle case where the genres might be in the root of the JSON
+        const potentialGenres = Object.values(result).find(value => Array.isArray(value));
+        if (potentialGenres && Array.isArray(potentialGenres)) {
+          return potentialGenres;
+        }
+        
+        console.log("No genres array found in the response");
+        return [];
+      }
     } catch (parseError) {
       console.error("Error parsing genres JSON:", parseError);
+      // Try to extract genres from raw text if JSON parsing fails
+      try {
+        // Look for patterns that might indicate genres in the text
+        const genreMatches = content.match(/["'\[\]\{]([^"'\[\]\{\}]+)["'\[\]\}]/g);
+        if (genreMatches && genreMatches.length > 0) {
+          return genreMatches
+            .map(match => match.replace(/["'\[\]\{\}]/g, '').trim())
+            .filter(Boolean);
+        }
+      } catch (e) {
+        console.error("Error in fallback genre extraction:", e);
+      }
       return [];
     }
   } catch (error: any) {
     console.error("Error extracting book genres:", error);
-    throw new Error(`Failed to extract book genres: ${error.message || String(error)}`);
+    return []; // Return empty array instead of throwing to avoid breaking the whole analysis
   }
 }
 
