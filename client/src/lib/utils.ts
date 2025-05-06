@@ -146,7 +146,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 1. ASB Classification in top-right and top-left corner ---
   doc.setFontSize(11);
-  doc.setFont("times", "bold");
+  doc.setFont("helvetica", "bold");
   
   // Top-left ASB label
   doc.text("ASB:", 22, yPos);
@@ -154,10 +154,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Top-right catalog number (e.g., 103.485.0)
   const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1"];
   const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
-  doc.text(asbNumber, 170, yPos, { align: 'right' });
+  doc.text(asbNumber, 190, yPos, { align: 'right' });
   
   // Second line - secondary classification under ASB
-  yPos += 5;
+  yPos += 7;
   const secondaryOptions = ["4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
   const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
   doc.text(secondaryCode, 22, yPos);
@@ -175,13 +175,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   doc.setFontSize(11);
-  doc.setFont("times", "bold"); 
+  doc.setFont("helvetica", "bold"); 
   doc.text(authorFormatted + ":", 22, yPos);
   
   yPos += 6; // Space after author name
   
   // --- 3. Book title and publication info ---
-  doc.setFont("times", "normal");
+  doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
   let titleFull = book.title;
@@ -223,7 +223,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // Split the title text for proper wrapping
-  const titleLines = doc.splitTextToSize(titleText, 150);
+  const titleLines = doc.splitTextToSize(titleText, 155);
   
   // Set the title lines
   for (let i = 0; i < titleLines.length; i++) {
@@ -234,24 +234,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 4. Publication Information ---
   yPos += 2; // Extra space before publication info
   
-  // Build full publication string similar to the sample
+  // Build full publication string following the exact format in the sample image
   let publicationInfo = '';
   
-  // Start with edition information
+  // Start with edition information - using format from sample image
   publicationInfo += book.edition || '1. Auflage';
   
-  // Add location and publisher
+  // Add location and publisher - using format from sample image
   const location = book.location || 'München';
   const publisher = book.publisher || 'C.H.Beck';
   publicationInfo += `. - ${location} : ${publisher}`;
   
-  // Add year
+  // Add year - using format from sample image
   publicationInfo += `, ${book.publishedYear || '2025'}`;
   
   // Add physical description - pages
   publicationInfo += `. - ${book.pageCount || '250'} Seiten`;
   
-  // Add illustration information if appropriate
+  // Add illustration information if appropriate - using format from sample image
   if (book.contributors && Array.isArray(book.contributors)) {
     const illustrators = book.contributors.filter((c: any) => 
       c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
@@ -261,20 +261,32 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       // Add color info if available
       publicationInfo += `, farbig`;
     }
+  } else if (Math.random() > 0.5) {
+    // Sometimes add illustrations info to match sample format
+    publicationInfo += ` : Illustrationen`;
+    if (Math.random() > 0.5) {
+      publicationInfo += `, farbig`;
+    } else {
+      publicationInfo += `, schwarz-weiß`;
+    }
   }
   
-  // Add dimensions
+  // Add dimensions - using format from sample image
   publicationInfo += ` ; ${book.dimensions || '21 cm'}`;
   
-  // Add series information in parentheses if available
+  // Add series information, publisher info, or other parenthetical information if available
   if (book.series) {
     publicationInfo += ` (${book.series})`;
+  } else if (Math.random() > 0.7) {
+    // Sometimes add publisher info in parentheses to match sample format
+    publicationInfo += ` (${Math.random() > 0.5 ? 'P.M. Schneller schlau' : 'ekz-Informationsdienst'})`;
   }
   
-  // Split the publication info text for proper wrapping
-  const pubLines = doc.splitTextToSize(publicationInfo, 150);
+  // Split the publication info text for proper wrapping - match exact width from sample
+  const pubLines = doc.splitTextToSize(publicationInfo, 165);
   
-  // Set the publication info lines
+  // Set the publication info lines with helvetica font matching the sample
+  doc.setFont("helvetica", "normal");
   for (let i = 0; i < pubLines.length; i++) {
     doc.text(pubLines[i], 22, yPos);
     yPos += 5;
@@ -286,20 +298,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price
-    const bindingInfo = book.binding || 'Festeinband';
+    // Add binding type and price - exact format from sample
+    const bindingTypes = ['Festeinband', 'Broschur', 'Taschenbuch', 'Gebunden'];
+    const bindingInfo = book.binding || bindingTypes[Math.floor(Math.random() * bindingTypes.length)];
     
-    // Format as "ISBN XXX-X-XXX-XXXX-X - Binding - EUR XX.XX"
+    // Format as "ISBN XXX-X-XXX-XXXX-X - Binding - EUR XX.XX" - matching sample exactly
     isbnLine += ` - ${bindingInfo}`;
     
-    // Add price if available
+    // Add price if available (with comma, not period, for decimal values in German format)
     if (book.price) {
-      isbnLine += ` : EUR ${book.price}`;
+      isbnLine += ` : EUR ${book.price.toString().replace('.', ',')}`;
     } else {
       // Add a generic default price formatted with German decimal comma
-      isbnLine += ` : EUR 28,00`;
+      const priceOptions = ['12,99', '24,99', '28,00', '19,95', '14,99'];
+      const price = priceOptions[Math.floor(Math.random() * priceOptions.length)];
+      isbnLine += ` : EUR ${price}`;
     }
     
+    doc.setFont("helvetica", "normal");
     doc.text(isbnLine, 22, yPos);
     yPos += 7;
   }
@@ -309,19 +325,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 2;
     
     // Set text style for summary
-    doc.setFont("times", "normal");
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     
     let summaryText = book.summary;
     
     // Split the text for proper wrapping
-    const summaryLines = doc.splitTextToSize(summaryText, 150);
+    const summaryLines = doc.splitTextToSize(summaryText, 160);
     
     // Create content for each line with justified text
     for (let i = 0; i < summaryLines.length; i++) {
       doc.text(summaryLines[i], 22, yPos, { 
         align: 'justify',
-        maxWidth: 150,
+        maxWidth: 160,
       });
       yPos += 5;
     }
@@ -329,63 +345,75 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 7. Reviewer name in bottom right ---
   yPos += 5;
-  doc.setFont("times", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
   // Use reviewer name if available or default ones from the sample
   const reviewerOptions = ["Dagmar List", "Rouven Haus", "Tobias Herger", "Larissa Dämmig"];
   const reviewerName = book.reviewerName || reviewerOptions[Math.floor(Math.random() * reviewerOptions.length)];
   
-  doc.text(reviewerName, 150, yPos, { align: 'right' });
+  doc.text(reviewerName, 190, yPos, { align: 'right' });
   
   // --- 8. Interest category (IK) and ID-B number on bottom left ---
   yPos += 10;
   
-  // Interest category from sample
-  const ikOptions = ["IK: Basteln; ab 4", "IK: Wissen von A-Z; ab 14", "IK: Geschichte"];
+  // Interest category from sample - use exact same format as in the reference
+  const ikOptions = ["IK: Basteln; ab 4", "IK: Wissen von A-Z; ab 14", "IK: Geschichte", "IK: Biografie; ab 10"];
   const interestCategory = book.interestCategory || ikOptions[Math.floor(Math.random() * ikOptions.length)];
+  
+  doc.setFont("helvetica", "bold");
   doc.text(interestCategory, 22, yPos);
   
   yPos += 5;
   
-  // ID-B number from sample
-  const idBNumber = book.idBNumber || `ID-B 19/${Math.floor(Math.random() * 30) + 1}`;
+  // ID-B number from sample - matches exactly the format in the reference image
+  const idBNumber = book.idBNumber || `ID-B ${Math.floor(Math.random() * 25) + 1}/${Math.floor(Math.random() * 35) + 1}`;
+  
+  doc.setFont("helvetica", "normal");
   doc.text(idBNumber, 22, yPos);
   
   // --- 9. Add Barcode and footer ---
   yPos += 10;
   
   // Generate a realistic barcode according to the image sample
-  const barcodeHeight = 15;
-  const barcodeWidth = 80;
+  const barcodeHeight = 12;
+  const barcodeWidth = 90;
   const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
   
-  // Add the catalog number above the barcode for reference
-  doc.setFontSize(8);
+  // Add the catalog number above the barcode for reference - exactly as in sample
+  doc.setFontSize(7);
   doc.setFont("courier", "normal");
   doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
   
-  // Draw barcode lines - simplified version using vertical lines
+  // Draw barcode lines in the style shown in the reference image
   doc.setDrawColor(0);
   doc.setFillColor(0, 0, 0);
   doc.setLineWidth(0.1);
   
-  // Draw multiple vertical lines of varying widths for barcode effect
-  for (let i = 0; i < 50; i++) {
-    const x = startX + (i * (barcodeWidth / 50));
-    const width = (0.2 + Math.random() * 1.5) * (barcodeWidth / 50);
+  // Create a more realistic EAN/ISBN-style barcode pattern
+  // Some thicker and some thinner bars, with specific spacing patterns
+  let barX = startX;
+  const numBars = 50;  // Number of bars in barcode
+  const spacing = barcodeWidth / numBars;
+  
+  for (let i = 0; i < numBars; i++) {
+    // Create varying bar widths to look like a real barcode
+    // Thicker bars at specific positions to emulate EAN/ISBN pattern
+    const isThickBar = (i % 7 === 0 || i % 11 === 0 || i % 3 === 2);
+    const barWidth = isThickBar ? spacing * 2 : spacing * 0.7;
     
-    // Only draw some of the lines (to create gaps)
-    if (Math.random() > 0.4) {
-      // Create filled rectangle for barcode line
-      doc.rect(x, yPos, width, barcodeHeight, 'F');
+    // Only draw some bars (with specific pattern) for realistic appearance
+    if (i % 4 !== 3 || i % 8 === 0) {
+      doc.rect(barX, yPos, barWidth, barcodeHeight, 'F');
     }
+    
+    barX += spacing;
   }
   
   // Add ekz-Informationsdienst text below barcode exactly as in the sample
   yPos += barcodeHeight + 5;
-  doc.setFontSize(9);
-  doc.setFont("times", "normal");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
   doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
   
   return yPos + 10; // Return the final Y position with some extra space
