@@ -56,8 +56,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
+        // Get language from body (default to German)
+        const language = bodyData.language || "de";
+        console.log(`[${requestId}] Analysis requested in language: ${language}`);
+        
         bookInfo = {
           ...bodyData,
+          language: language,
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
