@@ -36,10 +36,7 @@ export default function BookResult({
   onSave,
   loadingSteps
 }: BookResultProps) {
-  const { t, language } = useLanguage();
-  
-  // Check if the book's analysis language matches the current UI language
-  const isWrongLanguage = book && book.language && book.language !== language;
+  const { t } = useLanguage(); // We don't need to check language anymore
 
   // Export functionality moved to multi-book export in archives page
 
