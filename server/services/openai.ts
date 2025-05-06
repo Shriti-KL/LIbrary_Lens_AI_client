@@ -745,34 +745,36 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
         idBNumber: germanLibraryCatalogData.idBNumber || null,
       };
       
-      // Check for illustrator information
-      const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
-      if (illustratorMatch && illustratorMatch[1]) {
-        // Add illustrator to contributors if not already present
-        const illustratorName = illustratorMatch[1].trim();
-        
-        // Initialize contributors array if it doesn't exist or isn't an array
-        // Use type assertion to handle the unknown type
-        const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
-          ? [...(bookInfo.contributors as {role: string, name: string}[])] 
-          : [];
-        
-        // Check if this illustrator is already in contributors
-        const hasIllustrator = contributors.some((c: any) => 
-          c.role === 'illustrator' && c.name === illustratorName
-        );
-        
-        if (!hasIllustrator) {
-          contributors.push({
-            role: 'illustrator',
-            name: illustratorName
-          });
+      // Check for illustrator information in catalog entry
+      if (bookInfo.catalogEntry) {
+        const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
+        if (illustratorMatch && illustratorMatch[1]) {
+          // Add illustrator to contributors if not already present
+          const illustratorName = illustratorMatch[1].trim();
           
-          // Update the book info with the new contributors array
-          bookInfo = {
-            ...bookInfo,
-            contributors
-          };
+          // Initialize contributors array if it doesn't exist or isn't an array
+          // Use type assertion to handle the unknown type
+          const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
+            ? [...(bookInfo.contributors as {role: string, name: string}[])] 
+            : [];
+          
+          // Check if this illustrator is already in contributors
+          const hasIllustrator = contributors.some((c: any) => 
+            c.role === 'illustrator' && c.name === illustratorName
+          );
+          
+          if (!hasIllustrator) {
+            contributors.push({
+              role: 'illustrator',
+              name: illustratorName
+            });
+            
+            // Update the book info with the new contributors array
+            bookInfo = {
+              ...bookInfo,
+              contributors
+            };
+          }
         }
       }
     }

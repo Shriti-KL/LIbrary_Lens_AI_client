@@ -145,26 +145,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   let yPos = startY;
   
   // --- 1. ASB Classification in top-right and top-left corner ---
-  // First, handle the ASB classification and secondary identifier in the top right
   doc.setFontSize(11);
   doc.setFont("times", "bold");
   
-  // Use custom ASB classification if available, or generate a catalog-style identifier
-  // ASB section - Top right
-  const asbCategory = Array.isArray(book.categories) && book.categories.length > 0 ? 
-    book.categories[0] : "ASB:";
+  // Top-left ASB label
+  doc.text("ASB:", 22, yPos);
   
-  // Format ASB number like 103.485.0 or similar from sample
+  // Top-right catalog number (e.g., 103.485.0)
   const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1"];
   const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
-  
-  // Print ASB text
-  doc.text("ASB:", 22, yPos);
   doc.text(asbNumber, 170, yPos, { align: 'right' });
   
+  // Second line - secondary classification under ASB
   yPos += 5;
-  
-  // Secondary classification (like 4.3/Y, 6.1/Aax)
   const secondaryOptions = ["4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
   const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
   doc.text(secondaryCode, 22, yPos);
@@ -362,22 +355,37 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 9. Add Barcode and footer ---
   yPos += 10;
   
-  // Draw a barcode-like rectangle (placeholder for actual barcode)
-  const barcodeHeight = 10;
-  doc.setDrawColor(0);
-  doc.setFillColor(0, 0, 0); // Use RGB format to avoid type error
-  
-  // Draw a simple line instead of barcode to avoid type issues
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.5);
-  const barcodeWidth = 60;
+  // Generate a realistic barcode according to the image sample
+  const barcodeHeight = 15;
+  const barcodeWidth = 80;
   const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
-  doc.line(startX, yPos, startX + barcodeWidth, yPos);
-  doc.line(startX, yPos + barcodeHeight, startX + barcodeWidth, yPos + barcodeHeight);
   
-  // Add ekz-Informationsdienst text below barcode
+  // Add the catalog number above the barcode for reference
+  doc.setFontSize(8);
+  doc.setFont("courier", "normal");
+  doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
+  
+  // Draw barcode lines - simplified version using vertical lines
+  doc.setDrawColor(0);
+  doc.setFillColor(0, 0, 0);
+  doc.setLineWidth(0.1);
+  
+  // Draw multiple vertical lines of varying widths for barcode effect
+  for (let i = 0; i < 50; i++) {
+    const x = startX + (i * (barcodeWidth / 50));
+    const width = (0.2 + Math.random() * 1.5) * (barcodeWidth / 50);
+    
+    // Only draw some of the lines (to create gaps)
+    if (Math.random() > 0.4) {
+      // Create filled rectangle for barcode line
+      doc.rect(x, yPos, width, barcodeHeight, 'F');
+    }
+  }
+  
+  // Add ekz-Informationsdienst text below barcode exactly as in the sample
   yPos += barcodeHeight + 5;
   doc.setFontSize(9);
+  doc.setFont("times", "normal");
   doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
   
   return yPos + 10; // Return the final Y position with some extra space
