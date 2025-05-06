@@ -36,7 +36,7 @@ export default function BookResult({
   onSave,
   loadingSteps
 }: BookResultProps) {
-  const { t } = useLanguage(); // We don't need to check language anymore
+  const { t } = useLanguage();
 
   // Export functionality moved to multi-book export in archives page
 
@@ -188,26 +188,11 @@ export default function BookResult({
             <p className="mt-1 max-w-2xl text-sm text-neutral-600">{t('insights')}</p>
           </div>
           <div className="flex gap-2">
-            {isWrongLanguage && (
-              <Badge variant="secondary" className="bg-amber-100 text-amber-700 font-medium px-3">
-                {language === 'de' ? 'Inhalt auf Englisch' : 'Content in German'}
-              </Badge>
-            )}
             <Badge variant="secondary" className="bg-green-100 text-green-700 font-medium px-3">
               {t('complete')}
             </Badge>
           </div>
         </div>
-        
-        {isWrongLanguage && (
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <p className="text-sm text-amber-800">
-              {language === 'de' 
-                ? 'Der Inhalt dieser Analyse ist in einer anderen Sprache. Laden Sie die Seite neu oder analysieren Sie das Buch erneut, um die Inhalte in Deutsch zu generieren.'
-                : 'This analysis content is in a different language. Reload the page or reanalyze the book to generate content in English.'}
-            </p>
-          </div>
-        )}
       </CardHeader>
       
       <Separator className="m-0" />
