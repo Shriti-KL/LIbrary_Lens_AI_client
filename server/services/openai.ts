@@ -7,15 +7,32 @@ const MODEL = "gpt-4o";
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Map language codes to full language names for prompt clarity
+const languageNames: Record<string, string> = {
+  en: "English",
+  de: "German (Deutsch)",
+  fr: "French (Français)",
+  es: "Spanish (Español)",
+  zh: "Chinese (中文)"
+};
+
+// Helper function to get the language name from a language code
+function getLanguageName(language?: string): string {
+  if (!language) return languageNames.de; // Default to German
+  return languageNames[language] || languageNames.de;
+}
+
 // Handle book cover analysis
-export async function analyzeBookCover(image: string): Promise<any> {
+export async function analyzeBookCover(image: string, language: string = 'de'): Promise<any> {
   try {
+    const languageName = getLanguageName(language);
+    
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate. Respond in German language."
+          content: `You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate. Respond in ${languageName}.`
         },
         {
           role: "user",
@@ -67,17 +84,7 @@ export async function generateBookSummary(bookInfo: Partial<Book>): Promise<stri
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
@@ -146,17 +153,7 @@ export async function extractBookGenres(bookInfo: Partial<Book>): Promise<string
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Add more context data to improve genre extraction
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -243,17 +240,7 @@ export async function extractBookThemes(bookInfo: Partial<Book>): Promise<any[]>
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Create context with more information
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -325,17 +312,7 @@ export async function assessReadingLevel(bookInfo: Partial<Book>): Promise<any> 
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Create context with more information
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -412,17 +389,7 @@ export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<str
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Collect all available bibliographic information
     let contextText = `Title: ${bookInfo.title || 'Unknown'}
@@ -476,17 +443,7 @@ export async function generateGermanLibraryCatalogData(bookInfo: Partial<Book>):
   try {
     // Determine language for content generation (default to German)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Compile book information for context
     let contextText = `Title: ${bookInfo.title || 'Unknown'}
@@ -560,17 +517,7 @@ export async function extractMissingBibliographicData(bookInfo: Partial<Book>): 
   try {
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
+    const languageName = getLanguageName(language);
     
     // Collect all available bibliographic information
     const context = `Title: ${bookInfo.title || 'Unknown'}
