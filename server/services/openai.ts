@@ -437,6 +437,90 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
   }
 }
 
+// Generate German library catalog specific classifications and data
+export async function generateGermanLibraryCatalogData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+  try {
+    // Determine language for content generation (default to German)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Compile book information for context
+    let contextText = `Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+
+    console.log(`Generating German library catalog data for "${bookInfo.title}" by "${bookInfo.author}"`);
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a German library cataloging expert who creates ASB (Allgemeine Systematik für Bibliotheken) classifications and catalog entries. Generate data that exactly matches the German library catalog format.`
+        },
+        {
+          role: "user",
+          content: `Generate German library catalog specific fields for this book. 
+Return a JSON object with the following fields:
+- catalogNumber: an ASB classification number (like "103.485.0")
+- categories: an array of applicable ASB categories
+- secondaryClassification: a secondary classification like "4.3/Y" or "6.1/Aax"
+- reviewerName: a German reviewer name in the format "Firstname Lastname"
+- interestCategory: an interest category in the format "IK: Category; ab X" where X is an age
+- idBNumber: an ID-B number in the format "ID-B YY/ZZ" where YY is the year and ZZ is a sequence number
+
+The response should be valid JSON.
+
+Book information:
+${contextText}`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for German library catalog data");
+      return {};
+    }
+    
+    console.log(`Generated German library catalog data response: ${content}`);
+    
+    try {
+      const result = JSON.parse(content);
+      return {
+        catalogNumber: result.catalogNumber,
+        categories: result.categories,
+        secondaryClassification: result.secondaryClassification,
+        reviewerName: result.reviewerName,
+        interestCategory: result.interestCategory,
+        idBNumber: result.idBNumber
+      };
+    } catch (parseError) {
+      console.error("Error parsing German library catalog data JSON:", parseError);
+      return {};
+    }
+  } catch (error: any) {
+    console.error("Error generating German library catalog data:", error);
+    return {}; // Return empty object instead of throwing to avoid breaking the analysis
+  }
+}
+
 // Extract missing bibliographic fields from AI
 export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
@@ -646,6 +730,20 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
           bookInfo.binding = bindingMatch[1];
         }
       }
+      
+      // Generate German library catalog specific data
+      const germanLibraryCatalogData = await generateGermanLibraryCatalogData(bookInfo);
+      
+      // Merge the German library catalog data with the book info
+      bookInfo = {
+        ...bookInfo,
+        catalogNumber: germanLibraryCatalogData.catalogNumber || null,
+        categories: germanLibraryCatalogData.categories || [],
+        secondaryClassification: germanLibraryCatalogData.secondaryClassification || null,
+        reviewerName: germanLibraryCatalogData.reviewerName || null,
+        interestCategory: germanLibraryCatalogData.interestCategory || null,
+        idBNumber: germanLibraryCatalogData.idBNumber || null,
+      };
       
       // Check for illustrator information
       const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
