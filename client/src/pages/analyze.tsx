@@ -20,7 +20,7 @@ import {
 import { AlertCircle } from 'lucide-react';
 
 export default function Analyze() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [location, navigate] = useLocation();
   const { registerGuard, unregisterGuard } = useNavigationGuard();
   
@@ -59,6 +59,26 @@ export default function Analyze() {
     // Log this action
     console.log("Analyze page mounted: cleared previous analysis data");
   }, []);
+  
+  // Listen for language changes
+  useEffect(() => {
+    const handleLanguageChange = (event: CustomEvent) => {
+      // If we have book data and it has title/author (basic requirements)
+      if (bookData?.title && bookData?.author) {
+        console.log(`Language changed to ${event.detail.language}, queuing retranslation of content`);
+        
+        // We don't need to manually trigger retranslation here as BookResult component
+        // is already listening for language changes through its own effect
+      }
+    };
+    
+    // Add event listener with type assertion for CustomEvent
+    window.addEventListener('app:languagechange', handleLanguageChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('app:languagechange', handleLanguageChange as EventListener);
+    };
+  }, [bookData]);
   
   // Effect to sync bookData with the current state (from the mutation only)
   useEffect(() => {

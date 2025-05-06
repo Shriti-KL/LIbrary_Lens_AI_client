@@ -31,7 +31,7 @@ interface AnalysisFormProps {
 }
 
 export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
@@ -73,6 +73,11 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     // Add a unique timestamp to force the server to treat this as a new request
     formData.append('requestTimestamp', submissionId);
     
+    // Add current language for localized content generation
+    formData.append('language', language);
+    
+    console.log(`Submitting analysis with language: ${language}`);
+    
     // Submit with analysis options
     onSubmit(formData, {
       summary: true,
@@ -94,6 +99,9 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       const formData = new FormData();
       formData.append('coverImage', selectedFile);
       formData.append('requestTimestamp', submissionId);
+      
+      // Add current language for localized content generation
+      formData.append('language', language);
       
       // This is NOT a manual submission
       formData.append('isManualSubmission', 'false');
@@ -132,20 +140,25 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
       formData.append('coverImage', file);
       formData.append('requestTimestamp', submissionId);
       
+      // Add current language for localized content generation
+      formData.append('language', language);
+      
       // Add a null title and author to indicate we need backend extraction
       formData.append('title', '');
       formData.append('author', '');
       console.log(`Submitting analysis with form data:`, {
         title: null,
         author: null,
-        hasImage: true
+        hasImage: true,
+        language
       });
       
       // Log analysis parameters for debugging
       console.log(`Analyzing book with data:`, {
         hasTitle: false,
         hasAuthor: false,
-        hasCoverImage: true
+        hasCoverImage: true,
+        language
       });
       
       // Explicitly mark this as NOT a manual submission (auto-extraction)
