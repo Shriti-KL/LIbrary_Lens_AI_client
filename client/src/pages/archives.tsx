@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF } from '@/lib/utils';
+import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF, exportEkzCatalogPDF } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -275,6 +275,35 @@ export default function Archives() {
       });
     } catch (error) {
       console.error('PDF export error:', error);
+      toast({
+        title: t('exportFailed'),
+        description: t('errorGeneratingPDF'),
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Export selected books in ekz-Informationsdienst format
+  const exportEkzFormat = () => {
+    const booksToExport = filteredBooks.filter(book => selectedBooks.has(book.id));
+    
+    if (booksToExport.length === 0) {
+      toast({
+        title: t('noBookSelected'),
+        description: t('pleaseSelectBooks'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      exportEkzCatalogPDF(booksToExport);
+      toast({
+        title: 'ekz-Format Export',
+        description: 'Books exported in ekz-Informationsdienst format',
+      });
+    } catch (error) {
+      console.error('ekz-Format PDF export error:', error);
       toast({
         title: t('exportFailed'),
         description: t('errorGeneratingPDF'),
