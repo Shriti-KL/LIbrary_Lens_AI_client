@@ -585,7 +585,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     currentY += 5;
   }
   
-  // --- Summary - condensed, only a few lines ---
+  // --- Summary - ensure full summary appears ---
   if (book.summary) {
     doc.setFontSize(gridFontSize - 1);
     
@@ -614,36 +614,36 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Remove any extra whitespace that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Ensure summary is not too long for grid view (increased to ~1000 characters as requested)
-    if (summaryText.length > 1000) { // Limit for grid view
-      // Find the last complete sentence before character limit
-      const truncateAt = summaryText.lastIndexOf('.', 1000);
-      if (truncateAt > 0) {
-        summaryText = summaryText.substring(0, truncateAt + 1);
-      } else {
-        // If no sentence break found, just truncate
-        summaryText = summaryText.substring(0, 1000) + '...';
-      }
-    }
+    // Calculate available space in the grid cell for summary
+    // The height value is the total cell height
+    // We need to reserve space for all the other elements (roughly 80mm for metadata, classifications, etc.)
+    const reservedSpace = 80; // Space for other elements in mm
+    const availableHeight = height - reservedSpace;
     
     // Break into lines with proper wrapping
     const summaryLines = doc.splitTextToSize(summaryText, width - 10);
     
-    // We need to ensure the summary fits in the available space - limit to max lines
-    const maxSummaryLines = 6; // Limit summary to 6 lines in grid view
+    // Calculate how many lines we can fit in the available space
+    // Each line takes about 3mm of height with our reduced line spacing
+    const lineHeight = 3;
+    // Maximum number of lines based on available height
+    const maxSummaryLines = Math.floor(availableHeight / lineHeight);
     
     // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
     
-    for (let i = 0; i < Math.min(summaryLines.length, maxSummaryLines); i++) {
+    // If limited by space, show as many lines as possible
+    const linesToShow = Math.min(summaryLines.length, Math.max(10, maxSummaryLines));
+    
+    for (let i = 0; i < linesToShow; i++) {
       doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
-      currentY += 3; // Slightly reduce line spacing to fit more text
+      currentY += lineHeight; // Reduced line spacing to fit more text
     }
     
     // Add ellipsis if the summary was truncated
-    if (summaryLines.length > maxSummaryLines) {
+    if (summaryLines.length > linesToShow) {
       doc.text("...", x + 5, currentY);
-      currentY += 3;
+      currentY += lineHeight;
     }
   }
   
@@ -714,11 +714,14 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
   const pageHeight = doc.internal.pageSize.height;
   const margin = 10;
   
-  // Grid dimensions
+  // Grid dimensions - Adjust to provide more space for content
   const gridColumns = 2;
-  const gridRows = 2;
+  // Reduce to 1 row per page after the first page to allow more space for content
+  const gridRows = 1;
   const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
-  const cellHeight = (pageHeight - (margin * 3)) / gridRows; // 2 rows with margins
+  // Increase the cell height to accommodate more text, especially for summaries
+  // Use 140mm height per cell for even more space
+  const cellHeight = 140; // Fixed height in mm to ensure enough space for summary
   
   // First page layout - two correction boxes at the top
   const boxWidth = 80;
