@@ -401,13 +401,34 @@ const translations: Translations = {
   }
 };
 
+// Custom event name for language changes
+export const LANGUAGE_CHANGE_EVENT = 'app-language-changed';
+
+// Create a custom event for language changes
+export function createLanguageChangeEvent(language: Language) {
+  return new CustomEvent(LANGUAGE_CHANGE_EVENT, { 
+    detail: { language },
+    bubbles: true,
+    cancelable: true
+  });
+}
+
 export function useLanguage() {
   const [language, setLanguage] = useState<Language>("de");
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
+    if (lang === language) return; // Don't do anything if language hasn't changed
+    
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
+    
+    // Dispatch a custom event to notify components that need to refresh data
+    document.dispatchEvent(createLanguageChangeEvent(lang));
+    
+    // Optionally force refresh all API data that's language-dependent
+    // This will clear all cached queries that might contain language-specific content
+    // TODO: In a larger app, we could be more selective about which queries to invalidate
   };
   
   // Translation function
