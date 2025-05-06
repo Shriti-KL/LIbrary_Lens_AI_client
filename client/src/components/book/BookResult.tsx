@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
+import { useLanguageContext } from '@/contexts/LanguageContext';
 import { Book } from '@shared/schema';
 import { exportBookToPDF } from '@/lib/utils';
 import { 
@@ -11,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save } from 'lucide-react';
+import { Download, Save, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
@@ -37,6 +38,25 @@ export default function BookResult({
   loadingSteps
 }: BookResultProps) {
   const { t } = useLanguage();
+  const { translateBook, isTranslating } = useLanguageContext();
+  const [translatedBook, setTranslatedBook] = useState<Partial<Book>>(book);
+  
+  // Update translated book when book changes
+  useEffect(() => {
+    setTranslatedBook(book);
+  }, [book]);
+  
+  // Handle refreshing content in current language
+  const handleRefreshTranslation = async () => {
+    if (book.id) {
+      try {
+        const newTranslatedBook = await translateBook(book);
+        setTranslatedBook(newTranslatedBook);
+      } catch (error) {
+        console.error('Error translating book:', error);
+      }
+    }
+  };
 
   // Export functionality moved to multi-book export in archives page
 
@@ -222,11 +242,27 @@ export default function BookResult({
                   />
                 </div>
               )}
+              
+              {/* Translation refresh button */}
+              {book.id && (
+                <div className="mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full flex items-center justify-center gap-2" 
+                    onClick={handleRefreshTranslation}
+                    disabled={isTranslating}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isTranslating ? 'animate-spin' : ''}`} />
+                    {isTranslating ? t('translating') : t('refreshTranslation')}
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="sm:w-2/3">
-              <h3 className="text-xl font-serif font-semibold text-primary-dark">{book.title}</h3>
-              <p className="text-lg text-neutral-700 mt-1 font-medium">{book.author}</p>
+              <h3 className="text-xl font-serif font-semibold text-primary-dark">{translatedBook.title || book.title}</h3>
+              <p className="text-lg text-neutral-700 mt-1 font-medium">{translatedBook.author || book.author}</p>
               
               {/* Book Details Section */}
               <div className="mt-5">
@@ -249,17 +285,17 @@ export default function BookResult({
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-primary-dark/70">{t('publisher')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.publisher || 'N/A'}</p>
+                    <p className="mt-1 text-sm text-neutral-700">{translatedBook.publisher || book.publisher || 'N/A'}</p>
                   </div>
                   
                   {/* Edition and Location */}
                   <div>
                     <h4 className="text-sm font-medium text-primary-dark/70">{t('edition')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.edition || 'N/A'}</p>
+                    <p className="mt-1 text-sm text-neutral-700">{translatedBook.edition || book.edition || 'N/A'}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-primary-dark/70">{t('location')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.location || 'N/A'}</p>
+                    <p className="mt-1 text-sm text-neutral-700">{translatedBook.location || book.location || 'N/A'}</p>
                   </div>
                   
                   {/* Physical Characteristics */}
@@ -269,7 +305,7 @@ export default function BookResult({
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.binding || 'N/A'}</p>
+                    <p className="mt-1 text-sm text-neutral-700">{translatedBook.binding || book.binding || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -278,7 +314,18 @@ export default function BookResult({
               <div className="mt-5">
                 <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('contributors')}</h4>
                 <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                  {book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0 ? (
+                  {translatedBook.contributors && Array.isArray(translatedBook.contributors) && translatedBook.contributors.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {translatedBook.contributors.map((contributor: any, index: number) => (
+                        <div key={index} className="flex items-center">
+                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full mr-2">
+                            {contributor.role}
+                          </span>
+                          <span className="text-sm text-neutral-700">{contributor.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
                       {book.contributors.map((contributor: any, index: number) => (
                         <div key={index} className="flex items-center">
@@ -299,7 +346,13 @@ export default function BookResult({
                 <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('genres')}</h4>
                 <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
                   <div className="flex flex-wrap gap-2">
-                    {Array.isArray(book.genres) && book.genres.length > 0 ? (
+                    {Array.isArray(translatedBook.genres) && translatedBook.genres.length > 0 ? (
+                      translatedBook.genres.map((genre, index) => (
+                        <Badge key={index} variant="outline" className="bg-primary-light/20 text-primary-dark border-primary/30 px-3 py-1 font-medium">
+                          {genre}
+                        </Badge>
+                      ))
+                    ) : Array.isArray(book.genres) && book.genres.length > 0 ? (
                       book.genres.map((genre, index) => (
                         <Badge key={index} variant="outline" className="bg-primary-light/20 text-primary-dark border-primary/30 px-3 py-1 font-medium">
                           {genre}
@@ -312,7 +365,7 @@ export default function BookResult({
                 </div>
               </div>
               
-              {book.readingLevel && (
+              {(translatedBook.readingLevel || book.readingLevel) && (
                 <div className="mt-5">
                   <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('readingLevel')}</h4>
                   <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
@@ -327,7 +380,7 @@ export default function BookResult({
                           }}
                         ></div>
                       </div>
-                      <span className="ml-3 text-sm font-medium text-neutral-700">{book.readingLevel}</span>
+                      <span className="ml-3 text-sm font-medium text-neutral-700">{translatedBook.readingLevel || book.readingLevel}</span>
                     </div>
                   </div>
                 </div>
@@ -336,21 +389,21 @@ export default function BookResult({
           </div>
           
           {/* Book Summary */}
-          {book.summary && (
+          {translatedBook.summary && (
             <div>
               <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('aiSummary')}</h4>
               <p className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                {book.summary}
+                {translatedBook.summary}
               </p>
             </div>
           )}
           
           {/* Themes */}
-          {Array.isArray(book.themes) && book.themes.length > 0 && (
+          {Array.isArray(translatedBook.themes) && translatedBook.themes.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('majorThemes')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {book.themes.map((theme, index) => (
+                {translatedBook.themes.map((theme, index) => (
                   <div key={index} className="bg-accent/10 p-4 rounded-lg border border-accent/30 shadow-sm">
                     <h5 className="font-medium text-secondary-dark">
                       {typeof theme === 'object' && theme !== null && 'theme' in theme
@@ -369,11 +422,11 @@ export default function BookResult({
           )}
           
           {/* Catalog Entry */}
-          {book.catalogEntry && (
+          {translatedBook.catalogEntry && (
             <div>
               <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('catalogEntry')}</h4>
               <div className="p-5 bg-primary/5 rounded-lg font-mono text-sm whitespace-pre-wrap border border-primary/10 shadow-sm">
-                {book.catalogEntry}
+                {translatedBook.catalogEntry}
               </div>
             </div>
           )}
@@ -394,7 +447,7 @@ export default function BookResult({
       
       <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
         <Button 
-          onClick={() => onSave(book)}
+          onClick={() => onSave({...book, ...translatedBook})}
           className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
         >
           <Save className="h-4 w-4" />
