@@ -56,21 +56,24 @@ export default function BookDetail() {
   // Function to handle translation of book fields
   const handleLanguageChange = async (newLanguage: Language, oldLanguage: Language) => {
     if (!book) return;
+
+    // Set the original content first to avoid empty content during translation
+    setTranslatedFields({
+      summary: book.summary,
+      genres: book.genres as string[] | null,
+      themes: book.themes as any[] | null,
+      catalogEntry: book.catalogEntry,
+    });
     
-    // Don't translate if it's the initial language
-    if (book.language === newLanguage) {
-      setTranslatedFields({
-        summary: book.summary,
-        genres: book.genres as string[] | null,
-        themes: book.themes as any[] | null,
-        catalogEntry: book.catalogEntry,
-      });
-      return;
-    }
-    
+    // For any language change, attempt translation
+    // Even if book.language === newLanguage, still run translation as AI content might be in English
     try {
+      console.log(`Translating book content from ${oldLanguage} to ${newLanguage}`);
+      
       // Translate the book content fields
       const translatedBook = await translateBook(book);
+      
+      console.log("Translation complete, updating content");
       
       setTranslatedFields({
         summary: translatedBook.summary || null,
@@ -80,13 +83,7 @@ export default function BookDetail() {
       });
     } catch (error) {
       console.error('Translation error:', error);
-      // Fallback to original content
-      setTranslatedFields({
-        summary: book.summary || null,
-        genres: Array.isArray(book.genres) ? book.genres : null,
-        themes: Array.isArray(book.themes) ? book.themes : null,
-        catalogEntry: book.catalogEntry || null,
-      });
+      // Fallback to original content is already set above
     }
   };
   

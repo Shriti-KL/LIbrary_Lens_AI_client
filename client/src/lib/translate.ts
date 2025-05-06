@@ -118,40 +118,55 @@ export async function translateBookData(book: Partial<Book>, targetLanguage: Lan
   // Create a copy to avoid mutating the original
   const translatedBook: Partial<Book> = { ...book };
   
+  // Default source language (assume content is in original book language or English)
+  // This will force translation even if language detection fails
+  const defaultSourceLanguage: Language = (book.language as Language) || "en";
+  
   // Fields that need translation and their detected source language
-  const fieldsToTranslate: Record<TranslatableField, Language | null> = {
-    summary: null,
-    catalogEntry: null,
-    genres: null,
-    themes: null
+  const fieldsToTranslate: Record<TranslatableField, Language> = {
+    summary: defaultSourceLanguage,
+    catalogEntry: defaultSourceLanguage,
+    genres: defaultSourceLanguage,
+    themes: defaultSourceLanguage
   };
   
-  // Detect language of AI-generated fields
-  if (book.summary) fieldsToTranslate.summary = detectLanguage(book.summary);
-  if (book.catalogEntry) fieldsToTranslate.catalogEntry = detectLanguage(book.catalogEntry);
+  // Try to detect language of AI-generated fields, fallback to default if detection fails
+  if (book.summary) {
+    const detectedLang = detectLanguage(book.summary);
+    if (detectedLang) fieldsToTranslate.summary = detectedLang;
+  }
+  
+  if (book.catalogEntry) {
+    const detectedLang = detectLanguage(book.catalogEntry);
+    if (detectedLang) fieldsToTranslate.catalogEntry = detectedLang;
+  }
   
   // Handle arrays
-  if (Array.isArray(book.genres)) {
-    const genresLang = book.genres.length > 0 ? detectLanguage(book.genres.join(' ')) : null;
-    fieldsToTranslate.genres = genresLang;
+  if (Array.isArray(book.genres) && book.genres.length > 0) {
+    const detectedLang = detectLanguage(book.genres.join(' '));
+    if (detectedLang) fieldsToTranslate.genres = detectedLang;
   }
   
   if (Array.isArray(book.themes) && book.themes.length > 0) {
     // For themes which is an array of objects with theme and description
-    fieldsToTranslate.themes = detectLanguage(
-      book.themes.map(t => 
-        typeof t === 'object' && t !== null ? 
-          `${(t as any).theme || ''} ${(t as any).description || ''}` : 
-          String(t)
-      ).join(' ')
-    );
+    const themesText = book.themes.map(t => 
+      typeof t === 'object' && t !== null ? 
+        `${(t as any).theme || ''} ${(t as any).description || ''}` : 
+        String(t)
+    ).join(' ');
+    
+    const detectedLang = detectLanguage(themesText);
+    if (detectedLang) fieldsToTranslate.themes = detectedLang;
   }
+
+  console.log('Detected languages for book fields:', fieldsToTranslate);
 
   // Perform translations
   const translationPromises: Promise<any>[] = [];
   
+  // Always attempt translation for all fields if target language is different
   // Handle simple string fields
-  if (fieldsToTranslate.summary && book.summary) {
+  if (book.summary && fieldsToTranslate.summary !== targetLanguage) {
     translationPromises.push(
       translateText(book.summary, fieldsToTranslate.summary, targetLanguage)
         .then(translated => {
@@ -160,7 +175,7 @@ export async function translateBookData(book: Partial<Book>, targetLanguage: Lan
     );
   }
   
-  if (fieldsToTranslate.catalogEntry && book.catalogEntry) {
+  if (book.catalogEntry && fieldsToTranslate.catalogEntry !== targetLanguage) {
     translationPromises.push(
       translateText(book.catalogEntry, fieldsToTranslate.catalogEntry, targetLanguage)
         .then(translated => {
@@ -169,12 +184,12 @@ export async function translateBookData(book: Partial<Book>, targetLanguage: Lan
     );
   }
   
-  // Handle genres array
-  if (Array.isArray(book.genres) && fieldsToTranslate.genres) {
+  // Handle genres array - always translate if target language is different
+  if (Array.isArray(book.genres) && book.genres.length > 0 && fieldsToTranslate.genres !== targetLanguage) {
     translationPromises.push(
       Promise.all(
         book.genres.map(genre => 
-          translateText(genre, fieldsToTranslate.genres!, targetLanguage)
+          translateText(genre, fieldsToTranslate.genres, targetLanguage)
         )
       ).then(translatedGenres => {
         translatedBook.genres = translatedGenres;
@@ -182,8 +197,8 @@ export async function translateBookData(book: Partial<Book>, targetLanguage: Lan
     );
   }
   
-  // Handle themes array
-  if (Array.isArray(book.themes) && fieldsToTranslate.themes) {
+  // Handle themes array - always translate if target language is different
+  if (Array.isArray(book.themes) && book.themes.length > 0 && fieldsToTranslate.themes !== targetLanguage) {
     translationPromises.push(
       Promise.all(
         book.themes.map(async themeObj => {
@@ -191,11 +206,11 @@ export async function translateBookData(book: Partial<Book>, targetLanguage: Lan
             const typedTheme = themeObj as { theme?: string; description?: string; [key: string]: any };
             
             const theme = typedTheme.theme ? 
-              await translateText(typedTheme.theme, fieldsToTranslate.themes!, targetLanguage) : 
+              await translateText(typedTheme.theme, fieldsToTranslate.themes, targetLanguage) : 
               typedTheme.theme;
             
             const description = typedTheme.description ? 
-              await translateText(typedTheme.description, fieldsToTranslate.themes!, targetLanguage) : 
+              await translateText(typedTheme.description, fieldsToTranslate.themes, targetLanguage) : 
               typedTheme.description;
             
             return { ...typedTheme, theme, description };
