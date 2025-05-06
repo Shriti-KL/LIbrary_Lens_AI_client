@@ -615,25 +615,47 @@ export default function Archives() {
                   </span>
                 </div>
                 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="h-8"
-                        onClick={exportSelectedBooks}
-                        disabled={selectedBooks.size === 0}
-                      >
-                        <FileOutput className="h-4 w-4 mr-2" />
-                        {t('exportSelected')}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('exportSelectedTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <div className="flex space-x-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-8"
+                          onClick={exportSelectedBooks}
+                          disabled={selectedBooks.size === 0}
+                        >
+                          <FileOutput className="h-4 w-4 mr-2" />
+                          {t('exportSelected')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('exportSelectedTooltip')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={exportEkzFormat}
+                          disabled={selectedBooks.size === 0}
+                        >
+                          <BookText className="h-4 w-4 mr-2" />
+                          ekz-Informationsdienst
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Export in ekz-Informationsdienst catalog format</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
               
               <Table>
