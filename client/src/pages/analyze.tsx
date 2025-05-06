@@ -100,37 +100,38 @@ export default function Analyze() {
     }
   }, [analysisMutation.data]);
   
-  // Effect to monitor language changes and automatically trigger reanalysis
+  // Track previous language to avoid infinite loops
+  const [previousUILanguage, setPreviousUILanguage] = useState(language);
+  
+  // Effect to monitor language changes and trigger reanalysis once
   useEffect(() => {
-    // Skip on first render or if there's no book data
-    if (!bookData || Object.keys(bookData).length === 0) {
+    // Skip if language hasn't changed or if we don't have book data
+    if (language === previousUILanguage || !bookData || Object.keys(bookData).length === 0) {
       return;
     }
     
-    // If we have book data and language has changed
-    if (bookData.language && bookData.language !== language) {
-      console.log(`Language changed from ${bookData.language} to ${language}, queuing retranslation of content`);
+    console.log(`UI language changed from ${previousUILanguage} to ${language}, translating content`);
+    setPreviousUILanguage(language); // Update previous language to avoid multiple triggers
+    
+    // We have book data and detected a real language change, not a book data update
+    if (bookData.title && (bookData.author || bookData.isbn)) {
+      // Create a form with minimal data needed for the reanalysis
+      const formData = new FormData();
+      formData.append('title', bookData.title);
+      if (bookData.author) formData.append('author', bookData.author);
+      if (bookData.isbn) formData.append('isbn', bookData.isbn);
       
-      // Set a short timeout to allow the language change to fully process
-      setTimeout(() => {
-        if (bookData.title && (bookData.author || bookData.isbn)) {
-          // Create a form with minimal data needed for the reanalysis
-          const formData = new FormData();
-          formData.append('title', bookData.title);
-          if (bookData.author) formData.append('author', bookData.author);
-          if (bookData.isbn) formData.append('isbn', bookData.isbn);
-          
-          // Add necessary flags
-          formData.append('forceNewAnalysis', Date.now().toString());
-          formData.append('language', language);
-          formData.append('autoTranslate', 'true');
-          
-          // Submit for translation
-          analysisMutation.mutate({ formData, options });
-        }
-      }, 100);
+      // Add necessary flags
+      formData.append('forceNewAnalysis', Date.now().toString());
+      formData.append('language', language);
+      formData.append('autoTranslate', 'true');
+      
+      console.log(`Submitting translation request for "${bookData.title}" to ${language}`);
+      
+      // Submit for translation
+      analysisMutation.mutate({ formData, options });
     }
-  }, [language, bookData]);
+  }, [language]);
   
   // Before unload handler for browser navigation
   useEffect(() => {
