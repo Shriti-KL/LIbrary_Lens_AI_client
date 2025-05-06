@@ -4,7 +4,15 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { processBookAnalysis, analyzeBookCover } from "./services/openai";
+import { 
+  processBookAnalysis, 
+  analyzeBookCover, 
+  generateBookSummary, 
+  extractBookGenres, 
+  extractBookThemes, 
+  assessReadingLevel, 
+  generateCatalogEntry 
+} from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
@@ -224,6 +232,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(book);
     } catch (error) {
       res.status(500).json({ message: `Error fetching book: ${error.message}` });
+    }
+  });
+  
+  // POST /api/books/translate - Translate book content to another language
+  app.post("/api/books/translate", async (req: Request, res: Response) => {
+    try {
+      const { bookId, language } = req.body;
+      
+      if (!bookId || !language) {
+        return res.status(400).json({ message: "Book ID and language are required" });
+      }
+      
+      // Get the book from storage
+      const book = await storage.getBook(parseInt(bookId));
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+      
+      // Create a unique ID for this translation request for tracking
+      const translationId = `translation_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      console.log(`[${translationId}] Translating book "${book.title}" to ${language}`);
+      
+      // Clone the book and prepare to translate its fields
+      const translatedBook: Partial<Book> = { ...book, language };
+      
+      // Translate the summary if it exists
+      if (book.summary) {
+        console.log(`[${translationId}] Translating summary`);
+        translatedBook.summary = await generateBookSummary({
+          ...book,
+          language
+        });
+      }
+      
+      // Translate the genres if they exist
+      if (book.genres && Array.isArray(book.genres)) {
+        console.log(`[${translationId}] Translating genres`);
+        translatedBook.genres = await extractBookGenres({
+          ...book,
+          language
+        });
+      }
+      
+      // Translate the themes if they exist
+      if (book.themes) {
+        console.log(`[${translationId}] Translating themes`);
+        translatedBook.themes = await extractBookThemes({
+          ...book,
+          language
+        });
+      }
+      
+      // Translate the reading level if it exists
+      if (book.readingLevel) {
+        console.log(`[${translationId}] Translating reading level`);
+        translatedBook.readingLevel = await assessReadingLevel({
+          ...book,
+          language
+        });
+      }
+      
+      // Translate the catalog entry if it exists
+      if (book.catalogEntry) {
+        console.log(`[${translationId}] Translating catalog entry`);
+        translatedBook.catalogEntry = await generateCatalogEntry({
+          ...book,
+          language
+        });
+      }
+      
+      console.log(`[${translationId}] Translation complete`);
+      res.status(200).json(translatedBook);
+    } catch (error: any) {
+      console.error("Translation error:", error);
+      res.status(500).json({ message: `Error translating book: ${error.message}` });
     }
   });
   
