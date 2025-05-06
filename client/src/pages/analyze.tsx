@@ -7,7 +7,6 @@ import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
 import { useLocation } from 'wouter';
 import { useNavigationGuard } from '@/lib/navigation-guard';
-import { useLanguageContext } from '@/contexts/LanguageContext';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +21,6 @@ import { AlertCircle } from 'lucide-react';
 
 export default function Analyze() {
   const { t } = useLanguage();
-  const { language } = useLanguageContext();
   const [location, navigate] = useLocation();
   const { registerGuard, unregisterGuard } = useNavigationGuard();
   
@@ -144,15 +142,11 @@ export default function Analyze() {
     console.log("Submitting analysis with fresh form data:", {
       title: title || null,
       author: author || null,
-      hasImage,
-      language
+      hasImage
     });
     
     // Add a flag to explicitly mark this as a manual submission
     formData.append('isManualSubmission', 'true');
-    
-    // Add the current language to ensure content is generated in the correct language
-    formData.append('language', language);
     
     // Add a unique timestamp to force a fresh analysis
     formData.append('forceNewAnalysis', Date.now().toString());

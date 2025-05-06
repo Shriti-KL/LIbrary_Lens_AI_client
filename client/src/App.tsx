@@ -15,7 +15,6 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { NavigationGuardProvider } from "./lib/navigation-guard";
-import { LanguageProvider } from "./contexts/LanguageContext";
 
 function Router() {
   return (
@@ -36,18 +35,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <LanguageProvider>
-          <ThemeProvider attribute="class">
-            <TooltipProvider>
-              <NavigationGuardProvider>
-                <AppLayout>
-                  <Router />
-                </AppLayout>
-              </NavigationGuardProvider>
-              <Toaster />
-            </TooltipProvider>
-          </ThemeProvider>
-        </LanguageProvider>
+        <ThemeProvider attribute="class">
+          <TooltipProvider>
+            <NavigationGuardProvider>
+              <AppLayout>
+                <Router />
+              </AppLayout>
+            </NavigationGuardProvider>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

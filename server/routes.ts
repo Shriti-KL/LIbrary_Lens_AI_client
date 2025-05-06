@@ -4,15 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { 
-  processBookAnalysis, 
-  analyzeBookCover, 
-  generateBookSummary, 
-  extractBookGenres, 
-  extractBookThemes, 
-  assessReadingLevel, 
-  generateCatalogEntry 
-} from "./services/openai";
+import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
@@ -86,11 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
-          // Get language preference from request, default to German
-          const language = bookInfo.language || 'de';
-          console.log(`[${requestId}] Using language ${language} for book cover analysis`);
-          
-          const coverAnalysisResult = await analyzeBookCover(imageBase64, language);
+          const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
           // Use the analysis results for fields that weren't provided
           bookInfo = {
@@ -236,81 +224,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(book);
     } catch (error) {
       res.status(500).json({ message: `Error fetching book: ${error.message}` });
-    }
-  });
-  
-  // POST /api/books/translate - Translate book content to another language
-  app.post("/api/books/translate", async (req: Request, res: Response) => {
-    try {
-      const { bookId, language } = req.body;
-      
-      if (!bookId || !language) {
-        return res.status(400).json({ message: "Book ID and language are required" });
-      }
-      
-      // Get the book from storage
-      const book = await storage.getBook(parseInt(bookId));
-      if (!book) {
-        return res.status(404).json({ message: "Book not found" });
-      }
-      
-      // Create a unique ID for this translation request for tracking
-      const translationId = `translation_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      console.log(`[${translationId}] Translating book "${book.title}" to ${language}`);
-      
-      // Clone the book and prepare to translate its fields
-      const translatedBook: Partial<Book> = { ...book, language };
-      
-      // Translate the summary if it exists
-      if (book.summary) {
-        console.log(`[${translationId}] Translating summary`);
-        translatedBook.summary = await generateBookSummary({
-          ...book,
-          language
-        });
-      }
-      
-      // Translate the genres if they exist
-      if (book.genres && Array.isArray(book.genres)) {
-        console.log(`[${translationId}] Translating genres`);
-        translatedBook.genres = await extractBookGenres({
-          ...book,
-          language
-        });
-      }
-      
-      // Translate the themes if they exist
-      if (book.themes) {
-        console.log(`[${translationId}] Translating themes`);
-        translatedBook.themes = await extractBookThemes({
-          ...book,
-          language
-        });
-      }
-      
-      // Translate the reading level if it exists
-      if (book.readingLevel) {
-        console.log(`[${translationId}] Translating reading level`);
-        translatedBook.readingLevel = await assessReadingLevel({
-          ...book,
-          language
-        });
-      }
-      
-      // Translate the catalog entry if it exists
-      if (book.catalogEntry) {
-        console.log(`[${translationId}] Translating catalog entry`);
-        translatedBook.catalogEntry = await generateCatalogEntry({
-          ...book,
-          language
-        });
-      }
-      
-      console.log(`[${translationId}] Translation complete`);
-      res.status(200).json(translatedBook);
-    } catch (error: any) {
-      console.error("Translation error:", error);
-      res.status(500).json({ message: `Error translating book: ${error.message}` });
     }
   });
   
@@ -495,10 +408,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       const processed = { success: 0, failed: 0 };
       
-      // Get language preference from request, default to German
-      const language = req.body.language || 'de';
-      console.log(`Using language ${language} for batch processing`);
-      
       // Process files sequentially for better error handling
       for (const file of files) {
         try {
@@ -518,15 +427,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           try {
             // Step 1: Analyze cover using OpenAI Vision
-            console.log(`Step 1: Analyzing book cover with OpenAI Vision (language: ${language})...`);
-            const coverAnalysis = await analyzeBookCover(imageBase64, language);
+            console.log("Step 1: Analyzing book cover with OpenAI Vision...");
+            const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
             // Step 2: Enrich with Google Books data
             console.log("Step 2: Enriching with Google Books data...");
             const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis,
-              language, // Add language to enrichment request 
+              ...coverAnalysis, 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
@@ -546,13 +454,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis
-            console.log(`Step 3: Processing complete book analysis in ${language}...`);
+            console.log("Step 3: Processing complete book analysis...");
             const analysisResult = await processBookAnalysis({
               ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
-              language, // Include language parameter
               options: {
                 summary: true,
                 genres: true,

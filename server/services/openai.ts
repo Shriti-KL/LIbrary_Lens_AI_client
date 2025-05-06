@@ -8,32 +8,21 @@ const MODEL = "gpt-4o";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Handle book cover analysis
-export async function analyzeBookCover(image: string, language: string = "de"): Promise<any> {
+export async function analyzeBookCover(image: string): Promise<any> {
   try {
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
-    
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: `You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate. Respond in ${languageName}.`
+          content: "You are a book cataloging expert. Analyze this book cover image and extract all relevant metadata for library cataloging. Be comprehensive and accurate. Respond in German language."
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Analyze this book cover image and extract the following information with high accuracy:\n1. Book title (exact as shown)\n2. Author name (full name as shown)\n3. Publisher (if visible)\n4. ISBN (if visible)\n5. Publication year (if visible)\n6. Brief description of cover design\n\nRespond with a JSON object with keys: title, author, publisher, isbn, publishedYear, coverDescription. Use null for any fields not visible or unclear. Be as accurate as possible with the visible text on the cover. Your response should be in ${languageName}.`
+              text: "Analyze this book cover image and extract the following information with high accuracy:\n1. Book title (exact as shown)\n2. Author name (full name as shown)\n3. Publisher (if visible)\n4. ISBN (if visible)\n5. Publication year (if visible)\n6. Brief description of cover design\n\nRespond with a JSON object with keys: title, author, publisher, isbn, publishedYear, coverDescription. Use null for any fields not visible or unclear. Be as accurate as possible with the visible text on the cover."
             },
             {
               type: "image_url",
@@ -678,8 +667,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       title: analysisRequest.title,
       author: analysisRequest.author,
       hasCoverImage: !!analysisRequest.coverImage,
-      existingSummary: !!analysisRequest.summary,
-      language: analysisRequest.language || "de" // Default to German if not specified
+      existingSummary: !!analysisRequest.summary
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
