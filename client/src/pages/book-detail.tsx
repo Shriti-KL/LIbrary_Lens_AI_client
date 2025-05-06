@@ -60,7 +60,7 @@ export default function BookDetail() {
     if (!book) return;
     
     // Show the loading state immediately
-    setIsTranslating(true);
+    setIsContentRegenerating(true);
 
     // Set the original content first to avoid empty content during regeneration
     setTranslatedFields({
@@ -125,7 +125,7 @@ export default function BookDetail() {
       });
       // Fallback to original content is already set above
     } finally {
-      setIsTranslating(false);
+      setIsContentRegenerating(false);
     }
   };
   
@@ -239,8 +239,8 @@ export default function BookDetail() {
     setLocation('/archives');
   };
   
-  // Show loading state when fetching book data or during active translation
-  if (isLoading || isTranslating) {
+  // Show loading state when fetching book data or during active content regeneration
+  if (isLoading || isLanguageTranslating || isContentRegenerating) {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
@@ -457,14 +457,14 @@ export default function BookDetail() {
                   {((Array.isArray(translatedFields.genres) && translatedFields.genres.length > 0) || 
                    (Array.isArray(book.genres) && book.genres.length > 0)) && (
                     <div className="flex flex-wrap gap-2 mb-6">
-                      {/* Show loading indicator during translation */}
-                      {isTranslating && (
+                      {/* Show loading indicator during content regeneration */}
+                      {isContentRegenerating && (
                         <div className="w-full flex items-center justify-center py-2">
                           <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
                         </div>
                       )}
                       
@@ -493,13 +493,13 @@ export default function BookDetail() {
                       {t('summary')}
                     </h3>
                     <div className="prose prose-neutral">
-                      {isTranslating ? (
+                      {isContentRegenerating ? (
                         <div className="flex items-center py-2">
                           <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
                         </div>
                       ) : (
                         <p className="text-neutral-700 whitespace-pre-line">
@@ -516,13 +516,13 @@ export default function BookDetail() {
                       <h3 className="text-lg font-medium text-neutral-900 mb-3">
                         {t('themes')}
                       </h3>
-                      {isTranslating ? (
+                      {isContentRegenerating ? (
                         <div className="flex items-center py-2">
                           <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
                         </div>
                       ) : (
                         <ul className="list-disc pl-5 space-y-1">
@@ -567,13 +567,13 @@ export default function BookDetail() {
                         {t('catalogEntry')}
                       </h3>
                       <div className="bg-neutral-50 p-4 rounded-md border border-neutral-200">
-                        {isTranslating ? (
+                        {isContentRegenerating ? (
                           <div className="flex items-center py-2">
                             <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span className="text-sm text-neutral-500">{t('translating')}</span>
+                            <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
                           </div>
                         ) : (
                           <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
