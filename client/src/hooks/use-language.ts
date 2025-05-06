@@ -37,7 +37,6 @@ const translations: Translations = {
     assessReadingLevel: "Assess Reading Level",
     readingLevelDesc: "Determines appropriate age/grade level",
     generateCatalog: "Generate Catalog Entry",
-    translateContent: "Translate Content",
     catalogDesc: "Creates a formatted catalog entry",
     results: "Book Analysis Results",
     insights: "AI-powered insights and classification",
@@ -154,7 +153,6 @@ const translations: Translations = {
     readingLevelDesc: "Determina el nivel de edad/grado apropiado",
     generateCatalog: "Generar Entrada de Catálogo",
     catalogDesc: "Crea una entrada de catálogo formateada",
-    translateContent: "Traducir Contenido",
     results: "Resultados del Análisis del Libro",
     insights: "Información y clasificación con IA",
     complete: "Completo",
@@ -209,7 +207,6 @@ const translations: Translations = {
     readingLevelDesc: "Détermine le niveau d'âge/grade approprié",
     generateCatalog: "Générer une Entrée de Catalogue",
     catalogDesc: "Crée une entrée de catalogue formatée",
-    translateContent: "Traduire le Contenu",
     results: "Résultats de l'Analyse du Livre",
     insights: "Informations et classification par IA",
     complete: "Terminé",
@@ -264,7 +261,6 @@ const translations: Translations = {
     readingLevelDesc: "Bestimmt das angemessene Alters-/Klassenniveau",
     generateCatalog: "Katalogeintrag erstellen",
     catalogDesc: "Erstellt einen formatierten Katalogeintrag",
-    translateContent: "Inhalt übersetzen",
     results: "Buchanalyse-Ergebnisse",
     insights: "KI-gestützte Erkenntnisse und Klassifizierung",
     complete: "Abgeschlossen",
@@ -375,7 +371,6 @@ const translations: Translations = {
     readingLevelDesc: "确定适当的年龄/年级水平",
     generateCatalog: "生成目录条目",
     catalogDesc: "创建格式化的目录条目",
-    translateContent: "翻译内容",
     results: "图书分析结果",
     insights: "AI驱动的洞察和分类",
     complete: "完成",
@@ -408,21 +403,11 @@ const translations: Translations = {
 
 export function useLanguage() {
   const [language, setLanguage] = useState<Language>("de");
-  // Track when language changes for components that need to reload
-  const [languageChangeTimestamp, setLanguageChangeTimestamp] = useState<number>(Date.now());
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
-    // Update timestamp for components to detect language change
-    setLanguageChangeTimestamp(Date.now());
-    
-    // Trigger a custom event that components can listen for
-    const languageChangeEvent = new CustomEvent('app:languagechange', { 
-      detail: { language: lang, timestamp: Date.now() } 
-    });
-    window.dispatchEvent(languageChangeEvent);
   };
   
   // Translation function
@@ -442,5 +427,5 @@ export function useLanguage() {
     }
   }, []);
   
-  return { language, changeLanguage, t, languageChangeTimestamp };
+  return { language, changeLanguage, t };
 }
