@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from "react";
+import { translateBookData } from "@/lib/translate";
+import { Book } from "@shared/schema";
 
 // Supported languages
 export type Language = "en" | "es" | "fr" | "de" | "zh";
@@ -9,6 +11,9 @@ type Translations = {
     [key: string]: string;
   };
 };
+
+// Language change callback type
+export type LanguageChangeCallback = (newLanguage: Language, oldLanguage: Language) => void;
 
 // Default translations
 const translations: Translations = {
@@ -75,6 +80,8 @@ const translations: Translations = {
     close: "Close",
     view: "View",
     loading: "Loading...",
+    translating: "Translating...",
+    translationComplete: "Translation complete",
     // Filter-related translations
     filters: "Filters",
     selectAuthors: "Select authors",
@@ -180,6 +187,8 @@ const translations: Translations = {
     search: "Buscar",
     clear: "Limpiar",
     loading: "Cargando...",
+    translating: "Traduciendo...",
+    translationComplete: "Traducción completa",
   },
   fr: {
     appName: "LibraryLens AI",
@@ -234,6 +243,8 @@ const translations: Translations = {
     search: "Rechercher",
     clear: "Effacer",
     loading: "Chargement...",
+    translating: "Traduction en cours...",
+    translationComplete: "Traduction terminée",
   },
   de: {
     appName: "LibraryLens AI",
@@ -297,6 +308,8 @@ const translations: Translations = {
     close: "Schließen",
     view: "Ansehen",
     loading: "Laden...",
+    translating: "Übersetze...",
+    translationComplete: "Übersetzung abgeschlossen",
     filters: "Filter",
     selectAuthors: "Autoren auswählen",
     selectGenres: "Genres auswählen",
@@ -398,22 +411,85 @@ const translations: Translations = {
     search: "搜索",
     clear: "清除",
     loading: "加载中...",
+    translating: "翻译中...",
+    translationComplete: "翻译完成",
   }
 };
 
-export function useLanguage() {
+// Create a context for language
+interface LanguageContextType {
+  language: Language;
+  changeLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translateBook: (book: Partial<Book>) => Promise<Partial<Book>>;
+  isTranslating: boolean;
+  registerTranslationCallback: (id: string, callback: LanguageChangeCallback) => void;
+  unregisterTranslationCallback: (id: string) => void;
+}
+
+export const LanguageContext = createContext<LanguageContextType | null>(null);
+
+// Provider component
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>("de");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [callbacks, setCallbacks] = useState<Record<string, LanguageChangeCallback>>({});
   
   // Function to change the current language
-  const changeLanguage = (lang: Language) => {
+  const changeLanguage = useCallback((lang: Language) => {
+    if (lang === language) return; // No change needed
+    
+    setIsTranslating(true);
+    const previousLanguage = language;
+    
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
-  };
+    
+    // Notify all registered callbacks about the language change
+    Object.values(callbacks).forEach(callback => {
+      callback(lang, previousLanguage);
+    });
+    
+    // Set translating to false after a short delay
+    setTimeout(() => {
+      setIsTranslating(false);
+    }, 300);
+  }, [language, callbacks]);
   
   // Translation function
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     return translations[language][key] || key;
-  };
+  }, [language]);
+  
+  // Register a callback function to be notified of language changes
+  const registerTranslationCallback = useCallback((id: string, callback: LanguageChangeCallback) => {
+    setCallbacks(prev => ({ ...prev, [id]: callback }));
+  }, []);
+  
+  // Unregister a callback function
+  const unregisterTranslationCallback = useCallback((id: string) => {
+    setCallbacks(prev => {
+      const newCallbacks = { ...prev };
+      delete newCallbacks[id];
+      return newCallbacks;
+    });
+  }, []);
+  
+  // Translate book data
+  const translateBook = useCallback(async (book: Partial<Book>): Promise<Partial<Book>> => {
+    if (!book) return book;
+    setIsTranslating(true);
+    
+    try {
+      const translatedBook = await translateBookData(book, language);
+      return translatedBook;
+    } catch (error) {
+      console.error("Error translating book:", error);
+      return book;
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [language]);
   
   // Load saved language preference on mount
   useEffect(() => {
@@ -427,5 +503,27 @@ export function useLanguage() {
     }
   }, []);
   
-  return { language, changeLanguage, t };
+  const contextValue = {
+    language,
+    changeLanguage,
+    t,
+    translateBook,
+    isTranslating,
+    registerTranslationCallback,
+    unregisterTranslationCallback
+  };
+  
+  return (
+    <LanguageContext.Provider value={contextValue}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
+  }
+  return context;
 }
