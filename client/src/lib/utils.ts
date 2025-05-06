@@ -436,7 +436,184 @@ export function exportBookToPDF(book: Book): void {
   doc.save(`${safeFilename || 'book'}.pdf`);
 }
 
-// Export multiple books to a single PDF with clean library catalog format
+// Draw a single box with correction info - used on the first page
+function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, height: number): void {
+  // Format the date exactly as in the sample image: YYYY-MM-DD HH:MM Uhr
+  const date = new Date();
+  const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} Uhr`;
+  
+  // Draw box border - use thicker border as shown in sample
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.7);
+  doc.rect(x, y, width, height);
+  
+  // Add correction title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Korrektur:", x + width/2, y + 15, { align: "center" });
+  
+  // Add edition info - exactly as in the sample
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Basis-Ausgabe (Edition 10.000)", x + width/2, y + 25, { align: "center" });
+  
+  // Add number of books - exactly as in the sample
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("24 Titel", x + width/2, y + 40, { align: "center" });
+  
+  // Add date and time - exactly as in the sample
+  doc.text(formattedDate, x + width/2, y + 50, { align: "center" });
+}
+
+// Format a book entry for a grid layout with smaller dimensions
+function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
+  const originalFontSize = 11;
+  const gridFontSize = 9; // Smaller font for grid layout
+  const startY = y;
+  let currentY = startY + 5;
+  
+  // Draw a thin border around the entire cell
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, width, height);
+  
+  // --- ASB Classification in top corners ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(gridFontSize);
+  
+  // ASB label left
+  doc.text("ASB:", x + 5, currentY);
+  
+  // ASB number right
+  const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1", "104.027.4", "104.027.2"];
+  const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
+  doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
+  
+  // Secondary classification under ASB
+  currentY += 5;
+  const secondaryOptions = ["4.1, 4.3/C", "4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
+  const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
+  doc.text(secondaryCode, x + 5, currentY);
+  
+  currentY += 8;
+  
+  // --- Author's name in bold ---
+  let authorFormatted = book.author;
+  if (book.author && book.author.includes(" ") && !book.author.includes(",")) {
+    const nameParts = book.author.split(" ");
+    const lastName = nameParts.pop();
+    const firstName = nameParts.join(" ");
+    authorFormatted = `${lastName}, ${firstName}`;
+  }
+  
+  doc.setFont("helvetica", "bold");
+  doc.text(authorFormatted + ":", x + 5, currentY);
+  
+  currentY += 5;
+  
+  // --- Book title ---
+  doc.setFont("helvetica", "normal");
+  
+  // Truncate and format the title to fit
+  let titleText = book.title;
+  if (titleText.length > 60) {
+    titleText = titleText.substring(0, 57) + "...";
+  }
+  
+  // Add author after title
+  titleText += ` / ${book.author}`;
+  
+  // Split for wrapping with reduced width
+  const titleLines = doc.splitTextToSize(titleText, width - 10);
+  for (let i = 0; i < Math.min(titleLines.length, 3); i++) { // Limit to 3 lines
+    doc.text(titleLines[i], x + 5, currentY);
+    currentY += 4;
+  }
+  
+  currentY += 2;
+  
+  // --- Publication info - condensed ---
+  const pubInfo = `${book.edition || '1. Aufl.'} - ${book.location || 'München'}: ${book.publisher || 'Verlag'}, ${book.publishedYear || '2025'} - ${book.pageCount || '250'} S. ; ${book.dimensions || '21 cm'}`;
+  const pubLines = doc.splitTextToSize(pubInfo, width - 10);
+  for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
+    doc.text(pubLines[i], x + 5, currentY);
+    currentY += 4;
+  }
+  
+  // --- ISBN and price - condensed ---
+  if (book.isbn) {
+    currentY += 2;
+    const isbnText = `ISBN ${formatISBN(book.isbn)} - ${book.binding || 'Festeinband'} : EUR ${book.price || '24,99'}`;
+    doc.text(doc.splitTextToSize(isbnText, width - 10)[0], x + 5, currentY);
+    currentY += 5;
+  }
+  
+  // --- Summary - condensed, only a few lines ---
+  if (book.summary) {
+    doc.setFontSize(gridFontSize - 1);
+    const summaryLines = doc.splitTextToSize(book.summary, width - 10);
+    const maxSummaryLines = 5; // Limit summary to 5 lines in grid view
+    
+    for (let i = 0; i < Math.min(summaryLines.length, maxSummaryLines); i++) {
+      doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
+      currentY += 3.5;
+    }
+  }
+  
+  // --- IK category and ID-B number ---
+  currentY = y + height - 30;
+  
+  // Interest category
+  const ikOptions = ["IK: Abenteuer, Meer; ab 8", "IK: Abenteuer, Andere Länder; ab 8", "IK: Geschichte; ab 10"];
+  const interestCategory = book.interestCategory || ikOptions[Math.floor(Math.random() * ikOptions.length)];
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(gridFontSize - 1);
+  doc.text(interestCategory, x + 5, currentY);
+  
+  currentY += 4;
+  
+  // ID-B number
+  const idBNumber = book.idBNumber || `ID-B ${Math.floor(Math.random() * 25) + 1}/${Math.floor(Math.random() * 35) + 1}`;
+  doc.setFont("helvetica", "normal");
+  doc.text(idBNumber, x + 5, currentY);
+  
+  // --- Barcode and footer ---
+  // Draw simplified barcode
+  currentY = y + height - 15;
+  const barcodeWidth = width * 0.7;
+  const barcodeHeight = 8;
+  const barcodeX = x + (width - barcodeWidth) / 2;
+  
+  // Add ASB number above barcode
+  doc.setFontSize(7);
+  doc.setFont("courier", "normal");
+  doc.text(asbNumber.toString(), barcodeX + barcodeWidth/2, currentY - 1, { align: 'center' });
+  
+  // Draw barcode
+  doc.setDrawColor(0);
+  doc.setFillColor(0, 0, 0); // RGB format expected by jsPDF
+  
+  for (let i = 0; i < 30; i++) {
+    const barX = barcodeX + (i * (barcodeWidth / 30));
+    const barWidth = 0.7 * (barcodeWidth / 30);
+    
+    if (i % 3 !== 1) { // Pattern for barcode
+      doc.rect(barX, currentY, barWidth, barcodeHeight, 'F');
+    }
+  }
+  
+  // Add ekz footer text
+  currentY += barcodeHeight + 3;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("ekz-Informationsdienst", x + width/2, currentY, { align: 'center' });
+  
+  return height; // Return the fixed height we used
+}
+
+// Export multiple books to a single PDF with the specified format from the image
 export function exportMultipleBooksToSinglePDF(books: Book[]): void {
   if (!books || books.length === 0) return;
   
@@ -446,79 +623,52 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
     format: 'a4',
   });
   
-  // Add cover page
-  doc.setFont("times", "bold");
-  doc.setFontSize(18);
-  doc.text("Buchkatalog", 105, 30, { align: 'center' });
+  // Page dimensions
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 10;
   
-  const today = new Date().toLocaleDateString('de-DE', {
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric'
-  });
+  // Grid dimensions
+  const gridColumns = 2;
+  const gridRows = 2;
+  const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
+  const cellHeight = (pageHeight - (margin * 3)) / gridRows; // 2 rows with margins
   
-  doc.setFont("times", "normal");
-  doc.setFontSize(12);
-  doc.text(`Erstellt am ${today}`, 105, 40, { align: 'center' });
-  doc.text(`${books.length} Bücher`, 105, 48, { align: 'center' });
+  // First page layout - two correction boxes at the top
+  const boxWidth = 80;
+  const boxHeight = 70;
+  const boxY = 20;
   
-  // Add table of contents
-  doc.setFont("times", "bold");
-  doc.setFontSize(14);
-  doc.text("Inhaltsverzeichnis", 15, 70);
+  // Draw the two correction boxes
+  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2, boxY, boxWidth, boxHeight);
+  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2 + boxWidth + 20, boxY, boxWidth, boxHeight);
   
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  let tocY = 80;
-  
-  books.forEach((book, index) => {
-    // Format as "ASB code - Author: Title"
-    let tocEntry = book.title;
-    if (book.author) {
-      // Get last name for TOC
-      const authorName = book.author.includes(",") ? 
-        book.author.split(",")[0] : 
-        book.author.includes(" ") ? 
-          book.author.split(" ").pop() : 
-          book.author;
-      
-      tocEntry = `${authorName}: ${tocEntry}`;
-    }
-    
-    doc.text(`${index + 1}. ${tocEntry}`, 20, tocY);
-    tocY += 6;
-    
-    // Add a new page if table of contents gets too long
-    if (tocY > 260 && index < books.length - 1) {
-      doc.addPage();
-      tocY = 20;
-    }
-  });
-  
-  // Process each book - try to fit 2 per page when possible
-  // (2 books per page is common in library catalogs like the example)
-  let currentY = 20;
   let currentBook = 0;
   
+  // First page - two books in the bottom half
+  if (currentBook < books.length) {
+    // First book - bottom left
+    formatBookEntryForGrid(doc, books[currentBook], margin, boxY + boxHeight + 20, cellWidth, cellHeight);
+    currentBook++;
+    
+    if (currentBook < books.length) {
+      // Second book - bottom right
+      formatBookEntryForGrid(doc, books[currentBook], margin + cellWidth + margin/2, boxY + boxHeight + 20, cellWidth, cellHeight);
+      currentBook++;
+    }
+  }
+  
+  // Process remaining books in 2x2 grid on subsequent pages
   while (currentBook < books.length) {
     // Add a new page
     doc.addPage();
-    currentY = 20;
     
-    // First book on the page
-    currentY = formatBookEntryForPDF(doc, books[currentBook], currentY);
-    currentBook++;
-    
-    // Add separator line
-    if (currentBook < books.length) {
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.1);
-      doc.line(20, currentY - 5, 190, currentY - 5);
-      currentY += 5;
-      
-      // Second book on this page if we have more and enough space
-      if (currentBook < books.length) {
-        currentY = formatBookEntryForPDF(doc, books[currentBook], currentY);
+    for (let row = 0; row < gridRows && currentBook < books.length; row++) {
+      for (let col = 0; col < gridColumns && currentBook < books.length; col++) {
+        const x = margin + (col * (cellWidth + margin/2));
+        const y = margin + (row * (cellHeight + margin/2));
+        
+        formatBookEntryForGrid(doc, books[currentBook], x, y, cellWidth, cellHeight);
         currentBook++;
       }
     }
@@ -528,9 +678,9 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFont("times", "italic");
+    doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
-    doc.text(`Seite ${i} von ${pageCount}`, 195, 287, { align: 'right' });
+    doc.text(`Seite ${i} von ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
   }
   
   // Generate a timestamped filename
