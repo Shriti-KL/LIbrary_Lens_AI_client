@@ -208,9 +208,9 @@ export default function BookResult({
                   alt={`${book.title} cover`} 
                   className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
                 />
-              ) : book.coverImageData ? (
+              ) : (book as any).coverImageData ? (
                 <img 
-                  src={book.coverImageData as string} 
+                  src={(book as any).coverImageData} 
                   alt={`${book.title} cover`} 
                   className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
                 />

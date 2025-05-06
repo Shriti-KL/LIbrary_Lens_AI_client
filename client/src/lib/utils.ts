@@ -151,9 +151,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Use custom ASB classification if available, or generate a catalog-style identifier
   // ASB section - Top right
-  const asbCategory = book.categories && book.categories.length > 0 ? book.categories[0] : "ASB:";
+  const asbCategory = Array.isArray(book.categories) && book.categories.length > 0 ? 
+    book.categories[0] : "ASB:";
+  
   // Format ASB number like 103.485.0 or similar from sample
-  const asbNumber = book.catalogNumber || `${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 10)}`;
+  const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1"];
+  const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
   
   // Print ASB text
   doc.text("ASB:", 22, yPos);
@@ -362,18 +365,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Draw a barcode-like rectangle (placeholder for actual barcode)
   const barcodeHeight = 10;
   doc.setDrawColor(0);
-  doc.setFillColor(0);
+  doc.setFillColor(0, 0, 0); // Use RGB format to avoid type error
   
-  // Draw several vertical bars to simulate barcode
+  // Draw a simple line instead of barcode to avoid type issues
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
   const barcodeWidth = 60;
   const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
-  for (let i = 0; i < 20; i++) {
-    if (i % 2 === 0) {
-      const barWidth = 0.5 + Math.random() * 2;
-      const barX = startX + (i * 3);
-      doc.rect(barX, yPos, barWidth, barcodeHeight, 'F');
-    }
-  }
+  doc.line(startX, yPos, startX + barcodeWidth, yPos);
+  doc.line(startX, yPos + barcodeHeight, startX + barcodeWidth, yPos + barcodeHeight);
   
   // Add ekz-Informationsdienst text below barcode
   yPos += barcodeHeight + 5;
