@@ -324,12 +324,6 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.summary) {
     yPos += 2;
     
-    // Add subheading for summary
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.text("Inhalt:", 22, yPos);
-    yPos += 5;
-    
     // Set text style for summary text
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
@@ -359,15 +353,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Remove any extra whitespace and multiple newlines that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Ensure summary is not too long (aim for ~1000 characters)
-    if (summaryText.length > 1000) {
-      // Find the last complete sentence before the 1000 character mark
-      const truncateAt = summaryText.lastIndexOf('.', 1000);
+    // In single-book view, we don't limit the summary length
+    // (unless it's extremely long and would cause layout issues)
+    if (summaryText.length > 5000) { // Only limit extremely long summaries
+      // Find the last complete sentence
+      const truncateAt = summaryText.lastIndexOf('.', 5000);
       if (truncateAt > 0) {
         summaryText = summaryText.substring(0, truncateAt + 1);
-      } else {
-        // If no sentence break found, just truncate at 1000
-        summaryText = summaryText.substring(0, 1000) + '...';
       }
     }
     
@@ -622,15 +614,15 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Remove any extra whitespace that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Ensure summary is not too long
-    if (summaryText.length > 400) { // Shorter for grid view
+    // Ensure summary is not too long for grid view (increased to ~1000 characters as requested)
+    if (summaryText.length > 1000) { // Limit for grid view
       // Find the last complete sentence before character limit
-      const truncateAt = summaryText.lastIndexOf('.', 400);
+      const truncateAt = summaryText.lastIndexOf('.', 1000);
       if (truncateAt > 0) {
         summaryText = summaryText.substring(0, truncateAt + 1);
       } else {
         // If no sentence break found, just truncate
-        summaryText = summaryText.substring(0, 400) + '...';
+        summaryText = summaryText.substring(0, 1000) + '...';
       }
     }
     
@@ -640,12 +632,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // We need to ensure the summary fits in the available space - limit to max lines
     const maxSummaryLines = 6; // Limit summary to 6 lines in grid view
     
-    // Add subheading for summary
-    doc.setFont("helvetica", "italic");
-    doc.text("Inhalt:", x + 5, currentY);
-    currentY += 3.5;
-    
-    // Switch back to normal font for the summary text
+    // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
     
     for (let i = 0; i < Math.min(summaryLines.length, maxSummaryLines); i++) {
