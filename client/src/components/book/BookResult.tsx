@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
-import { Book } from '@shared/schema';
+import { Book, AnalysisOption } from '@shared/schema';
 import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
@@ -11,11 +11,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save } from 'lucide-react';
+import { Download, Save, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
 import { formatISBN } from '@/lib/utils';
+import { useMutation } from '@tanstack/react-query';
 
 interface BookResultProps {
   book: Partial<Book>;
@@ -36,7 +37,72 @@ export default function BookResult({
   onSave,
   loadingSteps
 }: BookResultProps) {
-  const { t } = useLanguage();
+  const { t, language, languageChangeTimestamp } = useLanguage();
+  const [localBook, setLocalBook] = useState<Partial<Book>>(book);
+  const previousLanguageRef = useRef<string>(language);
+  
+  // Update local book state when prop changes
+  useEffect(() => {
+    setLocalBook(book);
+  }, [book]);
+  
+  // Listen for language changes and re-translate content if book data exists
+  useEffect(() => {
+    // Only trigger retranslation if language changed (not on initial render)
+    if (previousLanguageRef.current !== language && localBook?.title && localBook?.author) {
+      console.log(`Language changed from ${previousLanguageRef.current} to ${language}. Retranslating content...`);
+      retranslateContentMutation.mutate(localBook);
+    }
+    
+    // Update ref for next comparison
+    previousLanguageRef.current = language;
+  }, [language, languageChangeTimestamp]);
+  
+  // Handle language-specific content updates
+  const retranslateContentMutation = useMutation({
+    mutationFn: async (bookData: Partial<Book>) => {
+      // Skip if we don't have basic book info
+      if (!bookData.title || !bookData.author) {
+        throw new Error("Missing title or author for retranslation");
+      }
+      
+      // Create form data with book info
+      const formData = new FormData();
+      formData.append("title", bookData.title);
+      formData.append("author", bookData.author);
+      formData.append("isbn", bookData.isbn || "");
+      formData.append("language", language);
+      formData.append("forceNewAnalysis", Date.now().toString());
+      
+      // Include all relevant analysis options
+      const options = {
+        summary: true,
+        genres: true,
+        themes: true,
+        readingLevel: true,
+        catalogEntry: true
+      };
+      formData.append("options", JSON.stringify(options));
+      
+      // Make the API request
+      const response = await fetch("/api/books/analyze", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || response.statusText);
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      // Update the local book data with new translated content
+      setLocalBook(data);
+    }
+  });
 
   // Export functionality moved to multi-book export in archives page
 
@@ -392,14 +458,30 @@ export default function BookResult({
         </div>
       </CardContent>
       
-      <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
-        <Button 
-          onClick={() => onSave(book)}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
-        >
-          <Save className="h-4 w-4" />
-          {t('saveToArchive')}
-        </Button>
+      <CardFooter className="bg-primary/5 border-t border-primary/10 py-4 px-6">
+        <div className="flex justify-between w-full gap-2">
+          {/* Retranslate button */}
+          <Button 
+            variant="outline" 
+            onClick={() => retranslateContentMutation.mutate(localBook)}
+            disabled={retranslateContentMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${retranslateContentMutation.isPending ? 'animate-spin' : ''}`} />
+            {retranslateContentMutation.isPending 
+              ? t('processing') 
+              : t('translateContent') || "Translate Content"}
+          </Button>
+          
+          {/* Save button */}
+          <Button 
+            onClick={() => onSave(localBook)}
+            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
+          >
+            <Save className="h-4 w-4" />
+            {t('saveToArchive')}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

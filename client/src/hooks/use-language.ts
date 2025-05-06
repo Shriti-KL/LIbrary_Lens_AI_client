@@ -403,11 +403,21 @@ const translations: Translations = {
 
 export function useLanguage() {
   const [language, setLanguage] = useState<Language>("de");
+  // Track when language changes for components that need to reload
+  const [languageChangeTimestamp, setLanguageChangeTimestamp] = useState<number>(Date.now());
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
+    // Update timestamp for components to detect language change
+    setLanguageChangeTimestamp(Date.now());
+    
+    // Trigger a custom event that components can listen for
+    const languageChangeEvent = new CustomEvent('app:languagechange', { 
+      detail: { language: lang, timestamp: Date.now() } 
+    });
+    window.dispatchEvent(languageChangeEvent);
   };
   
   // Translation function
@@ -427,5 +437,5 @@ export function useLanguage() {
     }
   }, []);
   
-  return { language, changeLanguage, t };
+  return { language, changeLanguage, t, languageChangeTimestamp };
 }
