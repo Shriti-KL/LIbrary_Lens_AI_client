@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 import { Book, BookAnalysisRequest, AnalysisOption } from "@shared/schema";
 
+// Simple language type (should match what's in the client)
+export type Language = "en" | "es" | "fr" | "de" | "zh";
+
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
 
@@ -556,6 +559,54 @@ ${contextText}`
 }
 
 // Extract missing bibliographic fields from AI
+// Translate text from one language to another
+export async function translateText(text: string, fromLanguage: Language, toLanguage: Language): Promise<string> {
+  // If languages are the same or text is empty, no translation needed
+  if (fromLanguage === toLanguage || !text) {
+    return text;
+  }
+  
+  // Map language codes to full language names for prompt clarity
+  const languageNames: Record<Language, string> = {
+    en: "English",
+    de: "German (Deutsch)",
+    fr: "French (Français)",
+    es: "Spanish (Español)",
+    zh: "Chinese (中文)"
+  };
+  
+  try {
+    console.log(`Translating text from ${fromLanguage} to ${toLanguage}...`);
+    
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert translator. Translate the following text from ${languageNames[fromLanguage]} to ${languageNames[toLanguage]} accurately while maintaining the original meaning, tone, and formatting. Do not add or remove information.`
+        },
+        {
+          role: "user",
+          content: text
+        }
+      ],
+      temperature: 0.3, // Lower temperature for more accurate translation
+    });
+    
+    const translatedContent = response.choices[0].message.content;
+    if (!translatedContent) {
+      console.error("No translation content returned from OpenAI");
+      return text;  // Return original if translation fails
+    }
+    
+    return translatedContent.trim();
+  } catch (error: any) {
+    console.error("Translation error:", error.message || String(error));
+    // Return original text if translation fails
+    return text;
+  }
+}
+
 export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     // Determine language for content generation (default to German if not specified)

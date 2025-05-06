@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { parseErrorMessage, formatISBN } from '@/lib/utils';
-import { useLanguage } from '@/hooks/use-language';
+import { useLanguage, Language } from '@/hooks/use-language';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
 import { ChevronLeft, Bookmark, Check, Pencil, Trash, Save, X } from 'lucide-react';

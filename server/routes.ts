@@ -523,6 +523,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Translation API endpoint
+  app.post("/api/translate", async (req: Request, res: Response) => {
+    try {
+      const { text, fromLanguage, toLanguage } = req.body;
+      
+      if (!text || !fromLanguage || !toLanguage) {
+        return res.status(400).json({ 
+          message: "Missing required fields: text, fromLanguage, and toLanguage are required" 
+        });
+      }
+      
+      const translatedText = await translateText(text, fromLanguage, toLanguage);
+      res.status(200).json({ translatedText });
+    } catch (error: any) {
+      console.error("Translation error:", error);
+      res.status(500).json({ 
+        message: `Error during translation: ${error.message || String(error)}` 
+      });
+    }
+  });
+  
   // Google Books API integration endpoints
   
   // GET /api/googlebooks/search - Search books via Google Books API
