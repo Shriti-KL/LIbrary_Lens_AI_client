@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF, exportEkzCatalogPDF } from '@/lib/utils';
+import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -275,35 +275,6 @@ export default function Archives() {
       });
     } catch (error) {
       console.error('PDF export error:', error);
-      toast({
-        title: t('exportFailed'),
-        description: t('errorGeneratingPDF'),
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  // Export selected books in ekz-Informationsdienst format
-  const exportEkzFormat = () => {
-    const booksToExport = filteredBooks.filter(book => selectedBooks.has(book.id));
-    
-    if (booksToExport.length === 0) {
-      toast({
-        title: t('noBookSelected'),
-        description: t('pleaseSelectBooks'),
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      exportEkzCatalogPDF(booksToExport);
-      toast({
-        title: 'ekz-Format Export',
-        description: 'Books exported in ekz-Informationsdienst format',
-      });
-    } catch (error) {
-      console.error('ekz-Format PDF export error:', error);
       toast({
         title: t('exportFailed'),
         description: t('errorGeneratingPDF'),
@@ -615,47 +586,25 @@ export default function Archives() {
                   </span>
                 </div>
                 
-                <div className="flex space-x-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="h-8"
-                          onClick={exportSelectedBooks}
-                          disabled={selectedBooks.size === 0}
-                        >
-                          <FileOutput className="h-4 w-4 mr-2" />
-                          {t('exportSelected')}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t('exportSelectedTooltip')}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8"
-                          onClick={exportEkzFormat}
-                          disabled={selectedBooks.size === 0}
-                        >
-                          <BookText className="h-4 w-4 mr-2" />
-                          ekz-Informationsdienst
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Export in ekz-Informationsdienst catalog format</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-8"
+                        onClick={exportSelectedBooks}
+                        disabled={selectedBooks.size === 0}
+                      >
+                        <FileOutput className="h-4 w-4 mr-2" />
+                        {t('exportSelected')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('exportSelectedTooltip')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               
               <Table>
