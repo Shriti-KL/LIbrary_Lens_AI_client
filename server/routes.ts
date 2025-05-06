@@ -57,12 +57,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Get language from body (default to German)
-        const language = bodyData.language || "de";
+        // Handle case where language might come as an array from form data
+        let language = bodyData.language || "de";
+        if (Array.isArray(language)) {
+          language = language[0]; // Take first element if it's an array
+        }
         console.log(`[${requestId}] Analysis requested in language: ${language}`);
         
         bookInfo = {
           ...bodyData,
-          language: language,
+          language: language, // Ensure language is a string
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
