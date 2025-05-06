@@ -27,8 +27,21 @@ export default function BookDetail() {
   const [, setLocation] = useLocation();
   const [_, params] = useRoute('/book/:id');
   const bookId = params?.id;
-  const { t } = useLanguage();
+  const { t, language, translateBook, isTranslating, registerTranslationCallback, unregisterTranslationCallback } = useLanguage();
   const { toast } = useToast();
+  
+  // Language-specific fields that need translation
+  const [translatedFields, setTranslatedFields] = useState<{
+    summary: string | null;
+    genres: string[] | null;
+    themes: any[] | null;
+    catalogEntry: string | null;
+  }>({
+    summary: null,
+    genres: null,
+    themes: null,
+    catalogEntry: null,
+  });
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedBook, setEditedBook] = useState<Partial<Book>>({});
@@ -39,6 +52,58 @@ export default function BookDetail() {
     queryKey: [`/api/books/${bookId}`],
     enabled: !!bookId,
   });
+  
+  // Function to handle translation of book fields
+  const handleLanguageChange = async (newLanguage: Language, oldLanguage: Language) => {
+    if (!book) return;
+    
+    // Don't translate if it's the initial language
+    if (book.language === newLanguage) {
+      setTranslatedFields({
+        summary: book.summary,
+        genres: book.genres as string[] | null,
+        themes: book.themes as any[] | null,
+        catalogEntry: book.catalogEntry,
+      });
+      return;
+    }
+    
+    try {
+      // Translate the book content fields
+      const translatedBook = await translateBook(book);
+      
+      setTranslatedFields({
+        summary: translatedBook.summary || null,
+        genres: Array.isArray(translatedBook.genres) ? translatedBook.genres : null,
+        themes: Array.isArray(translatedBook.themes) ? translatedBook.themes : null,
+        catalogEntry: translatedBook.catalogEntry || null,
+      });
+    } catch (error) {
+      console.error('Translation error:', error);
+      // Fallback to original content
+      setTranslatedFields({
+        summary: book.summary || null,
+        genres: Array.isArray(book.genres) ? book.genres : null,
+        themes: Array.isArray(book.themes) ? book.themes : null,
+        catalogEntry: book.catalogEntry || null,
+      });
+    }
+  };
+  
+  // Register for language changes
+  useEffect(() => {
+    const translationCallbackId = 'book-detail-' + bookId;
+    registerTranslationCallback(translationCallbackId, handleLanguageChange);
+    
+    // Initial translation if needed
+    if (book) {
+      handleLanguageChange(language, language);
+    }
+    
+    return () => {
+      unregisterTranslationCallback(translationCallbackId);
+    };
+  }, [book, bookId, language, registerTranslationCallback, unregisterTranslationCallback]);
   
   // Update book mutation
   const updateBookMutation = useMutation({
@@ -135,7 +200,8 @@ export default function BookDetail() {
     setLocation('/archives');
   };
   
-  if (isLoading) {
+  // Show loading state when fetching book data or during active translation
+  if (isLoading || isTranslating) {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
@@ -348,62 +414,133 @@ export default function BookDetail() {
                     {t('by')} {book.author}
                   </p>
                   
-                  {/* Genres */}
-                  {Array.isArray(book.genres) && book.genres.length > 0 && (
+                  {/* Genres - use translated version if available */}
+                  {((Array.isArray(translatedFields.genres) && translatedFields.genres.length > 0) || 
+                   (Array.isArray(book.genres) && book.genres.length > 0)) && (
                     <div className="flex flex-wrap gap-2 mb-6">
-                      {book.genres.map((genre: string, index: number) => (
-                        <Badge key={index} variant="outline" className="bg-primary/10">
-                          {genre}
-                        </Badge>
-                      ))}
+                      {/* Show loading indicator during translation */}
+                      {isTranslating && (
+                        <div className="w-full flex items-center justify-center py-2">
+                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                        </div>
+                      )}
+                      
+                      {/* Render genres */}
+                      {Array.isArray(translatedFields.genres) && translatedFields.genres.length > 0 ? (
+                        // Use translated genres
+                        translatedFields.genres.map((genre: string, index: number) => (
+                          <Badge key={index} variant="outline" className="bg-primary/10">
+                            {genre}
+                          </Badge>
+                        ))
+                      ) : (
+                        // Use original genres
+                        Array.isArray(book.genres) && book.genres.map((genre: string, index: number) => (
+                          <Badge key={index} variant="outline" className="bg-primary/10">
+                            {genre}
+                          </Badge>
+                        ))
+                      )}
                     </div>
                   )}
                   
-                  {/* Summary */}
+                  {/* Summary - use translated version if available */}
                   <div className="mb-8">
                     <h3 className="text-lg font-medium text-neutral-900 mb-3">
                       {t('summary')}
                     </h3>
                     <div className="prose prose-neutral">
-                      <p className="text-neutral-700 whitespace-pre-line">
-                        {book.summary || t('noSummaryAvailable')}
-                      </p>
+                      {isTranslating ? (
+                        <div className="flex items-center py-2">
+                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                        </div>
+                      ) : (
+                        <p className="text-neutral-700 whitespace-pre-line">
+                          {translatedFields.summary || book.summary || t('noSummaryAvailable')}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Themes */}
-                  {Array.isArray(book.themes) && book.themes.length > 0 && (
+                  {/* Themes - use translated version if available */}
+                  {((Array.isArray(translatedFields.themes) && translatedFields.themes.length > 0) || 
+                   (Array.isArray(book.themes) && book.themes.length > 0)) && (
                     <div className="mb-8">
                       <h3 className="text-lg font-medium text-neutral-900 mb-3">
                         {t('themes')}
                       </h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {book.themes.map((theme: any, index: number) => {
-                          // Handle both string and object themes
-                          const themeText = typeof theme === 'string' 
-                            ? theme 
-                            : (theme.theme || theme.description || JSON.stringify(theme));
-                            
-                          return (
-                            <li key={index} className="text-neutral-700">
-                              {themeText}
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      {isTranslating ? (
+                        <div className="flex items-center py-2">
+                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span className="text-sm text-neutral-500">{t('translating')}</span>
+                        </div>
+                      ) : (
+                        <ul className="list-disc pl-5 space-y-1">
+                          {Array.isArray(translatedFields.themes) && translatedFields.themes.length > 0 ? (
+                            // Use translated themes
+                            translatedFields.themes.map((theme: any, index: number) => {
+                              // Handle both string and object themes
+                              const themeText = typeof theme === 'string' 
+                                ? theme 
+                                : (theme.theme || theme.description || JSON.stringify(theme));
+                                
+                              return (
+                                <li key={index} className="text-neutral-700">
+                                  {themeText}
+                                </li>
+                              );
+                            })
+                          ) : (
+                            // Use original themes
+                            Array.isArray(book.themes) && book.themes.map((theme: any, index: number) => {
+                              // Handle both string and object themes
+                              const themeText = typeof theme === 'string' 
+                                ? theme 
+                                : (theme.theme || theme.description || JSON.stringify(theme));
+                                
+                              return (
+                                <li key={index} className="text-neutral-700">
+                                  {themeText}
+                                </li>
+                              );
+                            })
+                          )}
+                        </ul>
+                      )}
                     </div>
                   )}
                   
-                  {/* Catalog Entry */}
-                  {book.catalogEntry && (
+                  {/* Catalog Entry - use translated version if available */}
+                  {(translatedFields.catalogEntry || book.catalogEntry) && (
                     <div>
                       <h3 className="text-lg font-medium text-neutral-900 mb-3">
                         {t('catalogEntry')}
                       </h3>
                       <div className="bg-neutral-50 p-4 rounded-md border border-neutral-200">
-                        <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
-                          {book.catalogEntry}
-                        </p>
+                        {isTranslating ? (
+                          <div className="flex items-center py-2">
+                            <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span className="text-sm text-neutral-500">{t('translating')}</span>
+                          </div>
+                        ) : (
+                          <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
+                            {translatedFields.catalogEntry || book.catalogEntry}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
