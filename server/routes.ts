@@ -495,6 +495,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       const processed = { success: 0, failed: 0 };
       
+      // Get language preference from request, default to German
+      const language = req.body.language || 'de';
+      console.log(`Using language ${language} for batch processing`);
+      
       // Process files sequentially for better error handling
       for (const file of files) {
         try {
@@ -514,14 +518,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           try {
             // Step 1: Analyze cover using OpenAI Vision
-            console.log("Step 1: Analyzing book cover with OpenAI Vision...");
-            const coverAnalysis = await analyzeBookCover(imageBase64);
+            console.log(`Step 1: Analyzing book cover with OpenAI Vision (language: ${language})...`);
+            const coverAnalysis = await analyzeBookCover(imageBase64, language);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
             // Step 2: Enrich with Google Books data
             console.log("Step 2: Enriching with Google Books data...");
             const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis, 
+              ...coverAnalysis,
+              language, // Add language to enrichment request 
               // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
@@ -541,12 +546,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Data enrichment successful");
             
             // Step 3: Process full analysis
-            console.log("Step 3: Processing complete book analysis...");
+            console.log(`Step 3: Processing complete book analysis in ${language}...`);
             const analysisResult = await processBookAnalysis({
               ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
+              language, // Include language parameter
               options: {
                 summary: true,
                 genres: true,
