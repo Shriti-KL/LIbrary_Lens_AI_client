@@ -324,13 +324,54 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.summary) {
     yPos += 2;
     
-    // Set text style for summary
+    // Add subheading for summary
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text("Inhalt:", 22, yPos);
+    yPos += 5;
+    
+    // Set text style for summary text
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     
+    // Clean up the summary to remove redundant metadata
     let summaryText = book.summary;
     
-    // Split the text for proper wrapping
+    // Remove metadata-like patterns that might be in the summary
+    const metadataPatterns = [
+      /\*\*Titel:\*\*.*\n?/i,
+      /\*\*Autor(?:in)?:\*\*.*\n?/i,
+      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
+      /\*\*ISBN:\*\*.*\n?/i,
+      /\*\*Verlag:\*\*.*\n?/i,
+      /Titel:.*\n?/i,
+      /Autor(?:in)?:.*\n?/i,
+      /Erscheinungsjahr:.*\n?/i,
+      /ISBN:.*\n?/i,
+      /Verlag:.*\n?/i
+    ];
+    
+    // Apply all patterns
+    metadataPatterns.forEach(pattern => {
+      summaryText = summaryText.replace(pattern, '');
+    });
+    
+    // Remove any extra whitespace and multiple newlines that might remain
+    summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    
+    // Ensure summary is not too long (aim for ~1000 characters)
+    if (summaryText.length > 1000) {
+      // Find the last complete sentence before the 1000 character mark
+      const truncateAt = summaryText.lastIndexOf('.', 1000);
+      if (truncateAt > 0) {
+        summaryText = summaryText.substring(0, truncateAt + 1);
+      } else {
+        // If no sentence break found, just truncate at 1000
+        summaryText = summaryText.substring(0, 1000) + '...';
+      }
+    }
+    
+    // Split the text for proper wrapping with slightly reduced line spacing
     const summaryLines = doc.splitTextToSize(summaryText, 160);
     
     // Create content for each line with justified text
@@ -339,8 +380,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
         align: 'justify',
         maxWidth: 160,
       });
-      yPos += 5;
+      yPos += 4.5; // Slightly reduce line spacing to fit more text
     }
+    
+    // Add a small space after the summary
+    yPos += 2;
   }
   
   // --- 7. Reviewer name in bottom right ---
@@ -552,12 +596,67 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // --- Summary - condensed, only a few lines ---
   if (book.summary) {
     doc.setFontSize(gridFontSize - 1);
-    const summaryLines = doc.splitTextToSize(book.summary, width - 10);
-    const maxSummaryLines = 5; // Limit summary to 5 lines in grid view
+    
+    // Clean up the summary to remove redundant metadata - similar to the function above
+    let summaryText = book.summary;
+    
+    // Remove metadata-like patterns
+    const metadataPatterns = [
+      /\*\*Titel:\*\*.*\n?/i,
+      /\*\*Autor(?:in)?:\*\*.*\n?/i,
+      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
+      /\*\*ISBN:\*\*.*\n?/i,
+      /\*\*Verlag:\*\*.*\n?/i,
+      /Titel:.*\n?/i,
+      /Autor(?:in)?:.*\n?/i,
+      /Erscheinungsjahr:.*\n?/i,
+      /ISBN:.*\n?/i,
+      /Verlag:.*\n?/i
+    ];
+    
+    // Apply all patterns
+    metadataPatterns.forEach(pattern => {
+      summaryText = summaryText.replace(pattern, '');
+    });
+    
+    // Remove any extra whitespace that might remain
+    summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    
+    // Ensure summary is not too long
+    if (summaryText.length > 400) { // Shorter for grid view
+      // Find the last complete sentence before character limit
+      const truncateAt = summaryText.lastIndexOf('.', 400);
+      if (truncateAt > 0) {
+        summaryText = summaryText.substring(0, truncateAt + 1);
+      } else {
+        // If no sentence break found, just truncate
+        summaryText = summaryText.substring(0, 400) + '...';
+      }
+    }
+    
+    // Break into lines with proper wrapping
+    const summaryLines = doc.splitTextToSize(summaryText, width - 10);
+    
+    // We need to ensure the summary fits in the available space - limit to max lines
+    const maxSummaryLines = 6; // Limit summary to 6 lines in grid view
+    
+    // Add subheading for summary
+    doc.setFont("helvetica", "italic");
+    doc.text("Inhalt:", x + 5, currentY);
+    currentY += 3.5;
+    
+    // Switch back to normal font for the summary text
+    doc.setFont("helvetica", "normal");
     
     for (let i = 0; i < Math.min(summaryLines.length, maxSummaryLines); i++) {
       doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
-      currentY += 3.5;
+      currentY += 3; // Slightly reduce line spacing to fit more text
+    }
+    
+    // Add ellipsis if the summary was truncated
+    if (summaryLines.length > maxSummaryLines) {
+      doc.text("...", x + 5, currentY);
+      currentY += 3;
     }
   }
   
