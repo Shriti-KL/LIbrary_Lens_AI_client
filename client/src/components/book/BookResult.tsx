@@ -38,11 +38,7 @@ export default function BookResult({
 }: BookResultProps) {
   const { t } = useLanguage();
 
-  // Handle export results
-  const handleExport = () => {
-    // Use the same PDF export function used in Archives page
-    exportBookToPDF(book as Book);
-  };
+  // Export functionality moved to multi-book export in archives page
 
   // If still loading, show loading state
   if (isLoading && loadingSteps) {
@@ -396,15 +392,7 @@ export default function BookResult({
         </div>
       </CardContent>
       
-      <CardFooter className="bg-primary/5 justify-between border-t border-primary/10 py-4 px-6">
-        <Button 
-          variant="outline" 
-          onClick={handleExport}
-          className="flex items-center gap-2 border-primary/30 text-primary-dark hover:bg-primary/10"
-        >
-          <Download className="h-4 w-4" />
-          {t('exportResults')}
-        </Button>
+      <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
         <Button 
           onClick={() => onSave(book)}
           className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
