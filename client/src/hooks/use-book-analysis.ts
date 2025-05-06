@@ -78,10 +78,7 @@ export function useBookAnalysis() {
       data.formData.append("options", JSON.stringify(data.options));
       
       // Add language to form data for localized AI generation
-      // Always use German (de) as default language for initial AI content generation
-      // This ensures new content is always generated in German first
-      const contentGenerationLanguage = "de"; 
-      data.formData.append("language", contentGenerationLanguage);
+      data.formData.append("language", language);
       
       // Check if we have a title and author as a debugging log
       const hasTitle = data.formData.get('title');
@@ -90,8 +87,7 @@ export function useBookAnalysis() {
         hasTitle: !!hasTitle,
         hasAuthor: !!hasAuthor,
         hasCoverImage: data.formData.has('coverImage'),
-        language: contentGenerationLanguage,
-        uiLanguage: language
+        language: language
       });
       
       // Start request - first update metadata progress

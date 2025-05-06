@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { parseErrorMessage, formatISBN } from '@/lib/utils';
-import { useLanguage, Language } from '@/hooks/use-language';
+import { useLanguage } from '@/hooks/use-language';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
 import { ChevronLeft, Bookmark, Check, Pencil, Trash, Save, X } from 'lucide-react';
@@ -27,23 +27,8 @@ export default function BookDetail() {
   const [, setLocation] = useLocation();
   const [_, params] = useRoute('/book/:id');
   const bookId = params?.id;
-  const { t, language, translateBook, isTranslating: isLanguageTranslating, registerTranslationCallback, unregisterTranslationCallback } = useLanguage();
+  const { t } = useLanguage();
   const { toast } = useToast();
-  // Add local loading state for content regeneration
-  const [isContentRegenerating, setIsContentRegenerating] = useState(false);
-  
-  // Language-specific fields that need translation
-  const [translatedFields, setTranslatedFields] = useState<{
-    summary: string | null;
-    genres: string[] | null;
-    themes: any[] | null;
-    catalogEntry: string | null;
-  }>({
-    summary: null,
-    genres: null,
-    themes: null,
-    catalogEntry: null,
-  });
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedBook, setEditedBook] = useState<Partial<Book>>({});
@@ -54,95 +39,6 @@ export default function BookDetail() {
     queryKey: [`/api/books/${bookId}`],
     enabled: !!bookId,
   });
-  
-  // Function to handle content regeneration when language changes
-  const handleLanguageChange = async (newLanguage: Language, oldLanguage: Language) => {
-    if (!book) return;
-    
-    // Show the loading state immediately
-    setIsContentRegenerating(true);
-
-    // Set the original content first to avoid empty content during regeneration
-    setTranslatedFields({
-      summary: book.summary,
-      genres: book.genres as string[] | null,
-      themes: book.themes as any[] | null,
-      catalogEntry: book.catalogEntry,
-    });
-    
-    try {
-      console.log(`Regenerating book content from ${oldLanguage} to ${newLanguage}`);
-      
-      // Call the new API endpoint to regenerate content in the selected language
-      const response = await fetch(`/api/books/${bookId}/regenerate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          language: newLanguage,
-          options: {
-            summary: true,
-            genres: true,
-            themes: true,
-            catalogEntry: true
-          }
-        }),
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
-      }
-      
-      // Get the updated book with regenerated content
-      const updatedBook = await response.json();
-      
-      console.log("Content regeneration complete, updating UI");
-      
-      // Update the book in the cache
-      queryClient.setQueryData([`/api/books/${bookId}`], updatedBook);
-      
-      // Update translated fields with the regenerated content
-      setTranslatedFields({
-        summary: updatedBook.summary || null,
-        genres: Array.isArray(updatedBook.genres) ? updatedBook.genres : null,
-        themes: Array.isArray(updatedBook.themes) ? updatedBook.themes : null,
-        catalogEntry: updatedBook.catalogEntry || null,
-      });
-      
-      toast({
-        title: t('contentRegenerated'),
-        description: t('contentRegeneratedSuccess'),
-      });
-    } catch (error) {
-      console.error('Content regeneration error:', error);
-      toast({
-        title: t('regenerationFailed'),
-        description: parseErrorMessage(error),
-        variant: 'destructive',
-      });
-      // Fallback to original content is already set above
-    } finally {
-      setIsContentRegenerating(false);
-    }
-  };
-  
-  // Register for language changes
-  useEffect(() => {
-    const translationCallbackId = 'book-detail-' + bookId;
-    registerTranslationCallback(translationCallbackId, handleLanguageChange);
-    
-    // Initial translation if needed
-    if (book) {
-      handleLanguageChange(language, language);
-    }
-    
-    return () => {
-      unregisterTranslationCallback(translationCallbackId);
-    };
-  }, [book, bookId, language, registerTranslationCallback, unregisterTranslationCallback]);
   
   // Update book mutation
   const updateBookMutation = useMutation({
@@ -239,8 +135,7 @@ export default function BookDetail() {
     setLocation('/archives');
   };
   
-  // Show loading state when fetching book data or during active content regeneration
-  if (isLoading || isLanguageTranslating || isContentRegenerating) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center space-x-4">
@@ -453,133 +348,62 @@ export default function BookDetail() {
                     {t('by')} {book.author}
                   </p>
                   
-                  {/* Genres - use translated version if available */}
-                  {((Array.isArray(translatedFields.genres) && translatedFields.genres.length > 0) || 
-                   (Array.isArray(book.genres) && book.genres.length > 0)) && (
+                  {/* Genres */}
+                  {Array.isArray(book.genres) && book.genres.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-6">
-                      {/* Show loading indicator during content regeneration */}
-                      {isContentRegenerating && (
-                        <div className="w-full flex items-center justify-center py-2">
-                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
-                        </div>
-                      )}
-                      
-                      {/* Render genres */}
-                      {Array.isArray(translatedFields.genres) && translatedFields.genres.length > 0 ? (
-                        // Use translated genres
-                        translatedFields.genres.map((genre: string, index: number) => (
-                          <Badge key={index} variant="outline" className="bg-primary/10">
-                            {genre}
-                          </Badge>
-                        ))
-                      ) : (
-                        // Use original genres
-                        Array.isArray(book.genres) && book.genres.map((genre: string, index: number) => (
-                          <Badge key={index} variant="outline" className="bg-primary/10">
-                            {genre}
-                          </Badge>
-                        ))
-                      )}
+                      {book.genres.map((genre: string, index: number) => (
+                        <Badge key={index} variant="outline" className="bg-primary/10">
+                          {genre}
+                        </Badge>
+                      ))}
                     </div>
                   )}
                   
-                  {/* Summary - use translated version if available */}
+                  {/* Summary */}
                   <div className="mb-8">
                     <h3 className="text-lg font-medium text-neutral-900 mb-3">
                       {t('summary')}
                     </h3>
                     <div className="prose prose-neutral">
-                      {isContentRegenerating ? (
-                        <div className="flex items-center py-2">
-                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
-                        </div>
-                      ) : (
-                        <p className="text-neutral-700 whitespace-pre-line">
-                          {translatedFields.summary || book.summary || t('noSummaryAvailable')}
-                        </p>
-                      )}
+                      <p className="text-neutral-700 whitespace-pre-line">
+                        {book.summary || t('noSummaryAvailable')}
+                      </p>
                     </div>
                   </div>
                   
-                  {/* Themes - use translated version if available */}
-                  {((Array.isArray(translatedFields.themes) && translatedFields.themes.length > 0) || 
-                   (Array.isArray(book.themes) && book.themes.length > 0)) && (
+                  {/* Themes */}
+                  {Array.isArray(book.themes) && book.themes.length > 0 && (
                     <div className="mb-8">
                       <h3 className="text-lg font-medium text-neutral-900 mb-3">
                         {t('themes')}
                       </h3>
-                      {isContentRegenerating ? (
-                        <div className="flex items-center py-2">
-                          <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
-                        </div>
-                      ) : (
-                        <ul className="list-disc pl-5 space-y-1">
-                          {Array.isArray(translatedFields.themes) && translatedFields.themes.length > 0 ? (
-                            // Use translated themes
-                            translatedFields.themes.map((theme: any, index: number) => {
-                              // Handle both string and object themes
-                              const themeText = typeof theme === 'string' 
-                                ? theme 
-                                : (theme.theme || theme.description || JSON.stringify(theme));
-                                
-                              return (
-                                <li key={index} className="text-neutral-700">
-                                  {themeText}
-                                </li>
-                              );
-                            })
-                          ) : (
-                            // Use original themes
-                            Array.isArray(book.themes) && book.themes.map((theme: any, index: number) => {
-                              // Handle both string and object themes
-                              const themeText = typeof theme === 'string' 
-                                ? theme 
-                                : (theme.theme || theme.description || JSON.stringify(theme));
-                                
-                              return (
-                                <li key={index} className="text-neutral-700">
-                                  {themeText}
-                                </li>
-                              );
-                            })
-                          )}
-                        </ul>
-                      )}
+                      <ul className="list-disc pl-5 space-y-1">
+                        {book.themes.map((theme: any, index: number) => {
+                          // Handle both string and object themes
+                          const themeText = typeof theme === 'string' 
+                            ? theme 
+                            : (theme.theme || theme.description || JSON.stringify(theme));
+                            
+                          return (
+                            <li key={index} className="text-neutral-700">
+                              {themeText}
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
                   )}
                   
-                  {/* Catalog Entry - use translated version if available */}
-                  {(translatedFields.catalogEntry || book.catalogEntry) && (
+                  {/* Catalog Entry */}
+                  {book.catalogEntry && (
                     <div>
                       <h3 className="text-lg font-medium text-neutral-900 mb-3">
                         {t('catalogEntry')}
                       </h3>
                       <div className="bg-neutral-50 p-4 rounded-md border border-neutral-200">
-                        {isContentRegenerating ? (
-                          <div className="flex items-center py-2">
-                            <svg className="animate-spin h-4 w-4 text-primary mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span className="text-sm text-neutral-500">{t('regeneratingContent')}</span>
-                          </div>
-                        ) : (
-                          <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
-                            {translatedFields.catalogEntry || book.catalogEntry}
-                          </p>
-                        )}
+                        <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
+                          {book.catalogEntry}
+                        </p>
                       </div>
                     </div>
                   )}

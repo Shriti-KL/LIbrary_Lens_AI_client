@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { processBookAnalysis, analyzeBookCover, translateText, regenerateBookContent, Language } from "./services/openai";
+import { processBookAnalysis, analyzeBookCover } from "./services/openai";
 import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
@@ -523,78 +523,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Translation API endpoint
-  app.post("/api/translate", async (req: Request, res: Response) => {
-    try {
-      const { text, fromLanguage, toLanguage } = req.body;
-      
-      if (!text || !fromLanguage || !toLanguage) {
-        return res.status(400).json({ 
-          message: "Missing required fields: text, fromLanguage, and toLanguage are required" 
-        });
-      }
-      
-      const translatedText = await translateText(text, fromLanguage, toLanguage);
-      res.status(200).json({ translatedText });
-    } catch (error: any) {
-      console.error("Translation error:", error);
-      res.status(500).json({ 
-        message: `Error during translation: ${error.message || String(error)}` 
-      });
-    }
-  });
-  
-  // API endpoint to regenerate book content in a specific language
-  app.post("/api/books/:id/regenerate", async (req: Request, res: Response) => {
-    try {
-      const bookId = parseInt(req.params.id);
-      const { language, options } = req.body;
-      
-      if (!bookId || isNaN(bookId)) {
-        return res.status(400).json({ message: "Invalid book ID" });
-      }
-      
-      if (!language) {
-        return res.status(400).json({ message: "Language is required" });
-      }
-      
-      // Get the book from the database
-      const book = await storage.getBook(bookId);
-      if (!book) {
-        return res.status(404).json({ message: "Book not found" });
-      }
-      
-      // Default regeneration options if not provided
-      const regenerationOptions = options || {
-        summary: true,
-        genres: true,
-        themes: true,
-        catalogEntry: true
-      };
-      
-      console.log(`Regenerating content for book ${bookId} in language: ${language}`);
-      console.log("Options:", regenerationOptions);
-      
-      // Regenerate the content
-      const updatedBook = await regenerateBookContent(book, language as Language, regenerationOptions);
-      
-      // Update the book in the database
-      const result = await storage.updateBook(bookId, updatedBook);
-      
-      if (!result) {
-        return res.status(500).json({ message: "Failed to update book" });
-      }
-      
-      // Return the updated book
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.error("Error regenerating book content:", error);
-      res.status(500).json({ 
-        message: `Error regenerating book content: ${error.message || String(error)}` 
-      });
-    }
-  });
-  
   // Google Books API integration endpoints
   
   // GET /api/googlebooks/search - Search books via Google Books API
