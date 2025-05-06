@@ -616,7 +616,7 @@ export default function Archives() {
                     <TableHead>{t('author')}</TableHead>
                     <TableHead>{t('isbn')}</TableHead>
                     <TableHead>{t('genres')}</TableHead>
-                    <TableHead style={{ width: '120px' }}>{/* Actions */}</TableHead>
+                    <TableHead style={{ width: '90px' }}>{/* Actions */}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -664,14 +664,6 @@ export default function Archives() {
                             onClick={() => window.location.href = `/archives?view=${book.id}`}
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title={t('export')}
-                            onClick={() => exportBookToPDF(book)}
-                          >
-                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
