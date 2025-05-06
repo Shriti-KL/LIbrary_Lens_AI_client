@@ -20,7 +20,7 @@ import {
 import { AlertCircle } from 'lucide-react';
 
 export default function Analyze() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [location, navigate] = useLocation();
   const { registerGuard, unregisterGuard } = useNavigationGuard();
   
@@ -50,14 +50,32 @@ export default function Analyze() {
     catalogEntry: true,
   });
   
-  // Clear previous data when the component mounts
+  // State to show language change confirmation dialog
+  const [showLanguageChangeConfirm, setShowLanguageChangeConfirm] = useState(false);
+  const [previousLanguage, setPreviousLanguage] = useState<string | null>(null);
+  
+  // Effect to handle component mount
   useEffect(() => {
-    // Clear any previous analysis data to ensure a fresh start
-    clearAnalysisData();
-    setBookData({});
+    // Attempt to restore saved analysis first
+    const success = restoreSavedAnalysis();
     
-    // Log this action
-    console.log("Analyze page mounted: cleared previous analysis data");
+    if (success) {
+      // If we successfully restored data, grab it and set to state
+      const savedData = getCurrentData();
+      setBookData(savedData || {});
+      
+      // Check if the saved analysis was in a different language
+      if (savedData?.analyzerLanguage && savedData.analyzerLanguage !== language) {
+        console.log(`Detected language mismatch: UI language ${language}, book analyzed in ${savedData.analyzerLanguage}`);
+        setPreviousLanguage(savedData.analyzerLanguage);
+        setShowLanguageChangeConfirm(true);
+      }
+    } else {
+      // No saved data, ensure we're starting fresh
+      clearAnalysisData();
+      setBookData({});
+      console.log("Analyze page mounted: no saved data found, starting fresh");
+    }
   }, []);
   
   // Effect to sync bookData with the current state (from the mutation only)
@@ -67,6 +85,21 @@ export default function Analyze() {
       setBookData(analysisMutation.data);
     }
   }, [analysisMutation.data]);
+  
+  // Effect to monitor language changes and potentially show reanalysis prompt
+  useEffect(() => {
+    // Skip on first render
+    if (!bookData || Object.keys(bookData).length === 0) {
+      return;
+    }
+    
+    // If we have book data and language has changed, show the dialog
+    if (bookData.language && bookData.language !== language) {
+      console.log(`UI language changed to ${language}, book was analyzed in ${bookData.language}`);
+      setPreviousLanguage(bookData.language);
+      setShowLanguageChangeConfirm(true);
+    }
+  }, [language, bookData]);
   
   // Before unload handler for browser navigation
   useEffect(() => {
@@ -151,6 +184,11 @@ export default function Analyze() {
     // Add a unique timestamp to force a fresh analysis
     formData.append('forceNewAnalysis', Date.now().toString());
     
+    // Add current language to ensure content is generated in the correct language
+    formData.append('language', language);
+    
+    console.log(`Submitting analysis in language: ${language}`);
+    
     // Submit the form data for analysis
     analysisMutation.mutate({ formData, options });
   };
@@ -164,8 +202,63 @@ export default function Analyze() {
     setBookData({});
   };
   
+  // Function to regenerate analysis with current language
+  const regenerateWithCurrentLanguage = () => {
+    // First get the current book data
+    const currentData = getCurrentData();
+    if (!currentData || !currentData.title || !currentData.author) {
+      return;
+    }
+    
+    // Create a new FormData object and populate it with current data
+    const formData = new FormData();
+    formData.append('title', currentData.title);
+    formData.append('author', currentData.author);
+    if (currentData.isbn) formData.append('isbn', currentData.isbn);
+    
+    // Add a flag to force regeneration
+    formData.append('forceNewAnalysis', Date.now().toString());
+    formData.append('language', language);
+    
+    console.log(`Regenerating analysis in language: ${language}`);
+    
+    // Submit for analysis
+    analysisMutation.mutate({ formData, options });
+    
+    // Close dialog
+    setShowLanguageChangeConfirm(false);
+  };
+  
   return (
     <>
+      {/* Language Change Confirmation Dialog */}
+      <AlertDialog open={showLanguageChangeConfirm} onOpenChange={setShowLanguageChangeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-500" />
+              {language === 'de' ? 'Sprache geändert' : 'Language Changed'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {language === 'de' 
+                ? `Die Analyse wurde zuvor auf ${previousLanguage === 'de' ? 'Deutsch' : 'Englisch'} durchgeführt. Möchten Sie die Analyse auf Deutsch neu generieren?`
+                : `The analysis was previously performed in ${previousLanguage === 'de' ? 'German' : 'English'}. Would you like to regenerate the analysis in English?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowLanguageChangeConfirm(false)}>
+              {language === 'de' ? 'Abbrechen' : 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={regenerateWithCurrentLanguage}
+              className="bg-primary hover:bg-primary-dark"
+            >
+              {language === 'de' ? 'Neu generieren' : 'Regenerate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       {/* Navigation Confirmation Dialog */}
       <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
         <AlertDialogContent>
