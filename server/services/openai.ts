@@ -708,6 +708,177 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
 }
 
 // Process the full book analysis
+/**
+ * Regenerate book content in the specified language
+ * @param bookInfo The book data to regenerate content for
+ * @param targetLanguage The target language to generate content in
+ * @param options Options for which fields to regenerate
+ * @returns Updated book object with newly generated content
+ */
+export async function regenerateBookContent(
+  bookInfo: Partial<Book>, 
+  targetLanguage: Language,
+  options: {
+    summary?: boolean;
+    genres?: boolean;
+    themes?: boolean;
+    catalogEntry?: boolean;
+  }
+): Promise<Partial<Book>> {
+  try {
+    const regenerationId = `regen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${regenerationId}] Regenerating content for "${bookInfo.title}" in ${targetLanguage}`);
+    
+    // Create a copy of the book to modify
+    const updatedBook: Partial<Book> = { ...bookInfo };
+    
+    // Get the language name for prompts
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German",
+      fr: "French",
+      es: "Spanish",
+      zh: "Chinese"
+    };
+    
+    const languageName = languageNames[targetLanguage] || languageNames.de;
+    
+    // Generate summary if requested
+    if (options.summary) {
+      console.log(`[${regenerationId}] Regenerating summary in ${languageName}`);
+      try {
+        const summary = await openai.chat.completions.create({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in ${languageName}. Your summaries must be EXACTLY 150 words (approximately 1000 characters) and contain NO metadata or bibliographic information.`
+            },
+            {
+              role: "user",
+              content: `Create a concise, informative summary in ${languageName} for the following book that would be appropriate for a library catalog. 
+              Book: "${bookInfo.title}" by ${bookInfo.author}`
+            }
+          ]
+        });
+        
+        updatedBook.summary = summary.choices[0].message.content?.trim() || null;
+      } catch (error) {
+        console.error(`[${regenerationId}] Error generating summary:`, error);
+      }
+    }
+    
+    // Generate genres if requested
+    if (options.genres) {
+      console.log(`[${regenerationId}] Regenerating genres in ${languageName}`);
+      try {
+        const contextText = `Book: "${bookInfo.title}" by ${bookInfo.author}`;
+        
+        const genreResponse = await openai.chat.completions.create({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in ${languageName}.`
+            },
+            {
+              role: "user",
+              content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON object with a "genres" property that contains an array of strings with only the genre names in ${languageName}.\n\n${contextText}`
+            }
+          ],
+          response_format: { type: "json_object" }
+        });
+        
+        try {
+          const genreData = JSON.parse(genreResponse.choices[0].message.content || "{}");
+          if (Array.isArray(genreData.genres)) {
+            updatedBook.genres = genreData.genres;
+          }
+        } catch (parseError) {
+          console.error(`[${regenerationId}] Error parsing genre data:`, parseError);
+        }
+      } catch (error) {
+        console.error(`[${regenerationId}] Error generating genres:`, error);
+      }
+    }
+    
+    // Generate themes if requested
+    if (options.themes) {
+      console.log(`[${regenerationId}] Regenerating themes in ${languageName}`);
+      try {
+        const contextText = `Book: "${bookInfo.title}" by ${bookInfo.author}`;
+        
+        const themeResponse = await openai.chat.completions.create({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a literature expert who specializes in identifying and analyzing recurring themes in literary works. Always write your analysis in ${languageName}.`
+            },
+            {
+              role: "user",
+              content: `Identify 3 major themes from the book "${bookInfo.title}" by ${bookInfo.author}. For each theme, provide the theme name and a brief description of how it manifests in the book. 
+              
+              Return your response as a JSON object with a "themes" array, where each item has a "theme" property and a "description" property. Use ${languageName} for all content.`
+            }
+          ],
+          response_format: { type: "json_object" }
+        });
+        
+        try {
+          const themeData = JSON.parse(themeResponse.choices[0].message.content || "{}");
+          if (Array.isArray(themeData.themes)) {
+            updatedBook.themes = themeData.themes;
+          }
+        } catch (parseError) {
+          console.error(`[${regenerationId}] Error parsing theme data:`, parseError);
+        }
+      } catch (error) {
+        console.error(`[${regenerationId}] Error generating themes:`, error);
+      }
+    }
+    
+    // Generate catalog entry if requested
+    if (options.catalogEntry) {
+      console.log(`[${regenerationId}] Regenerating catalog entry in ${languageName}`);
+      try {
+        // Get enriching details if available
+        const enrichingDetails = [
+          bookInfo.readingLevel ? `Reading level: ${bookInfo.readingLevel}` : null,
+          bookInfo.pageCount ? `Page count: ${bookInfo.pageCount}` : null,
+          bookInfo.publishedYear ? `Published: ${bookInfo.publishedYear}` : null,
+          bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : null
+        ].filter(Boolean).join(", ");
+        
+        const catalogEntryResponse = await openai.chat.completions.create({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional cataloger at a major library. Create a detailed catalog entry for books in ${languageName} that would appear in a library database.`
+            },
+            {
+              role: "user",
+              content: `Create a catalog entry in ${languageName} for "${bookInfo.title}" by ${bookInfo.author}. ${enrichingDetails ? "Additional details: " + enrichingDetails : ""}`
+            }
+          ]
+        });
+        
+        updatedBook.catalogEntry = catalogEntryResponse.choices[0].message.content?.trim() || null;
+      } catch (error) {
+        console.error(`[${regenerationId}] Error generating catalog entry:`, error);
+      }
+    }
+    
+    console.log(`[${regenerationId}] Content regeneration completed`);
+    return updatedBook;
+    
+  } catch (error) {
+    console.error("Error in regenerateBookContent:", error);
+    throw error;
+  }
+}
+
 export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
   try {
     // Create a unique ID for this analysis request

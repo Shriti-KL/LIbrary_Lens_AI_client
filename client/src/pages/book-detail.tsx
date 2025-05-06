@@ -27,8 +27,10 @@ export default function BookDetail() {
   const [, setLocation] = useLocation();
   const [_, params] = useRoute('/book/:id');
   const bookId = params?.id;
-  const { t, language, translateBook, isTranslating, registerTranslationCallback, unregisterTranslationCallback } = useLanguage();
+  const { t, language, translateBook, isTranslating: isLanguageTranslating, registerTranslationCallback, unregisterTranslationCallback } = useLanguage();
   const { toast } = useToast();
+  // Add local loading state for content regeneration
+  const [isContentRegenerating, setIsContentRegenerating] = useState(false);
   
   // Language-specific fields that need translation
   const [translatedFields, setTranslatedFields] = useState<{
@@ -53,11 +55,14 @@ export default function BookDetail() {
     enabled: !!bookId,
   });
   
-  // Function to handle translation of book fields
+  // Function to handle content regeneration when language changes
   const handleLanguageChange = async (newLanguage: Language, oldLanguage: Language) => {
     if (!book) return;
+    
+    // Show the loading state immediately
+    setIsTranslating(true);
 
-    // Set the original content first to avoid empty content during translation
+    // Set the original content first to avoid empty content during regeneration
     setTranslatedFields({
       summary: book.summary,
       genres: book.genres as string[] | null,
@@ -65,25 +70,62 @@ export default function BookDetail() {
       catalogEntry: book.catalogEntry,
     });
     
-    // For any language change, attempt translation
-    // Even if book.language === newLanguage, still run translation as AI content might be in English
     try {
-      console.log(`Translating book content from ${oldLanguage} to ${newLanguage}`);
+      console.log(`Regenerating book content from ${oldLanguage} to ${newLanguage}`);
       
-      // Translate the book content fields
-      const translatedBook = await translateBook(book);
+      // Call the new API endpoint to regenerate content in the selected language
+      const response = await fetch(`/api/books/${bookId}/regenerate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          language: newLanguage,
+          options: {
+            summary: true,
+            genres: true,
+            themes: true,
+            catalogEntry: true
+          }
+        }),
+        credentials: 'include',
+      });
       
-      console.log("Translation complete, updating content");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || response.statusText);
+      }
       
+      // Get the updated book with regenerated content
+      const updatedBook = await response.json();
+      
+      console.log("Content regeneration complete, updating UI");
+      
+      // Update the book in the cache
+      queryClient.setQueryData([`/api/books/${bookId}`], updatedBook);
+      
+      // Update translated fields with the regenerated content
       setTranslatedFields({
-        summary: translatedBook.summary || null,
-        genres: Array.isArray(translatedBook.genres) ? translatedBook.genres : null,
-        themes: Array.isArray(translatedBook.themes) ? translatedBook.themes : null,
-        catalogEntry: translatedBook.catalogEntry || null,
+        summary: updatedBook.summary || null,
+        genres: Array.isArray(updatedBook.genres) ? updatedBook.genres : null,
+        themes: Array.isArray(updatedBook.themes) ? updatedBook.themes : null,
+        catalogEntry: updatedBook.catalogEntry || null,
+      });
+      
+      toast({
+        title: t('contentRegenerated'),
+        description: t('contentRegeneratedSuccess'),
       });
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error('Content regeneration error:', error);
+      toast({
+        title: t('regenerationFailed'),
+        description: parseErrorMessage(error),
+        variant: 'destructive',
+      });
       // Fallback to original content is already set above
+    } finally {
+      setIsTranslating(false);
     }
   };
   
