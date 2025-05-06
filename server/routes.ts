@@ -86,7 +86,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
-          const coverAnalysisResult = await analyzeBookCover(imageBase64);
+          // Get language preference from request, default to German
+          const language = bookInfo.language || 'de';
+          console.log(`[${requestId}] Using language ${language} for book cover analysis`);
+          
+          const coverAnalysisResult = await analyzeBookCover(imageBase64, language);
           
           // Use the analysis results for fields that weren't provided
           bookInfo = {
