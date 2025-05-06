@@ -22,10 +22,25 @@ function getLanguageName(language?: string): string {
   return languageNames[language] || languageNames.de;
 }
 
+// Helper function to get the language code (standardized)
+function normalizeLanguage(language?: string | null): string {
+  if (!language) return "de"; // Default to German
+  
+  // If it's an array, take the first element
+  if (Array.isArray(language)) {
+    language = language[0];
+  }
+  
+  // Make sure it's a valid language code
+  const validLanguages = ["en", "de", "fr", "es", "zh"];
+  return validLanguages.includes(language as string) ? language as string : "de";
+}
+
 // Handle book cover analysis
 export async function analyzeBookCover(image: string, language: string = 'de'): Promise<any> {
   try {
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(language);
+    const languageName = getLanguageName(normalizedLang);
     
     const response = await openai.chat.completions.create({
       model: MODEL,
@@ -83,8 +98,8 @@ export async function analyzeBookCover(image: string, language: string = 'de'): 
 export async function generateBookSummary(bookInfo: Partial<Book>): Promise<string> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
@@ -152,8 +167,8 @@ ${context}`
 export async function extractBookGenres(bookInfo: Partial<Book>): Promise<string[]> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Add more context data to improve genre extraction
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -239,8 +254,8 @@ ${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
 export async function extractBookThemes(bookInfo: Partial<Book>): Promise<any[]> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Create context with more information
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -311,8 +326,8 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
 export async function assessReadingLevel(bookInfo: Partial<Book>): Promise<any> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Create context with more information
     let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
@@ -388,8 +403,8 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
 export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<string> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Collect all available bibliographic information
     let contextText = `Title: ${bookInfo.title || 'Unknown'}
@@ -442,8 +457,8 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 export async function generateGermanLibraryCatalogData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     // Determine language for content generation (default to German)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Compile book information for context
     let contextText = `Title: ${bookInfo.title || 'Unknown'}
@@ -516,8 +531,8 @@ ${contextText}`
 export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
     // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    const languageName = getLanguageName(language);
+    const normalizedLang = normalizeLanguage(bookInfo.language);
+    const languageName = getLanguageName(normalizedLang);
     
     // Collect all available bibliographic information
     const context = `Title: ${bookInfo.title || 'Unknown'}
