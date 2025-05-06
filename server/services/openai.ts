@@ -667,7 +667,8 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       title: analysisRequest.title,
       author: analysisRequest.author,
       hasCoverImage: !!analysisRequest.coverImage,
-      existingSummary: !!analysisRequest.summary
+      existingSummary: !!analysisRequest.summary,
+      language: analysisRequest.language || "de" // Default to German if not specified
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
