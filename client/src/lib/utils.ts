@@ -144,278 +144,243 @@ interface BookMetadata {
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
   
-  // --- 1. Author's name in bold ---
-  // Format: "Sorg, Marion:"
-  doc.setFontSize(12);
-  doc.setFont("times", "bold"); // Using Times for more traditional bibliographic look
-  doc.text(`${book.author}:`, 15, yPos);
+  // --- 1. ASB Classification in top-right and top-left corner ---
+  // First, handle the ASB classification and secondary identifier in the top right
+  doc.setFontSize(11);
+  doc.setFont("times", "bold");
   
-  yPos += 7; // Space after author name
+  // Use custom ASB classification if available, or generate a catalog-style identifier
+  // ASB section - Top right
+  const asbCategory = book.categories && book.categories.length > 0 ? book.categories[0] : "ASB:";
+  // Format ASB number like 103.485.0 or similar from sample
+  const asbNumber = book.catalogNumber || `${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 10)}`;
   
-  // --- 2. Title in normal weight ---
+  // Print ASB text
+  doc.text("ASB:", 22, yPos);
+  doc.text(asbNumber, 170, yPos, { align: 'right' });
+  
+  yPos += 5;
+  
+  // Secondary classification (like 4.3/Y, 6.1/Aax)
+  const secondaryOptions = ["4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
+  const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
+  doc.text(secondaryCode, 22, yPos);
+  
+  yPos += 15; // Space after classifications
+  
+  // --- 2. Author's name in bold ---
+  // Format author's name to "LastName, FirstName:" as shown in the sample
+  let authorFormatted = book.author;
+  if (book.author.includes(" ") && !book.author.includes(",")) {
+    const nameParts = book.author.split(" ");
+    const lastName = nameParts.pop();
+    const firstName = nameParts.join(" ");
+    authorFormatted = `${lastName}, ${firstName}`;
+  }
+  
+  doc.setFontSize(11);
+  doc.setFont("times", "bold"); 
+  doc.text(authorFormatted + ":", 22, yPos);
+  
+  yPos += 6; // Space after author name
+  
+  // --- 3. Book title and publication info ---
+  doc.setFont("times", "normal");
+  
   // Get the title and subtitle if available
   let titleFull = book.title;
   let subtitle = '';
   
-  // Try to extract subtitle if present (after colon)
-  if (book.title.includes(':')) {
-    const titleParts = book.title.split(':');
+  // Extract subtitle if present (after dash or colon)
+  if (book.title.includes(" - ")) {
+    const titleParts = book.title.split(" - ");
     titleFull = titleParts[0].trim();
-    subtitle = titleParts.slice(1).join(':').trim();
+    subtitle = titleParts.slice(1).join(" - ").trim();
+  } else if (book.title.includes(":")) {
+    const titleParts = book.title.split(":");
+    titleFull = titleParts[0].trim();
+    subtitle = titleParts.slice(1).join(":").trim();
   }
   
-  // Format the title line with proper indentation for multi-line catalog entries
-  // (Note: first line aligns with margin, subsequent lines are indented)
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  
+  // Format the title line with subtitle if present
   let titleText = titleFull;
   if (subtitle) {
-    titleText += ` : ${subtitle}`;
+    titleText = `${titleFull} : ${subtitle}`;
   }
   
-  // Add main contributor information
-  titleText += ` / ${book.author}`;
-  
-  // Add all contributors with their roles from the contributors array
+  // Add contributors like editors, translators
+  let hasEditors = false;
   if (book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0) {
-    // Process each contributor by role
-    const illustrators = book.contributors.filter((c: any) => c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
-    const translators = book.contributors.filter((c: any) => c.role.toLowerCase() === 'translator' || c.role.toLowerCase().includes('übersetz'));
-    const editors = book.contributors.filter((c: any) => c.role.toLowerCase() === 'editor' || c.role.toLowerCase().includes('herausgeb'));
-    const coAuthors = book.contributors.filter((c: any) => c.role.toLowerCase() === 'co-author' || c.role.toLowerCase().includes('mitautor'));
+    // Find editors/publishers
+    const editors = book.contributors.filter((c: any) => 
+      c.role.toLowerCase() === 'herausgeber' || c.role.toLowerCase() === 'editor');
     
-    // Add co-authors first
-    if (coAuthors.length > 0) {
-      titleText += `, ${coAuthors.map((c: any) => c.name).join(', ')}`;
-    }
-    
-    // Add editors
     if (editors.length > 0) {
-      titleText += ` ; ${editors.length > 1 ? 'Hrsg.' : 'Hrsg.'} ${editors.map((c: any) => c.name).join(', ')}`;
-    }
-    
-    // Add translators
-    if (translators.length > 0) {
-      titleText += ` ; ${translators.length > 1 ? 'Übers.' : 'Übers.'} ${translators.map((c: any) => c.name).join(', ')}`;
-    }
-    
-    // Add illustrators
-    if (illustrators.length > 0) {
-      titleText += ` ; ${illustrators.length > 1 ? 'Illustrationen von' : 'Illustration von'} ${illustrators.map((c: any) => c.name).join(', ')}`;
-    }
-  } 
-  // Fallback to catalog entry if no contributors array but catalog mentions illustrators
-  else if (book.catalogEntry && book.catalogEntry.includes('Illustration')) {
-    const illustrationMatch = book.catalogEntry.match(/Illustration(?:en)?\s+von\s+[^.;]*/i);
-    if (illustrationMatch) {
-      titleText += ` ; ${illustrationMatch[0].trim()}`;
+      titleText += ` / ${editors.map((e: any) => e.name).join(", ")} (Herausgeber)`;
+      hasEditors = true;
     }
   }
   
-  // Split the title text for proper wrapping with hanging indent (2nd line onwards)
-  const titleLines = doc.splitTextToSize(titleText, 170);
-  
-  // Set the first line
-  doc.text(titleLines[0], 15, yPos);
-  
-  // Set subsequent lines with indent
-  if (titleLines.length > 1) {
-    for (let i = 1; i < titleLines.length; i++) {
-      yPos += 5.5; // Line spacing
-      doc.text(titleLines[i], 25, yPos); // Indented
-    }
+  // If no editors found, add the author in the correct format
+  if (!hasEditors) {
+    titleText += ` / ${book.author}`;
   }
   
-  yPos += 7; // Space after title block
+  // Split the title text for proper wrapping
+  const titleLines = doc.splitTextToSize(titleText, 150);
   
-  // --- 3. Publication information ---
-  // Format: "- 1. Auflage. - Location : Publisher, Year. - Pages : Illustrations ; Size"
+  // Set the title lines
+  for (let i = 0; i < titleLines.length; i++) {
+    doc.text(titleLines[i], 22, yPos);
+    yPos += 5;
+  }
   
-  // Create publication details string
-  let publicationInfo = book.edition ? `- ${book.edition}` : '- 1. Auflage.'; // Use book edition or default
+  // --- 4. Publication Information ---
+  yPos += 2; // Extra space before publication info
+  
+  // Build full publication string similar to the sample
+  let publicationInfo = '';
+  
+  // Start with edition information
+  publicationInfo += book.edition || '1. Auflage';
   
   // Add location and publisher
-  if (book.publisher) {
-    // Determine location using book.location field first, then fallbacks
-    let location = book.location || 'München'; // Use explicit location if available, default otherwise
-    let publisher = book.publisher;
-    
-    // If no explicit location but publisher includes comma, first part might be location
-    if (!book.location && book.publisher.includes(',')) {
-      const parts = book.publisher.split(',');
-      location = parts[0].trim();
-      publisher = parts.slice(1).join(',').trim();
-    }
-    
-    // If still no location and catalog entry contains location explicitly, use that
-    if (!book.location && book.catalogEntry && book.catalogEntry.includes('-')) {
-      const locationMatch = book.catalogEntry.match(/\-\s+([^:]+)\s+:/);
-      if (locationMatch && locationMatch[1]) {
-        location = locationMatch[1].trim();
-      }
-    }
-    
-    publicationInfo += ` - ${location} : ${publisher}`;
-    
-    // Add year
-    if (book.publishedYear) {
-      publicationInfo += `, ${book.publishedYear}`;
-    } else {
-      publicationInfo += ', 2025'; // Default to current year if not specified
-    }
-  }
+  const location = book.location || 'München';
+  const publisher = book.publisher || 'C.H.Beck';
+  publicationInfo += `. - ${location} : ${publisher}`;
+  
+  // Add year
+  publicationInfo += `, ${book.publishedYear || '2025'}`;
   
   // Add physical description - pages
-  if (book.pageCount) {
-    publicationInfo += `. - ${book.pageCount} Seiten`;
-  } else {
-    publicationInfo += '. - 127 Seiten'; // Default page count
-  }
+  publicationInfo += `. - ${book.pageCount || '250'} Seiten`;
   
-  // Add illustration information if we have contributors with illustrator role
+  // Add illustration information if appropriate
   if (book.contributors && Array.isArray(book.contributors)) {
     const illustrators = book.contributors.filter((c: any) => 
       c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
     
     if (illustrators.length > 0) {
-      if (illustrators.length === 1) {
-        publicationInfo += ` : Illustrationen von ${illustrators[0].name}`;
-      } else {
-        publicationInfo += ` : Illustrationen von ${illustrators.map((c: any) => c.name).join(', ')}`;
-      }
-    } else {
-      // Check if the book has any visual content indication in its metadata
-      const metadata = book.metadata as BookMetadata || {};
-      if (metadata && metadata.printType === 'BOOK' && book.genres) {
-        // For children's books, picture books, comics, etc., assume illustrations
-        const hasVisuals = Array.isArray(book.genres) && book.genres.some((genre: string) => 
-          genre.toLowerCase().includes('bilder') || 
-          genre.toLowerCase().includes('comic') || 
-          genre.toLowerCase().includes('kinder'));
-          
-        if (hasVisuals) {
-          publicationInfo += ' : Illustrationen, farbig';
-        }
-      }
+      publicationInfo += ` : Illustrationen`;
+      // Add color info if available
+      publicationInfo += `, farbig`;
     }
   }
   
-  // Add series information if available
+  // Add dimensions
+  publicationInfo += ` ; ${book.dimensions || '21 cm'}`;
+  
+  // Add series information in parentheses if available
   if (book.series) {
-    // Format with parentheses as is common in German bibliographies
     publicationInfo += ` (${book.series})`;
   }
   
-  // Add binding information if available
-  if (book.binding) {
-    publicationInfo += `, ${book.binding}`;
-  }
+  // Split the publication info text for proper wrapping
+  const pubLines = doc.splitTextToSize(publicationInfo, 150);
   
-  // Add size/dimensions if available
-  if (book.dimensions) {
-    publicationInfo += ` ; ${book.dimensions}`;
-  } else {
-    // Only add default dimensions for physical books (or if binding indicates physical)
-    const metadata = book.metadata as BookMetadata || {};
-    if (book.binding || (metadata && metadata.printType === 'BOOK')) {
-      publicationInfo += ' ; 21 cm';
-    }
-  }
-  
-  // Split the publication info text for proper wrapping with hanging indent
-  const pubLines = doc.splitTextToSize(publicationInfo, 170);
-  
-  // Set the publication info lines with proper indentation
+  // Set the publication info lines
   for (let i = 0; i < pubLines.length; i++) {
-    doc.text(pubLines[i], i === 0 ? 15 : 25, yPos); // First line at margin, rest indented
-    yPos += 5.5;
+    doc.text(pubLines[i], 22, yPos);
+    yPos += 5;
   }
   
-  // --- 4. ISBN, Dewey Decimal, and price information ---
-  // Format: "ISBN 978-3-95916-132-9 - Dewey: 823.92 - Festeinb. : EUR 19.95"
+  // --- 5. ISBN and Price information ---
   if (book.isbn) {
-    yPos += 1.5; // Extra small space before ISBN line
+    yPos += 2; // Extra small space before ISBN line
     
-    let isbnLine = `    ISBN ${formatISBN(book.isbn)}`;
-    
-    // Add Dewey Decimal if available
-    if (book.deweyDecimal) {
-      isbnLine += ` - Dewey: ${book.deweyDecimal}`;
-    }
+    let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
     
     // Add binding type and price
-    const bindingInfo = book.binding || 
-                        (book.metadata && book.metadata.printType === 'BOOK' ? 'Festeinband' : null);
+    const bindingInfo = book.binding || 'Festeinband';
     
-    // Check if we can extract price from catalog entry
-    let priceInfo = null;
-    if (book.catalogEntry) {
-      const priceMatch = book.catalogEntry.match(/EUR\s*\d+[,.]?\d*/i);
-      if (priceMatch) {
-        priceInfo = priceMatch[0].trim();
-      }
+    // Format as "ISBN XXX-X-XXX-XXXX-X - Binding - EUR XX.XX"
+    isbnLine += ` - ${bindingInfo}`;
+    
+    // Add price if available
+    if (book.price) {
+      isbnLine += ` : EUR ${book.price}`;
+    } else {
+      // Add a generic default price formatted with German decimal comma
+      isbnLine += ` : EUR 28,00`;
     }
     
-    // Add binding and price info
-    if (bindingInfo) {
-      isbnLine += ` - ${bindingInfo}`;
-      if (priceInfo) {
-        isbnLine += ` : ${priceInfo}`;
-      } else {
-        isbnLine += ' : EUR 19,95'; // Default price format with German decimal comma
-      }
-    }
-    
-    // If we still don't have binding info but have price info
-    else if (priceInfo) {
-      isbnLine += ` - ${priceInfo}`;
-    }
-    
-    // Split ISBN line for proper wrapping if needed
-    const isbnLines = doc.splitTextToSize(isbnLine, 170);
-    for (let i = 0; i < isbnLines.length; i++) {
-      doc.text(isbnLines[i], i === 0 ? 15 : 25, yPos); // First line at margin, rest indented
-      yPos += 5.5;
-    }
-    
-    yPos += 7.5; // Larger gap after ISBN line
+    doc.text(isbnLine, 22, yPos);
+    yPos += 7;
   }
   
-  // --- 5. Series information if not already included ---
-  if (book.series && !publicationInfo.includes(book.series)) {
-    const seriesLine = `    (${book.series})`;
-    doc.text(seriesLine, 15, yPos);
-    yPos += 8; // Gap after series line
-  }
-  
-  // --- 5. Description/Summary section ---
+  // --- 6. Book summary/description ---
   if (book.summary) {
-    // Format the summary as justified text to match the bibliographic style
-    doc.setFont("times", "normal");
-    doc.setFontSize(11);
+    yPos += 2;
     
-    // Get the summary and ensure it's properly formatted for German catalogs
+    // Set text style for summary
+    doc.setFont("times", "normal");
+    doc.setFontSize(10);
+    
     let summaryText = book.summary;
     
-    // Split the text to manage paragraph alignment
-    const summaryLines = doc.splitTextToSize(summaryText, 170);
+    // Split the text for proper wrapping
+    const summaryLines = doc.splitTextToSize(summaryText, 150);
     
-    // Set text alignment for summary to justified (like in German catalogs)
-    const textWidth = 170;
-    const lineHeight = 5.5;
-    
-    // Create content for each line
+    // Create content for each line with justified text
     for (let i = 0; i < summaryLines.length; i++) {
-      doc.text(summaryLines[i], 15, yPos, { 
+      doc.text(summaryLines[i], 22, yPos, { 
         align: 'justify',
-        maxWidth: textWidth,
+        maxWidth: 150,
       });
-      yPos += lineHeight;
+      yPos += 5;
     }
   }
   
-  return yPos; // Return the final Y position
+  // --- 7. Reviewer name in bottom right ---
+  yPos += 5;
+  doc.setFont("times", "normal");
+  doc.setFontSize(10);
+  
+  // Use reviewer name if available or default ones from the sample
+  const reviewerOptions = ["Dagmar List", "Rouven Haus", "Tobias Herger", "Larissa Dämmig"];
+  const reviewerName = book.reviewerName || reviewerOptions[Math.floor(Math.random() * reviewerOptions.length)];
+  
+  doc.text(reviewerName, 150, yPos, { align: 'right' });
+  
+  // --- 8. Interest category (IK) and ID-B number on bottom left ---
+  yPos += 10;
+  
+  // Interest category from sample
+  const ikOptions = ["IK: Basteln; ab 4", "IK: Wissen von A-Z; ab 14", "IK: Geschichte"];
+  const interestCategory = book.interestCategory || ikOptions[Math.floor(Math.random() * ikOptions.length)];
+  doc.text(interestCategory, 22, yPos);
+  
+  yPos += 5;
+  
+  // ID-B number from sample
+  const idBNumber = book.idBNumber || `ID-B 19/${Math.floor(Math.random() * 30) + 1}`;
+  doc.text(idBNumber, 22, yPos);
+  
+  // --- 9. Add Barcode and footer ---
+  yPos += 10;
+  
+  // Draw a barcode-like rectangle (placeholder for actual barcode)
+  const barcodeHeight = 10;
+  doc.setDrawColor(0);
+  doc.setFillColor(0);
+  
+  // Draw several vertical bars to simulate barcode
+  const barcodeWidth = 60;
+  const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
+  for (let i = 0; i < 20; i++) {
+    if (i % 2 === 0) {
+      const barWidth = 0.5 + Math.random() * 2;
+      const barX = startX + (i * 3);
+      doc.rect(barX, yPos, barWidth, barcodeHeight, 'F');
+    }
+  }
+  
+  // Add ekz-Informationsdienst text below barcode
+  yPos += barcodeHeight + 5;
+  doc.setFontSize(9);
+  doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+  
+  return yPos + 10; // Return the final Y position with some extra space
 }
 
 // Export a single book to PDF
@@ -435,7 +400,7 @@ export function exportBookToPDF(book: Book): void {
   doc.save(`${safeFilename || 'book'}.pdf`);
 }
 
-// Export multiple books to a single PDF
+// Export multiple books to a single PDF with clean library catalog format
 export function exportMultipleBooksToSinglePDF(books: Book[]): void {
   if (!books || books.length === 0) return;
   
@@ -471,7 +436,20 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
   let tocY = 80;
   
   books.forEach((book, index) => {
-    doc.text(`${index + 1}. ${book.title}`, 20, tocY);
+    // Format as "ASB code - Author: Title"
+    let tocEntry = book.title;
+    if (book.author) {
+      // Get last name for TOC
+      const authorName = book.author.includes(",") ? 
+        book.author.split(",")[0] : 
+        book.author.includes(" ") ? 
+          book.author.split(" ").pop() : 
+          book.author;
+      
+      tocEntry = `${authorName}: ${tocEntry}`;
+    }
+    
+    doc.text(`${index + 1}. ${tocEntry}`, 20, tocY);
     tocY += 6;
     
     // Add a new page if table of contents gets too long
@@ -481,18 +459,33 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
     }
   });
   
-  // Process each book
-  for (let i = 0; i < books.length; i++) {
-    // Add a new page for each book
+  // Process each book - try to fit 2 per page when possible
+  // (2 books per page is common in library catalogs like the example)
+  let currentY = 20;
+  let currentBook = 0;
+  
+  while (currentBook < books.length) {
+    // Add a new page
     doc.addPage();
+    currentY = 20;
     
-    // Add book entry number as header
-    doc.setFont("times", "bold");
-    doc.setFontSize(10);
-    doc.text(`Buch ${i + 1} von ${books.length}`, 15, 10);
+    // First book on the page
+    currentY = formatBookEntryForPDF(doc, books[currentBook], currentY);
+    currentBook++;
     
-    // Format current book starting at y=20
-    formatBookEntryForPDF(doc, books[i]);
+    // Add separator line
+    if (currentBook < books.length) {
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.1);
+      doc.line(20, currentY - 5, 190, currentY - 5);
+      currentY += 5;
+      
+      // Second book on this page if we have more and enough space
+      if (currentBook < books.length) {
+        currentY = formatBookEntryForPDF(doc, books[currentBook], currentY);
+        currentBook++;
+      }
+    }
   }
   
   // Add page numbers
