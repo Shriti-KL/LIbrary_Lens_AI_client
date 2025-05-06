@@ -82,7 +82,9 @@ export const bookAnalysisSchema = z.object({
   deweyDecimal: z.string().nullable().optional(),
   metadata: z.any().optional(),
   userId: z.number().nullable().optional(),
-  language: z.string().optional(), // The language to generate content in (e.g. "en", "de", "es", etc.)
+  language: z.union([z.string(), z.array(z.string())]).pipe(
+    z.string().transform(value => Array.isArray(value) ? value[0] : value)
+  ).optional(), // The language to generate content in (e.g. "en", "de", "es", etc.)
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
   
   // Library catalog specific fields

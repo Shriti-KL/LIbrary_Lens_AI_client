@@ -56,8 +56,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
+        // Fix language field and other data conversions
+        let language = bodyData.language;
+        if (Array.isArray(language)) {
+          console.log(`[${requestId}] Converting language from array to string:`, language);
+          language = language[0]; // Take the first value if it's an array
+        }
+        
         bookInfo = {
           ...bodyData,
+          language: language, // Use the fixed language value
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
