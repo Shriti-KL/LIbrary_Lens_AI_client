@@ -56,18 +56,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
-        // Fix language field and other data conversions
-        let language = bodyData.language;
-        if (Array.isArray(language)) {
-          console.log(`[${requestId}] Converting language from array to string:`, language);
-          language = language[0]; // Take the first value if it's an array
+        // Parse and validate the request data with Zod
+        try {
+          const validatedData = bookAnalysisSchema.parse(bodyData);
+          console.log(`[${requestId}] Validated data with language: ${validatedData.language}`);
+          bookInfo = validatedData;
+        } catch (validationError: any) {
+          console.error(`[${requestId}] Validation error:`, validationError);
+          // Fall back to original data with manual fixes if validation fails
+          let language = bodyData.language;
+          if (Array.isArray(language)) {
+            console.log(`[${requestId}] Converting language from array to string:`, language);
+            language = language[0]; // Take the first value if it's an array
+          }
+          
+          bookInfo = {
+            ...bodyData,
+            language: language || "de", // Use the fixed language value or default to German
+            options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
+          };
         }
-        
-        bookInfo = {
-          ...bodyData,
-          language: language, // Use the fixed language value
-          options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
-        };
       }
       
       // If coverImage is uploaded, process it
