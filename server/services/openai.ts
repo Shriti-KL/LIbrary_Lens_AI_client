@@ -579,64 +579,155 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
 // Generate a library catalog entry
 export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<string> {
   try {
-    // Determine language for content generation (default to German if not specified)
-    const language = bookInfo.language || "de";
-    
-    // Map language codes to full language names for prompt clarity
-    const languageNames: Record<string, string> = {
-      en: "English",
-      de: "German (Deutsch)",
-      fr: "French (Français)",
-      es: "Spanish (Español)",
-      zh: "Chinese (中文)"
-    };
-    
-    const languageName = languageNames[language] || languageNames.de;
-    
-    // Collect all available bibliographic information
-    let contextText = `Title: ${bookInfo.title || 'Unknown'}
-Author: ${bookInfo.author || 'Unknown'}
-${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
-${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
-${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
-${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
-${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
-${bookInfo.dimensions ? `Dimensions: ${bookInfo.dimensions}` : ''}
-${bookInfo.edition ? `Edition: ${bookInfo.edition}` : ''}
-${bookInfo.binding ? `Binding: ${bookInfo.binding}` : ''}
-${bookInfo.series ? `Series: ${bookInfo.series}` : ''}
-${bookInfo.contributors && Array.isArray(bookInfo.contributors) && bookInfo.contributors.length > 0 
-  ? `Contributors: ${bookInfo.contributors.map((c: any) => `${c.name} (${c.role})`).join(', ')}` 
-  : ''}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
-
-    console.log(`Generating catalog entry for "${bookInfo.title}" by "${bookInfo.author}"`);
-
-    const response = await openai.chat.completions.create({
+    // Log the catalog entry request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "generateCatalogEntry",
+      endpoint: "chat.completions.create",
       model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in ${languageName}.`
-        },
-        {
-          role: "user",
-          content: `Create a formal library catalog entry in ${languageName} for this book following standard cataloging conventions for ${languageName}. Include a Dewey Decimal classification if possible.\n\n${contextText}`
-        }
-      ],
+      bookTitle: bookInfo.title,
+      bookAuthor: bookInfo.author
     });
 
-    const content = response.choices[0].message.content;
-    if (!content) {
-      console.log("No content returned from OpenAI for catalog entry");
-      return "Keine Kataloginformationen verfügbar";
+    // Get the ASB classification and other German library specific data
+    const germanCatalogData = bookInfo.catalogNumber || 
+                              bookInfo.secondaryClassification || 
+                              bookInfo.reviewerName ? 
+                              bookInfo : 
+                              await generateGermanLibraryCatalogData(bookInfo);
+    
+    // Extract the reviewer name and related classifiers
+    const reviewerName = germanCatalogData.reviewerName || "[Reviewer Name]";
+    const asbClassification = germanCatalogData.catalogNumber || "[ASB Placeholder]";
+    const secondaryCode = germanCatalogData.secondaryClassification || "[Code Placeholder]";
+    const idBNumber = germanCatalogData.idBNumber || "[ID Placeholder]";
+    
+    // Format the author name (lastname, firstname)
+    let formattedAuthor = "[Author Placeholder]";
+    if (bookInfo.author) {
+      const authorParts = bookInfo.author.split(" ");
+      if (authorParts.length > 1) {
+        const lastName = authorParts.pop();
+        const firstName = authorParts.join(" ");
+        formattedAuthor = `${lastName}, ${firstName}`;
+      } else {
+        formattedAuthor = bookInfo.author;
+      }
+      
+      // Check if author is an editor
+      if (bookInfo.contributors && 
+          Array.isArray(bookInfo.contributors) && 
+          bookInfo.contributors.some(c => c.role?.toLowerCase()?.includes("hrsg"))) {
+        formattedAuthor += " (Hrsg.)";
+      }
     }
     
-    console.log(`Generated catalog entry with length: ${content.length} characters`);
-    return content.trim();
+    // Format the title and subtitle
+    const title = bookInfo.title || "[Title Placeholder]";
+    let subtitle = "";
+    if (title.includes(":")) {
+      const titleParts = title.split(":");
+      subtitle = ` / ${titleParts.slice(1).join(":").trim()}`;
+    }
+    
+    // Get translator if available
+    let translator = "";
+    if (bookInfo.contributors && Array.isArray(bookInfo.contributors)) {
+      const translatorContributor = bookInfo.contributors.find(c => 
+        c.role?.toLowerCase()?.includes("übersetz") || 
+        c.role?.toLowerCase()?.includes("translat")
+      );
+      if (translatorContributor) {
+        translator = ` / ${translatorContributor.name}`;
+      }
+    }
+    
+    // Format edition
+    const edition = bookInfo.edition ? `${bookInfo.edition} – ` : "";
+    
+    // Format location and publisher
+    const location = bookInfo.location || "[Ort]";
+    const publisher = bookInfo.publisher || "[Verlag]";
+    const publishingInfo = `${location} : ${publisher}`;
+    
+    // Format year
+    const year = bookInfo.publishedYear || "[Jahr]";
+    
+    // Format physical details
+    const pageCount = bookInfo.pageCount ? `${bookInfo.pageCount}` : "[Seitenzahl]";
+    const physicalDetails = bookInfo.contributors && 
+                           Array.isArray(bookInfo.contributors) && 
+                           bookInfo.contributors.some(c => c.role?.toLowerCase()?.includes("illustr")) ? 
+                           " : Illustrationen" : "";
+    
+    // Format dimensions
+    const dimensions = bookInfo.dimensions ? ` ; ${bookInfo.dimensions}` : " ; [Format]";
+    
+    // Format series
+    const series = bookInfo.series ? ` : (${bookInfo.series})` : "";
+    
+    // Format ISBN and binding
+    const isbn = bookInfo.isbn || "[ISBN]";
+    const binding = bookInfo.binding ? 
+                   bookInfo.binding.toLowerCase().includes("hardcover") || 
+                   bookInfo.binding.toLowerCase().includes("gebunden") ? 
+                   "Festeinb." : "Taschenbuch" : 
+                   "[Binding Type]";
+    
+    // Placeholder for price
+    const price = "EUR [price]";
+    
+    // Create the formatted catalog entry following ekz-Informationsdienst style
+    let catalogEntry = `ASB: ${asbClassification}        ${secondaryCode}\n\n`;
+    catalogEntry += `**${formattedAuthor}**: ${title}${subtitle}${translator} : ${edition}${publishingInfo}, ${year} – ${pageCount}${physicalDetails}${dimensions}${series}\n`;
+    catalogEntry += `ISBN ${isbn}, ${binding} : ${price}\n\n`;
+    
+    // Add the summary (either existing or generate a new one)
+    if (!bookInfo.summary) {
+      try {
+        bookInfo.summary = await generateBookSummary(bookInfo);
+      } catch (error) {
+        console.error("Failed to generate summary for catalog entry:", error);
+        bookInfo.summary = "[Zusammenfassung nicht verfügbar]";
+      }
+    }
+    
+    catalogEntry += bookInfo.summary + "\n\n";
+    
+    // Add the footer with reviewer name and ID
+    catalogEntry += `- ${reviewerName}\n`;
+    catalogEntry += `- ${idBNumber}\n`;
+    catalogEntry += `- ekz-Informationsdienst\n`;
+    catalogEntry += `- ${secondaryCode}`;
+    
+    // Log success
+    apiLogger.logResponse("OpenAI API", {
+      operation: "generateCatalogEntry",
+      status: "success",
+      bookTitle: bookInfo.title,
+      entryLength: catalogEntry.length
+    });
+    
+    return catalogEntry;
   } catch (error: any) {
     console.error("Error generating catalog entry:", error);
-    return "Keine Kataloginformationen verfügbar"; // Return default instead of throwing
+    apiLogger.logError("OpenAI API", {
+      operation: "generateCatalogEntry",
+      error: error.message || String(error),
+      bookTitle: bookInfo.title
+    });
+    
+    // Create a basic template with placeholders if an error occurs
+    return `ASB: [ASB Placeholder]        [Code Placeholder]
+
+**[Author]**: [Title] : [Edition] – [Ort] : [Verlag], [Jahr] – [Seiten] ; [Format]
+ISBN [ISBN], [Einband] : EUR [Preis]
+
+[Zusammenfassung nicht verfügbar]
+
+- [Reviewer Name]
+- [ID Placeholder]
+- ekz-Informationsdienst
+- [Code Placeholder]`;
   }
 }
 
@@ -714,8 +805,8 @@ ${contextText}`
         interestCategory: result.interestCategory,
         idBNumber: result.idBNumber
       };
-    } catch (parseError) {
-      console.error("Error parsing German library catalog data JSON:", parseError);
+    } catch (error: unknown) {
+      console.error("Error parsing German library catalog data JSON:", error);
       return {};
     }
   } catch (error: any) {
@@ -869,8 +960,8 @@ ${context}`
       console.log(`- Location: ${extractedData.location || 'null'}`);
       console.log(`- Publisher: ${extractedData.publisher || 'null'}`);
       
-    } catch (parseError) {
-      console.error("Error parsing bibliographic data JSON:", parseError);
+    } catch (error: unknown) {
+      console.error("Error parsing bibliographic data JSON:", error);
       return bookInfo;
     }
 
