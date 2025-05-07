@@ -1082,3 +1082,287 @@
   "isbn": "9783959161350",
   "bookTitle": "Der kleine Drache Kokosnuss bei den Dinosauriern"
 }
+
+[2025-05-07 07:53:41] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783961294732"
+}
+
+[2025-05-07 07:53:41] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-96129-473-2"
+  }
+}
+
+[2025-05-07 07:53:47] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783961294732",
+  "bookTitle": "Die Kunst des klaren Denkens: 52 Denkfehler, die Sie besser anderen überlassen"
+}
+
+[2025-05-07 07:53:47] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die große Heuchelei"
+}
+
+[2025-05-07 07:53:47] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die große Heuchelei",
+  "bookAuthor": "Jürgen Todenhöfer"
+}
+
+[2025-05-07 07:53:52] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 208,
+    "completion_tokens": 215,
+    "total_tokens": 423,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die große Heuchelei"
+}
+
+[2025-05-07 07:53:52] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1012,
+  "wordCount": 135,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:53:52] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die große Heuchelei",
+  "bookAuthor": "Jürgen Todenhöfer",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:53:53] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 338,
+    "completion_tokens": 31,
+    "total_tokens": 369,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die große Heuchelei"
+}
+
+[2025-05-07 07:53:53] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Die große Heuchelei",
+  "genreCount": 4,
+  "genres": {
+    "0": "Sachbuch",
+    "1": "Politik",
+    "2": "Gesellschaft",
+    "3": "Kritik"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:53:59] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die große Heuchelei",
+  "bookAuthor": "Jürgen Todenhöfer"
+}
+
+[2025-05-07 07:54:03] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die große Heuchelei",
+  "entryLength": 1261
+}
+
+[2025-05-07 07:55:50] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783959161350"
+}
+
+[2025-05-07 07:55:51] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 07:55:56] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783959161350",
+  "bookTitle": "Die drei ??? und der schwarze Tag"
+}
+
+[2025-05-07 07:56:01] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die Tyrannei des Schmetterlings"
+}
+
+[2025-05-07 07:56:01] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Tyrannei des Schmetterlings",
+  "bookAuthor": "Frank Schätzing"
+}
+
+[2025-05-07 07:56:05] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 215,
+    "completion_tokens": 209,
+    "total_tokens": 424,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Tyrannei des Schmetterlings"
+}
+
+[2025-05-07 07:56:05] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1001,
+  "wordCount": 134,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:56:05] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Tyrannei des Schmetterlings",
+  "bookAuthor": "Frank Schätzing",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:56:06] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 339,
+    "completion_tokens": 28,
+    "total_tokens": 367,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Tyrannei des Schmetterlings"
+}
+
+[2025-05-07 07:56:06] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Die Tyrannei des Schmetterlings",
+  "genreCount": 4,
+  "genres": {
+    "0": "Thriller",
+    "1": "Science-Fiction",
+    "2": "Philosophischer Roman",
+    "3": "Zukunftsroman"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:56:12] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die Tyrannei des Schmetterlings",
+  "bookAuthor": "Frank Schätzing"
+}
+
+[2025-05-07 07:56:14] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die Tyrannei des Schmetterlings",
+  "entryLength": 1267
+}
