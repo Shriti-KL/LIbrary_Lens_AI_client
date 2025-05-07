@@ -1689,13 +1689,14 @@ Return the response as a JSON object with an "items" array containing books. Eac
   }
 }
 
-export async function enrichBookMetadata(
+// Original OpenAI-only function (renamed to avoid conflicts)
+export async function enrichBookMetadataWithOpenAI(
   bookInfo: Partial<Book>,
 ): Promise<Partial<Book>> {
   try {
     // Log the enrichment request
     apiLogger.logRequest("OpenAI API", {
-      operation: "enrichBookMetadata",
+      operation: "enrichBookMetadataWithOpenAI",
       model: MODEL,
       bookInfo: {
         title: bookInfo.title,
@@ -1810,7 +1811,7 @@ Return the response as a JSON object with the following fields:
 
       // Log success
       apiLogger.logResponse("OpenAI API", {
-        operation: "enrichBookMetadata",
+        operation: "enrichBookMetadataWithOpenAI",
         status: "success",
         bookTitle: title || bookInfo.title,
       });
@@ -1890,7 +1891,7 @@ Return the response as a JSON object with the following fields:
     } catch (error: unknown) {
       console.error("Error parsing book metadata JSON from OpenAI:", error);
       apiLogger.logError("OpenAI API", {
-        operation: "enrichBookMetadata",
+        operation: "enrichBookMetadataWithOpenAI",
         error: error instanceof Error ? error.message : String(error),
         bookTitle: bookInfo.title,
       });
@@ -1900,11 +1901,169 @@ Return the response as a JSON object with the following fields:
   } catch (error: any) {
     console.error("Error enriching book metadata with OpenAI:", error);
     apiLogger.logError("OpenAI API", {
-      operation: "enrichBookMetadata",
+      operation: "enrichBookMetadataWithOpenAI",
       error: error.message || String(error),
       bookTitle: bookInfo.title,
     });
     // Return original book info if there's an error
+    return bookInfo;
+  }
+}
+
+// New implementation that uses Google Books API first, then OpenAI for enhancement
+export async function enrichBookMetadata(
+  bookInfo: Partial<Book>,
+): Promise<Partial<Book>> {
+  try {
+    // Create a unique ID for this request
+    const enrichmentId = `enrich_hybrid_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${enrichmentId}] Starting hybrid book metadata enrichment for "${bookInfo.title || bookInfo.isbn}" by "${bookInfo.author || "unknown"}"`);
+    
+    // STEP 1: Get accurate base information from Google Books API
+    let googleBooksData: Partial<Book> = { ...bookInfo };
+    
+    if (bookInfo.isbn) {
+      try {
+        console.log(`[${enrichmentId}] Fetching book data from Google Books API using ISBN: ${bookInfo.isbn}`);
+        const googleBook = await googleBooks.getBookByISBN(bookInfo.isbn);
+        
+        if (googleBook && googleBook.volumeInfo) {
+          console.log(`[${enrichmentId}] Google Books API returned data for ISBN: ${bookInfo.isbn}`);
+          
+          // Extract the relevant fields from Google Books response
+          const volumeInfo = googleBook.volumeInfo;
+          
+          // Update our book info with Google Books data
+          googleBooksData = {
+            ...bookInfo,
+            title: bookInfo.title || volumeInfo.title,
+            author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            publisher: bookInfo.publisher || volumeInfo.publisher,
+            publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+            pageCount: bookInfo.pageCount || volumeInfo.pageCount,
+            // Other fields
+            summary: bookInfo.summary || volumeInfo.description,
+            language: bookInfo.language || volumeInfo.language || "de",
+            // Get cover image if available
+            coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+            // Extract ISBN if available
+            isbn: bookInfo.isbn, // Keep original ISBN format
+            // Add metadata from Google Books
+            metadata: {
+              ...(bookInfo.metadata || {}),
+              source: "google_books",
+              googleBookId: googleBook.id,
+              ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
+              ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
+              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {})
+            }
+          };
+          
+          console.log(`[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`);
+        } else {
+          console.log(`[${enrichmentId}] Google Books API did not return data for ISBN: ${bookInfo.isbn}`);
+        }
+      } catch (error) {
+        console.error(`[${enrichmentId}] Error fetching from Google Books API:`, error);
+        // Continue with original data if Google Books fails
+      }
+    } else if (bookInfo.title) {
+      try {
+        console.log(`[${enrichmentId}] Fetching book data from Google Books API using title: "${bookInfo.title}"`);
+        const searchParams = {
+          query: bookInfo.title,
+          title: bookInfo.title,
+          ...(bookInfo.author ? { author: bookInfo.author } : {}),
+          maxResults: 1
+        };
+        
+        const searchResults = await googleBooks.searchBooks(searchParams);
+        
+        if (searchResults && searchResults.length > 0) {
+          const googleBook = searchResults[0];
+          console.log(`[${enrichmentId}] Google Books API returned data for title: "${bookInfo.title}"`);
+          
+          // Extract the relevant fields from Google Books response
+          const volumeInfo = googleBook.volumeInfo;
+          
+          // Update our book info with Google Books data
+          googleBooksData = {
+            ...bookInfo,
+            title: bookInfo.title,
+            author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            publisher: bookInfo.publisher || volumeInfo.publisher,
+            publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+            pageCount: bookInfo.pageCount || volumeInfo.pageCount,
+            // Other fields
+            summary: bookInfo.summary || volumeInfo.description,
+            language: bookInfo.language || volumeInfo.language || "de",
+            // Get cover image if available
+            coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+            // Extract ISBN if available
+            isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
+                   volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13")?.identifier || 
+                   volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10")?.identifier : 
+                   null),
+            // Add metadata from Google Books
+            metadata: {
+              ...(bookInfo.metadata || {}),
+              source: "google_books",
+              googleBookId: googleBook.id,
+              ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
+              ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
+              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {})
+            }
+          };
+          
+          console.log(`[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`);
+        } else {
+          console.log(`[${enrichmentId}] Google Books API did not return data for title: "${bookInfo.title}"`);
+        }
+      } catch (error) {
+        console.error(`[${enrichmentId}] Error searching Google Books API:`, error);
+        // Continue with original data if Google Books fails
+      }
+    }
+    
+    // STEP 2: Enrich with OpenAI to get additional library-specific data
+    // Only use OpenAI if we have at least a title or ISBN
+    if (googleBooksData.title || googleBooksData.isbn) {
+      console.log(`[${enrichmentId}] Enriching book data with OpenAI using base data from Google Books`);
+      
+      // Note: We're now passing Google Books enhanced data to OpenAI
+      // This way OpenAI will have accurate base information to work with
+      const openAIEnrichedData = await enrichBookMetadataWithOpenAI(googleBooksData);
+      
+      // Merge the two data sources, giving precedence to Google Books for basic bibliographic data
+      // but using OpenAI for more specialized library data
+      return {
+        ...openAIEnrichedData,
+        // We trust Google Books more for these core fields
+        title: googleBooksData.title || openAIEnrichedData.title,
+        author: googleBooksData.author || openAIEnrichedData.author,
+        publisher: googleBooksData.publisher || openAIEnrichedData.publisher,
+        publishedYear: googleBooksData.publishedYear || openAIEnrichedData.publishedYear,
+        pageCount: googleBooksData.pageCount || openAIEnrichedData.pageCount,
+        isbn: googleBooksData.isbn || openAIEnrichedData.isbn,
+        // Combine metadata from both sources
+        metadata: {
+          ...(googleBooksData.metadata || {}),
+          ...(openAIEnrichedData.metadata || {}),
+          hybridEnrichment: true
+        }
+      };
+    }
+    
+    return googleBooksData;
+  } catch (error: any) {
+    console.error("Error in hybrid book metadata enrichment:", error);
+    apiLogger.logError("Hybrid Enrichment", {
+      operation: "enrichBookMetadata",
+      error: error.message || String(error),
+      bookTitle: bookInfo.title,
+      isbn: bookInfo.isbn
+    });
+    // Return original book info if all enrichment fails
     return bookInfo;
   }
 }
