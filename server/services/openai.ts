@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { Book, BookAnalysisRequest, AnalysisOption } from "@shared/schema";
+import { apiLogger } from "../utils/logger";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const MODEL = "gpt-4o";
@@ -10,6 +11,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Handle book cover analysis
 export async function analyzeBookCover(image: string): Promise<any> {
   try {
+    // Log the request (without the actual image data for space efficiency)
+    apiLogger.logRequest("OpenAI API", {
+      operation: "analyzeBookCover",
+      endpoint: "chat.completions.create",
+      model: MODEL,
+      requestType: "image analysis",
+      imageProvided: Boolean(image),
+      imageSize: image ? `${Math.round(image.length / 1024)} KB` : '0 KB'
+    });
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -37,9 +48,24 @@ export async function analyzeBookCover(image: string): Promise<any> {
       temperature: 0.1, // Lower temperature for more accurate extraction
     });
 
+    // Log successful response
+    apiLogger.logResponse("OpenAI API", {
+      operation: "analyzeBookCover",
+      status: "success",
+      model: MODEL,
+      usage: response.usage,
+      finishReason: response.choices[0].finish_reason
+    });
+
     const content = response.choices[0].message.content;
     if (!content) {
-      throw new Error("No content returned from book cover analysis");
+      const errorMsg = "No content returned from book cover analysis";
+      apiLogger.logError("OpenAI API", {
+        operation: "analyzeBookCover",
+        error: errorMsg,
+        phase: "content extraction"
+      });
+      throw new Error(errorMsg);
     }
     
     let result;
@@ -47,17 +73,43 @@ export async function analyzeBookCover(image: string): Promise<any> {
       result = JSON.parse(content);
     } catch (parseError) {
       console.error("Error parsing book cover JSON:", parseError);
+      apiLogger.logError("OpenAI API", {
+        operation: "analyzeBookCover",
+        error: "JSON parse error",
+        phase: "parsing response",
+        content: content.substring(0, 200) + "..." // Include start of content for debugging
+      });
       throw new Error("Failed to parse book cover analysis results");
     }
     
     // Ensure we have at least a title and author
     if (!result.title && !result.author) {
-      throw new Error("Could not extract title or author from book cover");
+      const errorMsg = "Could not extract title or author from book cover";
+      apiLogger.logError("OpenAI API", {
+        operation: "analyzeBookCover",
+        error: errorMsg,
+        phase: "validation",
+        result
+      });
+      throw new Error(errorMsg);
     }
+    
+    // Log the extracted data
+    apiLogger.logResponse("OpenAI API", {
+      operation: "analyzeBookCover:results",
+      fieldsExtracted: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined),
+      titleLength: result.title ? result.title.length : 0,
+      authorLength: result.author ? result.author.length : 0,
+      hasISBN: Boolean(result.isbn)
+    });
     
     return result;
   } catch (error: any) {
     console.error("Error analyzing book cover:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "analyzeBookCover",
+      error: error.message || String(error)
+    });
     throw new Error(`Failed to analyze book cover: ${error.message || String(error)}`);
   }
 }
@@ -85,6 +137,16 @@ ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
 
+    // Log the summary generation request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "generateBookSummary",
+      endpoint: "chat.completions.create",
+      model: MODEL,
+      language: language,
+      bookTitle: bookInfo.title,
+      bookAuthor: bookInfo.author
+    });
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -107,6 +169,16 @@ Book information:
 ${context}`
         }
       ],
+    });
+
+    // Log successful response
+    apiLogger.logResponse("OpenAI API", {
+      operation: "generateBookSummary",
+      status: "success",
+      model: MODEL,
+      usage: response.usage,
+      finishReason: response.choices[0].finish_reason,
+      bookTitle: bookInfo.title
     });
 
     const content = response.choices[0].message.content;
@@ -134,9 +206,23 @@ ${context}`
     // Remove any extra whitespace and multiple newlines
     summary = summary.replace(/\n\s*\n/g, '\n').trim();
     
+    // Log summary stats
+    apiLogger.logResponse("OpenAI API", {
+      operation: "generateBookSummary:results",
+      summaryLength: summary.length,
+      wordCount: summary.split(/\s+/).length,
+      paragraphCount: summary.split(/\n+/).length,
+      cleanupApplied: true
+    });
+    
     return summary;
   } catch (error: any) {
     console.error("Error generating book summary:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "generateBookSummary",
+      bookTitle: bookInfo.title,
+      error: error.message || String(error)
+    });
     throw new Error(`Failed to generate book summary: ${error.message || String(error)}`);
   }
 }
@@ -174,6 +260,19 @@ ${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
     }
 
     console.log(`Extracting genres for "${bookInfo.title}" by "${bookInfo.author}"`);
+    
+    // Log the genre extraction request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "extractBookGenres",
+      endpoint: "chat.completions.create",
+      model: MODEL,
+      language: language,
+      bookTitle: bookInfo.title,
+      bookAuthor: bookInfo.author,
+      hasGoogleCategories: bookInfo.metadata && 
+                          typeof bookInfo.metadata === 'object' && 
+                          !!(bookInfo.metadata as any).categories
+    });
 
     const response = await openai.chat.completions.create({
       model: MODEL,
@@ -189,10 +288,25 @@ ${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
       ],
       response_format: { type: "json_object" },
     });
+    
+    // Log successful response
+    apiLogger.logResponse("OpenAI API", {
+      operation: "extractBookGenres",
+      status: "success",
+      model: MODEL,
+      usage: response.usage,
+      finishReason: response.choices[0].finish_reason,
+      bookTitle: bookInfo.title
+    });
 
     const content = response.choices[0].message.content;
     if (!content) {
       console.log("No content returned from OpenAI for genres");
+      apiLogger.logError("OpenAI API", {
+        operation: "extractBookGenres",
+        error: "No content returned",
+        bookTitle: bookInfo.title
+      });
       return [];
     }
     
@@ -202,38 +316,93 @@ ${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
       const result = JSON.parse(content);
       
       if (Array.isArray(result.genres)) {
+        apiLogger.logResponse("OpenAI API", {
+          operation: "extractBookGenres:results",
+          bookTitle: bookInfo.title,
+          genreCount: result.genres.length,
+          genres: result.genres,
+          parseMethod: "standard"
+        });
         return result.genres;
       } else if (result.genres && typeof result.genres === 'string') {
         // Handle case where it might return a comma-separated string instead of array
-        return result.genres.split(',').map((genre: string) => genre.trim());
+        const parsedGenres = result.genres.split(',').map((genre: string) => genre.trim());
+        apiLogger.logResponse("OpenAI API", {
+          operation: "extractBookGenres:results",
+          bookTitle: bookInfo.title,
+          genreCount: parsedGenres.length,
+          genres: parsedGenres,
+          parseMethod: "string-split"
+        });
+        return parsedGenres;
       } else {
         // Handle case where the genres might be in the root of the JSON
         const potentialGenres = Object.values(result).find(value => Array.isArray(value));
         if (potentialGenres && Array.isArray(potentialGenres)) {
+          apiLogger.logResponse("OpenAI API", {
+            operation: "extractBookGenres:results",
+            bookTitle: bookInfo.title,
+            genreCount: potentialGenres.length,
+            genres: potentialGenres,
+            parseMethod: "root-array"
+          });
           return potentialGenres;
         }
         
         console.log("No genres array found in the response");
+        apiLogger.logError("OpenAI API", {
+          operation: "extractBookGenres",
+          error: "No genres array found in response",
+          content: JSON.stringify(result),
+          bookTitle: bookInfo.title
+        });
         return [];
       }
     } catch (parseError) {
       console.error("Error parsing genres JSON:", parseError);
+      apiLogger.logError("OpenAI API", {
+        operation: "extractBookGenres",
+        error: "JSON parse error",
+        content: content.substring(0, 200) + "...",
+        bookTitle: bookInfo.title
+      });
+      
       // Try to extract genres from raw text if JSON parsing fails
       try {
         // Look for patterns that might indicate genres in the text
         const genreMatches = content.match(/["'\[\]\{]([^"'\[\]\{\}]+)["'\[\]\}]/g);
         if (genreMatches && genreMatches.length > 0) {
-          return genreMatches
+          const extractedGenres = genreMatches
             .map(match => match.replace(/["'\[\]\{\}]/g, '').trim())
             .filter(Boolean);
+            
+          apiLogger.logResponse("OpenAI API", {
+            operation: "extractBookGenres:results",
+            bookTitle: bookInfo.title,
+            genreCount: extractedGenres.length,
+            genres: extractedGenres,
+            parseMethod: "regex-fallback"
+          });
+          return extractedGenres;
         }
       } catch (e) {
         console.error("Error in fallback genre extraction:", e);
+        apiLogger.logError("OpenAI API", {
+          operation: "extractBookGenres",
+          error: "Fallback extraction failed",
+          originalError: parseError.message,
+          bookTitle: bookInfo.title
+        });
       }
       return [];
     }
   } catch (error: any) {
     console.error("Error extracting book genres:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "extractBookGenres",
+      error: error.message || String(error),
+      bookTitle: bookInfo.title
+    });
     return []; // Return empty array instead of throwing to avoid breaking the whole analysis
   }
 }
