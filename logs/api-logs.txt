@@ -730,3 +730,295 @@
   "totalItems": 1000000,
   "itemCount": 4
 }
+
+[2025-05-07 06:51:20] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 06:51:26] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:51:26] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown"
+}
+
+[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 198,
+    "completion_tokens": 223,
+    "total_tokens": 421,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1056,
+  "wordCount": 140,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 06:51:31] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 336,
+    "completion_tokens": 25,
+    "total_tokens": 361,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Unknown",
+  "genreCount": 5,
+  "genres": {
+    "0": "Science-Fiction",
+    "1": "Dystopie",
+    "2": "Spannung",
+    "3": "Abenteuer",
+    "4": "Liebesroman"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 06:51:37] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown"
+}
+
+[2025-05-07 06:51:39] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Unknown",
+  "entryLength": 1286
+}
+
+[2025-05-07 06:52:24] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Unknown",
+    "author": "Unknown",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 06:52:28] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:52:33] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": " 978-3-959161-32-9 "
+  }
+}
+
+[2025-05-07 06:52:39] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:52:39] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown"
+}
+
+[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 238,
+    "total_tokens": 438,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1093,
+  "wordCount": 145,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 06:52:44] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 353,
+    "completion_tokens": 27,
+    "total_tokens": 380,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Unknown"
+}
+
+[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Unknown",
+  "genreCount": 5,
+  "genres": {
+    "0": "Roman",
+    "1": "Drama",
+    "2": "Mystery",
+    "3": "Historischer Roman",
+    "4": "Psychologische Fiktion"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 06:52:49] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Unknown",
+  "bookAuthor": "Unknown"
+}
+
+[2025-05-07 06:52:51] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Unknown",
+  "entryLength": 1329
+}
+
+[2025-05-07 06:53:26] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Unknown",
+    "author": "Unknown",
+    "isbn": " 978-3-959161-32-9 "
+  }
+}
+
+[2025-05-07 06:53:31] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Unknown"
+}

@@ -1027,15 +1027,24 @@ export async function searchBooks(params: any): Promise<{items: any[]}> {
         {
           role: "system",
           content: `You are a book search engine with access to a vast database of books. 
-Provide search results based on the user's query. Return 3-5 books that best match the search criteria.
-Results should be in the language of the query when detectable (default to German).`
+Your task is to search real books based on the provided query parameters and return accurate results.
+You MUST provide REAL book information - never return placeholder or "Unknown" values for title or author.
+Results should be in the language of the query when detectable (default to German).
+This is extremely important: If you don't know the exact details from the query, you MUST research to find real book information.`
         },
         {
           role: "user",
           content: `Search for books matching this query: "${searchQuery}"
+
+It's critically important that you:
+1. Find REAL book information matching the query parameters
+2. Provide ACTUAL titles and authors - NEVER return "Unknown" for these fields
+3. Research thoroughly to find correct and complete data
+4. If an ISBN is provided, use it to find the exact matching book
+
 Return results as a JSON array of book objects with these fields:
-- title: Full book title
-- authors: Array of author names
+- title: Full book title (REQUIRED, must be real book title)
+- authors: Array of author names (REQUIRED, must be real author names)
 - description: Brief description of the book
 - isbn: ISBN-13 if available (otherwise null)
 - publishedDate: Publication date (YYYY or YYYY-MM-DD format)
@@ -1043,8 +1052,10 @@ Return results as a JSON array of book objects with these fields:
 - categories: Array of genres/categories
 - imageLinks: Object with thumbnail and smallThumbnail URLs (or null)
 - language: Two-letter language code
+- publisher: Publisher name
 
-Return EXACTLY 4 books maximum, ranked by relevance to the query.`
+Return up to 4 books, ranked by relevance to the query.
+If no books can be found matching the query after thorough research, return an empty array.`
         }
       ],
       response_format: { type: "json_object" },
@@ -1120,16 +1131,24 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
         {
           role: "system",
           content: `You are a book metadata service with access to comprehensive bibliographic data.
-Provide detailed information for books based on ISBN numbers.
-All responses should be formatted consistently in German.`
+Your task is to provide detailed and accurate information for books based on ISBN numbers.
+You MUST research real books and provide real metadata - do not return "Unknown" for title or author.
+All responses should be formatted consistently in German.
+This is extremely important: If you don't know the exact details for the ISBN, you MUST research using the ISBN to find the real book information.`
         },
         {
           role: "user",
           content: `Look up detailed information for book with ISBN: ${cleanedISBN}
+
+It's critically important that you:
+1. Find the real book information using this ISBN
+2. Provide the ACTUAL title and author - NEVER return "Unknown" for these fields
+3. Research the ISBN thoroughly to find the correct data
+
 Return a single JSON object with these fields:
-- title: Full, correctly capitalized book title in its original language
-- authors: Array with full author name(s)
-- publisher: Publisher name
+- title: Full, correctly capitalized book title in its original language (REQUIRED, must be real book title)
+- authors: Array with full author name(s) (REQUIRED, must be real author names)
+- publisher: Publisher name (REQUIRED)
 - publishedDate: Publication date (YYYY or YYYY-MM-DD format)
 - description: Book description or summary (150-250 words)
 - pageCount: Page count
@@ -1140,7 +1159,7 @@ Return a single JSON object with these fields:
 - dimensions: Book dimensions (format like "14.0 x 21.6 cm")
 - binding: Book binding type (Hardcover, Taschenbuch, etc.)
 
-If you don't have data for this ISBN, respond with a JSON object with a "notFound" field set to true.`
+If after extensive research you still cannot find data for this ISBN, respond with a JSON object with a "notFound" field set to true.`
         }
       ],
       response_format: { type: "json_object" },
@@ -1247,24 +1266,34 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}`;
         {
           role: "system",
           content: `You are a book recommendation engine with extensive knowledge of literature.
-Recommend books that are similar to the reference book in style, theme, or content.
-All recommendations should be in the same language as the reference book (default to German).`
+Your task is to recommend books that are similar to the reference book in style, theme, or content.
+You MUST provide REAL book information - never return placeholder or "Unknown" for title or author.
+All recommendations should be in the same language as the reference book (default to German).
+This is extremely important: You MUST research to find real similar books with accurate information.`
         },
         {
           role: "user",
           content: `Based on this book, recommend 4 similar books that readers might enjoy:
 ${context}
 
+It's critically important that you:
+1. Find REAL similar books based on the reference book's characteristics
+2. Provide ACTUAL titles and authors - NEVER return "Unknown" for these fields
+3. Research thoroughly to find correct and complete data
+4. Ensure all recommended books are genuine published works
+
 Return results as a JSON object with an "items" array containing book objects with these fields:
-- title: Full book title
-- authors: Array of author names
+- title: Full book title (REQUIRED, must be real book title)
+- authors: Array of author names (REQUIRED, must be real author names)
 - description: Brief description of why this book is similar
-- publisher: Publisher name (if known)
-- publishedDate: Publication year (if known)
+- publisher: Publisher name
+- publishedDate: Publication year
 - categories: Array of genres/categories
 - language: Two-letter language code of the book (same as reference book)
+- isbn: ISBN-13 if available (otherwise null)
 
-Make sure each recommendation is a real book that's similar in theme, style, or content to the reference book.`
+Make sure each recommendation is a real book that's similar in theme, style, or content to the reference book.
+If no similar books can be found after thorough research, return an empty array of items.`
         }
       ],
       response_format: { type: "json_object" },
@@ -1348,20 +1377,26 @@ ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...`
         {
           role: "system",
           content: `You are a book metadata specialist with access to comprehensive bibliographic data. 
-Provide accurate, detailed metadata for books based on available information. 
+Your task is to provide accurate, detailed metadata for books based on ISBN numbers or other identifiers.
+You MUST research real books and provide real metadata - NEVER return "Unknown" for title or author when an ISBN is provided.
 All responses should be in the same language as the book title (detect language).
-Generate realistic, detailed information when exact data isn't available.
-NEVER use made-up information for ISBN numbers - only provide complete ISBNs if they are known or in the original query.`
+This is extremely important: If you don't know the exact details from the information given, you MUST research to find the real book information.`
         },
         {
           role: "user",
-          content: `Based on the following book information, generate complete book metadata. 
+          content: `Based on the following book information, research and generate complete, accurate book metadata.
+
+It's critically important that you:
+1. If an ISBN is provided, use it to find the real book information
+2. Provide the ACTUAL title and author - NEVER return "Unknown" for these fields
+3. Research thoroughly to find correct and complete data
+
 Return a JSON object with these fields:
-- title: Full, correctly capitalized title (maintain original language)
-- author: Full author name with correct capitalization
+- title: Full, correctly capitalized title (maintain original language) (REQUIRED, must be real book title)
+- author: Full author name with correct capitalization (REQUIRED, must be real author name)
 - publishedYear: Publication year (integer)
 - publisher: Publisher name
-- pageCount: Realistic page count based on book type and genre
+- pageCount: Page count
 - description: Brief description of the book's content (150-250 words)
 - categories: Array of 3-5 genre categories
 - language: Primary language of the book (two-letter code: en, de, fr, etc.)
