@@ -271,6 +271,28 @@ export default function BookResult({
                     <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
                     <p className="mt-1 text-sm text-neutral-700">{book.binding || 'N/A'}</p>
                   </div>
+                  
+                  {/* Debug section - This will be removed before deployment */}
+                  <div className="col-span-2 mt-3 pt-3 border-t border-neutral-200">
+                    <details>
+                      <summary className="flex items-center gap-2 cursor-pointer text-xs text-neutral-500 font-mono">
+                        <span className="text-red-500">[DEBUG]</span> Book Data
+                      </summary>
+                      <div className="mt-2 overflow-auto max-h-32 p-2 bg-neutral-100 rounded text-xs font-mono">
+                        <pre className="text-neutral-700">
+                          {JSON.stringify({
+                            title: book.title,
+                            author: book.author,
+                            pageCount: book.pageCount,
+                            dimensions: book.dimensions,
+                            binding: book.binding,
+                            edition: book.edition,
+                            publisher: book.publisher
+                          }, null, 2)}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
                 </div>
               </div>
               

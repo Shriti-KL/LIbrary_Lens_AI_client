@@ -558,6 +558,9 @@ ${contextText}`
 // Extract missing bibliographic fields from AI
 export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
   try {
+    // Add debug information to identify the book being processed
+    console.log(`DEBUG bibliographic extraction for book: "${bookInfo.title}" by "${bookInfo.author}"`);
+    
     // Determine language for content generation (default to German if not specified)
     const language = bookInfo.language || "de";
     
@@ -579,7 +582,7 @@ ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
 ${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}
 ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
 
     // Identify missing fields
@@ -604,25 +607,33 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
       messages: [
         {
           role: "system",
-          content: `You are a professional librarian specialized in bibliographic data. Always respond in ${languageName} and provide JSON format.`
+          content: `You are a professional librarian specialized in bibliographic data. Always respond in ${languageName} and provide JSON format. IMPORTANT: Do not use generic placeholder values - each book should have unique, specific bibliographic characteristics based on its genre, publishing norms, and content.`
         },
         {
           role: "user",
-          content: `Based on the available information, provide educated estimates for the missing bibliographic data for this book. Return a JSON object with: 
-          - pageCount (number of pages, just the number)
-          - binding (e.g., "Hardcover", "Taschenbuch", etc.)
-          - dimensions (e.g., "15 x 21 cm")
-          - edition (e.g., "1. Auflage", "Erste Ausgabe", etc.)
-          - location (publisher's location, e.g., "Berlin", "Frankfurt", etc.)
-          - publisher (if missing)
-          
-          Only include fields that can be reasonably estimated based on the information provided. If you can't estimate a field with reasonable confidence, leave it as null.
-          
-          Available information:
-          ${context}`
+          content: `Based on the available information about "${bookInfo.title}" by "${bookInfo.author}", provide realistic estimates for the missing bibliographic data. 
+
+Return a JSON object with the following fields that are specific to THIS BOOK:
+- pageCount: A realistic page count for this specific book based on its genre and content. Different books should have different page counts. (just the number, no text)
+- binding: The likely binding type for this book (e.g., "Hardcover", "Taschenbuch", "Gebunden", etc.)
+- dimensions: Realistic physical dimensions for this book (e.g., "14.5 x 21.2 cm")
+- edition: Likely edition information (e.g., "1. Auflage", "Zweite Ausgabe", etc.)
+- location: Publisher's location/city
+- publisher: Publisher name (if missing)
+
+IMPORTANT RULES:
+1. Provide significantly different values for different books - do not default to 320 pages for every book
+2. Use realistic dimensions that vary by book type and genre
+3. If you cannot estimate a field with confidence, leave it as null
+4. Base your estimates on typical characteristics for the book's genre and content
+5. Consider the book's publication year when estimating format and dimensions
+
+Available information:
+${context}`
         }
       ],
       response_format: { type: "json_object" },
+      temperature: 0.7, // Increase temperature for more variation in results
     });
 
     const content = response.choices[0].message.content;
@@ -634,7 +645,16 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
     let extractedData;
     try {
       extractedData = JSON.parse(content);
-      console.log("AI extracted bibliographic data:", extractedData);
+      
+      // DEBUG: Log detailed information about the extracted data
+      console.log(`DEBUG: Bibliographic data for "${bookInfo.title}" by "${bookInfo.author}":`);
+      console.log(`- Page count: ${extractedData.pageCount || 'null'}`);
+      console.log(`- Binding: ${extractedData.binding || 'null'}`);
+      console.log(`- Dimensions: ${extractedData.dimensions || 'null'}`);
+      console.log(`- Edition: ${extractedData.edition || 'null'}`);
+      console.log(`- Location: ${extractedData.location || 'null'}`);
+      console.log(`- Publisher: ${extractedData.publisher || 'null'}`);
+      
     } catch (parseError) {
       console.error("Error parsing bibliographic data JSON:", parseError);
       return bookInfo;
