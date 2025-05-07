@@ -996,7 +996,7 @@ ${context}`
 
 // Enrich book metadata using OpenAI instead of Google Books
 // Search for books using OpenAI instead of Google Books
-export async function searchBooks(params: any): Promise<any[]> {
+export async function searchBooks(params: any): Promise<{items: any[]}> {
   try {
     // Log the search request
     apiLogger.logRequest("OpenAI API", {
@@ -1054,7 +1054,7 @@ Return EXACTLY 4 books maximum, ranked by relevance to the query.`
     const content = response.choices[0].message.content;
     if (!content) {
       console.log("No content returned from OpenAI for book search");
-      return [];
+      return { items: [] };
     }
 
     try {
@@ -1215,7 +1215,7 @@ If you don't have data for this ISBN, respond with a JSON object with a "notFoun
 }
 
 // Search for similar books using OpenAI instead of Google Books
-export async function searchSimilarBooks(bookInfo: Partial<Book>): Promise<any[]> {
+export async function searchSimilarBooks(bookInfo: Partial<Book>): Promise<{volumeInfo: any}[]> {
   try {
     // Log the similar books request
     apiLogger.logRequest("OpenAI API", {
@@ -1290,7 +1290,10 @@ Make sure each recommendation is a real book that's similar in theme, style, or 
       });
       
       // Format to match Google Books API structure
-      return similarBooks.items || [];
+      if (Array.isArray(similarBooks.items)) {
+        return similarBooks.items.map(book => ({ volumeInfo: book }));
+      }
+      return [];
     } catch (error: unknown) {
       console.error("Error parsing similar books from OpenAI:", error);
       apiLogger.logError("OpenAI API", {

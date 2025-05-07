@@ -4,9 +4,14 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { processBookAnalysis, analyzeBookCover, enrichBookMetadata } from "./services/openai";
-// Comment out Google Books API imports as we'll use OpenAI for all metadata
-// import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
+import { 
+  processBookAnalysis, 
+  analyzeBookCover, 
+  enrichBookMetadata,
+  searchBooks,
+  getBookByISBN,
+  searchSimilarBooks
+} from "./services/openai";
 
 // Set up multer for in-memory file storage
 const upload = multer({
