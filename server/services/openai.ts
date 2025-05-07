@@ -1123,27 +1123,36 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     const lookupId = `isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.log(`[${lookupId}] Looking up book with ISBN: "${cleanedISBN}"`);
 
-    // Query OpenAI for book details by ISBN
+    // Query OpenAI for book details by ISBN with extensive research instructions
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
       messages: [
         {
           role: "system",
-          content: `You are a book metadata service with access to comprehensive bibliographic data.
+          content: `You are an advanced book metadata service with access to comprehensive international bibliographic databases.
 Your task is to provide detailed and accurate information for books based on ISBN numbers.
-You MUST research real books and provide real metadata - do not return "Unknown" for title or author.
-All responses should be formatted consistently in German.
-This is extremely important: If you don't know the exact details for the ISBN, you MUST research using the ISBN to find the real book information.`
+You MUST research real books and provide real metadata - NEVER return "Unknown" for title or author.
+All responses should be formatted consistently in the language of the book (default to German).
+This is extremely important: If you don't know the exact details for the ISBN, you MUST perform thorough research using the ISBN to find the real book information.
+
+RESEARCH PROCESS:
+1. First check if the ISBN follows valid formatting (ISBN-13 should be 13 digits)
+2. Search in multiple bibliographic databases like German National Library, Amazon.de, Thalia.de, etc.
+3. Cross-reference information for accuracy and completeness
+4. Ensure all required fields are properly populated with real data
+5. Never substitute "Unknown" for any required field - always provide actual data`
         },
         {
           role: "user",
           content: `Look up detailed information for book with ISBN: ${cleanedISBN}
 
 It's critically important that you:
-1. Find the real book information using this ISBN
+1. Find the real book information using this ISBN - search multiple book databases
 2. Provide the ACTUAL title and author - NEVER return "Unknown" for these fields
-3. Research the ISBN thoroughly to find the correct data
+3. Research the ISBN thoroughly to find the correct and complete data
+4. Format dates consistently as YYYY-MM-DD or just YYYY if day/month unknown
+5. Provide a comprehensive description that captures the book's content accurately
 
 Return a single JSON object with these fields:
 - title: Full, correctly capitalized book title in its original language (REQUIRED, must be real book title)
@@ -1154,12 +1163,15 @@ Return a single JSON object with these fields:
 - pageCount: Page count
 - categories: Array of 3-5 genre categories
 - imageLinks: Object with thumbnail URL (use null if unavailable)
-- language: Two-letter language code
+- language: Two-letter language code 
 - isbn13: The ISBN-13 (normalized)
 - dimensions: Book dimensions (format like "14.0 x 21.6 cm")
 - binding: Book binding type (Hardcover, Taschenbuch, etc.)
+- edition: Edition information if available
+- price: Approximate price if available
+- subjects: Detailed subject classifications if available
 
-If after extensive research you still cannot find data for this ISBN, respond with a JSON object with a "notFound" field set to true.`
+If after extensive research you still cannot find data for this ISBN, respond with a JSON object with a "notFound" field set to true and include a message explaining your research process.`
         }
       ],
       response_format: { type: "json_object" },
@@ -1190,7 +1202,7 @@ If after extensive research you still cannot find data for this ISBN, respond wi
         bookTitle: bookData.title
       });
       
-      // Return in the same format as Google Books API would
+      // Return in an enhanced format with additional metadata
       return {
         id: `ISBN:${isbn}`,
         volumeInfo: {
@@ -1210,7 +1222,16 @@ If after extensive research you still cannot find data for this ISBN, respond wi
             }
           ],
           dimensions: bookData.dimensions,
-          binding: bookData.binding
+          binding: bookData.binding,
+          edition: bookData.edition || null,
+          price: bookData.price || null,
+          subjects: bookData.subjects || [],
+          subtitle: bookData.subtitle || null,
+          translator: bookData.translator || null,
+          rating: bookData.rating || null,
+          ratingsCount: bookData.ratingsCount || null,
+          printType: bookData.printType || null,
+          maturityRating: bookData.maturityRating || null
         }
       };
     } catch (error: unknown) {
@@ -1387,13 +1408,17 @@ This is extremely important: If you don't know the exact details from the inform
           content: `Based on the following book information, research and generate complete, accurate book metadata.
 
 It's critically important that you:
-1. If an ISBN is provided, use it to find the real book information
+1. If an ISBN is provided, use it to find the real book information - search multiple book databases
 2. Provide the ACTUAL title and author - NEVER return "Unknown" for these fields
 3. Research thoroughly to find correct and complete data
+4. Format dates consistently as YYYY-MM-DD or just YYYY if day/month unknown
+5. Provide a comprehensive description that captures the book's content accurately
 
 Return a JSON object with these fields:
 - title: Full, correctly capitalized title (maintain original language) (REQUIRED, must be real book title)
 - author: Full author name with correct capitalization (REQUIRED, must be real author name)
+- subtitle: Book subtitle if available
+- translator: Translator name if the book is translated
 - publishedYear: Publication year (integer)
 - publisher: Publisher name
 - pageCount: Page count
@@ -1406,6 +1431,12 @@ Return a JSON object with these fields:
 - dimensions: Physical dimensions (format like "14.0 x 21.6 cm")
 - edition: Edition information (like "1. Auflage")
 - location: Location/city of publisher
+- price: Approximate price if available
+- subjects: Detailed subject classifications if available
+- rating: Average rating if available (1-5 scale)
+- ratingsCount: Number of ratings if available
+- printType: Print type (e.g., "BOOK", "MAGAZINE")
+- maturityRating: Reading level or age appropriateness
 
 ${context}`
         }
@@ -1435,11 +1466,13 @@ ${context}`
       });
       
       // Merge the enriched data with the original book info
-      // Keep original data where available and fill in the blanks
+      // Keep original data where available and fill in the blanks with newly researched data
       return {
         ...bookInfo,
         title: bookInfo.title || enrichedData.title,
         author: bookInfo.author || enrichedData.author,
+        subtitle: bookInfo.subtitle || enrichedData.subtitle || null,
+        translator: bookInfo.translator || enrichedData.translator || null,
         publishedYear: bookInfo.publishedYear || enrichedData.publishedYear,
         publisher: bookInfo.publisher || enrichedData.publisher,
         pageCount: bookInfo.pageCount || enrichedData.pageCount,
@@ -1451,7 +1484,13 @@ ${context}`
         binding: bookInfo.binding || enrichedData.binding,
         dimensions: bookInfo.dimensions || enrichedData.dimensions,
         edition: bookInfo.edition || enrichedData.edition,
-        location: bookInfo.location || enrichedData.location
+        location: bookInfo.location || enrichedData.location,
+        price: bookInfo.price || enrichedData.price || null,
+        subjects: bookInfo.subjects || enrichedData.subjects || [],
+        rating: bookInfo.rating || enrichedData.rating || null,
+        ratingsCount: bookInfo.ratingsCount || enrichedData.ratingsCount || null,
+        printType: bookInfo.printType || enrichedData.printType || null,
+        maturityRating: bookInfo.maturityRating || enrichedData.maturityRating || null
       };
     } catch (error: unknown) {
       console.error("Error parsing book metadata JSON from OpenAI:", error);
