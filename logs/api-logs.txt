@@ -1022,3 +1022,387 @@
   "status": "success",
   "bookTitle": "Unknown"
 }
+
+[2025-05-07 08:24:04] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-96251-218-7"
+  }
+}
+
+[2025-05-07 08:24:05] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:24:05] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 187,
+    "completion_tokens": 218,
+    "total_tokens": 405,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1040,
+  "wordCount": 138,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 08:24:09] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "",
+  "bookAuthor": "",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 320,
+    "completion_tokens": 40,
+    "total_tokens": 360,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "",
+  "genreCount": 5,
+  "genres": {
+    "0": "Dystopie",
+    "1": "Science-Fiction",
+    "2": "Thriller",
+    "3": "Abenteuer",
+    "4": "Politische Fiktion"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 08:24:18] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:24:20] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "",
+  "entryLength": 1283
+}
+
+[2025-05-07 08:24:38] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Life of Pi",
+    "author": "",
+    "isbn": ""
+  }
+}
+
+[2025-05-07 08:24:38] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+  "bookTitle": "Life of Pi"
+}
+
+[2025-05-07 08:24:38] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Life of Pi",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 189,
+    "completion_tokens": 214,
+    "total_tokens": 403,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Life of Pi"
+}
+
+[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 999,
+  "wordCount": 145,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 08:24:43] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Life of Pi",
+  "bookAuthor": "",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 318,
+    "completion_tokens": 25,
+    "total_tokens": 343,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Life of Pi"
+}
+
+[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Life of Pi",
+  "genreCount": 5,
+  "genres": {
+    "0": "Abenteuer",
+    "1": "Drama",
+    "2": "Philosophie",
+    "3": "Überleben",
+    "4": "Spirituell"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 08:24:51] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Life of Pi",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:24:54] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Life of Pi",
+  "entryLength": 1224
+}
+
+[2025-05-07 08:25:28] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "9783406830303"
+  }
+}
+
+[2025-05-07 08:25:28] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:25:28] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 187,
+    "completion_tokens": 240,
+    "total_tokens": 427,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1083,
+  "wordCount": 143,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 08:25:34] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "",
+  "bookAuthor": "",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 342,
+    "completion_tokens": 37,
+    "total_tokens": 379,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": ""
+}
+
+[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "",
+  "genreCount": 5,
+  "genres": {
+    "0": "Krimi",
+    "1": "Drama",
+    "2": "Thriller",
+    "3": "Psychologischer Roman",
+    "4": "Mystery"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 08:25:41] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "",
+  "bookAuthor": ""
+}
+
+[2025-05-07 08:25:43] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "",
+  "entryLength": 1330
+}

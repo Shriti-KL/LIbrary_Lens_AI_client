@@ -1019,18 +1019,29 @@ export async function searchBooks(params: any): Promise<{items: any[]}> {
     const searchId = `search_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.log(`[${searchId}] Searching books with OpenAI: "${searchQuery}"`);
 
-    // Query OpenAI for book search results with a simple, direct prompt
+    // Query OpenAI for book search results with a simple but structured prompt
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.7,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book information.`
+          content: `You are a helpful assistant that provides book information in JSON format.`
         },
         {
           role: "user",
-          content: `search for books matching: ${searchQuery}`
+          content: `Please search for books matching: ${searchQuery}
+
+Return the response as a JSON object with an "items" array containing books. Each book should have these fields:
+- title: Full book title
+- author: Book author's name
+- publisher: Publisher name
+- publishedDate: Publication date (year)
+- description: Brief description of the book
+- pageCount: Number of pages
+- categories: Array of genres or categories
+- language: Primary language of the book (e.g., "de" for German)
+- isbn: The ISBN number (if available)`
         }
       ],
       response_format: { type: "json_object" },
@@ -1180,18 +1191,31 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     const lookupId = `isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.log(`[${lookupId}] Looking up book with ISBN: "${cleanedISBN}"`);
 
-    // Query OpenAI for book details by ISBN using a simple, direct prompt
+    // Query OpenAI for book details by ISBN - using simple but structured prompt
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book information.`
+          content: `You are a helpful assistant that provides book information in JSON format.`
         },
         {
           role: "user",
-          content: `get detailed information about the book with ISBN: ${cleanedISBN}`
+          content: `Please provide detailed information about the book with ISBN: ${cleanedISBN}
+
+Return the response as a JSON object with the following fields:
+- title: Full book title
+- author: Book author's name
+- publisher: Publisher name
+- publishedDate: Publication date (year)
+- description: Brief description of the book
+- pageCount: Number of pages
+- categories: Array of genres or categories
+- language: Primary language of the book (e.g., "de" for German)
+- dimensions: Physical dimensions (format like "14.0 x 21.6 cm")
+- binding: Book binding type (Hardcover, Paperback, etc.)
+- isbn: The ISBN number`
         }
       ],
       response_format: { type: "json_object" },
@@ -1298,21 +1322,31 @@ Author: ${bookInfo.author || 'Unknown'}
 Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : (bookInfo.genres || 'Unknown')}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}`;
 
-    // Query OpenAI for similar books with a simple, direct prompt
+    // Query OpenAI for similar books with a simple but structured prompt
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.8,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book recommendations.`
+          content: `You are a helpful assistant that provides book recommendations in JSON format.`
         },
         {
           role: "user",
-          content: `recommend 4 books similar to this one:
+          content: `Please recommend 4 books similar to this one:
 Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-${Array.isArray(bookInfo.genres) ? `Genres: ${bookInfo.genres.join(', ')}` : ''}`
+${Array.isArray(bookInfo.genres) ? `Genres: ${bookInfo.genres.join(', ')}` : ''}
+
+Return the response as a JSON object with an "items" array containing books. Each book should have these fields:
+- title: Full book title
+- author: Book author's name
+- publisher: Publisher name
+- publishedDate: Publication date (year)
+- description: Brief description of the book and why it's similar
+- pageCount: Number of pages (approximate is fine)
+- categories: Array of genres or categories
+- language: Primary language of the book (e.g., "de" for German, same as reference book)`
         }
       ],
       response_format: { type: "json_object" },
@@ -1489,21 +1523,37 @@ ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...` : ''}`;
 
-    // Query OpenAI to enrich the book's metadata with a simple, direct prompt
+    // Query OpenAI to enrich the book's metadata with a simple but structured prompt
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.7,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book information.`
+          content: `You are a helpful assistant that provides book information in JSON format.`
         },
         {
           role: "user",
-          content: `get detailed information about this book:
+          content: `Please provide detailed information about this book:
 Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-ISBN: ${bookInfo.isbn || 'Unknown'}`
+ISBN: ${bookInfo.isbn || 'Unknown'}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+
+Return the response as a JSON object with the following fields:
+- title: Full book title
+- author: Book author's name
+- publisher: Publisher name
+- publishedYear: Publication year (number)
+- description: Brief description of the book
+- pageCount: Number of pages
+- genres: Array of genres or categories
+- language: Primary language of the book (e.g., "de" for German)
+- dimensions: Physical dimensions (format like "14.0 x 21.6 cm")
+- binding: Book binding type (Hardcover, Paperback, etc.)
+- isbn: The ISBN number
+- location: Publishing location/city`
         }
       ],
       response_format: { type: "json_object" },
