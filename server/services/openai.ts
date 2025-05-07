@@ -602,6 +602,10 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
 
     console.log(`Attempting to extract missing bibliographic fields: ${missingFields.join(', ')}`);
 
+    // Add a random request ID to track this specific extraction
+    const extractionId = `bibex_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${extractionId}] Extracting bibliographic data for "${bookInfo.title}" by "${bookInfo.author}"`);
+    
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
@@ -627,14 +631,19 @@ IMPORTANT RULES:
 3. If you cannot estimate a field with confidence, leave it as null
 4. Base your estimates on typical characteristics for the book's genre and content
 5. Consider the book's publication year when estimating format and dimensions
+6. For pageCount, please provide a specific number that makes sense for this book - 
+   academic books might be 400-600 pages, while novels might be 250-350 pages, and children's books 32-80 pages
 
 Available information:
 ${context}`
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7, // Increase temperature for more variation in results
+      temperature: 0.9, // Increase temperature further for more variation
     });
+    
+    // Log the raw response for debugging
+    console.log(`[${extractionId}] OpenAI raw response: ${response.choices[0].message.content}`);
 
     const content = response.choices[0].message.content;
     if (!content) {
@@ -660,10 +669,23 @@ ${context}`
       return bookInfo;
     }
 
+    // Make sure to parse pageCount as a number
+    const pageCount = extractedData.pageCount ? 
+      (typeof extractedData.pageCount === 'string' ? 
+        parseInt(extractedData.pageCount, 10) : 
+        extractedData.pageCount) : 
+      null;
+    
+    // Explicitly log final values before returning
+    console.log(`[${extractionId}] FINAL extracted bibliographic values:`);
+    console.log(`- Page count: ${pageCount} (original: ${extractedData.pageCount}, type: ${typeof extractedData.pageCount})`);
+    console.log(`- Binding: ${extractedData.binding}`);
+    console.log(`- Dimensions: ${extractedData.dimensions}`);
+    
     // Merge the extracted data with the book info, only using AI data where we lack actual data
     return {
       ...bookInfo,
-      pageCount: bookInfo.pageCount || extractedData.pageCount || null,
+      pageCount: bookInfo.pageCount || pageCount || null,
       binding: bookInfo.binding || extractedData.binding || null,
       dimensions: bookInfo.dimensions || extractedData.dimensions || null,
       edition: bookInfo.edition || extractedData.edition || null,

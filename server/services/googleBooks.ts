@@ -465,7 +465,8 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
       author: (volumeInfo.authors ? volumeInfo.authors[0] : null) || bookInfo.author,
       publisher: volumeInfo.publisher || bookInfo.publisher,
       publishedYear: (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null) || bookInfo.publishedYear,
-      pageCount: volumeInfo.pageCount || bookInfo.pageCount,
+      // Only use Google Books pageCount if it's actually present
+      pageCount: volumeInfo.pageCount ? volumeInfo.pageCount : bookInfo.pageCount,
       coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || bookInfo.coverImageUrl,
       
       // Extract additional bibliographic details, including our newly extracted ones
