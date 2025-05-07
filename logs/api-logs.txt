@@ -2686,3 +2686,100 @@
   "error": "Book not found for identifiers: ISBN: 978-3-95916-132-9, Title: Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle, Author: Marion Sorg",
   "bookIdentifiers": "ISBN: 978-3-95916-132-9, Title: Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle, Author: Marion Sorg"
 }
+
+[2025-05-07 18:23:14] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-07 18:23:14] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329"
+  }
+}
+
+[2025-05-07 18:23:14] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 18:23:14] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-07 18:23:14] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+    "author": "Marion Sorg",
+    "isbn": "978-3-95916-132-9"
+  }
+}
+
+[2025-05-07 18:23:15] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9, Title: Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle, Author: Marion Sorg",
+  "language": "de"
+}
+
+[2025-05-07 18:23:16] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-07 18:23:16] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329"
+  }
+}
+
+[2025-05-07 18:23:16] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 18:23:16] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}

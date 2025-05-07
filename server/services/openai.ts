@@ -1720,7 +1720,21 @@ ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ""}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ""}
 ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...` : ""}`;
 
+    // Determine response language (default to German if not specified)
+    const responseLanguage = bookInfo.language || "de";
+    const responseLanguageName =
+      responseLanguage === "de"
+        ? "German"
+        : responseLanguage === "en"
+        ? "English"
+        : responseLanguage === "fr"
+        ? "French"
+        : responseLanguage === "es"
+        ? "Spanish"
+        : "German";
+        
     // Query OpenAI to enrich the book's metadata with a simple but structured prompt
+    // Using English for the query but requesting response in user's language
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.7,
@@ -1728,6 +1742,11 @@ ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...`
         {
           role: "system",
           content: `You are a helpful assistant that provides book information in JSON format.
+          
+INSTRUCTIONS:
+1. Process the query in English for maximum accuracy
+2. Return your final response in ${responseLanguageName} language
+3. ALWAYS respond with a properly structured JSON
           
 IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
         },
@@ -2100,16 +2119,16 @@ export async function processBookAnalysis(
       );
     }
 
-    // Determine which language to use
-    const language = analysisRequest.language || "de";
-    const languageName =
-      language === "de"
+    // Determine which language to use for the response
+    const responseLanguage = analysisRequest.language || "de";
+    const responseLanguageName =
+      responseLanguage === "de"
         ? "German"
-        : language === "en"
+        : responseLanguage === "en"
           ? "English"
-          : language === "fr"
+          : responseLanguage === "fr"
             ? "French"
-            : language === "es"
+            : responseLanguage === "es"
               ? "Spanish"
               : "German";
 
@@ -2118,22 +2137,28 @@ export async function processBookAnalysis(
       operation: "processBookAnalysis",
       model: MODEL,
       bookIdentifiers: bookIdentifiers.join(", "),
-      language,
+      queryLanguage: "English",
+      responseLanguage,
     });
 
     console.log(
-      `[${analysisId}] Sending single comprehensive request to OpenAI for book analysis in ${languageName}`,
+      `[${analysisId}] Sending single comprehensive request to OpenAI in English, requesting response in ${responseLanguageName}`,
     );
 
     // Make a single API call to get all book information and analysis
+    // Using English for the query but requesting response in user's language
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides detailed book information and analysis in JSON format. 
-          Return your response in ${languageName} language.
+          content: `You are a helpful assistant that provides detailed book information and analysis in JSON format.
+          
+          INSTRUCTIONS:
+          1. Process the query in English for maximum accuracy
+          2. Return your final response in ${responseLanguageName} language
+          3. ALWAYS respond with a properly structured JSON
           
           IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
         },
@@ -2174,7 +2199,7 @@ Return the response as a structured JSON object with these fields:
   - interestCategory: Interest category (format like "IK: Gesellschaft; ab 18")
   - idBNumber: ID-B number (format like "ID-B 18/102")
   
-- catalogEntry: A complete library catalog entry in ${languageName}, approximately 1000-1500 characters
+- catalogEntry: A complete library catalog entry in ${responseLanguageName}, approximately 1000-1500 characters
 `,
         },
       ],
@@ -2303,7 +2328,7 @@ Return the response as a structured JSON object with these fields:
         dimensions: result.bibliographicData?.dimensions || null,
         edition: result.bibliographicData?.edition || null,
         location: result.bibliographicData?.location || null,
-        language: result.bibliographicData?.language || language,
+        language: result.bibliographicData?.language || responseLanguage,
 
         // Handle the cover image data if provided
         coverImageUrl:
