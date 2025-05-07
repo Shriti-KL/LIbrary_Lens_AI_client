@@ -1064,15 +1064,24 @@ It's critically important that you:
 
 Return results as a JSON array of book objects with these fields:
 - title: Full book title (REQUIRED, must be real book title)
+- subtitle: Subtitle if available
 - authors: Array of author names (REQUIRED, must be real author names)
-- description: Brief description of the book
+- translator: Translator name(s) if available
+- description: Brief description of the book (approximately 150-250 words)
 - isbn: ISBN-13 if available (otherwise null)
 - publishedDate: Publication date (YYYY or YYYY-MM-DD format)
 - pageCount: Approximate page count
+- dimensions: Size in cm (format like "14.0 x 21.6 cm")
+- details: Other physical details (e.g., "Illustrationen, farbig")
+- edition: Edition information (like "1. Auflage")
+- binding: Book binding type (Hardcover, Taschenbuch, etc.)
+- series: Series information if present
+- price: Price information if available
 - categories: Array of genres/categories
 - imageLinks: Object with thumbnail and smallThumbnail URLs (or null)
 - language: Two-letter language code
 - publisher: Publisher name
+- location: Publication place/city
 
 Return up to 4 books, ranked by relevance to the query.
 If no books can be found matching the query after thorough research, return an empty array.`
@@ -1314,13 +1323,23 @@ It's critically important that you:
 
 Return results as a JSON object with an "items" array containing book objects with these fields:
 - title: Full book title (REQUIRED, must be real book title)
+- subtitle: Subtitle if available
 - authors: Array of author names (REQUIRED, must be real author names)
-- description: Brief description of why this book is similar
+- translator: Translator name(s) if available
+- description: Brief description of why this book is similar (approximately 150-250 words)
 - publisher: Publisher name
 - publishedDate: Publication year
+- pageCount: Approximate page count
+- dimensions: Size in cm (format like "14.0 x 21.6 cm")
+- details: Other physical details (e.g., "Illustrationen, farbig")
+- edition: Edition information (like "1. Auflage") 
+- binding: Book binding type (Hardcover, Taschenbuch, etc.)
+- series: Series information if present
+- price: Price information if available
 - categories: Array of genres/categories
 - language: Two-letter language code of the book (same as reference book)
 - isbn: ISBN-13 if available (otherwise null)
+- location: Publication place/city
 
 Make sure each recommendation is a real book that's similar in theme, style, or content to the reference book.
 If no similar books can be found after thorough research, return an empty array of items.`
