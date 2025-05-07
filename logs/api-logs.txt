@@ -1840,3 +1840,258 @@
   "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
   "entryLength": 1320
 }
+
+[2025-05-07 12:34:10] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 12:34:12] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "The German Language: A Cultural History"
+}
+
+[2025-05-07 12:34:12] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "The German Language: A Cultural History",
+  "bookAuthor": "Peter von Polenz"
+}
+
+[2025-05-07 12:34:19] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 209,
+    "completion_tokens": 198,
+    "total_tokens": 407,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "The German Language: A Cultural History"
+}
+
+[2025-05-07 12:34:19] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1060,
+  "wordCount": 138,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:34:19] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "The German Language: A Cultural History",
+  "bookAuthor": "Peter von Polenz",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:34:20] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 322,
+    "completion_tokens": 35,
+    "total_tokens": 357,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "The German Language: A Cultural History"
+}
+
+[2025-05-07 12:34:20] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "The German Language: A Cultural History",
+  "genreCount": 4,
+  "genres": {
+    "0": "Kulturgeschichte",
+    "1": "Sprachwissenschaft",
+    "2": "Soziolinguistik",
+    "3": "Geschichte"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 12:34:26] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "The German Language: A Cultural History",
+  "bookAuthor": "Peter von Polenz"
+}
+
+[2025-05-07 12:34:30] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "The German Language: A Cultural History",
+  "entryLength": 1343
+}
+
+[2025-05-07 12:45:45] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 12:45:50] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+}
+
+[2025-05-07 12:45:50] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
+  "bookAuthor": "Johannes Hillje"
+}
+
+[2025-05-07 12:45:54] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 210,
+    "completion_tokens": 216,
+    "total_tokens": 426,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+}
+
+[2025-05-07 12:45:54] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1144,
+  "wordCount": 144,
+  "paragraphCount": 3,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:45:54] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
+  "bookAuthor": "Johannes Hillje",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:45:55] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 340,
+    "completion_tokens": 38,
+    "total_tokens": 378,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+}
+
+[2025-05-07 12:45:55] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
+  "genreCount": 5,
+  "genres": {
+    "0": "Politik",
+    "1": "Gesellschaft",
+    "2": "Sozialwissenschaft",
+    "3": "Zeitgeschehen",
+    "4": "Sachbuch"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 12:46:03] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
+  "bookAuthor": "Johannes Hillje"
+}
+
+[2025-05-07 12:46:05] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
+  "entryLength": 1453
+}

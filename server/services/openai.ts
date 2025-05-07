@@ -1030,7 +1030,7 @@ export async function searchBooks(params: any): Promise<{items: any[]}> {
         },
         {
           role: "user",
-          content: `Please search for books matching: ${searchQuery}
+          content: `Get detailed information about books matching: ${searchQuery}
 
 Return the response as a JSON object with an "items" array containing books. Each book should have these fields:
 - title: Full book title
@@ -1191,7 +1191,7 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     const lookupId = `isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     console.log(`[${lookupId}] Looking up book with ISBN: "${cleanedISBN}"`);
 
-    // Query OpenAI for book details by ISBN - using simple but structured prompt
+    // Query OpenAI for book details by ISBN using a simple, direct prompt with format instructions
     const response = await openai.chat.completions.create({
       model: MODEL,
       temperature: 0.5,
@@ -1202,9 +1202,9 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
         },
         {
           role: "user",
-          content: `Please provide detailed information about the book with ISBN: ${cleanedISBN}
+          content: `Get detailed information about the book with ISBN: ${cleanedISBN}
 
-Return the response as a JSON object with the following fields:
+Return the response as a JSON object with these fields:
 - title: Full book title
 - author: Book author's name
 - publisher: Publisher name
@@ -1333,7 +1333,7 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}`;
         },
         {
           role: "user",
-          content: `Please recommend 4 books similar to this one:
+          content: `Get 4 books similar to this one:
 Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${Array.isArray(bookInfo.genres) ? `Genres: ${bookInfo.genres.join(', ')}` : ''}
@@ -1534,7 +1534,7 @@ ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...`
         },
         {
           role: "user",
-          content: `Please provide detailed information about this book:
+          content: `Get detailed information about this book:
 Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ISBN: ${bookInfo.isbn || 'Unknown'}
