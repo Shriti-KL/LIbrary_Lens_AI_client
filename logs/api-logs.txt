@@ -126,3 +126,548 @@
   "bookTitle": "Unknown",
   "entryLength": 1289
 }
+
+[2025-05-07 07:33:00] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 07:33:07] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Laloux’s Welt"
+}
+
+[2025-05-07 07:33:07] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Laloux’s Welt",
+  "bookAuthor": "Frederic Laloux"
+}
+
+[2025-05-07 07:33:12] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 205,
+    "completion_tokens": 240,
+    "total_tokens": 445,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Laloux’s Welt"
+}
+
+[2025-05-07 07:33:12] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1185,
+  "wordCount": 146,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:33:12] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Laloux’s Welt",
+  "bookAuthor": "Frederic Laloux",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:33:13] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 360,
+    "completion_tokens": 24,
+    "total_tokens": 384,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Laloux’s Welt"
+}
+
+[2025-05-07 07:33:13] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Laloux’s Welt",
+  "genreCount": 3,
+  "genres": {
+    "0": "Wirtschaft",
+    "1": "Business",
+    "2": "Sachbuch"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:33:21] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Laloux’s Welt",
+  "bookAuthor": "Frederic Laloux"
+}
+
+[2025-05-07 07:33:22] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "9783406830303"
+  }
+}
+
+[2025-05-07 07:33:24] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Laloux’s Welt",
+  "entryLength": 1452
+}
+
+[2025-05-07 07:33:36] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Der Nachtwächter"
+}
+
+[2025-05-07 07:33:36] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der Nachtwächter",
+  "bookAuthor": "Louise Erdrich"
+}
+
+[2025-05-07 07:33:42] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 208,
+    "completion_tokens": 236,
+    "total_tokens": 444,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der Nachtwächter"
+}
+
+[2025-05-07 07:33:42] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1064,
+  "wordCount": 142,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:33:42] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der Nachtwächter",
+  "bookAuthor": "Louise Erdrich",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:33:43] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 359,
+    "completion_tokens": 38,
+    "total_tokens": 397,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der Nachtwächter"
+}
+
+[2025-05-07 07:33:43] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Der Nachtwächter",
+  "genreCount": 5,
+  "genres": {
+    "0": "Historischer Roman",
+    "1": "Zeitgenössische Literatur",
+    "2": "Drama",
+    "3": "Politik",
+    "4": "Abenteuer"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:33:48] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Der Nachtwächter",
+  "bookAuthor": "Louise Erdrich"
+}
+
+[2025-05-07 07:33:51] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Der Nachtwächter",
+  "entryLength": 1350
+}
+
+[2025-05-07 07:34:32] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Laloux’s Welt",
+    "author": "Frederic Laloux",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 07:34:38] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": " 978-3-95916-132-9"
+  }
+}
+
+[2025-05-07 07:34:39] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Laloux’s Welt"
+}
+
+[2025-05-07 07:34:45] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die Känguru-Chroniken"
+}
+
+[2025-05-07 07:34:45] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Känguru-Chroniken",
+  "bookAuthor": "Marc-Uwe Kling"
+}
+
+[2025-05-07 07:34:48] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-10-397704-2"
+  }
+}
+
+[2025-05-07 07:34:51] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 210,
+    "completion_tokens": 241,
+    "total_tokens": 451,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Känguru-Chroniken"
+}
+
+[2025-05-07 07:34:51] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1082,
+  "wordCount": 134,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:34:51] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Känguru-Chroniken",
+  "bookAuthor": "Marc-Uwe Kling",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:34:52] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 366,
+    "completion_tokens": 34,
+    "total_tokens": 400,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Känguru-Chroniken"
+}
+
+[2025-05-07 07:34:52] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Die Känguru-Chroniken",
+  "genreCount": 4,
+  "genres": {
+    "0": "Satire",
+    "1": "Humor",
+    "2": "Gesellschaftskritik",
+    "3": "Komödie"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:34:54] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Der Buchspazierer"
+}
+
+[2025-05-07 07:34:54] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der Buchspazierer",
+  "bookAuthor": "Carsten Henn"
+}
+
+[2025-05-07 07:34:59] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 207,
+    "completion_tokens": 212,
+    "total_tokens": 419,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der Buchspazierer"
+}
+
+[2025-05-07 07:34:59] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1021,
+  "wordCount": 144,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 07:34:59] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der Buchspazierer",
+  "bookAuthor": "Carsten Henn",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 07:35:01] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 334,
+    "completion_tokens": 48,
+    "total_tokens": 382,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der Buchspazierer"
+}
+
+[2025-05-07 07:35:01] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Der Buchspazierer",
+  "genreCount": 5,
+  "genres": {
+    "0": "Literarische Fiktion",
+    "1": "Beziehungsroman",
+    "2": "Gegenwartsliteratur",
+    "3": "Lebensphilosophie",
+    "4": "Erzählung"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 07:35:02] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die Känguru-Chroniken",
+  "bookAuthor": "Marc-Uwe Kling"
+}
+
+[2025-05-07 07:35:05] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die Känguru-Chroniken",
+  "entryLength": 1373
+}
+
+[2025-05-07 07:35:10] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Der Buchspazierer",
+  "bookAuthor": "Carsten Henn"
+}
+
+[2025-05-07 07:35:12] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Der Buchspazierer",
+  "entryLength": 1303
+}
+
+[2025-05-07 07:35:37] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Die Känguru-Chroniken",
+    "author": "Marc-Uwe Kling",
+    "isbn": " 978-3-95916-132-9"
+  }
+}
+
+[2025-05-07 07:35:43] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die Känguru-Chroniken"
+}
