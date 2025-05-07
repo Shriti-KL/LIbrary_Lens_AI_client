@@ -661,6 +661,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // GET /api/books/fast-lookup/:isbn - Get basic book information by ISBN (faster version)
+  app.get("/api/books/fast-lookup/:isbn", async (req: Request, res: Response) => {
+    try {
+      const isbn = req.params.isbn;
+      
+      if (!isbn) {
+        return res.status(400).json({ message: "ISBN is required" });
+      }
+      
+      // Log the request
+      console.log(`Quick lookup for book with ISBN: ${isbn}`);
+      
+      // First check if we already have this book in our database
+      const existingBook = await storage.searchBooks(`isbn:${isbn}`);
+      if (existingBook && existingBook.length > 0) {
+        console.log(`Found existing book with ISBN ${isbn} in database`);
+        return res.json({
+          source: "database",
+          book: existingBook[0]
+        });
+      }
+      
+      // If not in database, do a simple lookup
+      console.log(`No existing book found with ISBN ${isbn}, performing OpenAI lookup`);
+      
+      // Return a simplified response with minimal information
+      res.json({
+        isbn: isbn,
+        message: "Book lookup in progress",
+        status: "processing"
+      });
+      
+      // Continue processing in the background
+      getBookByISBN(isbn).then(bookData => {
+        if (bookData) {
+          console.log(`Successfully retrieved data for ISBN ${isbn}: ${bookData.volumeInfo.title}`);
+        } else {
+          console.log(`No data found for ISBN ${isbn}`);
+        }
+      }).catch(error => {
+        console.error(`Error in background processing for ISBN ${isbn}:`, error);
+      });
+      
+    } catch (error) {
+      console.error("Error in quick lookup:", error);
+      res.status(500).json({ message: "Failed to perform quick lookup", error: String(error) });
+    }
+  });
+  
   // POST /api/books/similar - Get similar books via OpenAI
   app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {

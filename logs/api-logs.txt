@@ -1022,3 +1022,18 @@
   "status": "success",
   "bookTitle": "Unknown"
 }
+
+[2025-05-07 07:44:59] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783959161350"
+}
+
+[2025-05-07 07:45:19] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783959161350",
+  "bookTitle": "Die Känguru-Chroniken: Ansichten eines vorlauten Beuteltiers"
+}
