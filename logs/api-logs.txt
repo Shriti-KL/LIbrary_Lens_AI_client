@@ -2562,3 +2562,29 @@
   "bookIdentifiers": "ISBN: 9783406830303",
   "language": "de"
 }
+
+[2025-05-07 16:59:15] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 16:59:17] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+  "bookTitle": ""
+}
+
+[2025-05-07 16:59:17] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-135-0",
+  "language": "de"
+}
