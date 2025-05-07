@@ -372,20 +372,36 @@ export default function BookDetail() {
                   <Input 
                     name="illustrator"
                     value={
-                      editedBook.contributors && Array.isArray(editedBook.contributors) 
+                      editedBook.contributors && 
+                      Array.isArray(editedBook.contributors) && 
+                      editedBook.contributors.length > 0
                         ? editedBook.contributors
-                            .filter((c: any) => c.role?.toLowerCase().includes('illustr'))
-                            .map((c: any) => c.name).join(', ')
+                            .filter(c => 
+                              typeof c === 'object' && 
+                              c !== null && 
+                              'role' in c && 
+                              typeof c.role === 'string' && 
+                              c.role.toLowerCase().includes('illustr')
+                            )
+                            .map(c => (typeof c === 'object' && c !== null && 'name' in c && typeof c.name === 'string') ? c.name : '')
+                            .filter(Boolean)
+                            .join(', ')
                         : ''
                     }
                     onChange={(e) => {
                       const illustratorName = e.target.value;
-                      let contributors = [];
+                      let contributors: Array<{role: string, name: string}> = [];
                       
                       // If we have existing contributors, filter out illustrators and keep others
                       if (editedBook.contributors && Array.isArray(editedBook.contributors)) {
                         contributors = editedBook.contributors
-                          .filter((c: any) => !c.role?.toLowerCase().includes('illustr'));
+                          .filter(c => 
+                            typeof c === 'object' && 
+                            c !== null && 
+                            'role' in c && 
+                            typeof c.role === 'string' && 
+                            !c.role.toLowerCase().includes('illustr')
+                          ) as Array<{role: string, name: string}>;
                       }
                       
                       // Add new illustrator if provided
@@ -470,8 +486,28 @@ export default function BookDetail() {
                       
                       <p className="font-medium">
                         {book.title} / {book.author}
-                        {book.contributors && Array.isArray(book.contributors) && book.contributors.some((c: any) => c.role?.toLowerCase().includes('illustr')) && 
-                          '; ' + book.contributors.filter((c: any) => c.role?.toLowerCase().includes('illustr')).map((c: any) => c.name).join(', ')}
+                        {book.contributors && 
+                          Array.isArray(book.contributors) && 
+                          book.contributors.length > 0 && 
+                          book.contributors.some(c => 
+                            typeof c === 'object' && 
+                            c !== null && 
+                            'role' in c && 
+                            typeof c.role === 'string' && 
+                            c.role.toLowerCase().includes('illustr')
+                          ) ? 
+                          `; ${book.contributors
+                            .filter(c => 
+                              typeof c === 'object' && 
+                              c !== null && 
+                              'role' in c && 
+                              typeof c.role === 'string' && 
+                              c.role.toLowerCase().includes('illustr')
+                            )
+                            .map(c => (typeof c === 'object' && c !== null && 'name' in c) ? c.name : '')
+                            .filter(Boolean)
+                            .join(', ')
+                          }` : ''}
                         .
                       </p>
                     </div>
