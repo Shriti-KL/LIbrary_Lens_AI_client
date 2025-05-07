@@ -876,6 +876,11 @@ Important details for bibliographic estimation:
     if (!bookInfo.edition) missingFields.push('edition');
     if (!bookInfo.location) missingFields.push('location');
     if (!bookInfo.publisher) missingFields.push('publisher');
+    if (!bookInfo.subtitle) missingFields.push('subtitle');
+    if (!bookInfo.translator) missingFields.push('translator');
+    if (!bookInfo.details) missingFields.push('details');
+    if (!bookInfo.series) missingFields.push('series');
+    if (!bookInfo.price) missingFields.push('price');
 
     // Skip if we have all the fields
     if (missingFields.length === 0) {
@@ -907,6 +912,11 @@ Return a JSON object with the following fields that are UNIQUELY tailored to THI
 - edition: Likely edition information (e.g., "1. Auflage", "Zweite Ausgabe", etc.)
 - location: Publisher's location/city
 - publisher: Publisher name (if missing)
+- subtitle: Book subtitle if available 
+- translator: Translator name(s) if available
+- details: Other physical details (e.g., "Illustrationen, farbig")
+- series: Series information if present
+- price: Price information in EUR format (e.g., "EUR 19,99")
 
 CRITICAL GUIDELINES:
 1. EVERY BOOK MUST HAVE DISTINCT BIBLIOGRAPHIC VALUES - no two books should have identical page counts or dimensions
@@ -959,6 +969,11 @@ ${context}`
       console.log(`- Edition: ${extractedData.edition || 'null'}`);
       console.log(`- Location: ${extractedData.location || 'null'}`);
       console.log(`- Publisher: ${extractedData.publisher || 'null'}`);
+      console.log(`- Subtitle: ${extractedData.subtitle || 'null'}`);
+      console.log(`- Translator: ${extractedData.translator || 'null'}`);
+      console.log(`- Details: ${extractedData.details || 'null'}`);
+      console.log(`- Series: ${extractedData.series || 'null'}`);
+      console.log(`- Price: ${extractedData.price || 'null'}`);
       
     } catch (error: unknown) {
       console.error("Error parsing bibliographic data JSON:", error);
@@ -987,6 +1002,11 @@ ${context}`
       edition: bookInfo.edition || extractedData.edition || null,
       location: bookInfo.location || extractedData.location || null,
       publisher: bookInfo.publisher || extractedData.publisher || null,
+      subtitle: bookInfo.subtitle || extractedData.subtitle || null,
+      translator: bookInfo.translator || extractedData.translator || null,
+      details: bookInfo.details || extractedData.details || null,
+      series: bookInfo.series || extractedData.series || null,
+      price: bookInfo.price || extractedData.price || null,
     };
   } catch (error: any) {
     console.error("Error extracting missing bibliographic data:", error);
