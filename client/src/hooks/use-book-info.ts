@@ -2,8 +2,6 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Book } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { cleanISBNForSearch } from "@/lib/utils";
-import { useLanguage } from "@/hooks/use-language";
 
 export interface BookSearchParams {
   query?: string;
@@ -15,7 +13,6 @@ export interface BookSearchParams {
 
 export function useBookInfo() {
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   // Search books mutation
   const searchBooksMutation = useMutation({
@@ -37,7 +34,7 @@ export function useBookInfo() {
     },
     onError: (error) => {
       toast({
-        title: t("searchError") || "Search Failed",
+        title: "Search Failed",
         description: error.message,
         variant: "destructive"
       });
@@ -55,34 +52,6 @@ export function useBookInfo() {
       },
     });
   };
-  
-  // Get detailed book information by ISBN
-  const getDetailedBookByISBN = (isbn: string) => {
-    return useQuery({
-      queryKey: ['/api/books/isbn/details', isbn],
-      enabled: Boolean(isbn),
-      queryFn: async () => {
-        const response = await apiRequest("GET", `/api/books/isbn/details/${isbn}`);
-        return await response.json();
-      },
-    });
-  };
-  
-  // Fast lookup book by ISBN mutation (returns immediately, processes in background)
-  const fastLookupIsbnMutation = useMutation({
-    mutationFn: async (isbn: string) => {
-      const cleanIsbn = cleanISBNForSearch(isbn);
-      const response = await apiRequest("GET", `/api/books/fast-lookup/${cleanIsbn}`);
-      return await response.json();
-    },
-    onError: (error) => {
-      toast({
-        title: t("fastLookupError") || "Quick Lookup Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
 
   // Find similar books mutation
   const findSimilarBooksMutation = useMutation({
@@ -92,7 +61,7 @@ export function useBookInfo() {
     },
     onError: (error) => {
       toast({
-        title: t("similarBooksError") || "Failed to Find Similar Books",
+        title: "Failed to Find Similar Books",
         description: error.message,
         variant: "destructive"
       });
@@ -102,9 +71,6 @@ export function useBookInfo() {
   return {
     searchBooksMutation,
     getBookByISBN,
-    getDetailedBookByISBN,
-    fastLookupIsbn: fastLookupIsbnMutation.mutateAsync,
-    isFastLookingUpIsbn: fastLookupIsbnMutation.isPending,
     findSimilarBooksMutation
   };
 }

@@ -579,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via OpenAI (standard format)
+  // GET /api/books/isbn/:isbn - Get book by ISBN via OpenAI
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
@@ -587,9 +587,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isbn) {
         return res.status(400).json({ message: "ISBN is required" });
       }
-      
-      // Log the request
-      console.log(`Getting book information for ISBN: ${isbn}`);
       
       const book = await getBookByISBN(isbn);
       
@@ -599,114 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json(book);
     } catch (error) {
-      console.error("Error getting book by ISBN:", error);
       res.status(500).json({ message: `Error fetching book by ISBN: ${error.message}` });
-    }
-  });
-  
-  // GET /api/books/isbn/details/:isbn - Get detailed book information by ISBN
-  app.get("/api/books/isbn/details/:isbn", async (req: Request, res: Response) => {
-    try {
-      const isbn = req.params.isbn;
-      
-      if (!isbn) {
-        return res.status(400).json({ message: "ISBN is required" });
-      }
-      
-      // Log the request
-      console.log(`Getting detailed book information for ISBN: ${isbn}`);
-      
-      // Use OpenAI's enhanced ISBN lookup
-      const bookData = await getBookByISBN(isbn);
-      
-      if (!bookData) {
-        return res.status(404).json({ message: `No book found with ISBN: ${isbn}` });
-      }
-      
-      // Extract the book information from the Google Books API format
-      const volumeInfo = bookData.volumeInfo;
-      
-      // Transform the data into a more user-friendly format
-      const detailedBookInfo = {
-        id: bookData.id,
-        title: volumeInfo.title,
-        subtitle: volumeInfo.subtitle || null,
-        authors: volumeInfo.authors || [],
-        publisher: volumeInfo.publisher || null,
-        publishedDate: volumeInfo.publishedDate || null,
-        publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
-        description: volumeInfo.description || null,
-        pageCount: volumeInfo.pageCount || null,
-        categories: volumeInfo.categories || [],
-        language: volumeInfo.language || null,
-        isbn: isbn,
-        isbn13: volumeInfo.industryIdentifiers?.find(id => id.type === "ISBN_13")?.identifier || isbn,
-        coverImageUrl: volumeInfo.imageLinks?.thumbnail || null,
-        binding: volumeInfo.binding || null,
-        dimensions: volumeInfo.dimensions || null,
-        edition: volumeInfo.edition || null,
-        translator: volumeInfo.translator || null,
-        price: volumeInfo.price || null,
-        subjects: volumeInfo.subjects || [],
-        rating: volumeInfo.rating || null,
-        ratingsCount: volumeInfo.ratingsCount || null,
-        printType: volumeInfo.printType || null,
-        maturityRating: volumeInfo.maturityRating || null
-      };
-      
-      res.json(detailedBookInfo);
-    } catch (error) {
-      console.error("Error getting detailed book information by ISBN:", error);
-      res.status(500).json({ message: "Failed to get detailed book information", error: String(error) });
-    }
-  });
-  
-  // GET /api/books/fast-lookup/:isbn - Get basic book information by ISBN (faster version)
-  app.get("/api/books/fast-lookup/:isbn", async (req: Request, res: Response) => {
-    try {
-      const isbn = req.params.isbn;
-      
-      if (!isbn) {
-        return res.status(400).json({ message: "ISBN is required" });
-      }
-      
-      // Log the request
-      console.log(`Quick lookup for book with ISBN: ${isbn}`);
-      
-      // First check if we already have this book in our database
-      const existingBook = await storage.searchBooks(`isbn:${isbn}`);
-      if (existingBook && existingBook.length > 0) {
-        console.log(`Found existing book with ISBN ${isbn} in database`);
-        return res.json({
-          source: "database",
-          book: existingBook[0]
-        });
-      }
-      
-      // If not in database, do a simple lookup
-      console.log(`No existing book found with ISBN ${isbn}, performing OpenAI lookup`);
-      
-      // Return a simplified response with minimal information
-      res.json({
-        isbn: isbn,
-        message: "Book lookup in progress",
-        status: "processing"
-      });
-      
-      // Continue processing in the background
-      getBookByISBN(isbn).then(bookData => {
-        if (bookData) {
-          console.log(`Successfully retrieved data for ISBN ${isbn}: ${bookData.volumeInfo.title}`);
-        } else {
-          console.log(`No data found for ISBN ${isbn}`);
-        }
-      }).catch(error => {
-        console.error(`Error in background processing for ISBN ${isbn}:`, error);
-      });
-      
-    } catch (error) {
-      console.error("Error in quick lookup:", error);
-      res.status(500).json({ message: "Failed to perform quick lookup", error: String(error) });
     }
   });
   

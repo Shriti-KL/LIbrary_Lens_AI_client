@@ -16,10 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Search } from 'lucide-react';
-import { useBookInfo } from '@/hooks/use-book-info';
-import { cleanISBNForSearch } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 // Form schema
 const formSchema = z.object({
@@ -35,14 +32,10 @@ interface AnalysisFormProps {
 
 export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps) {
   const { t } = useLanguage();
-  const { toast } = useToast();
-  const { fastLookupIsbn, isFastLookingUpIsbn } = useBookInfo();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [isDragDropping, setIsDragDropping] = useState(false);
-  const [isPerformingIsbnLookup, setIsPerformingIsbnLookup] = useState(false);
-  const [bookLookupResult, setBookLookupResult] = useState<any>(null);
   
   // Store the previous loading state to detect transitions
   const previousLoadingRef = React.useRef(isLoading);
@@ -115,55 +108,6 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
     }
   };
 
-  // Handle ISBN lookup
-  const handleIsbnLookup = async (isbn: string) => {
-    if (!isbn || isPerformingIsbnLookup || isFastLookingUpIsbn) return;
-    
-    try {
-      console.log(`Looking up ISBN: ${isbn}`);
-      setIsPerformingIsbnLookup(true);
-      
-      // Use the fast lookup endpoint which returns immediately
-      const result = await fastLookupIsbn(isbn);
-      console.log('Fast ISBN lookup result:', result);
-      
-      // If we got a book from the database directly, populate the form
-      if (result.source === 'database' && result.book) {
-        setBookLookupResult(result.book);
-        
-        // Update form data with book information
-        form.setValue('title', result.book.title || '');
-        form.setValue('author', result.book.author || '');
-        
-        // Show confirmation toast
-        toast({
-          title: t('isbnFoundInDatabase') || 'Book found in database',
-          description: t('bookDetailsLoaded') || 'Book details have been loaded',
-          variant: 'default'
-        });
-      } else {
-        // Notify the user that the lookup is in progress
-        toast({
-          title: t('isbnLookupStarted') || 'ISBN lookup started',
-          description: t('isbnLookupInProgress') || 'Looking up book details in the background',
-          variant: 'default'
-        });
-        
-        // Background processing has started, but we don't have results yet
-        // In a production app, we might want to poll for results or use WebSockets for updates
-      }
-    } catch (error) {
-      console.error('Error looking up ISBN:', error);
-      toast({
-        title: t('isbnLookupError') || 'ISBN lookup failed',
-        description: String(error) || t('isbnLookupErrorDesc') || 'Could not find book details',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsPerformingIsbnLookup(false);
-    }
-  };
-  
   // Handle file selection
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -307,42 +251,9 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                 render={({ field }) => (
                   <FormItem className="mb-1">
                     <FormLabel className="text-sm font-medium">{t('isbn')}</FormLabel>
-                    <div className="flex items-center space-x-2">
-                      <FormControl>
-                        <Input 
-                          placeholder="ISBN (optional)" 
-                          {...field} 
-                          className="border-neutral-300"
-                          onChange={(e) => {
-                            field.onChange(e);
-                            // Reset lookup state when editing
-                            setIsPerformingIsbnLookup(false);
-                          }}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            const isbn = e.target.value.trim();
-                            // Only look up if there's an ISBN and it's at least 10 digits
-                            if (isbn && isbn.replace(/[^0-9]/g, '').length >= 10) {
-                              handleIsbnLookup(isbn);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => field.value && handleIsbnLookup(field.value)}
-                        disabled={!field.value || isLoading || isPerformingIsbnLookup || isFastLookingUpIsbn}
-                        className="h-9 w-9 flex-shrink-0 border-neutral-300"
-                      >
-                        {isFastLookingUpIsbn || isPerformingIsbnLookup ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Search className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
+                    <FormControl>
+                      <Input placeholder="ISBN (optional)" {...field} className="border-neutral-300" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
