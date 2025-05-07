@@ -2095,3 +2095,385 @@
   "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
   "entryLength": 1453
 }
+
+[2025-05-07 12:48:13] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 12:48:18] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Web Almanac 2019"
+}
+
+[2025-05-07 12:48:18] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Web Almanac 2019",
+  "bookAuthor": "HTTP Archive"
+}
+
+[2025-05-07 12:48:23] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 204,
+    "completion_tokens": 219,
+    "total_tokens": 423,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Web Almanac 2019"
+}
+
+[2025-05-07 12:48:23] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1101,
+  "wordCount": 148,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:48:23] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Web Almanac 2019",
+  "bookAuthor": "HTTP Archive",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:48:24] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 338,
+    "completion_tokens": 35,
+    "total_tokens": 373,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Web Almanac 2019"
+}
+
+[2025-05-07 12:48:24] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Web Almanac 2019",
+  "genreCount": 5,
+  "genres": {
+    "0": "Technologie",
+    "1": "Informatik",
+    "2": "Sachbuch",
+    "3": "Webentwicklung",
+    "4": "Internet"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 12:48:33] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Web Almanac 2019",
+  "bookAuthor": "HTTP Archive"
+}
+
+[2025-05-07 12:48:35] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Web Almanac 2019",
+  "entryLength": 1340
+}
+
+[2025-05-07 12:54:10] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 12:54:13] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die Unschuldigen"
+}
+
+[2025-05-07 12:54:13] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Unschuldigen",
+  "bookAuthor": "Michael Schulte-Markwort"
+}
+
+[2025-05-07 12:54:19] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 207,
+    "completion_tokens": 223,
+    "total_tokens": 430,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Unschuldigen"
+}
+
+[2025-05-07 12:54:19] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1132,
+  "wordCount": 149,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:54:19] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Unschuldigen",
+  "bookAuthor": "Michael Schulte-Markwort",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:54:21] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 345,
+    "completion_tokens": 38,
+    "total_tokens": 383,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die Unschuldigen"
+}
+
+[2025-05-07 12:54:21] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Die Unschuldigen",
+  "genreCount": 4,
+  "genres": {
+    "0": "Jugendliteratur",
+    "1": "Gesellschaftsroman",
+    "2": "Psychologischer Roman",
+    "3": "Entwicklungsroman"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 12:54:26] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die Unschuldigen",
+  "bookAuthor": "Michael Schulte-Markwort"
+}
+
+[2025-05-07 12:54:28] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die Unschuldigen",
+  "entryLength": 1387
+}
+
+[2025-05-07 13:04:24] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-07 13:04:28] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Mythos"
+}
+
+[2025-05-07 13:04:28] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Mythos",
+  "bookAuthor": "Stephen Fry"
+}
+
+[2025-05-07 13:04:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 237,
+    "total_tokens": 437,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Mythos"
+}
+
+[2025-05-07 13:04:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1015,
+  "wordCount": 138,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 13:04:34] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Mythos",
+  "bookAuthor": "Stephen Fry",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 13:04:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 352,
+    "completion_tokens": 32,
+    "total_tokens": 384,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Mythos"
+}
+
+[2025-05-07 13:04:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Mythos",
+  "genreCount": 4,
+  "genres": {
+    "0": "Mythologie",
+    "1": "Sachbuch",
+    "2": "Humor",
+    "3": "Kulturgeschichte"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 13:04:43] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Mythos",
+  "bookAuthor": "Stephen Fry"
+}
+
+[2025-05-07 13:04:45] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Mythos",
+  "entryLength": 1246
+}
