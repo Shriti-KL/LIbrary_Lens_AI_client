@@ -583,7 +583,30 @@ ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
 ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
 ${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}
-${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
+
+Important details for bibliographic estimation:
+- ${bookInfo.genres && Array.isArray(bookInfo.genres) && bookInfo.genres.length > 0 ? 
+    `This is primarily a ${bookInfo.genres[0]} book` : 
+    `Book genre is unknown`}
+- ${bookInfo.readingLevel ? 
+    `Reading level is ${bookInfo.readingLevel} (${
+      bookInfo.readingLevel?.toLowerCase().includes("kinder") || 
+      bookInfo.readingLevel?.toLowerCase().includes("children") ? 
+      "likely a children's book with fewer pages and larger print" : 
+      bookInfo.readingLevel?.toLowerCase().includes("jugend") || 
+      bookInfo.readingLevel?.toLowerCase().includes("young adult") ? 
+      "likely a young adult book with standard novel length" : 
+      "likely an adult-oriented book with typical adult content length"
+    })` : 
+    `Reading level is unknown`}
+- ${bookInfo.summary ? 
+    `Based on the summary complexity and length, this appears to be a ${
+      bookInfo.summary.length < 500 ? "simpler, possibly shorter work" : 
+      bookInfo.summary.length > 1500 ? "more complex, possibly longer work" : 
+      "work of average complexity and length"
+    }` : 
+    `No summary is available to assess complexity`}`;
 
     // Identify missing fields
     const missingFields = [];
@@ -615,24 +638,37 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
         },
         {
           role: "user",
-          content: `Based on the available information about "${bookInfo.title}" by "${bookInfo.author}", provide realistic estimates for the missing bibliographic data. 
+          content: `Based on the available information about "${bookInfo.title}" by "${bookInfo.author}", provide realistic estimates for the missing bibliographic data.
 
-Return a JSON object with the following fields that are specific to THIS BOOK:
-- pageCount: A realistic page count for this specific book based on its genre and content. Different books should have different page counts. (just the number, no text)
+Return a JSON object with the following fields that are UNIQUELY tailored to THIS SPECIFIC BOOK:
+- pageCount: A precise, realistic page count based on this book's specific genre, content complexity, and target audience. NEVER use generic counts like 250, 300, or 320 as defaults. (provide just the number)
 - binding: The likely binding type for this book (e.g., "Hardcover", "Taschenbuch", "Gebunden", etc.)
-- dimensions: Realistic physical dimensions for this book (e.g., "14.5 x 21.2 cm")
+- dimensions: Realistic physical dimensions for this book (e.g., "14.5 x 21.2 cm") that reflect the book's type
 - edition: Likely edition information (e.g., "1. Auflage", "Zweite Ausgabe", etc.)
 - location: Publisher's location/city
 - publisher: Publisher name (if missing)
 
-IMPORTANT RULES:
-1. Provide significantly different values for different books - do not default to 320 pages for every book
-2. Use realistic dimensions that vary by book type and genre
-3. If you cannot estimate a field with confidence, leave it as null
-4. Base your estimates on typical characteristics for the book's genre and content
-5. Consider the book's publication year when estimating format and dimensions
-6. For pageCount, please provide a specific number that makes sense for this book - 
-   academic books might be 400-600 pages, while novels might be 250-350 pages, and children's books 32-80 pages
+CRITICAL GUIDELINES:
+1. EVERY BOOK MUST HAVE DISTINCT BIBLIOGRAPHIC VALUES - no two books should have identical page counts or dimensions
+2. For pageCount, use these guidelines based on genre and reading level:
+   - Children's picture books: 24-48 pages
+   - Early readers: 48-96 pages
+   - Middle-grade fiction: 128-224 pages
+   - Young adult fiction: 224-384 pages
+   - Adult fiction: 256-496 pages depending on genre (thrillers shorter, fantasy longer)
+   - Academic/scholarly works: 288-672 pages
+   - Choose a SPECIFIC number within these ranges, never a round number like 300 or 350
+
+3. For dimensions, vary by book type:
+   - Children's books: Typically larger format (21 x 29.7 cm or 22.5 x 27 cm)
+   - Mass market paperbacks: Smaller format (10.5 x 17.5 cm)
+   - Trade paperbacks: Medium format (13.5 x 21 cm)
+   - Hardcover fiction: Standard format (14.5 x 22 cm)
+   - Coffee table/art books: Large format (23 x 28 cm)
+   - Choose SPECIFIC dimensions with decimal precision (like 14.8 x 21.3 cm)
+
+4. If you cannot estimate a specific field with confidence, leave it as null
+5. Use the book's genre, period, and content complexity to inform your estimates
 
 Available information:
 ${context}`
