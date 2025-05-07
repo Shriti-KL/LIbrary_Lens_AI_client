@@ -1,4 +1,5 @@
 import { Book } from "@shared/schema";
+import { apiLogger } from "../utils/logger";
 
 // Google Books API endpoint
 const GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes";
@@ -26,17 +27,41 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
     url.searchParams.append("key", API_KEY);
     if (params.maxResults) url.searchParams.append("maxResults", params.maxResults.toString());
 
+    // Log the request
+    apiLogger.logRequest("Google Books API", {
+      endpoint: "volumes",
+      url: url.toString().replace(API_KEY, "[REDACTED]"),
+      method: "GET",
+      params: {
+        query,
+        maxResults: params.maxResults
+      }
+    });
+
     // Make the request
     const response = await fetch(url.toString());
     
     if (!response.ok) {
-      throw new Error(`Google Books API error: ${response.status} ${response.statusText}`);
+      const errorMsg = `Google Books API error: ${response.status} ${response.statusText}`;
+      apiLogger.logError("Google Books API", errorMsg);
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
+    
+    // Log the response
+    apiLogger.logResponse("Google Books API", {
+      endpoint: "volumes",
+      query,
+      status: response.status,
+      totalItems: data.totalItems,
+      itemCount: data.items?.length || 0
+    });
+    
     return data.items || [];
   } catch (error: any) {
     console.error("Error searching Google Books:", error);
+    apiLogger.logError("Google Books API", error);
     throw new Error(`Failed to search Google Books: ${error.message || String(error)}`);
   }
 }
@@ -48,6 +73,17 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     
     // Clean the ISBN for search by removing hyphens
     const cleanedISBN = isbn.replace(/[^\dX]/gi, '');
+    
+    // Log the ISBN lookup request
+    apiLogger.logRequest("Google Books API", {
+      endpoint: "volumes",
+      method: "GET",
+      operation: "getBookByISBN",
+      params: {
+        isbn: originalISBN,
+        cleanedISBN
+      }
+    });
     
     // Search using the cleaned ISBN
     const books = await searchBooks({ query: `isbn:${cleanedISBN}` });
@@ -70,12 +106,34 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
           }
         }
       }
+      
+      // Log the result
+      apiLogger.logResponse("Google Books API", {
+        operation: "getBookByISBN",
+        isbn: originalISBN,
+        found: true,
+        title: result.volumeInfo?.title,
+        author: result.volumeInfo?.authors?.[0]
+      });
+      
       return result;
     }
+    
+    // Log that no book was found
+    apiLogger.logResponse("Google Books API", {
+      operation: "getBookByISBN",
+      isbn: originalISBN,
+      found: false
+    });
     
     return null;
   } catch (error: any) {
     console.error("Error fetching book by ISBN:", error);
+    apiLogger.logError("Google Books API", {
+      operation: "getBookByISBN",
+      isbn,
+      error: error.message || String(error)
+    });
     throw new Error(`Failed to fetch book by ISBN: ${error.message || String(error)}`);
   }
 }
@@ -282,11 +340,32 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     
     console.log(`Enriching book metadata for "${bookInfo.title}" by "${bookInfo.author}". User submission: ${isUserSubmission}`);
     
+    // Log the enrichment request
+    apiLogger.logRequest("Google Books API", {
+      operation: "enrichBookMetadata",
+      bookInfo: {
+        title: bookInfo.title,
+        author: bookInfo.author,
+        isbn: bookInfo.isbn,
+        isUserSubmission
+      }
+    });
+    
     // Search using multiple strategies
     const searchResults = await tryMultipleSearchStrategies(bookInfo);
     
     if (searchResults.length === 0) {
       console.log(`No Google Books results found for book: "${bookInfo.title}" by "${bookInfo.author}"`);
+      
+      // Log the empty result
+      apiLogger.logResponse("Google Books API", {
+        operation: "enrichBookMetadata",
+        bookTitle: bookInfo.title,
+        bookAuthor: bookInfo.author,
+        resultsFound: 0,
+        success: false
+      });
+      
       return bookInfo;
     }
     
