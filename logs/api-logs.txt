@@ -1661,3 +1661,182 @@
   "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
   "entryLength": 1366
 }
+
+[2025-05-07 12:23:09] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 12:23:09] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350"
+  }
+}
+
+[2025-05-07 12:23:09] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 12:23:09] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 12:23:09] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 12:23:09] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+auf+R%C3%B6m%C3%B6+-+Lilly%2C+Nikolas+und+der+Bunkerschatz&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 12:23:09] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 12:23:09] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann"
+}
+
+[2025-05-07 12:23:15] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 211,
+    "completion_tokens": 225,
+    "total_tokens": 436,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
+}
+
+[2025-05-07 12:23:15] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1041,
+  "wordCount": 147,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:23:15] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:23:16] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 350,
+    "completion_tokens": 32,
+    "total_tokens": 382,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
+}
+
+[2025-05-07 12:23:16] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "genreCount": 4,
+  "genres": {
+    "0": "Abenteuer",
+    "1": "Historischer Roman",
+    "2": "Kinderbuch",
+    "3": "Spannung"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 12:23:22] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann"
+}
+
+[2025-05-07 12:23:23] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "entryLength": 1320
+}

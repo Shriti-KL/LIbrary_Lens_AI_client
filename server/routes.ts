@@ -6,14 +6,12 @@ import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
 import { 
   processBookAnalysis, 
-  analyzeBookCover 
-} from "./services/openai";
-import {
+  analyzeBookCover,
   searchBooks,
   getBookByISBN,
   searchSimilarBooks,
   enrichBookMetadata
-} from "./services/googleBooks";
+} from "./services/openai";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -142,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[${requestId}] Enriching book metadata with OpenAI`);
       let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
-      // Log what got corrected from Google Books data
+      // Log what got corrected from OpenAI data
       if (enrichedBookInfo.title !== validatedData.title) {
         console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
       }
