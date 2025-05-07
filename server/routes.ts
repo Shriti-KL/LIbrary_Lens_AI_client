@@ -173,6 +173,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
       const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
+      // Log bibliographic data in detail before sending response
+      console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
+      console.log(`- Title: "${analysisResult.title}"`);
+      console.log(`- Author: "${analysisResult.author}"`);
+      console.log(`- Page Count: ${analysisResult.pageCount} (type: ${typeof analysisResult.pageCount})`);
+      console.log(`- Dimensions: ${analysisResult.dimensions}`);
+      console.log(`- Binding: ${analysisResult.binding}`);
+      console.log(`- Edition: ${analysisResult.edition}`);
+      console.log(`- Location: ${analysisResult.location}`);
+      console.log(`- Publisher: ${analysisResult.publisher}`);
+      
       console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
     } catch (error) {
