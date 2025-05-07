@@ -35,9 +35,9 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
 
     const data = await response.json();
     return data.items || [];
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error searching Google Books:", error);
-    throw new Error(`Failed to search Google Books: ${error.message}`);
+    throw new Error(`Failed to search Google Books: ${error.message || String(error)}`);
   }
 }
 
@@ -74,9 +74,9 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     }
     
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching book by ISBN:", error);
-    throw new Error(`Failed to fetch book by ISBN: ${error.message}`);
+    throw new Error(`Failed to fetch book by ISBN: ${error.message || String(error)}`);
   }
 }
 

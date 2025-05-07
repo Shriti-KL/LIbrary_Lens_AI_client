@@ -249,7 +249,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   publicationInfo += `, ${book.publishedYear || '2025'}`;
   
   // Add physical description - pages
-  publicationInfo += `. - ${book.pageCount || '250'} Seiten`;
+  publicationInfo += `. - ${book.pageCount || ''} Seiten`;
   
   // Add illustration information if appropriate - using format from sample image
   if (book.contributors && Array.isArray(book.contributors)) {
@@ -570,7 +570,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   currentY += 2;
   
   // --- Publication info - condensed ---
-  const pubInfo = `${book.edition || '1. Aufl.'} - ${book.location || 'München'}: ${book.publisher || 'Verlag'}, ${book.publishedYear || '2025'} - ${book.pageCount || '250'} S. ; ${book.dimensions || '21 cm'}`;
+  const pubInfo = `${book.edition || '1. Aufl.'} - ${book.location || 'München'}: ${book.publisher || 'Verlag'}, ${book.publishedYear || '2025'} - ${book.pageCount || ''} S. ; ${book.dimensions || '21 cm'}`;
   const pubLines = doc.splitTextToSize(pubInfo, width - 10);
   for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
     doc.text(pubLines[i], x + 5, currentY);
