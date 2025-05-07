@@ -2595,3 +2595,29 @@
   "status": "success",
   "bookTitle": "The Sorcerer's Apprentice"
 }
+
+[2025-05-07 17:57:03] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-132-9"
+  }
+}
+
+[2025-05-07 17:57:04] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
+  "language": "de"
+}
+
+[2025-05-07 17:57:06] ERROR FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "error": "Book not found for identifiers: ISBN: 978-3-95916-132-9",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9"
+}
