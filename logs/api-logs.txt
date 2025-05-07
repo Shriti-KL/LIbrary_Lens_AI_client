@@ -1406,3 +1406,258 @@
   "bookTitle": "",
   "entryLength": 1330
 }
+
+[2025-05-07 08:31:24] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "9783406830303"
+  }
+}
+
+[2025-05-07 08:31:28] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "Die drei ??? – Panik im Park"
+}
+
+[2025-05-07 08:31:28] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die drei ??? – Panik im Park",
+  "bookAuthor": "Ben Nevis"
+}
+
+[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 207,
+    "completion_tokens": 219,
+    "total_tokens": 426,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die drei ??? – Panik im Park"
+}
+
+[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 995,
+  "wordCount": 150,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 08:31:33] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die drei ??? – Panik im Park",
+  "bookAuthor": "Ben Nevis",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 341,
+    "completion_tokens": 39,
+    "total_tokens": 380,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Die drei ??? – Panik im Park"
+}
+
+[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Die drei ??? – Panik im Park",
+  "genreCount": 5,
+  "genres": {
+    "0": "Krimi",
+    "1": "Abenteuer",
+    "2": "Jugendliteratur",
+    "3": "Detektivgeschichte",
+    "4": "Spannung"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 08:31:43] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die drei ??? – Panik im Park",
+  "bookAuthor": "Ben Nevis"
+}
+
+[2025-05-07 08:31:44] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die drei ??? – Panik im Park",
+  "entryLength": 1232
+}
+
+[2025-05-07 08:32:59] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-96251-218-7"
+  }
+}
+
+[2025-05-07 08:33:02] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
+}
+
+[2025-05-07 08:33:02] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
+  "bookAuthor": "Charles Duhigg"
+}
+
+[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 217,
+    "completion_tokens": 210,
+    "total_tokens": 427,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
+}
+
+[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1028,
+  "wordCount": 130,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 08:33:07] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
+  "bookAuthor": "Charles Duhigg",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 342,
+    "completion_tokens": 34,
+    "total_tokens": 376,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
+}
+
+[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
+  "genreCount": 4,
+  "genres": {
+    "0": "Sachbuch",
+    "1": "Psychologie",
+    "2": "Wirtschaft",
+    "3": "Persönlichkeitsentwicklung"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 08:33:13] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
+  "bookAuthor": "Charles Duhigg"
+}
+
+[2025-05-07 08:33:15] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
+  "entryLength": 1366
+}

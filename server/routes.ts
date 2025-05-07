@@ -6,12 +6,14 @@ import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
 import { 
   processBookAnalysis, 
-  analyzeBookCover, 
-  enrichBookMetadata,
+  analyzeBookCover 
+} from "./services/openai";
+import {
   searchBooks,
   getBookByISBN,
-  searchSimilarBooks
-} from "./services/openai";
+  searchSimilarBooks,
+  enrichBookMetadata
+} from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
 const upload = multer({
