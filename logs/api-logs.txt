@@ -2477,3 +2477,88 @@
   "bookTitle": "Mythos",
   "entryLength": 1246
 }
+
+[2025-05-07 13:12:46] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "978-3-959161-35-0",
+    "author": "",
+    "isbn": ""
+  }
+}
+
+[2025-05-07 13:12:49] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "978-3-959161-35-0"
+}
+
+[2025-05-07 13:12:49] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-959161-35-0, Title: 978-3-959161-35-0, Author: Unknown",
+  "language": "de"
+}
+
+[2025-05-07 13:13:08] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Unbekanntes Buch"
+}
+
+[2025-05-07 16:04:44] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 16:04:47] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+  "bookTitle": ""
+}
+
+[2025-05-07 16:04:47] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-135-0",
+  "language": "de"
+}
+
+[2025-05-07 16:25:25] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "9783406830303"
+  }
+}
+
+[2025-05-07 16:25:27] ERROR FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+  "bookTitle": ""
+}
+
+[2025-05-07 16:25:27] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 9783406830303",
+  "language": "de"
+}
