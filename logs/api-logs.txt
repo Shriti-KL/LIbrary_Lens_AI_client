@@ -1,237 +1,5 @@
 
-[2025-05-07 05:50:56] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": " 978-3-10-397704-2",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 05:50:56] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783103977042"
-  }
-}
-
-[2025-05-07 05:50:56] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783103977042",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:50:56] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:50:56] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:50:56] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Die+Welt+nach+Gaza&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Die Welt nach Gaza",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:50:57] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Die Welt nach Gaza",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 05:50:57] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die Welt nach Gaza",
-  "bookAuthor": "Pankaj Mishra"
-}
-
-[2025-05-07 05:51:01] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 200,
-    "completion_tokens": 228,
-    "total_tokens": 428,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die Welt nach Gaza"
-}
-
-[2025-05-07 05:51:01] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1052,
-  "wordCount": 136,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 05:51:01] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die Welt nach Gaza",
-  "bookAuthor": "Pankaj Mishra",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 05:51:02] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 343,
-    "completion_tokens": 36,
-    "total_tokens": 379,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die Welt nach Gaza"
-}
-
-[2025-05-07 05:51:02] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Die Welt nach Gaza",
-  "genreCount": 4,
-  "genres": {
-    "0": "Historischer Roman",
-    "1": "Politischer Roman",
-    "2": "Gesellschaftsroman",
-    "3": "Kriegsroman"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 05:51:46] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "Die Welt nach Gaza",
-    "author": "Pankaj Mishra",
-    "isbn": " 978-3-10-397704-2",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 05:51:46] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783103977042"
-  }
-}
-
-[2025-05-07 05:51:47] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783103977042",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:51:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:51:47] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:51:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Historischer+Roman+Politischer+Roman&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Historischer Roman Politischer Roman",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:51:48] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Historischer Roman Politischer Roman",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 06:23:59] REQUEST TO Google Books API
+[2025-05-07 09:24:52] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
   "bookInfo": {
@@ -242,7 +10,7 @@
   }
 }
 
-[2025-05-07 06:23:59] REQUEST TO Google Books API
+[2025-05-07 09:24:52] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
@@ -252,7 +20,7 @@
   }
 }
 
-[2025-05-07 06:23:59] RESPONSE FROM Google Books API
+[2025-05-07 09:24:52] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161350",
@@ -261,7 +29,7 @@
   "itemCount": 1
 }
 
-[2025-05-07 06:23:59] REQUEST TO Google Books API
+[2025-05-07 09:24:52] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
@@ -272,7 +40,7 @@
   }
 }
 
-[2025-05-07 06:24:00] RESPONSE FROM Google Books API
+[2025-05-07 09:24:52] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
@@ -281,7 +49,7 @@
   "itemCount": 0
 }
 
-[2025-05-07 06:24:00] REQUEST TO Google Books API
+[2025-05-07 09:24:52] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+auf+R%C3%B6m%C3%B6+-+Lilly%2C+Nikolas+und+der+Bunkerschatz&key=[REDACTED]&maxResults=4",
@@ -292,7 +60,7 @@
   }
 }
 
-[2025-05-07 06:24:00] RESPONSE FROM Google Books API
+[2025-05-07 09:24:52] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
@@ -301,7 +69,7 @@
   "itemCount": 4
 }
 
-[2025-05-07 06:24:00] REQUEST TO OpenAI API
+[2025-05-07 09:24:52] REQUEST TO OpenAI API
 {
   "operation": "generateBookSummary",
   "endpoint": "chat.completions.create",
@@ -311,15 +79,15 @@
   "bookAuthor": "Birgit Hedemann"
 }
 
-[2025-05-07 06:24:04] RESPONSE FROM OpenAI API
+[2025-05-07 09:24:58] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
     "prompt_tokens": 211,
-    "completion_tokens": 217,
-    "total_tokens": 428,
+    "completion_tokens": 237,
+    "total_tokens": 448,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -335,16 +103,16 @@
   "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
 }
 
-[2025-05-07 06:24:04] RESPONSE FROM OpenAI API
+[2025-05-07 09:24:58] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary:results",
-  "summaryLength": 994,
-  "wordCount": 138,
-  "paragraphCount": 1,
+  "summaryLength": 1044,
+  "wordCount": 144,
+  "paragraphCount": 2,
   "cleanupApplied": true
 }
 
-[2025-05-07 06:24:04] REQUEST TO OpenAI API
+[2025-05-07 09:24:58] REQUEST TO OpenAI API
 {
   "operation": "extractBookGenres",
   "endpoint": "chat.completions.create",
@@ -355,15 +123,15 @@
   "hasGoogleCategories": false
 }
 
-[2025-05-07 06:24:05] RESPONSE FROM OpenAI API
+[2025-05-07 09:24:59] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 40,
-    "total_tokens": 382,
+    "prompt_tokens": 362,
+    "completion_tokens": 27,
+    "total_tokens": 389,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -379,22 +147,20 @@
   "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
 }
 
-[2025-05-07 06:24:05] RESPONSE FROM OpenAI API
+[2025-05-07 09:24:59] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres:results",
   "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "genreCount": 5,
+  "genreCount": 3,
   "genres": {
     "0": "Abenteuer",
     "1": "Kinderliteratur",
-    "2": "Historischer Roman",
-    "3": "Detektivroman",
-    "4": "Jugendliteratur"
+    "2": "Historischer Roman"
   },
   "parseMethod": "standard"
 }
 
-[2025-05-07 06:24:10] REQUEST TO OpenAI API
+[2025-05-07 09:25:04] REQUEST TO OpenAI API
 {
   "operation": "generateCatalogEntry",
   "endpoint": "chat.completions.create",
@@ -403,15 +169,15 @@
   "bookAuthor": "Birgit Hedemann"
 }
 
-[2025-05-07 06:24:12] RESPONSE FROM OpenAI API
+[2025-05-07 09:25:06] RESPONSE FROM OpenAI API
 {
   "operation": "generateCatalogEntry",
   "status": "success",
   "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "entryLength": 1272
+  "entryLength": 1323
 }
 
-[2025-05-07 06:24:53] REQUEST TO Google Books API
+[2025-05-07 09:25:13] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
   "bookInfo": {
@@ -422,7 +188,7 @@
   }
 }
 
-[2025-05-07 06:24:53] REQUEST TO Google Books API
+[2025-05-07 09:25:13] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
@@ -432,7 +198,7 @@
   }
 }
 
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
+[2025-05-07 09:25:14] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161350",
@@ -441,7 +207,7 @@
   "itemCount": 1
 }
 
-[2025-05-07 06:24:53] REQUEST TO Google Books API
+[2025-05-07 09:25:14] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
@@ -452,7 +218,7 @@
   }
 }
 
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
+[2025-05-07 09:25:14] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
@@ -461,7 +227,7 @@
   "itemCount": 0
 }
 
-[2025-05-07 06:24:53] REQUEST TO Google Books API
+[2025-05-07 09:25:14] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+Kinderliteratur&key=[REDACTED]&maxResults=4",
@@ -472,7 +238,7 @@
   }
 }
 
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
+[2025-05-07 09:25:14] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "Abenteuer Kinderliteratur",
@@ -481,7 +247,7 @@
   "itemCount": 4
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-07 09:26:37] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
   "bookInfo": {
@@ -492,7 +258,7 @@
   }
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-07 09:26:37] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
@@ -502,7 +268,7 @@
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-07 09:26:38] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161329",
@@ -511,7 +277,7 @@
   "itemCount": 1
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-07 09:26:38] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AMarion+Sorg%2Binauthor%3AMarion%2520Sorg&key=[REDACTED]&maxResults=4",
@@ -522,7 +288,7 @@
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-07 09:26:38] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
@@ -531,7 +297,7 @@
   "itemCount": 0
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-07 09:26:38] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+in+Norwegen+-+Lilly%2C+Nikolas+und+das+Geheimnis+der+Schmuckschatulle&key=[REDACTED]&maxResults=4",
@@ -542,7 +308,7 @@
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-07 09:26:38] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
@@ -551,7 +317,7 @@
   "itemCount": 4
 }
 
-[2025-05-07 06:25:06] REQUEST TO OpenAI API
+[2025-05-07 09:26:38] REQUEST TO OpenAI API
 {
   "operation": "generateBookSummary",
   "endpoint": "chat.completions.create",
@@ -561,15 +327,15 @@
   "bookAuthor": "Marion Sorg"
 }
 
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
+[2025-05-07 09:26:43] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
     "prompt_tokens": 212,
-    "completion_tokens": 229,
-    "total_tokens": 441,
+    "completion_tokens": 227,
+    "total_tokens": 439,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -585,16 +351,16 @@
   "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle"
 }
 
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
+[2025-05-07 09:26:43] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary:results",
-  "summaryLength": 1051,
-  "wordCount": 148,
-  "paragraphCount": 1,
+  "summaryLength": 1031,
+  "wordCount": 139,
+  "paragraphCount": 2,
   "cleanupApplied": true
 }
 
-[2025-05-07 06:25:11] REQUEST TO OpenAI API
+[2025-05-07 09:26:43] REQUEST TO OpenAI API
 {
   "operation": "extractBookGenres",
   "endpoint": "chat.completions.create",
@@ -605,15 +371,15 @@
   "hasGoogleCategories": false
 }
 
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
+[2025-05-07 09:26:44] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
-    "prompt_tokens": 355,
-    "completion_tokens": 40,
-    "total_tokens": 395,
+    "prompt_tokens": 353,
+    "completion_tokens": 37,
+    "total_tokens": 390,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -629,7 +395,7 @@
   "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle"
 }
 
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
+[2025-05-07 09:26:44] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres:results",
   "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
@@ -637,14 +403,14 @@
   "genres": {
     "0": "Abenteuer",
     "1": "Jugendliteratur",
-    "2": "Fantasy",
+    "2": "Familie",
     "3": "Mystery",
-    "4": "Kulturelle Erkundung"
+    "4": "Reise"
   },
   "parseMethod": "standard"
 }
 
-[2025-05-07 06:25:15] REQUEST TO OpenAI API
+[2025-05-07 09:26:49] REQUEST TO OpenAI API
 {
   "operation": "generateCatalogEntry",
   "endpoint": "chat.completions.create",
@@ -653,15 +419,15 @@
   "bookAuthor": "Marion Sorg"
 }
 
-[2025-05-07 06:25:17] RESPONSE FROM OpenAI API
+[2025-05-07 09:26:51] RESPONSE FROM OpenAI API
 {
   "operation": "generateCatalogEntry",
   "status": "success",
   "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "entryLength": 1346
+  "entryLength": 1326
 }
 
-[2025-05-07 06:27:35] REQUEST TO Google Books API
+[2025-05-07 09:33:22] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
   "bookInfo": {
@@ -672,7 +438,7 @@
   }
 }
 
-[2025-05-07 06:27:35] REQUEST TO Google Books API
+[2025-05-07 09:33:22] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
@@ -682,7 +448,7 @@
   }
 }
 
-[2025-05-07 06:27:35] RESPONSE FROM Google Books API
+[2025-05-07 09:33:22] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161329",
@@ -691,7 +457,7 @@
   "itemCount": 1
 }
 
-[2025-05-07 06:27:35] REQUEST TO Google Books API
+[2025-05-07 09:33:22] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AMarion+Sorg%2Binauthor%3AMarion%2520Sorg&key=[REDACTED]&maxResults=4",
@@ -702,7 +468,7 @@
   }
 }
 
-[2025-05-07 06:27:36] RESPONSE FROM Google Books API
+[2025-05-07 09:33:23] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
@@ -711,7 +477,7 @@
   "itemCount": 0
 }
 
-[2025-05-07 06:27:36] REQUEST TO Google Books API
+[2025-05-07 09:33:23] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+Jugendliteratur&key=[REDACTED]&maxResults=4",
@@ -722,7 +488,7 @@
   }
 }
 
-[2025-05-07 06:27:36] RESPONSE FROM Google Books API
+[2025-05-07 09:33:23] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "Abenteuer Jugendliteratur",
@@ -731,42 +497,574 @@
   "itemCount": 4
 }
 
-[2025-05-07 06:51:20] REQUEST TO OpenAI API
+[2025-05-07 09:33:25] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
   "bookInfo": {
     "title": "",
     "author": "",
-    "isbn": "978-3-959161-35-0"
+    "isbn": "978-3-96129-473-2",
+    "isUserSubmission": true
   }
 }
 
-[2025-05-07 06:51:26] RESPONSE FROM OpenAI API
+[2025-05-07 09:33:25] REQUEST TO Google Books API
 {
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783961294732"
+  }
 }
 
-[2025-05-07 06:51:26] REQUEST TO OpenAI API
+[2025-05-07 09:33:25] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783961294732",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:33:25] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ASven+Nordqvist%2Binauthor%3ASven%2520Nordqvist&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Sven Nordqvist+inauthor:Sven%20Nordqvist",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:33:25] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Sven Nordqvist+inauthor:Sven%20Nordqvist",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:33:25] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Pettersson+und+Findus%3A+Das+gro%C3%9Fe+Bastelbuch+f%C3%BCr+kreative+Entdecker&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:33:26] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:33:26] REQUEST TO OpenAI API
 {
   "operation": "generateBookSummary",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
   "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "bookAuthor": "Sven Nordqvist"
 }
 
-[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
+[2025-05-07 09:33:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 212,
+    "completion_tokens": 233,
+    "total_tokens": 445,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker"
+}
+
+[2025-05-07 09:33:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1064,
+  "wordCount": 133,
+  "paragraphCount": 3,
+  "cleanupApplied": true
+}
+
+[2025-05-07 09:33:31] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "bookAuthor": "Sven Nordqvist",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 09:33:32] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 360,
+    "completion_tokens": 40,
+    "total_tokens": 400,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker"
+}
+
+[2025-05-07 09:33:32] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "genreCount": 5,
+  "genres": {
+    "0": "Kinderbuch",
+    "1": "Sachbuch",
+    "2": "Hobby",
+    "3": "Kunst und Handwerk",
+    "4": "Bildungsbuch"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 09:33:38] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "bookAuthor": "Sven Nordqvist"
+}
+
+[2025-05-07 09:33:40] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "entryLength": 1402
+}
+
+[2025-05-07 09:37:33] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+    "author": "Sven Nordqvist",
+    "isbn": "978-3-96129-473-2",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:37:33] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783961294732"
+  }
+}
+
+[2025-05-07 09:37:33] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783961294732",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:37:33] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ASven+Nordqvist%2Binauthor%3ASven%2520Nordqvist&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Sven Nordqvist+inauthor:Sven%20Nordqvist",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:37:33] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Sven Nordqvist+inauthor:Sven%20Nordqvist",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:37:33] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Kinderbuch+Sachbuch&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Kinderbuch Sachbuch",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:37:34] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Kinderbuch Sachbuch",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:37:37] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-98702-122-0",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:37:37] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783987021220"
+  }
+}
+
+[2025-05-07 09:37:37] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783987021220",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:37:37] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AChristoph+Thomas+Link%2Binauthor%3AChristoph%2520Thomas%2520Link&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Christoph Thomas Link+inauthor:Christoph%20Thomas%20Link",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:37:37] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Christoph Thomas Link+inauthor:Christoph%20Thomas%20Link",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:37:37] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Das+neue+Universum&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Das neue Universum",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:37:38] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Das neue Universum",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:37:38] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Das neue Universum",
+  "bookAuthor": "Christoph Thomas Link"
+}
+
+[2025-05-07 09:37:43] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
     "prompt_tokens": 198,
-    "completion_tokens": 223,
+    "completion_tokens": 218,
+    "total_tokens": 416,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Das neue Universum"
+}
+
+[2025-05-07 09:37:43] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1031,
+  "wordCount": 140,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 09:37:43] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Das neue Universum",
+  "bookAuthor": "Christoph Thomas Link",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 09:37:45] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 331,
+    "completion_tokens": 43,
+    "total_tokens": 374,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Das neue Universum"
+}
+
+[2025-05-07 09:37:45] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Das neue Universum",
+  "genreCount": 5,
+  "genres": {
+    "0": "Science-Fiction",
+    "1": "Zukunftsroman",
+    "2": "Technothriller",
+    "3": "Abenteuer",
+    "4": "Philosophische Literatur"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 09:37:57] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Das neue Universum",
+  "bookAuthor": "Christoph Thomas Link"
+}
+
+[2025-05-07 09:38:00] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Das neue Universum",
+  "entryLength": 1278
+}
+
+[2025-05-07 09:40:13] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "Das neue Universum",
+    "author": "Christoph Thomas Link",
+    "isbn": "978-3-98702-122-0",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:40:13] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783987021220"
+  }
+}
+
+[2025-05-07 09:40:13] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783987021220",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:40:13] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AChristoph+Thomas+Link%2Binauthor%3AChristoph%2520Thomas%2520Link&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Christoph Thomas Link+inauthor:Christoph%20Thomas%20Link",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:40:13] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Christoph Thomas Link+inauthor:Christoph%20Thomas%20Link",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:40:13] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Science-Fiction+Zukunftsroman&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Science-Fiction Zukunftsroman",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:40:14] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Science-Fiction Zukunftsroman",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:40:28] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95416-448-6",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:40:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783954164486&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783954164486"
+  }
+}
+
+[2025-05-07 09:40:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783954164486",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:40:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=P.M.+Schneller+schlau+GESCHICHTE&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "P.M. Schneller schlau GESCHICHTE",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:40:29] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "P.M. Schneller schlau GESCHICHTE",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:40:29] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": ""
+}
+
+[2025-05-07 09:40:36] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 205,
+    "completion_tokens": 216,
     "total_tokens": 421,
     "prompt_tokens_details": {
       "cached_tokens": 0,
@@ -780,30 +1078,30 @@
     }
   },
   "finishReason": "stop",
-  "bookTitle": "Unknown"
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE"
 }
 
-[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
+[2025-05-07 09:40:36] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary:results",
-  "summaryLength": 1056,
-  "wordCount": 140,
+  "summaryLength": 1043,
+  "wordCount": 138,
   "paragraphCount": 1,
   "cleanupApplied": true
 }
 
-[2025-05-07 06:51:31] REQUEST TO OpenAI API
+[2025-05-07 09:40:36] REQUEST TO OpenAI API
 {
   "operation": "extractBookGenres",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
   "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": "",
   "hasGoogleCategories": false
 }
 
-[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
+[2025-05-07 09:40:37] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres",
   "status": "success",
@@ -824,96 +1122,586 @@
     }
   },
   "finishReason": "stop",
-  "bookTitle": "Unknown"
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE"
 }
 
-[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
+[2025-05-07 09:40:37] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres:results",
-  "bookTitle": "Unknown",
-  "genreCount": 5,
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "genreCount": 3,
   "genres": {
-    "0": "Science-Fiction",
-    "1": "Dystopie",
-    "2": "Spannung",
-    "3": "Abenteuer",
-    "4": "Liebesroman"
+    "0": "Geschichte",
+    "1": "Sachbuch",
+    "2": "Bildung"
   },
   "parseMethod": "standard"
 }
 
-[2025-05-07 06:51:37] REQUEST TO OpenAI API
+[2025-05-07 09:40:42] REQUEST TO OpenAI API
 {
   "operation": "generateCatalogEntry",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": ""
 }
 
-[2025-05-07 06:51:39] RESPONSE FROM OpenAI API
+[2025-05-07 09:40:44] RESPONSE FROM OpenAI API
 {
   "operation": "generateCatalogEntry",
   "status": "success",
-  "bookTitle": "Unknown",
-  "entryLength": 1286
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "entryLength": 1300
 }
 
-[2025-05-07 06:52:24] REQUEST TO OpenAI API
+[2025-05-07 09:41:25] REQUEST TO Google Books API
 {
   "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Unknown",
-    "author": "Unknown",
-    "isbn": "978-3-959161-35-0"
-  }
-}
-
-[2025-05-07 06:52:28] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:33] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
   "bookInfo": {
     "title": "",
     "author": "",
-    "isbn": " 978-3-959161-32-9 "
+    "isbn": "978-3-95416-448-6",
+    "isUserSubmission": true
   }
 }
 
-[2025-05-07 06:52:39] RESPONSE FROM OpenAI API
+[2025-05-07 09:41:25] REQUEST TO Google Books API
 {
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783954164486&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783954164486"
+  }
 }
 
-[2025-05-07 06:52:39] REQUEST TO OpenAI API
+[2025-05-07 09:41:25] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783954164486",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:41:25] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=P.M.+Schneller+schlau+GESCHICHTE&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "P.M. Schneller schlau GESCHICHTE",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:41:26] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "P.M. Schneller schlau GESCHICHTE",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:41:26] REQUEST TO OpenAI API
 {
   "operation": "generateBookSummary",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
   "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": ""
 }
 
-[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
+[2025-05-07 09:41:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 205,
+    "completion_tokens": 229,
+    "total_tokens": 434,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE"
+}
+
+[2025-05-07 09:41:31] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1116,
+  "wordCount": 145,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 09:41:31] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": "",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 09:41:37] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 349,
+    "completion_tokens": 25,
+    "total_tokens": 374,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE"
+}
+
+[2025-05-07 09:41:37] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "genreCount": 3,
+  "genres": {
+    "0": "Geschichte",
+    "1": "Sachbuch",
+    "2": "Bildung"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 09:41:43] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "bookAuthor": ""
+}
+
+[2025-05-07 09:41:45] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE",
+  "entryLength": 1375
+}
+
+[2025-05-07 09:47:22] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "P.M. Schneller schlau GESCHICHTE",
+    "author": "",
+    "isbn": "978-3-95416-448-6",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:47:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783954164486&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783954164486"
+  }
+}
+
+[2025-05-07 09:47:22] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783954164486",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:47:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Geschichte+Sachbuch&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Geschichte Sachbuch",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:47:23] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Geschichte Sachbuch",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:47:31] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-406-83030-3",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:47:31] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783406830303&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783406830303"
+  }
+}
+
+[2025-05-07 09:47:31] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783406830303",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:47:31] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AStephan+Lehnstaedt%2Binauthor%3AStephan%2520Lehnstaedt&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Stephan Lehnstaedt+inauthor:Stephan%20Lehnstaedt",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:47:31] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Stephan Lehnstaedt+inauthor:Stephan%20Lehnstaedt",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:47:31] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Der+vergessene+Widerstand&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Der vergessene Widerstand",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:47:32] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Der vergessene Widerstand",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:47:32] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der vergessene Widerstand",
+  "bookAuthor": "Stephan Lehnstaedt"
+}
+
+[2025-05-07 09:47:37] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 202,
+    "completion_tokens": 252,
+    "total_tokens": 454,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der vergessene Widerstand"
+}
+
+[2025-05-07 09:47:37] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1115,
+  "wordCount": 146,
+  "paragraphCount": 2,
+  "cleanupApplied": true
+}
+
+[2025-05-07 09:47:37] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Der vergessene Widerstand",
+  "bookAuthor": "Stephan Lehnstaedt",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 09:47:38] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 369,
+    "completion_tokens": 39,
+    "total_tokens": 408,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Der vergessene Widerstand"
+}
+
+[2025-05-07 09:47:38] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Der vergessene Widerstand",
+  "genreCount": 5,
+  "genres": {
+    "0": "Historische Fiktion",
+    "1": "Drama",
+    "2": "Politik",
+    "3": "Biografie",
+    "4": "Kriegsroman"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 09:47:45] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Der vergessene Widerstand",
+  "bookAuthor": "Stephan Lehnstaedt"
+}
+
+[2025-05-07 09:47:48] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Der vergessene Widerstand",
+  "entryLength": 1366
+}
+
+[2025-05-07 09:50:10] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "Der vergessene Widerstand",
+    "author": "Stephan Lehnstaedt",
+    "isbn": "978-3-406-83030-3",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:50:10] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783406830303&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783406830303"
+  }
+}
+
+[2025-05-07 09:50:11] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783406830303",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:50:11] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AStephan+Lehnstaedt%2Binauthor%3AStephan%2520Lehnstaedt&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Stephan Lehnstaedt+inauthor:Stephan%20Lehnstaedt",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:50:11] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Stephan Lehnstaedt+inauthor:Stephan%20Lehnstaedt",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 09:50:11] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Historische+Fiktion+Drama&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Historische Fiktion Drama",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:50:11] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Historische Fiktion Drama",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:50:21] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-10-397704-2",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:50:21] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042"
+  }
+}
+
+[2025-05-07 09:50:21] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783103977042",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:50:21] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:50:22] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:50:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Die+Welt+nach+Gaza&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Die Welt nach Gaza",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:50:22] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Die Welt nach Gaza",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 09:50:22] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Die Welt nach Gaza",
+  "bookAuthor": "Pankaj Mishra"
+}
+
+[2025-05-07 09:50:28] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
     "prompt_tokens": 200,
-    "completion_tokens": 238,
-    "total_tokens": 438,
+    "completion_tokens": 235,
+    "total_tokens": 435,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -926,312 +1714,38 @@
     }
   },
   "finishReason": "stop",
-  "bookTitle": "Unknown"
+  "bookTitle": "Die Welt nach Gaza"
 }
 
-[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
+[2025-05-07 09:50:28] RESPONSE FROM OpenAI API
 {
   "operation": "generateBookSummary:results",
-  "summaryLength": 1093,
-  "wordCount": 145,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 06:52:44] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 353,
-    "completion_tokens": 27,
-    "total_tokens": 380,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Unknown",
-  "genreCount": 5,
-  "genres": {
-    "0": "Roman",
-    "1": "Drama",
-    "2": "Mystery",
-    "3": "Historischer Roman",
-    "4": "Psychologische Fiktion"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 06:52:49] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
-}
-
-[2025-05-07 06:52:51] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Unknown",
-  "entryLength": 1329
-}
-
-[2025-05-07 06:53:26] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Unknown",
-    "author": "Unknown",
-    "isbn": " 978-3-959161-32-9 "
-  }
-}
-
-[2025-05-07 06:53:31] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 08:24:04] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-96251-218-7"
-  }
-}
-
-[2025-05-07 08:24:05] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:05] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 187,
-    "completion_tokens": 218,
-    "total_tokens": 405,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1040,
-  "wordCount": 138,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:24:09] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": "",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 320,
-    "completion_tokens": 40,
-    "total_tokens": 360,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "",
-  "genreCount": 5,
-  "genres": {
-    "0": "Dystopie",
-    "1": "Science-Fiction",
-    "2": "Thriller",
-    "3": "Abenteuer",
-    "4": "Politische Fiktion"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:24:18] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:20] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "",
-  "entryLength": 1283
-}
-
-[2025-05-07 08:24:38] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Life of Pi",
-    "author": "",
-    "isbn": ""
-  }
-}
-
-[2025-05-07 08:24:38] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": "Life of Pi"
-}
-
-[2025-05-07 08:24:38] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 189,
-    "completion_tokens": 214,
-    "total_tokens": 403,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Life of Pi"
-}
-
-[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 999,
-  "wordCount": 145,
+  "summaryLength": 1166,
+  "wordCount": 141,
   "paragraphCount": 1,
   "cleanupApplied": true
 }
 
-[2025-05-07 08:24:43] REQUEST TO OpenAI API
+[2025-05-07 09:50:28] REQUEST TO OpenAI API
 {
   "operation": "extractBookGenres",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
   "language": "de",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": "",
+  "bookTitle": "Die Welt nach Gaza",
+  "bookAuthor": "Pankaj Mishra",
   "hasGoogleCategories": false
 }
 
-[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
+[2025-05-07 09:50:29] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
-    "prompt_tokens": 318,
-    "completion_tokens": 25,
-    "total_tokens": 343,
+    "prompt_tokens": 350,
+    "completion_tokens": 43,
+    "total_tokens": 393,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -1244,420 +1758,287 @@
     }
   },
   "finishReason": "stop",
-  "bookTitle": "Life of Pi"
+  "bookTitle": "Die Welt nach Gaza"
 }
 
-[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
+[2025-05-07 09:50:29] RESPONSE FROM OpenAI API
 {
   "operation": "extractBookGenres:results",
-  "bookTitle": "Life of Pi",
+  "bookTitle": "Die Welt nach Gaza",
+  "genreCount": 5,
+  "genres": {
+    "0": "Fiktion",
+    "1": "Politischer Roman",
+    "2": "Gesellschaftsroman",
+    "3": "Kriegsroman",
+    "4": "Psychologischer Roman"
+  },
+  "parseMethod": "standard"
+}
+
+[2025-05-07 09:50:38] REQUEST TO OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "bookTitle": "Die Welt nach Gaza",
+  "bookAuthor": "Pankaj Mishra"
+}
+
+[2025-05-07 09:50:40] RESPONSE FROM OpenAI API
+{
+  "operation": "generateCatalogEntry",
+  "status": "success",
+  "bookTitle": "Die Welt nach Gaza",
+  "entryLength": 1405
+}
+
+[2025-05-07 09:53:22] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "Die Welt nach Gaza",
+    "author": "Pankaj Mishra",
+    "isbn": "978-3-10-397704-2",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 09:53:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042"
+  }
+}
+
+[2025-05-07 09:53:22] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783103977042",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:53:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:53:22] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 09:53:22] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Fiktion+Politischer+Roman&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Fiktion Politischer Roman",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 09:53:23] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Fiktion Politischer Roman",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 12:04:28] REQUEST TO Google Books API
+{
+  "operation": "enrichBookMetadata",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0",
+    "isUserSubmission": true
+  }
+}
+
+[2025-05-07 12:04:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350"
+  }
+}
+
+[2025-05-07 12:04:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-07 12:04:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 12:04:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
+  "status": 200,
+  "totalItems": 0,
+  "itemCount": 0
+}
+
+[2025-05-07 12:04:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+auf+R%C3%B6m%C3%B6+-+Lilly%2C+Nikolas+und+der+Bunkerschatz&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "params": {
+    "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+    "maxResults": 4
+  }
+}
+
+[2025-05-07 12:04:29] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "status": 200,
+  "totalItems": 1000000,
+  "itemCount": 4
+}
+
+[2025-05-07 12:04:29] REQUEST TO OpenAI API
+{
+  "operation": "generateBookSummary",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann"
+}
+
+[2025-05-07 12:04:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 211,
+    "completion_tokens": 218,
+    "total_tokens": 429,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
+}
+
+[2025-05-07 12:04:34] RESPONSE FROM OpenAI API
+{
+  "operation": "generateBookSummary:results",
+  "summaryLength": 1038,
+  "wordCount": 143,
+  "paragraphCount": 1,
+  "cleanupApplied": true
+}
+
+[2025-05-07 12:04:34] REQUEST TO OpenAI API
+{
+  "operation": "extractBookGenres",
+  "endpoint": "chat.completions.create",
+  "model": "gpt-4o",
+  "language": "de",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann",
+  "hasGoogleCategories": false
+}
+
+[2025-05-07 12:04:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 343,
+    "completion_tokens": 25,
+    "total_tokens": 368,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "finishReason": "stop",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
+}
+
+[2025-05-07 12:04:35] RESPONSE FROM OpenAI API
+{
+  "operation": "extractBookGenres:results",
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
   "genreCount": 5,
   "genres": {
     "0": "Abenteuer",
-    "1": "Drama",
-    "2": "Philosophie",
-    "3": "Überleben",
-    "4": "Spirituell"
+    "1": "Kinderbuch",
+    "2": "Historischer Roman",
+    "3": "Spannung",
+    "4": "Bildungsliteratur"
   },
   "parseMethod": "standard"
 }
 
-[2025-05-07 08:24:51] REQUEST TO OpenAI API
+[2025-05-07 12:04:40] REQUEST TO OpenAI API
 {
   "operation": "generateCatalogEntry",
   "endpoint": "chat.completions.create",
   "model": "gpt-4o",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": ""
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "bookAuthor": "Birgit Hedemann"
 }
 
-[2025-05-07 08:24:54] RESPONSE FROM OpenAI API
+[2025-05-07 12:04:43] RESPONSE FROM OpenAI API
 {
   "operation": "generateCatalogEntry",
   "status": "success",
-  "bookTitle": "Life of Pi",
-  "entryLength": 1224
-}
-
-[2025-05-07 08:25:28] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "9783406830303"
-  }
-}
-
-[2025-05-07 08:25:28] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:28] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 187,
-    "completion_tokens": 240,
-    "total_tokens": 427,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1083,
-  "wordCount": 143,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:25:34] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": "",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 37,
-    "total_tokens": 379,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "",
-  "genreCount": 5,
-  "genres": {
-    "0": "Krimi",
-    "1": "Drama",
-    "2": "Thriller",
-    "3": "Psychologischer Roman",
-    "4": "Mystery"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:25:41] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:25:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "",
-  "entryLength": 1330
-}
-
-[2025-05-07 08:31:24] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "9783406830303"
-  }
-}
-
-[2025-05-07 08:31:28] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:28] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis"
-}
-
-[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 207,
-    "completion_tokens": 219,
-    "total_tokens": 426,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 995,
-  "wordCount": 150,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:31:33] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 341,
-    "completion_tokens": 39,
-    "total_tokens": 380,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "genreCount": 5,
-  "genres": {
-    "0": "Krimi",
-    "1": "Abenteuer",
-    "2": "Jugendliteratur",
-    "3": "Detektivgeschichte",
-    "4": "Spannung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:31:43] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis"
-}
-
-[2025-05-07 08:31:44] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "entryLength": 1232
-}
-
-[2025-05-07 08:32:59] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-96251-218-7"
-  }
-}
-
-[2025-05-07 08:33:02] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:02] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg"
-}
-
-[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 217,
-    "completion_tokens": 210,
-    "total_tokens": 427,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1028,
-  "wordCount": 130,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:33:07] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 34,
-    "total_tokens": 376,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "genreCount": 4,
-  "genres": {
-    "0": "Sachbuch",
-    "1": "Psychologie",
-    "2": "Wirtschaft",
-    "3": "Persönlichkeitsentwicklung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:33:13] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg"
-}
-
-[2025-05-07 08:33:15] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "entryLength": 1366
+  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "entryLength": 1319
 }
