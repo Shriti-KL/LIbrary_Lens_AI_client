@@ -876,11 +876,6 @@ Important details for bibliographic estimation:
     if (!bookInfo.edition) missingFields.push('edition');
     if (!bookInfo.location) missingFields.push('location');
     if (!bookInfo.publisher) missingFields.push('publisher');
-    if (!bookInfo.subtitle) missingFields.push('subtitle');
-    if (!bookInfo.translator) missingFields.push('translator');
-    if (!bookInfo.details) missingFields.push('details');
-    if (!bookInfo.series) missingFields.push('series');
-    if (!bookInfo.price) missingFields.push('price');
 
     // Skip if we have all the fields
     if (missingFields.length === 0) {
@@ -912,11 +907,6 @@ Return a JSON object with the following fields that are UNIQUELY tailored to THI
 - edition: Likely edition information (e.g., "1. Auflage", "Zweite Ausgabe", etc.)
 - location: Publisher's location/city
 - publisher: Publisher name (if missing)
-- subtitle: Book subtitle if available 
-- translator: Translator name(s) if available
-- details: Other physical details (e.g., "Illustrationen, farbig")
-- series: Series information if present
-- price: Price information in EUR format (e.g., "EUR 19,99")
 
 CRITICAL GUIDELINES:
 1. EVERY BOOK MUST HAVE DISTINCT BIBLIOGRAPHIC VALUES - no two books should have identical page counts or dimensions
@@ -969,11 +959,6 @@ ${context}`
       console.log(`- Edition: ${extractedData.edition || 'null'}`);
       console.log(`- Location: ${extractedData.location || 'null'}`);
       console.log(`- Publisher: ${extractedData.publisher || 'null'}`);
-      console.log(`- Subtitle: ${extractedData.subtitle || 'null'}`);
-      console.log(`- Translator: ${extractedData.translator || 'null'}`);
-      console.log(`- Details: ${extractedData.details || 'null'}`);
-      console.log(`- Series: ${extractedData.series || 'null'}`);
-      console.log(`- Price: ${extractedData.price || 'null'}`);
       
     } catch (error: unknown) {
       console.error("Error parsing bibliographic data JSON:", error);
@@ -1002,11 +987,6 @@ ${context}`
       edition: bookInfo.edition || extractedData.edition || null,
       location: bookInfo.location || extractedData.location || null,
       publisher: bookInfo.publisher || extractedData.publisher || null,
-      subtitle: bookInfo.subtitle || extractedData.subtitle || null,
-      translator: bookInfo.translator || extractedData.translator || null,
-      details: bookInfo.details || extractedData.details || null,
-      series: bookInfo.series || extractedData.series || null,
-      price: bookInfo.price || extractedData.price || null,
     };
   } catch (error: any) {
     console.error("Error extracting missing bibliographic data:", error);
@@ -1064,24 +1044,15 @@ It's critically important that you:
 
 Return results as a JSON array of book objects with these fields:
 - title: Full book title (REQUIRED, must be real book title)
-- subtitle: Subtitle if available
 - authors: Array of author names (REQUIRED, must be real author names)
-- translator: Translator name(s) if available
-- description: Brief description of the book (approximately 150-250 words)
+- description: Brief description of the book
 - isbn: ISBN-13 if available (otherwise null)
 - publishedDate: Publication date (YYYY or YYYY-MM-DD format)
 - pageCount: Approximate page count
-- dimensions: Size in cm (format like "14.0 x 21.6 cm")
-- details: Other physical details (e.g., "Illustrationen, farbig")
-- edition: Edition information (like "1. Auflage")
-- binding: Book binding type (Hardcover, Taschenbuch, etc.)
-- series: Series information if present
-- price: Price information if available
 - categories: Array of genres/categories
 - imageLinks: Object with thumbnail and smallThumbnail URLs (or null)
 - language: Two-letter language code
 - publisher: Publisher name
-- location: Publication place/city
 
 Return up to 4 books, ranked by relevance to the query.
 If no books can be found matching the query after thorough research, return an empty array.`
@@ -1161,37 +1132,34 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
           role: "system",
           content: `You are a book metadata service with access to comprehensive bibliographic data.
 Your task is to provide detailed and accurate information for books based on ISBN numbers.
-You MUST research real books and provide real metadata. NEVER return "Unknown" for title or author.
+You MUST research real books and provide real metadata - do not return "Unknown" for title or author.
 All responses should be formatted consistently in German.
-This is extremely important: If you don't know the exact details for the ISBN, you MUST research using the ISBN to find the real book information.
-Only include information that is confirmed from reliable sources. If certain information is missing, use [placeholder] instead. Do not guess or hallucinate data.`
+This is extremely important: If you don't know the exact details for the ISBN, you MUST research using the ISBN to find the real book information.`
         },
         {
           role: "user",
-          content: `Given the ISBN: ${cleanedISBN}, return detailed book metadata including:
+          content: `Look up detailed information for book with ISBN: ${cleanedISBN}
 
+It's critically important that you:
+1. Find the real book information using this ISBN
+2. Provide the ACTUAL title and author - NEVER return "Unknown" for these fields
+3. Research the ISBN thoroughly to find the correct data
+
+Return a single JSON object with these fields:
 - title: Full, correctly capitalized book title in its original language (REQUIRED, must be real book title)
-- subtitle: Subtitle if available, otherwise [placeholder]
 - authors: Array with full author name(s) (REQUIRED, must be real author names)
-- translator: Translator name(s) if available, otherwise [placeholder]
-- edition: Edition information (like "1. Auflage")
-- location: Publication place/city
-- publisher: Publisher name
-- publishedYear: Publication year as number
-- pageCount: Total number of pages
-- details: Other physical details (e.g., "Illustrationen, farbig")
-- dimensions: Size in cm (format like "14.0 x 21.6 cm")
-- series: Series information if present, otherwise [placeholder]
-- binding: Book binding type (Hardcover, Taschenbuch, etc.)
-- price: Price information if available, otherwise [placeholder]
-- isbn13: The ISBN-13 (normalized)
+- publisher: Publisher name (REQUIRED)
+- publishedDate: Publication date (YYYY or YYYY-MM-DD format)
 - description: Book description or summary (150-250 words)
+- pageCount: Page count
 - categories: Array of 3-5 genre categories
+- imageLinks: Object with thumbnail URL (use null if unavailable)
 - language: Two-letter language code
+- isbn13: The ISBN-13 (normalized)
+- dimensions: Book dimensions (format like "14.0 x 21.6 cm")
+- binding: Book binding type (Hardcover, Taschenbuch, etc.)
 
-Only include information that is confirmed from sources. If something is missing, use [placeholder]. Do not guess or hallucinate. Do not hardcode any values.
-
-If after extensive research you still cannot find this book, respond with a JSON object with a "notFound" field set to true.`
+If after extensive research you still cannot find data for this ISBN, respond with a JSON object with a "notFound" field set to true.`
         }
       ],
       response_format: { type: "json_object" },
@@ -1222,16 +1190,14 @@ If after extensive research you still cannot find this book, respond with a JSON
         bookTitle: bookData.title
       });
       
-      // Return in a standardized format with all the new fields
+      // Return in the same format as Google Books API would
       return {
         id: `ISBN:${isbn}`,
         volumeInfo: {
           title: bookData.title,
-          subtitle: bookData.subtitle || "",
           authors: bookData.authors,
-          translator: bookData.translator || "",
           publisher: bookData.publisher,
-          publishedDate: bookData.publishedYear?.toString() || "",
+          publishedDate: bookData.publishedDate,
           description: bookData.description,
           pageCount: bookData.pageCount,
           categories: bookData.categories,
@@ -1244,12 +1210,7 @@ If after extensive research you still cannot find this book, respond with a JSON
             }
           ],
           dimensions: bookData.dimensions,
-          binding: bookData.binding,
-          edition: bookData.edition,
-          location: bookData.location,
-          details: bookData.details,
-          series: bookData.series,
-          price: bookData.price
+          binding: bookData.binding
         }
       };
     } catch (error: unknown) {
@@ -1323,23 +1284,13 @@ It's critically important that you:
 
 Return results as a JSON object with an "items" array containing book objects with these fields:
 - title: Full book title (REQUIRED, must be real book title)
-- subtitle: Subtitle if available
 - authors: Array of author names (REQUIRED, must be real author names)
-- translator: Translator name(s) if available
-- description: Brief description of why this book is similar (approximately 150-250 words)
+- description: Brief description of why this book is similar
 - publisher: Publisher name
 - publishedDate: Publication year
-- pageCount: Approximate page count
-- dimensions: Size in cm (format like "14.0 x 21.6 cm")
-- details: Other physical details (e.g., "Illustrationen, farbig")
-- edition: Edition information (like "1. Auflage") 
-- binding: Book binding type (Hardcover, Taschenbuch, etc.)
-- series: Series information if present
-- price: Price information if available
 - categories: Array of genres/categories
 - language: Two-letter language code of the book (same as reference book)
 - isbn: ISBN-13 if available (otherwise null)
-- location: Publication place/city
 
 Make sure each recommendation is a real book that's similar in theme, style, or content to the reference book.
 If no similar books can be found after thorough research, return an empty array of items.`
@@ -1441,27 +1392,20 @@ It's critically important that you:
 3. Research thoroughly to find correct and complete data
 
 Return a JSON object with these fields:
-- title: Full, correctly capitalized book title in its original language (REQUIRED, must be real book title)
-- subtitle: Subtitle if available, otherwise [placeholder]
+- title: Full, correctly capitalized title (maintain original language) (REQUIRED, must be real book title)
 - author: Full author name with correct capitalization (REQUIRED, must be real author name)
-- translator: Translator name(s) if available, otherwise [placeholder]
-- edition: Edition information (like "1. Auflage")
-- location: Publication place/city
+- publishedYear: Publication year (integer)
 - publisher: Publisher name
-- publishedYear: Publication year as number
-- pageCount: Total number of pages
-- details: Other physical details (e.g., "Illustrationen, farbig")
-- dimensions: Size in cm (format like "14.0 x 21.6 cm")
-- series: Series information if present, otherwise [placeholder]
-- binding: Book binding type (Hardcover, Taschenbuch, etc.)
-- price: Price information if available, otherwise [placeholder]
-- isbn: ONLY include the ISBN if provided in the query, otherwise null
-- description: Book description or summary (150-250 words)
+- pageCount: Page count
+- description: Brief description of the book's content (150-250 words)
 - categories: Array of 3-5 genre categories
 - language: Primary language of the book (two-letter code: en, de, fr, etc.)
 - coverImageUrl: ONLY include if already provided, otherwise null
-
-Only include information that is confirmed from sources. If something is missing, use [placeholder]. Do not guess or hallucinate. Do not hardcode any values.
+- isbn: ONLY include the ISBN if provided in the query, otherwise null
+- binding: Book binding type (Hardcover, Paperback, etc.)
+- dimensions: Physical dimensions (format like "14.0 x 21.6 cm")
+- edition: Edition information (like "1. Auflage")
+- location: Location/city of publisher
 
 ${context}`
         }
@@ -1495,9 +1439,7 @@ ${context}`
       return {
         ...bookInfo,
         title: bookInfo.title || enrichedData.title,
-        subtitle: bookInfo.subtitle || enrichedData.subtitle,
         author: bookInfo.author || enrichedData.author,
-        translator: bookInfo.translator || enrichedData.translator,
         publishedYear: bookInfo.publishedYear || enrichedData.publishedYear,
         publisher: bookInfo.publisher || enrichedData.publisher,
         pageCount: bookInfo.pageCount || enrichedData.pageCount,
@@ -1509,10 +1451,7 @@ ${context}`
         binding: bookInfo.binding || enrichedData.binding,
         dimensions: bookInfo.dimensions || enrichedData.dimensions,
         edition: bookInfo.edition || enrichedData.edition,
-        location: bookInfo.location || enrichedData.location,
-        details: bookInfo.details || enrichedData.details,
-        series: bookInfo.series || enrichedData.series,
-        price: bookInfo.price || enrichedData.price
+        location: bookInfo.location || enrichedData.location
       };
     } catch (error: unknown) {
       console.error("Error parsing book metadata JSON from OpenAI:", error);
@@ -1553,9 +1492,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     // Start fresh with a new book object, ignoring any existing analysis fields
     let bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
-      subtitle: analysisRequest.subtitle || null,
       author: analysisRequest.author || "",
-      translator: analysisRequest.translator || null,
       isbn: analysisRequest.isbn || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
       publisher: analysisRequest.publisher || null,
@@ -1565,15 +1502,6 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       
       // Include the language parameter
       language: analysisRequest.language || "de",
-      
-      // Physical book properties
-      dimensions: analysisRequest.dimensions || null,
-      details: analysisRequest.details || null,
-      edition: analysisRequest.edition || null,
-      binding: analysisRequest.binding || null,
-      price: analysisRequest.price || null,
-      series: analysisRequest.series || null,
-      location: analysisRequest.location || null,
       
       // Reset all analysis fields
       summary: null,
@@ -1705,10 +1633,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     }
     
     // Check if we have all required bibliographic data, if not use AI to fill missing fields
-    const fieldsToCheck = [
-      'pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher',
-      'subtitle', 'translator', 'details', 'series', 'price'
-    ] as const;
+    const fieldsToCheck = ['pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher'] as const;
     const missingFields = fieldsToCheck.filter(field => 
       !bookInfo[field as keyof typeof bookInfo]);
     

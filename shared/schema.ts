@@ -21,9 +21,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const books = pgTable("books", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  subtitle: text("subtitle"),             // Book subtitle
   author: text("author").notNull(),
-  translator: text("translator"),         // Translator name(s)
   isbn: text("isbn"),
   coverImageUrl: text("cover_image_url"),
   publisher: text("publisher"),
@@ -40,10 +38,9 @@ export const books = pgTable("books", {
   
   // Physical book properties
   dimensions: text("dimensions"),         // Physical dimensions (e.g., "21 x 15 cm")
-  details: text("details"),               // Other physical details (e.g., "Illustrationen, farbig")
   edition: text("edition"),               // Edition information (e.g., "First Edition")
   language: text("language").default("de"), // Language of the content (de, en, fr, es, zh)
-  location: text("location"),             // Publication place/city
+  location: text("location"),             // Library location (e.g., "Main Library, Section B")
   binding: text("binding"),               // Binding type (e.g., "Hardcover", "Paperback")
   price: text("price"),                   // Price information
   series: text("series"),                 // Series information
@@ -69,9 +66,7 @@ export const insertBookSchema = createInsertSchema(books)
 // For book upload/analysis request
 export const bookAnalysisSchema = z.object({
   title: z.string().optional(),
-  subtitle: z.string().nullable().optional(),
   author: z.string().optional(),
-  translator: z.string().nullable().optional(),
   isbn: z.string().nullable().optional(),
   coverImage: z.string().optional(), // base64 encoded image for URL
   coverImageData: z.string().optional(), // base64 encoded image data with mimetype prefix
@@ -89,16 +84,6 @@ export const bookAnalysisSchema = z.object({
   userId: z.number().nullable().optional(),
   language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional(), // The language to generate content in (e.g. "en", "de", "es", etc.)
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
-  
-  // Physical book properties
-  dimensions: z.string().nullable().optional(),
-  details: z.string().nullable().optional(),
-  edition: z.string().nullable().optional(),
-  binding: z.string().nullable().optional(),
-  price: z.string().nullable().optional(),
-  series: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  contributors: z.array(z.any()).nullable().optional(),
   
   // Library catalog specific fields
   catalogNumber: z.string().nullable().optional(),
