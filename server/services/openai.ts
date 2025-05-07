@@ -1321,7 +1321,9 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book information in JSON format.`,
+          content: `You are a helpful assistant that provides book information in JSON format.
+          
+IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
         },
         {
           role: "user",
@@ -1723,7 +1725,9 @@ ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...`
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that provides book information in JSON format.`,
+          content: `You are a helpful assistant that provides book information in JSON format.
+          
+IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
         },
         {
           role: "user",
@@ -1772,6 +1776,29 @@ Return the response as a JSON object with the following fields:
         "Raw OpenAI enrichment response:",
         JSON.stringify(enrichedData).substring(0, 500) + "...",
       );
+      
+      // Check if the book was not found
+      if (enrichedData.bookFound === false) {
+        console.log(`[${enrichmentId}] OpenAI indicates book not found for ISBN: ${bookInfo.isbn}`);
+        return bookInfo; // Return original info if book not found
+      }
+      
+      // Verify if the returned ISBN matches the requested ISBN (if an ISBN was provided)
+      if (bookInfo.isbn) {
+        const requestedIsbn = bookInfo.isbn.replace(/[^0-9X]/gi, '');
+        const returnedIsbn = enrichedData.isbn?.replace(/[^0-9X]/gi, '');
+        
+        if (returnedIsbn && requestedIsbn !== returnedIsbn) {
+          console.log(`[${enrichmentId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`);
+          console.log(`[${enrichmentId}] This suggests OpenAI may have provided information for a different book.`);
+          
+          // Add warning metadata
+          enrichedData.metadata = enrichedData.metadata || {};
+          enrichedData.metadata.isbnMismatch = true;
+          enrichedData.metadata.requestedIsbn = requestedIsbn;
+          enrichedData.metadata.returnedIsbn = returnedIsbn;
+        }
+      }
 
       // Extract fields from the response with fallbacks
       // We're flexible here since the format might vary
@@ -1834,6 +1861,11 @@ Return the response as a JSON object with the following fields:
           enrichedData.imageUrl ||
           null,
         isbn: bookInfo.isbn || enrichedData.isbn || enrichedData.isbn13 || null,
+        // Include metadata about any ISBN mismatch
+        metadata: {
+          ...(bookInfo.metadata || {}),
+          ...(enrichedData.metadata || {}),
+        },
         binding:
           bookInfo.binding ||
           enrichedData.binding ||
