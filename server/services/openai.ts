@@ -994,6 +994,449 @@ ${context}`
   }
 }
 
+// Enrich book metadata using OpenAI instead of Google Books
+// Search for books using OpenAI instead of Google Books
+export async function searchBooks(params: any): Promise<any[]> {
+  try {
+    // Log the search request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "searchBooks",
+      model: MODEL,
+      searchParams: params
+    });
+
+    // Construct a search query from the parameters
+    let searchQuery = "";
+    if (params.query) {
+      searchQuery = params.query;
+    } else {
+      if (params.title) searchQuery += `title:${params.title} `;
+      if (params.author) searchQuery += `author:${params.author} `;
+      if (params.isbn) searchQuery += `isbn:${params.isbn} `;
+    }
+
+    // Create a unique ID for this request
+    const searchId = `search_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${searchId}] Searching books with OpenAI: "${searchQuery}"`);
+
+    // Query OpenAI for book search results
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: `You are a book search engine with access to a vast database of books. 
+Provide search results based on the user's query. Return 3-5 books that best match the search criteria.
+Results should be in the language of the query when detectable (default to German).`
+        },
+        {
+          role: "user",
+          content: `Search for books matching this query: "${searchQuery}"
+Return results as a JSON array of book objects with these fields:
+- title: Full book title
+- authors: Array of author names
+- description: Brief description of the book
+- isbn: ISBN-13 if available (otherwise null)
+- publishedDate: Publication date (YYYY or YYYY-MM-DD format)
+- pageCount: Approximate page count
+- categories: Array of genres/categories
+- imageLinks: Object with thumbnail and smallThumbnail URLs (or null)
+- language: Two-letter language code
+
+Return EXACTLY 4 books maximum, ranked by relevance to the query.`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    // Extract the content
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for book search");
+      return [];
+    }
+
+    try {
+      // Parse the JSON response
+      const searchResults = JSON.parse(content);
+      
+      // Log success
+      apiLogger.logResponse("OpenAI API", {
+        operation: "searchBooks",
+        status: "success",
+        query: searchQuery,
+        resultCount: Array.isArray(searchResults.items) ? searchResults.items.length : 0
+      });
+      
+      // Return in the same format as Google Books API would
+      return {
+        items: Array.isArray(searchResults.items) ? searchResults.items : 
+              Array.isArray(searchResults) ? searchResults.map(book => ({ volumeInfo: book })) :
+              []
+      };
+    } catch (error: unknown) {
+      console.error("Error parsing book search results from OpenAI:", error);
+      apiLogger.logError("OpenAI API", {
+        operation: "searchBooks",
+        error: error instanceof Error ? error.message : String(error),
+        query: searchQuery
+      });
+      return { items: [] };
+    }
+  } catch (error: any) {
+    console.error("Error searching books with OpenAI:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "searchBooks",
+      error: error.message || String(error),
+      query: params.query || `${params.title || ''} ${params.author || ''} ${params.isbn || ''}`
+    });
+    return { items: [] };
+  }
+}
+
+// Get book by ISBN using OpenAI instead of Google Books
+export async function getBookByISBN(isbn: string): Promise<any | null> {
+  try {
+    // Log the ISBN lookup request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "getBookByISBN",
+      model: MODEL,
+      isbn
+    });
+
+    // Clean the ISBN
+    const cleanedISBN = isbn.replace(/[^0-9X]/gi, '');
+    
+    // Create a unique ID for this request
+    const lookupId = `isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${lookupId}] Looking up book with ISBN: "${cleanedISBN}"`);
+
+    // Query OpenAI for book details by ISBN
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: 0.5,
+      messages: [
+        {
+          role: "system",
+          content: `You are a book metadata service with access to comprehensive bibliographic data.
+Provide detailed information for books based on ISBN numbers.
+All responses should be formatted consistently in German.`
+        },
+        {
+          role: "user",
+          content: `Look up detailed information for book with ISBN: ${cleanedISBN}
+Return a single JSON object with these fields:
+- title: Full, correctly capitalized book title in its original language
+- authors: Array with full author name(s)
+- publisher: Publisher name
+- publishedDate: Publication date (YYYY or YYYY-MM-DD format)
+- description: Book description or summary (150-250 words)
+- pageCount: Page count
+- categories: Array of 3-5 genre categories
+- imageLinks: Object with thumbnail URL (use null if unavailable)
+- language: Two-letter language code
+- isbn13: The ISBN-13 (normalized)
+- dimensions: Book dimensions (format like "14.0 x 21.6 cm")
+- binding: Book binding type (Hardcover, Taschenbuch, etc.)
+
+If you don't have data for this ISBN, respond with a JSON object with a "notFound" field set to true.`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    // Extract the content
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for ISBN lookup");
+      return null;
+    }
+
+    try {
+      // Parse the JSON response
+      const bookData = JSON.parse(content);
+      
+      // Check if the book was not found
+      if (bookData.notFound) {
+        console.log(`No book found for ISBN: ${isbn}`);
+        return null;
+      }
+      
+      // Log success
+      apiLogger.logResponse("OpenAI API", {
+        operation: "getBookByISBN",
+        status: "success",
+        isbn,
+        bookTitle: bookData.title
+      });
+      
+      // Return in the same format as Google Books API would
+      return {
+        id: `ISBN:${isbn}`,
+        volumeInfo: {
+          title: bookData.title,
+          authors: bookData.authors,
+          publisher: bookData.publisher,
+          publishedDate: bookData.publishedDate,
+          description: bookData.description,
+          pageCount: bookData.pageCount,
+          categories: bookData.categories,
+          imageLinks: bookData.imageLinks || { thumbnail: null },
+          language: bookData.language,
+          industryIdentifiers: [
+            {
+              type: "ISBN_13",
+              identifier: bookData.isbn13 || isbn
+            }
+          ],
+          dimensions: bookData.dimensions,
+          binding: bookData.binding
+        }
+      };
+    } catch (error: unknown) {
+      console.error("Error parsing book data from OpenAI:", error);
+      apiLogger.logError("OpenAI API", {
+        operation: "getBookByISBN",
+        error: error instanceof Error ? error.message : String(error),
+        isbn
+      });
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error getting book by ISBN with OpenAI:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "getBookByISBN",
+      error: error.message || String(error),
+      isbn
+    });
+    return null;
+  }
+}
+
+// Search for similar books using OpenAI instead of Google Books
+export async function searchSimilarBooks(bookInfo: Partial<Book>): Promise<any[]> {
+  try {
+    // Log the similar books request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "searchSimilarBooks",
+      model: MODEL,
+      bookInfo: {
+        title: bookInfo.title,
+        author: bookInfo.author,
+        genres: bookInfo.genres
+      }
+    });
+
+    // Create a unique ID for this request
+    const similarId = `similar_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${similarId}] Finding similar books to: "${bookInfo.title}" by "${bookInfo.author}"`);
+
+    // Prepare context from available book information
+    const context = `Book information:
+Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : (bookInfo.genres || 'Unknown')}
+${bookInfo.summary ? `Summary: ${bookInfo.summary.substring(0, 200)}...` : ''}`;
+
+    // Query OpenAI for similar books
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: 0.8,
+      messages: [
+        {
+          role: "system",
+          content: `You are a book recommendation engine with extensive knowledge of literature.
+Recommend books that are similar to the reference book in style, theme, or content.
+All recommendations should be in the same language as the reference book (default to German).`
+        },
+        {
+          role: "user",
+          content: `Based on this book, recommend 4 similar books that readers might enjoy:
+${context}
+
+Return results as a JSON object with an "items" array containing book objects with these fields:
+- title: Full book title
+- authors: Array of author names
+- description: Brief description of why this book is similar
+- publisher: Publisher name (if known)
+- publishedDate: Publication year (if known)
+- categories: Array of genres/categories
+- language: Two-letter language code of the book (same as reference book)
+
+Make sure each recommendation is a real book that's similar in theme, style, or content to the reference book.`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    // Extract the content
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for similar books");
+      return [];
+    }
+
+    try {
+      // Parse the JSON response
+      const similarBooks = JSON.parse(content);
+      
+      // Log success
+      apiLogger.logResponse("OpenAI API", {
+        operation: "searchSimilarBooks",
+        status: "success",
+        referenceBook: bookInfo.title,
+        resultCount: Array.isArray(similarBooks.items) ? similarBooks.items.length : 0
+      });
+      
+      // Format to match Google Books API structure
+      return similarBooks.items || [];
+    } catch (error: unknown) {
+      console.error("Error parsing similar books from OpenAI:", error);
+      apiLogger.logError("OpenAI API", {
+        operation: "searchSimilarBooks",
+        error: error instanceof Error ? error.message : String(error),
+        referenceBook: bookInfo.title
+      });
+      return [];
+    }
+  } catch (error: any) {
+    console.error("Error finding similar books with OpenAI:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "searchSimilarBooks",
+      error: error.message || String(error),
+      referenceBook: bookInfo.title
+    });
+    return [];
+  }
+}
+
+export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+  try {
+    // Log the enrichment request
+    apiLogger.logRequest("OpenAI API", {
+      operation: "enrichBookMetadata",
+      model: MODEL,
+      bookInfo: {
+        title: bookInfo.title,
+        author: bookInfo.author,
+        isbn: bookInfo.isbn
+      }
+    });
+
+    // Create a unique ID for this request
+    const enrichmentId = `enrich_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${enrichmentId}] Enriching book metadata with OpenAI for "${bookInfo.title || bookInfo.isbn}" by "${bookInfo.author || 'unknown'}"`);
+
+    // Prepare context from available book information
+    const context = `Book information:
+Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+ISBN: ${bookInfo.isbn || 'Unknown'}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...` : ''}`;
+
+    // Query OpenAI to enrich the book's metadata
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: `You are a book metadata specialist with access to comprehensive bibliographic data. 
+Provide accurate, detailed metadata for books based on available information. 
+All responses should be in the same language as the book title (detect language).
+Generate realistic, detailed information when exact data isn't available.
+NEVER use made-up information for ISBN numbers - only provide complete ISBNs if they are known or in the original query.`
+        },
+        {
+          role: "user",
+          content: `Based on the following book information, generate complete book metadata. 
+Return a JSON object with these fields:
+- title: Full, correctly capitalized title (maintain original language)
+- author: Full author name with correct capitalization
+- publishedYear: Publication year (integer)
+- publisher: Publisher name
+- pageCount: Realistic page count based on book type and genre
+- description: Brief description of the book's content (150-250 words)
+- categories: Array of 3-5 genre categories
+- language: Primary language of the book (two-letter code: en, de, fr, etc.)
+- coverImageUrl: ONLY include if already provided, otherwise null
+- isbn: ONLY include the ISBN if provided in the query, otherwise null
+- binding: Book binding type (Hardcover, Paperback, etc.)
+- dimensions: Physical dimensions (format like "14.0 x 21.6 cm")
+- edition: Edition information (like "1. Auflage")
+- location: Location/city of publisher
+
+${context}`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    // Log the raw response
+    console.log(`[${enrichmentId}] OpenAI enrichment response received`);
+    
+    // Extract the content
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for book metadata enrichment");
+      return bookInfo;
+    }
+
+    try {
+      // Parse the JSON response
+      const enrichedData = JSON.parse(content);
+      
+      // Log success
+      apiLogger.logResponse("OpenAI API", {
+        operation: "enrichBookMetadata",
+        status: "success",
+        bookTitle: enrichedData.title || bookInfo.title
+      });
+      
+      // Merge the enriched data with the original book info
+      // Keep original data where available and fill in the blanks
+      return {
+        ...bookInfo,
+        title: bookInfo.title || enrichedData.title,
+        author: bookInfo.author || enrichedData.author,
+        publishedYear: bookInfo.publishedYear || enrichedData.publishedYear,
+        publisher: bookInfo.publisher || enrichedData.publisher,
+        pageCount: bookInfo.pageCount || enrichedData.pageCount,
+        summary: bookInfo.summary || enrichedData.description,
+        genres: bookInfo.genres || enrichedData.categories,
+        language: bookInfo.language || enrichedData.language,
+        coverImageUrl: bookInfo.coverImageUrl || enrichedData.coverImageUrl || null,
+        isbn: bookInfo.isbn || enrichedData.isbn || null,
+        binding: bookInfo.binding || enrichedData.binding,
+        dimensions: bookInfo.dimensions || enrichedData.dimensions,
+        edition: bookInfo.edition || enrichedData.edition,
+        location: bookInfo.location || enrichedData.location
+      };
+    } catch (error: unknown) {
+      console.error("Error parsing book metadata JSON from OpenAI:", error);
+      apiLogger.logError("OpenAI API", {
+        operation: "enrichBookMetadata",
+        error: error instanceof Error ? error.message : String(error),
+        bookTitle: bookInfo.title
+      });
+      // Return original book info if parsing fails
+      return bookInfo;
+    }
+  } catch (error: any) {
+    console.error("Error enriching book metadata with OpenAI:", error);
+    apiLogger.logError("OpenAI API", {
+      operation: "enrichBookMetadata",
+      error: error.message || String(error),
+      bookTitle: bookInfo.title
+    });
+    // Return original book info if there's an error
+    return bookInfo;
+  }
+}
+
 // Process the full book analysis
 export async function processBookAnalysis(analysisRequest: BookAnalysisRequest): Promise<Partial<Book>> {
   try {
