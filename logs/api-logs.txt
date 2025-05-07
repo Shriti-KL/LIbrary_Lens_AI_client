@@ -1037,3 +1037,48 @@
   "isbn": "9783959161350",
   "bookTitle": "Die Känguru-Chroniken: Ansichten eines vorlauten Beuteltiers"
 }
+
+[2025-05-07 07:47:44] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783959161350"
+}
+
+[2025-05-07 07:47:51] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783959161350",
+  "bookTitle": "Die Kunst des klaren Denkens: 52 Denkfehler, die Sie besser anderen überlassen"
+}
+
+[2025-05-07 07:47:56] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783959161350"
+}
+
+[2025-05-07 07:48:02] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783959161350",
+  "bookTitle": "Was ist was Band 129: Fußball"
+}
+
+[2025-05-07 07:48:07] REQUEST TO OpenAI API
+{
+  "operation": "getBookByISBN",
+  "model": "gpt-4o",
+  "isbn": "9783959161350"
+}
+
+[2025-05-07 07:48:14] RESPONSE FROM OpenAI API
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "isbn": "9783959161350",
+  "bookTitle": "Der kleine Drache Kokosnuss bei den Dinosauriern"
+}

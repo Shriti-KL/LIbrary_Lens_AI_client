@@ -16,7 +16,9 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
+import { useBookInfo } from '@/hooks/use-book-info';
+import { cleanISBNForSearch } from '@/lib/utils';
 
 // Form schema
 const formSchema = z.object({
@@ -32,10 +34,12 @@ interface AnalysisFormProps {
 
 export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps) {
   const { t } = useLanguage();
+  const { fastLookupIsbn, isFastLookingUpIsbn } = useBookInfo();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [autoExtract, setAutoExtract] = useState(true);
   const [extracting, setExtracting] = useState(false);
   const [isDragDropping, setIsDragDropping] = useState(false);
+  const [isPerformingIsbnLookup, setIsPerformingIsbnLookup] = useState(false);
   
   // Store the previous loading state to detect transitions
   const previousLoadingRef = React.useRef(isLoading);
@@ -251,9 +255,42 @@ export default function AnalysisForm({ onSubmit, isLoading }: AnalysisFormProps)
                 render={({ field }) => (
                   <FormItem className="mb-1">
                     <FormLabel className="text-sm font-medium">{t('isbn')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ISBN (optional)" {...field} className="border-neutral-300" />
-                    </FormControl>
+                    <div className="flex items-center space-x-2">
+                      <FormControl>
+                        <Input 
+                          placeholder="ISBN (optional)" 
+                          {...field} 
+                          className="border-neutral-300"
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // Reset lookup state when editing
+                            setIsPerformingIsbnLookup(false);
+                          }}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            const isbn = e.target.value.trim();
+                            // Only look up if there's an ISBN and it's at least 10 digits
+                            if (isbn && isbn.replace(/[^0-9]/g, '').length >= 10) {
+                              handleIsbnLookup(isbn);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => field.value && handleIsbnLookup(field.value)}
+                        disabled={!field.value || isLoading || isPerformingIsbnLookup || isFastLookingUpIsbn}
+                        className="h-9 w-9 flex-shrink-0 border-neutral-300"
+                      >
+                        {isFastLookingUpIsbn || isPerformingIsbnLookup ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
