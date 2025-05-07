@@ -1941,7 +1941,9 @@ export async function processBookAnalysis(
         {
           role: "system",
           content: `You are a helpful assistant that provides detailed book information and analysis in JSON format. 
-          Return your response in ${languageName} language.`,
+          Return your response in ${languageName} language.
+          
+          IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
         },
         {
           role: "user",
@@ -1999,6 +2001,27 @@ Return the response as a structured JSON object with these fields:
       console.log(
         `[${analysisId}] Successfully received comprehensive book analysis from OpenAI`,
       );
+      
+      // Check if the book was not found
+      if (result.bookFound === false) {
+        console.log(`[${analysisId}] OpenAI indicates book not found for identifiers: ${bookIdentifiers.join(", ")}`);
+        throw new Error(`Book not found for identifiers: ${bookIdentifiers.join(", ")}`);
+      }
+      
+      // Verify if the returned ISBN matches the requested ISBN (if an ISBN was provided)
+      const requestedIsbn = analysisRequest.isbn?.replace(/[^0-9X]/gi, '');
+      const returnedIsbn = result.bibliographicData?.isbn?.replace(/[^0-9X]/gi, '');
+      
+      if (requestedIsbn && returnedIsbn && requestedIsbn !== returnedIsbn) {
+        console.log(`[${analysisId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`);
+        console.log(`[${analysisId}] This suggests OpenAI may have provided information for a different book.`);
+        
+        // We'll still return the data, but with a warning in the metadata
+        result.metadata = result.metadata || {};
+        result.metadata.isbnMismatch = true;
+        result.metadata.requestedIsbn = requestedIsbn;
+        result.metadata.returnedIsbn = returnedIsbn;
+      }
 
       // Log success
       apiLogger.logResponse("OpenAI API", {
@@ -2046,6 +2069,8 @@ Return the response as a structured JSON object with these fields:
         // Additional metadata
         metadata: {
           readingLevelScore: result.analysis?.readingLevel?.score || null,
+          // Include any ISBN mismatch information if it exists
+          ...(result.metadata || {}),
         },
       };
 

@@ -2562,3 +2562,36 @@
   "bookIdentifiers": "ISBN: 9783406830303",
   "language": "de"
 }
+
+[2025-05-07 17:41:55] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "",
+    "author": "",
+    "isbn": "978-3-95916-135-0"
+  }
+}
+
+[2025-05-07 17:41:59] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadata",
+  "status": "success",
+  "bookTitle": "The Sorcerer's Apprentice"
+}
+
+[2025-05-07 17:41:59] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-135-0, Title: The Sorcerer's Apprentice, Author: Tahir Shah",
+  "language": "de"
+}
+
+[2025-05-07 17:42:17] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "The Sorcerer's Apprentice"
+}
