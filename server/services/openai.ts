@@ -2194,10 +2194,77 @@ Return the response as a structured JSON object with these fields:
         `[${analysisId}] Successfully received comprehensive book analysis from OpenAI`,
       );
       
-      // Check if the book was not found
+      // Check if the book was not found in OpenAI's knowledge
       if (result.bookFound === false) {
         console.log(`[${analysisId}] OpenAI indicates book not found for identifiers: ${bookIdentifiers.join(", ")}`);
-        throw new Error(`Book not found for identifiers: ${bookIdentifiers.join(", ")}`);
+        console.log(`[${analysisId}] Using only Google Books data for this book`);
+        
+        // Instead of throwing an error, let's use the existing metadata from Google Books if available
+        // This way we're using the hybrid approach to its full potential
+        
+        // Get basic book data using Google Books API
+        let googleData: Partial<Book> = { ...analysisRequest };
+        
+        try {
+          if (analysisRequest.isbn) {
+            console.log(`[${analysisId}] Fetching data from Google Books API for ISBN: ${analysisRequest.isbn}`);
+            const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
+            
+            if (googleBook && googleBook.volumeInfo) {
+              const volumeInfo = googleBook.volumeInfo;
+              
+              // Update with Google Books data
+              googleData = {
+                ...analysisRequest,
+                title: analysisRequest.title || volumeInfo.title,
+                author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+                publisher: volumeInfo.publisher || null,
+                publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+                pageCount: volumeInfo.pageCount || null,
+                language: volumeInfo.language || "de",
+                coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+                summary: volumeInfo.description || null,
+                // Add any missing fields with null values
+                genres: null,
+                themes: null,
+                readingLevel: null,
+                catalogEntry: null,
+                metadata: {
+                  source: "google_books",
+                  googleBookId: googleBook.id,
+                  categories: volumeInfo.categories || [],
+                  openaiStatus: "book_not_found",
+                  coverImage: !!analysisRequest.coverImageData
+                }
+              };
+              
+              console.log(`[${analysisId}] Successfully got Google Books data for: "${googleData.title}" by "${googleData.author}"`);
+              return googleData;
+            }
+          }
+          
+          // If we reach here, either no ISBN was provided or Google Books didn't find the book either
+          console.log(`[${analysisId}] Google Books API did not return data for this book`);
+          return {
+            ...analysisRequest,
+            metadata: {
+              source: "user_input",
+              openaiStatus: "book_not_found",
+              googleBooksStatus: "book_not_found"
+            }
+          };
+        } catch (error) {
+          console.error(`[${analysisId}] Error fetching from Google Books API:`, error);
+          // Continue with just the user input data
+          return {
+            ...analysisRequest,
+            metadata: {
+              source: "user_input",
+              openaiStatus: "book_not_found",
+              googleBooksStatus: "error"
+            }
+          };
+        }
       }
       
       // Verify if the returned ISBN matches the requested ISBN (if an ISBN was provided)
@@ -2290,14 +2357,126 @@ Return the response as a structured JSON object with these fields:
         error: error.message || String(error),
         bookIdentifiers: bookIdentifiers.join(", "),
       });
-      throw new Error(
-        `Failed to process book analysis response: ${error.message}`,
-      );
+      
+      // Instead of throwing an error, try to recover with Google Books data
+      console.log(`[${analysisId}] Attempting to recover with Google Books data`);
+      
+      // Get basic book data using Google Books API as a fallback
+      let googleData: Partial<Book> = { ...analysisRequest };
+      
+      try {
+        if (analysisRequest.isbn) {
+          console.log(`[${analysisId}] Fetching fallback data from Google Books API for ISBN: ${analysisRequest.isbn}`);
+          const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
+          
+          if (googleBook && googleBook.volumeInfo) {
+            const volumeInfo = googleBook.volumeInfo;
+            
+            // Update with Google Books data
+            googleData = {
+              ...analysisRequest,
+              title: analysisRequest.title || volumeInfo.title,
+              author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+              publisher: volumeInfo.publisher || null,
+              publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+              pageCount: volumeInfo.pageCount || null,
+              language: volumeInfo.language || "de",
+              coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+              summary: volumeInfo.description || null,
+              // Add any missing fields with null values
+              genres: null,
+              themes: null,
+              readingLevel: null,
+              catalogEntry: null,
+              metadata: {
+                source: "google_books",
+                googleBookId: googleBook.id,
+                categories: volumeInfo.categories || [],
+                openaiStatus: "parse_error",
+                openaiError: error.message || String(error),
+                coverImage: !!analysisRequest.coverImageData
+              }
+            };
+            
+            console.log(`[${analysisId}] Successfully recovered with Google Books data for: "${googleData.title}" by "${googleData.author}"`);
+            return googleData;
+          }
+        }
+        
+        // If we can't recover, return user input with error information
+        return {
+          ...analysisRequest,
+          metadata: {
+            source: "user_input",
+            openaiStatus: "parse_error",
+            openaiError: error.message || String(error),
+            googleBooksStatus: "book_not_found"
+          }
+        };
+      } catch (googleError) {
+        console.error(`[${analysisId}] Error fetching fallback data from Google Books API:`, googleError);
+        
+        // If all else fails, just return the user's input
+        return {
+          ...analysisRequest,
+          metadata: {
+            source: "user_input",
+            openaiStatus: "parse_error",
+            openaiError: error.message || String(error),
+            googleBooksStatus: "error"
+          }
+        };
+      }
     }
   } catch (error: any) {
     console.error("Error processing book analysis:", error);
-    throw new Error(
-      `Failed to process book analysis: ${error.message || String(error)}`,
-    );
+    
+    // Even here, try to return something useful instead of failing completely
+    try {
+      const analysisId = `recovery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      console.log(`[${analysisId}] Final recovery attempt with Google Books data after critical error`);
+      
+      if (analysisRequest.isbn) {
+        const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
+        
+        if (googleBook && googleBook.volumeInfo) {
+          const volumeInfo = googleBook.volumeInfo;
+          
+          console.log(`[${analysisId}] Successfully recovered with Google Books after critical error`);
+          
+          return {
+            ...analysisRequest,
+            title: analysisRequest.title || volumeInfo.title,
+            author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+            publisher: volumeInfo.publisher || null,
+            publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+            pageCount: volumeInfo.pageCount || null,
+            language: volumeInfo.language || "de",
+            coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+            summary: volumeInfo.description || null,
+            metadata: {
+              source: "google_books",
+              criticalError: error.message || String(error),
+              recoverySource: "google_books",
+              recoverMode: "emergency"
+            }
+          };
+        }
+      }
+      
+      // Last resort - just return what was given to us
+      return {
+        ...analysisRequest,
+        metadata: {
+          source: "user_input",
+          criticalError: error.message || String(error)
+        }
+      };
+    } catch (recoveryError) {
+      // At this point, we've tried everything we can - throw the original error
+      throw new Error(
+        `Failed to process book analysis: ${error.message || String(error)}`,
+      );
+    }
   }
 }
