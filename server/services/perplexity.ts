@@ -126,11 +126,19 @@ export async function processBookAnalysisWithPerplexity(
 ): Promise<Partial<Book>> {
   const { title, author, isbn, language } = analysisRequest;
 
+  // Determine if we have an ISBN
+  const hasISBN = !!isbn;
+  
   // Create the identifier string based on available information
+  // If ISBN is provided, ONLY use ISBN to ensure accurate matching
   const identifiers = [];
-  if (isbn) identifiers.push(`ISBN: ${isbn}`);
-  if (title) identifiers.push(`Title: ${title}`);
-  if (author) identifiers.push(`Author: ${author}`);
+  if (hasISBN) {
+    identifiers.push(`ISBN: ${isbn}`);
+  } else {
+    // Only use title and author if ISBN is not available
+    if (title) identifiers.push(`Title: ${title}`);
+    if (author) identifiers.push(`Author: ${author}`);
+  }
   const bookIdentifiers = identifiers.join(", ");
 
   // Use English for the query to get the most accurate information
@@ -141,6 +149,7 @@ export async function processBookAnalysisWithPerplexity(
   // Create the system message (instructions to Perplexity)
   const systemMessage = `You are a professional librarian and book researcher with expertise in cataloging books and creating comprehensive metadata records. 
 Your task is to analyze a book and provide detailed information about it.
+${hasISBN ? 'CRITICAL: You must ONLY return information for the exact ISBN provided. If you cannot find the exact ISBN, return null fields with an empty summary.' : ''}
 
 Output Format:
 Provide a valid JSON response with the following structure:
@@ -222,6 +231,28 @@ Provide real, factual information only. If information is not available, use nul
         });
         return null;
       }
+      
+      // If ISBN was provided in the request, validate that the returned ISBN matches
+      if (isbn && bookData.isbn) {
+        // Normalize ISBNs by removing hyphens and spaces for comparison
+        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+        const normalizedResponseISBN = bookData.isbn.replace(/[-\s]/g, '');
+        
+        // If ISBNs don't match, reject this response as it's for the wrong book
+        if (normalizedRequestISBN !== normalizedResponseISBN) {
+          apiLogger.logError("Perplexity", {
+            error: "ISBN mismatch in Perplexity response",
+            requestedISBN: isbn,
+            returnedISBN: bookData.isbn,
+            content: content.substring(0, 100) + "...",
+          });
+          
+          console.log(`[ERROR] ISBN mismatch: Requested ${isbn}, but Perplexity returned ${bookData.isbn}`);
+          
+          // Return null to trigger fallback to OpenAI
+          return null;
+        }
+      }
 
       // Log successful processing
       apiLogger.logResponse("Perplexity", {
@@ -266,13 +297,20 @@ export async function searchBooksWithPerplexity(
 ): Promise<any[]> {
   const { query, title, author, isbn } = params;
   
+  // Determine if we have an ISBN
+  const hasISBN = !!isbn;
+  
   // Create the search query based on available parameters
+  // If ISBN is provided, ONLY use ISBN to ensure accurate matching
   let searchQuery = "";
-  if (query) searchQuery += `Query: ${query} `;
-  if (title) searchQuery += `Title: ${title} `;
-  if (author) searchQuery += `Author: ${author} `;
-  if (isbn) searchQuery += `ISBN: ${isbn} `;
-  searchQuery = searchQuery.trim();
+  if (hasISBN) {
+    searchQuery = `ISBN: ${isbn}`;
+  } else {
+    if (query) searchQuery += `Query: ${query} `;
+    if (title) searchQuery += `Title: ${title} `;
+    if (author) searchQuery += `Author: ${author} `;
+    searchQuery = searchQuery.trim();
+  }
   
   // If no search parameters are provided, return an empty array
   if (!searchQuery) {
@@ -339,6 +377,39 @@ Return only the JSON array with no additional text or explanations.`;
     // Parse the JSON response
     try {
       const books = JSON.parse(content);
+      
+      // If ISBN was provided, validate that at least one book has a matching ISBN
+      if (hasISBN && Array.isArray(books) && books.length > 0) {
+        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+        
+        // Filter books to only include those with matching ISBN
+        const matchingBooks = books.filter(book => {
+          if (!book.isbn) return false;
+          const normalizedBookISBN = book.isbn.replace(/[-\s]/g, '');
+          return normalizedRequestISBN === normalizedBookISBN;
+        });
+        
+        if (matchingBooks.length === 0) {
+          apiLogger.logError("Perplexity", {
+            error: "No matching ISBN in search results",
+            requestedISBN: isbn,
+            returnedCount: books.length
+          });
+          
+          console.log(`[ERROR] ISBN search mismatch: Requested ${isbn}, but no matching books found`);
+          return [];
+        }
+        
+        // Return only the exact ISBN matches
+        apiLogger.logResponse("Perplexity", {
+          operation: "searchBooks",
+          status: "success",
+          resultsCount: matchingBooks.length,
+          filteredByISBN: true
+        });
+        
+        return matchingBooks;
+      }
       
       // Log successful search
       apiLogger.logResponse("Perplexity", {
@@ -537,6 +608,27 @@ Return only the JSON object with no additional text or explanations.`;
           found: false,
         });
         return null;
+      }
+      
+      // Validate that the returned ISBN matches the requested ISBN
+      if (bookData.isbn) {
+        // Normalize ISBNs by removing hyphens and spaces for comparison
+        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+        const normalizedResponseISBN = bookData.isbn.replace(/[-\s]/g, '');
+        
+        // If ISBNs don't match, reject this response as it's for the wrong book
+        if (normalizedRequestISBN !== normalizedResponseISBN) {
+          apiLogger.logError("Perplexity", {
+            error: "ISBN mismatch in Perplexity response for ISBN lookup",
+            requestedISBN: isbn,
+            returnedISBN: bookData.isbn
+          });
+          
+          console.log(`[ERROR] ISBN lookup mismatch: Requested ${isbn}, but Perplexity returned ${bookData.isbn}`);
+          
+          // Return null to trigger fallback to OpenAI
+          return null;
+        }
       }
       
       // Log successful lookup

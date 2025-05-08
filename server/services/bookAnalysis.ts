@@ -65,11 +65,10 @@ export async function processBookAnalysis(
 // Function to enrich book metadata (add missing fields)
 export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Partial<Book>> {
   try {
-    // We'll use the same analyzed book data processing as in processBookAnalysis
+    // We'll use the same comprehensive analysis function instead of making separate calls
     // But prioritize user-entered fields
     
-    // First, try using Perplexity API for enrichment
-    console.log(`Attempting to enrich book metadata with Perplexity`);
+    console.log(`Enriching book metadata using consolidated processBookAnalysis function`);
     
     // Convert to BookAnalysisRequest format
     const analysisRequest: BookAnalysisRequest = {
@@ -80,24 +79,24 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
       isUserEntry: true
     };
     
-    const perplexityResult = await processBookAnalysisWithPerplexity(analysisRequest);
+    // Use the main processBookAnalysis function which already implements the fallback strategy
+    const enrichedData = await processBookAnalysis(analysisRequest);
     
-    // If Perplexity returned valid data, use it for non-user fields
-    if (perplexityResult && perplexityResult.title && perplexityResult.author) {
-      console.log(`Successfully enriched book metadata with Perplexity`);
+    // If we got a valid result, merge with original data (prioritizing user entries)
+    if (enrichedData && enrichedData.title) {
+      console.log(`Successfully enriched book metadata`);
       
       // Merge the results, prioritizing original bookData fields that were explicitly set
       return {
-        ...perplexityResult,
+        ...enrichedData,
         ...Object.fromEntries(
           Object.entries(bookData).filter(([_, value]) => value !== null && value !== undefined)
         )
       };
     }
     
-    // If Perplexity failed, fall back to OpenAI
-    console.log(`Perplexity enrichment failed, falling back to OpenAI`);
-    return await enrichBookMetadataWithOpenAI(bookData);
+    // If everything failed, return original data
+    return bookData;
   } catch (error) {
     // Log the error
     apiLogger.logError("BookEnrichment", {
@@ -105,19 +104,8 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
       message: error.message
     });
     
-    // Try OpenAI as a last resort
-    try {
-      console.log(`Error with Perplexity enrichment, falling back to OpenAI`);
-      return await enrichBookMetadataWithOpenAI(bookData);
-    } catch (fallbackError) {
-      apiLogger.logError("BookEnrichment", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message
-      });
-      
-      // Return original data if both services fail
-      return bookData;
-    }
+    // Return original data if everything fails
+    return bookData;
   }
 }
 
