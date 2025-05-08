@@ -4,13 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { analyzeBookCover } from "./services/openai"; // Keep this for now as we'll still use it for cover image analysis
-import { 
-  processBookAnalysis,
-  searchBooks,
-  getBookByISBN,
-  searchSimilarBooks
-} from "./services/bookAnalysis";
+// Import only the types, all service functions will be dynamically imported
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -92,6 +86,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
+          // Import the analyzeBookCover function from OpenAI service
+          const { analyzeBookCover } = await import("./services/openai");
           const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
           // Use the analysis results for fields that weren't provided
@@ -137,6 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process book analysis directly with Perplexity (fallback to OpenAI if needed)
       console.log(`[${requestId}] Processing book analysis with Perplexity/OpenAI`);
+      // Import the processBookAnalysis function from bookAnalysis service
+      const { processBookAnalysis } = await import("./services/bookAnalysis");
       const analysisResult = await processBookAnalysis(validatedData);
       
       // Log bibliographic data in detail before sending response
