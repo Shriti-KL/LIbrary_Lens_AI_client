@@ -21,6 +21,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const books = pgTable("books", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  subtitle: text("subtitle"),             // Subtitle
   author: text("author").notNull(),
   isbn: text("isbn"),
   coverImageUrl: text("cover_image_url"),
@@ -44,6 +45,10 @@ export const books = pgTable("books", {
   binding: text("binding"),               // Binding type (e.g., "Hardcover", "Paperback")
   price: text("price"),                   // Price information
   series: text("series"),                 // Series information
+  
+  // Contributors
+  translator: text("translator"),         // Translator
+  illustrator: text("illustrator"),       // Illustrator
   contributors: jsonb("contributors").default([]), // Other contributors (editors, translators, etc.)
   
   // German library catalog specific fields
@@ -66,6 +71,7 @@ export const insertBookSchema = createInsertSchema(books)
 // For book upload/analysis request
 export const bookAnalysisSchema = z.object({
   title: z.string().optional(),
+  subtitle: z.string().nullable().optional(),
   author: z.string().optional(),
   isbn: z.string().nullable().optional(),
   coverImage: z.string().optional(), // base64 encoded image for URL
@@ -84,6 +90,17 @@ export const bookAnalysisSchema = z.object({
   userId: z.number().nullable().optional(),
   language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional(), // The language to generate content in (e.g. "en", "de", "es", etc.)
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
+  
+  // Contributors
+  translator: z.string().nullable().optional(),
+  illustrator: z.string().nullable().optional(),
+  
+  // Physical book properties 
+  dimensions: z.string().nullable().optional(),
+  edition: z.string().nullable().optional(),
+  binding: z.string().nullable().optional(),
+  price: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
   
   // Library catalog specific fields
   catalogNumber: z.string().nullable().optional(),

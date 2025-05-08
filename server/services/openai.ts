@@ -1952,11 +1952,76 @@ export async function enrichBookMetadata(
           // Extract the relevant fields from Google Books response
           const volumeInfo = googleBook.volumeInfo;
           
+          // Extract subtitle if available (often part of the title with a separator)
+          let mainTitle = volumeInfo.title || "";
+          let subtitle = null;
+          if (mainTitle && mainTitle.includes(" - ")) {
+            const parts = mainTitle.split(" - ");
+            mainTitle = parts[0];
+            subtitle = parts.slice(1).join(" - ");
+          } else if (volumeInfo.subtitle) {
+            subtitle = volumeInfo.subtitle;
+          }
+          
+          // Extract price information if available
+          let price = null;
+          if (volumeInfo.saleInfo && volumeInfo.saleInfo.listPrice) {
+            price = `${volumeInfo.saleInfo.listPrice.amount} ${volumeInfo.saleInfo.listPrice.currencyCode}`;
+          }
+          
+          // Extract translator and illustrator from volumeInfo.authors or other contributors
+          let translator = null;
+          let illustrator = null;
+          
+          // Extract edition info (may be in volumeInfo.contentVersion or title)
+          let edition = null;
+          if (volumeInfo.contentVersion) {
+            edition = volumeInfo.contentVersion;
+          }
+          
+          // Extract place/location from publisher or publisherInfo if available
+          let location = null;
+          
+          // Extract size/dimensions from volumeInfo
+          let dimensions = null;
+          if (volumeInfo.dimensions) {
+            dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
+          }
+          
+          // Extract binding type from volumeInfo
+          let binding = null;
+          if (volumeInfo.printType) {
+            binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
+          }
+          
+          // Log missing fields for debugging
+          const missingFields = [];
+          if (!mainTitle) missingFields.push("title");
+          if (!subtitle) missingFields.push("subtitle");
+          if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("author");
+          if (!translator) missingFields.push("translator");
+          if (!illustrator) missingFields.push("illustrator");
+          if (!edition) missingFields.push("edition");
+          if (!location) missingFields.push("location/place");
+          if (!volumeInfo.publisher) missingFields.push("publisher");
+          if (!volumeInfo.publishedDate) missingFields.push("publishedYear");
+          if (!volumeInfo.pageCount) missingFields.push("pages");
+          if (!dimensions) missingFields.push("size");
+          if (!binding) missingFields.push("binding");
+          if (!price) missingFields.push("price");
+          
+          if (missingFields.length > 0) {
+            console.log(`[${enrichmentId}] Google Books API missing fields: ${missingFields.join(", ")}`);
+          }
+          
           // Update our book info with Google Books data
           googleBooksData = {
             ...bookInfo,
-            title: bookInfo.title || volumeInfo.title,
+            title: bookInfo.title || mainTitle,
+            subtitle: bookInfo.subtitle || subtitle, 
             author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            translator: bookInfo.translator || translator,
+            illustrator: bookInfo.illustrator || illustrator,
             publisher: bookInfo.publisher || volumeInfo.publisher,
             publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
             pageCount: bookInfo.pageCount || volumeInfo.pageCount,
@@ -1967,6 +2032,11 @@ export async function enrichBookMetadata(
             coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
             // Extract ISBN if available
             isbn: bookInfo.isbn, // Keep original ISBN format
+            edition: bookInfo.edition || edition,
+            location: bookInfo.location || location,
+            dimensions: bookInfo.dimensions || dimensions,
+            binding: bookInfo.binding || binding,
+            price: bookInfo.price || price,
             // Add metadata from Google Books
             metadata: {
               ...(bookInfo.metadata || {}),
@@ -1974,7 +2044,8 @@ export async function enrichBookMetadata(
               googleBookId: googleBook.id,
               ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
               ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
-              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {})
+              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {}),
+              missingFields: missingFields.length > 0 ? missingFields : undefined
             }
           };
           
@@ -2005,11 +2076,76 @@ export async function enrichBookMetadata(
           // Extract the relevant fields from Google Books response
           const volumeInfo = googleBook.volumeInfo;
           
-          // Update our book info with Google Books data
+          // Extract subtitle if available (often part of the title with a separator)
+          let mainTitle = volumeInfo.title || "";
+          let subtitle = null;
+          if (mainTitle && mainTitle.includes(" - ")) {
+            const parts = mainTitle.split(" - ");
+            mainTitle = parts[0];
+            subtitle = parts.slice(1).join(" - ");
+          } else if (volumeInfo.subtitle) {
+            subtitle = volumeInfo.subtitle;
+          }
+          
+          // Extract price information if available
+          let price = null;
+          if (volumeInfo.saleInfo && volumeInfo.saleInfo.listPrice) {
+            price = `${volumeInfo.saleInfo.listPrice.amount} ${volumeInfo.saleInfo.listPrice.currencyCode}`;
+          }
+          
+          // Extract translator and illustrator from volumeInfo.authors or other contributors
+          let translator = null;
+          let illustrator = null;
+          
+          // Extract edition info (may be in volumeInfo.contentVersion or title)
+          let edition = null;
+          if (volumeInfo.contentVersion) {
+            edition = volumeInfo.contentVersion;
+          }
+          
+          // Extract place/location from publisher or publisherInfo if available
+          let location = null;
+          
+          // Extract size/dimensions from volumeInfo
+          let dimensions = null;
+          if (volumeInfo.dimensions) {
+            dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
+          }
+          
+          // Extract binding type from volumeInfo
+          let binding = null;
+          if (volumeInfo.printType) {
+            binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
+          }
+          
+          // Log missing fields for debugging
+          const missingFields = [];
+          if (!mainTitle) missingFields.push("title");
+          if (!subtitle) missingFields.push("subtitle");
+          if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("author");
+          if (!translator) missingFields.push("translator");
+          if (!illustrator) missingFields.push("illustrator");
+          if (!edition) missingFields.push("edition");
+          if (!location) missingFields.push("location/place");
+          if (!volumeInfo.publisher) missingFields.push("publisher");
+          if (!volumeInfo.publishedDate) missingFields.push("publishedYear");
+          if (!volumeInfo.pageCount) missingFields.push("pages");
+          if (!dimensions) missingFields.push("size");
+          if (!binding) missingFields.push("binding");
+          if (!price) missingFields.push("price");
+          
+          if (missingFields.length > 0) {
+            console.log(`[${enrichmentId}] Google Books API missing fields for title search: ${missingFields.join(", ")}`);
+          }
+          
+          // Update our book info with Google Books data - keep the title from user input
           googleBooksData = {
             ...bookInfo,
-            title: bookInfo.title,
+            title: bookInfo.title || mainTitle,
+            subtitle: bookInfo.subtitle || subtitle, 
             author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            translator: bookInfo.translator || translator,
+            illustrator: bookInfo.illustrator || illustrator,
             publisher: bookInfo.publisher || volumeInfo.publisher,
             publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
             pageCount: bookInfo.pageCount || volumeInfo.pageCount,
@@ -2023,6 +2159,11 @@ export async function enrichBookMetadata(
                    volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13")?.identifier || 
                    volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10")?.identifier : 
                    null),
+            edition: bookInfo.edition || edition,
+            location: bookInfo.location || location,
+            dimensions: bookInfo.dimensions || dimensions,
+            binding: bookInfo.binding || binding,
+            price: bookInfo.price || price,
             // Add metadata from Google Books
             metadata: {
               ...(bookInfo.metadata || {}),
@@ -2030,7 +2171,8 @@ export async function enrichBookMetadata(
               googleBookId: googleBook.id,
               ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
               ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
-              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {})
+              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {}),
+              missingFields: missingFields.length > 0 ? missingFields : undefined
             }
           };
           

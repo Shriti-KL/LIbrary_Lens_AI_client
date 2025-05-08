@@ -2783,3 +2783,151 @@
   "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
   "author": "Marion Sorg"
 }
+
+[2025-05-08 06:41:36] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-959161-35-0",
+    "cleanedISBN": "9783959161350"
+  }
+}
+
+[2025-05-08 06:41:36] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350"
+  }
+}
+
+[2025-05-08 06:41:36] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:41:36] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-959161-35-0",
+  "found": true,
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
+}
+
+[2025-05-08 06:41:36] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+    "author": "Birgit Hedemann",
+    "isbn": "978-3-959161-35-0"
+  }
+}
+
+[2025-05-08 06:41:38] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-959161-35-0, Title: Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz, Author: Birgit Hedemann",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 06:41:39] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-959161-35-0",
+    "cleanedISBN": "9783959161350"
+  }
+}
+
+[2025-05-08 06:41:39] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350"
+  }
+}
+
+[2025-05-08 06:41:39] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:41:39] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-959161-35-0",
+  "found": true,
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
+}
+
+[2025-05-08 06:41:44] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-959161-35-0",
+    "cleanedISBN": "9783959161350"
+  }
+}
+
+[2025-05-08 06:41:44] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350"
+  }
+}
+
+[2025-05-08 06:41:45] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:41:45] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-959161-35-0",
+  "found": true,
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
+}
+
+[2025-05-08 06:41:45] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+    "author": "Birgit Hedemann",
+    "isbn": "978-3-959161-35-0"
+  }
+}

@@ -21,10 +21,42 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
     if (params.author) query += `+inauthor:${encodeURIComponent(params.author)}`;
     if (params.isbn) query += `+isbn:${encodeURIComponent(params.isbn)}`;
 
+    // Request specific fields to fetch all required data in one call
+    // Full list: https://developers.google.com/books/docs/v1/reference/volumes#resource
+    const fields = [
+      "kind",
+      "id",
+      "etag",
+      "selfLink",
+      "volumeInfo/title",
+      "volumeInfo/subtitle",
+      "volumeInfo/authors",
+      "volumeInfo/publisher",
+      "volumeInfo/publishedDate",
+      "volumeInfo/description",
+      "volumeInfo/industryIdentifiers",
+      "volumeInfo/pageCount",
+      "volumeInfo/dimensions",
+      "volumeInfo/printType",
+      "volumeInfo/mainCategory",
+      "volumeInfo/categories",
+      "volumeInfo/averageRating",
+      "volumeInfo/ratingsCount",
+      "volumeInfo/contentVersion",
+      "volumeInfo/imageLinks",
+      "volumeInfo/language",
+      "volumeInfo/previewLink",
+      "volumeInfo/infoLink",
+      "volumeInfo/canonicalVolumeLink",
+      "saleInfo/listPrice",
+      "saleInfo/retailPrice"
+    ].join(",");
+
     // Build API URL
     const url = new URL(GOOGLE_BOOKS_API_URL);
     url.searchParams.append("q", query);
     url.searchParams.append("key", API_KEY);
+    url.searchParams.append("fields", `items(${fields}),totalItems,kind`);
     if (params.maxResults) url.searchParams.append("maxResults", params.maxResults.toString());
 
     // Log the request
@@ -34,7 +66,8 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
       method: "GET",
       params: {
         query,
-        maxResults: params.maxResults
+        maxResults: params.maxResults,
+        fields: 'items(...),totalItems,kind'  // Simplified for logging
       }
     });
 
