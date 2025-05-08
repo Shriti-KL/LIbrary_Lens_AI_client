@@ -331,7 +331,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/books", async (req: Request, res: Response) => {
     try {
       // Get the raw book data from the request
-      const bookData: InsertBook = req.body;
+      let bookData: InsertBook = req.body;
+      
+      // Validate required fields, as the database has NOT NULL constraints
+      if (!bookData.title || !bookData.author) {
+        return res.status(400).json({ 
+          message: "Title and author are required fields",
+          missingFields: {
+            title: !bookData.title,
+            author: !bookData.author
+          }
+        });
+      }
       
       // Always enrich with OpenAI to ensure proper spelling and capitalization
       let enrichedData = bookData;
@@ -344,11 +355,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           enrichedData = await enrichBookMetadata(tempData);
           
           // Log what was corrected
-          if (enrichedData.title !== bookData.title) {
+          if (enrichedData.title && bookData.title && enrichedData.title !== bookData.title) {
             console.log(`Book creation: Title corrected from "${bookData.title}" to "${enrichedData.title}"`);
           }
           
-          if (enrichedData.author !== bookData.author) {
+          if (enrichedData.author && bookData.author && enrichedData.author !== bookData.author) {
             console.log(`Book creation: Author corrected from "${bookData.author}" to "${enrichedData.author}"`);
           }
         } catch (enrichError) {
@@ -357,12 +368,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Ensure required fields are still present after enrichment
+      if (!enrichedData.title) {
+        enrichedData.title = bookData.title;
+      }
+      
+      if (!enrichedData.author) {
+        enrichedData.author = bookData.author;
+      }
+      
+      // Handle arrays that might be null
+      if (!enrichedData.genres) {
+        enrichedData.genres = [];
+      }
+      
+      if (!enrichedData.themes) {
+        enrichedData.themes = [];
+      }
+      
+      if (!enrichedData.similarBooks) {
+        enrichedData.similarBooks = [];
+      }
+      
       // Create book with enriched data
       const newBook = await storage.createBook(enrichedData);
       
       res.status(201).json(newBook);
-    } catch (error) {
-      res.status(500).json({ message: `Error creating book: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error creating book: ${errorMessage}` });
     }
   });
   
@@ -531,35 +565,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Enrich with OpenAI metadata
-            console.log("Step 2: Enriching with OpenAI metadata...");
-            const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis, 
-              // Ensure title and author are available for OpenAI enrichment
+            // Step 2: Process full analysis with GoogleBooks + OpenAI in one step
+            console.log("Step 2: Processing complete book analysis...");
+            const analysisResult = await processBookAnalysis({
+              ...coverAnalysis,
+              // Ensure title and author are available
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
-              // This is from cover analysis, not user input
-              isUserEntry: true
-            });
-            
-            // Log what got corrected from OpenAI enrichment
-            if (enrichedData.title !== coverAnalysis.title) {
-              console.log(`Title was corrected: "${coverAnalysis.title}" → "${enrichedData.title}"`);
-            }
-            
-            if (enrichedData.author !== coverAnalysis.author) {
-              console.log(`Author was corrected: "${coverAnalysis.author}" → "${enrichedData.author}"`);
-            }
-            
-            console.log("Data enrichment successful");
-            
-            // Step 3: Process full analysis
-            console.log("Step 3: Processing complete book analysis...");
-            const analysisResult = await processBookAnalysis({
-              ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
+              // This is from cover analysis, not user input
+              isUserEntry: true,
               options: {
                 summary: true,
                 genres: true,
