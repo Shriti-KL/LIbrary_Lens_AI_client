@@ -202,8 +202,7 @@ Provide real, factual information only. If information is not available, use nul
         { role: "user", content: userMessage },
       ],
       {
-        temperature: 0.2,
-        response_format: { type: "json_object" },
+        temperature: 0.2
       }
     );
 
@@ -330,7 +329,7 @@ Return only the JSON array with no additional text or explanations.`;
       ],
       {
         temperature: 0.1,
-        response_format: { type: "json_object" },
+        
       }
     );
 
@@ -434,7 +433,7 @@ Return only the JSON array with no additional text or explanations.`;
       ],
       {
         temperature: 0.3,
-        response_format: { type: "json_object" },
+        
       }
     );
 
@@ -519,7 +518,7 @@ Return only the JSON object with no additional text or explanations.`;
       ],
       {
         temperature: 0.1,
-        response_format: { type: "json_object" },
+        
       }
     );
 

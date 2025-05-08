@@ -1240,3 +1240,237 @@
   "status": "success",
   "bookTitle": "Das neue Universum"
 }
+
+[2025-05-08 11:14:21] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-498-03567-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:14:21] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-498-03567-9. \nProvide real, factual ..."
+}
+
+[2025-05-08 11:14:21] ERROR FROM Perplexity
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+    at makePerplexityRequest (/home/runner/workspace/server/services/perplexity.ts:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async processBookAnalysisWithPerplexity (/home/runner/workspace/server/services/perplexity.ts:199:22)
+    at async processBookAnalysis (/home/runner/workspace/server/services/bookAnalysis.ts:25:30)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:138:30)
+
+[2025-05-08 11:14:21] ERROR FROM Perplexity
+{
+  "error": "Perplexity API request failed",
+  "message": "Perplexity API error (400): {\"error\":{\"message\":\"[\\\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\\\", \\\"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\\\", \\\"At body -> response_format -> ResponseFormatRegex -> regex: Field required\\\"]\",\"type\":\"bad_request\",\"code\":400}}"
+}
+
+[2025-05-08 11:14:21] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-498-03567-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:14:39] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Die große Transformation: Eine Einführung in die Geschichte der modernen Welt"
+}
+
+[2025-05-08 11:19:04] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:19:04] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-95916-132-9. \nProvide real, factual ..."
+}
+
+[2025-05-08 11:19:04] ERROR FROM Perplexity
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+    at makePerplexityRequest (/home/runner/workspace/server/services/perplexity.ts:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async processBookAnalysisWithPerplexity (/home/runner/workspace/server/services/perplexity.ts:199:22)
+    at async processBookAnalysis (/home/runner/workspace/server/services/bookAnalysis.ts:25:30)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:138:30)
+
+[2025-05-08 11:19:04] ERROR FROM Perplexity
+{
+  "error": "Perplexity API request failed",
+  "message": "Perplexity API error (400): {\"error\":{\"message\":\"[\\\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\\\", \\\"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\\\", \\\"At body -> response_format -> ResponseFormatRegex -> regex: Field required\\\"]\",\"type\":\"bad_request\",\"code\":400}}"
+}
+
+[2025-05-08 11:19:04] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:19:19] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Der nasse Fisch"
+}
+
+[2025-05-08 11:26:17] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9, Title: Der nasse Fisch, Author: Volker Kutscher",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:26:17] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-95916-132-9, Title: Der nasse Fisch,..."
+}
+
+[2025-05-08 11:26:17] ERROR FROM Perplexity
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+    at makePerplexityRequest (/home/runner/workspace/server/services/perplexity.ts:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async processBookAnalysisWithPerplexity (/home/runner/workspace/server/services/perplexity.ts:199:22)
+    at async enrichBookMetadata (/home/runner/workspace/server/services/bookAnalysis.ts:83:30)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:242:26)
+
+[2025-05-08 11:26:17] ERROR FROM Perplexity
+{
+  "error": "Perplexity API request failed",
+  "message": "Perplexity API error (400): {\"error\":{\"message\":\"[\\\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\\\", \\\"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\\\", \\\"At body -> response_format -> ResponseFormatRegex -> regex: Field required\\\"]\",\"type\":\"bad_request\",\"code\":400}}"
+}
+
+[2025-05-08 11:26:17] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-08 11:26:17] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 11:26:18] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 11:26:18] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-08 11:26:18] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Der nasse Fisch",
+    "author": "Volker Kutscher",
+    "isbn": "978-3-95916-132-9"
+  }
+}
+
+[2025-05-08 11:26:21] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "status": "success",
+  "bookTitle": "Der nasse Fisch"
+}
+
+[2025-05-08 11:26:39] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-95916-135-0",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:26:39] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-95916-135-0. \nProvide real, factual ..."
+}
+
+[2025-05-08 11:26:39] ERROR FROM Perplexity
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+Error: Perplexity API error (400): {"error":{"message":"[\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\", \"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\", \"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\", \"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\", \"At body -> response_format -> ResponseFormatRegex -> regex: Field required\"]","type":"bad_request","code":400}}
+    at makePerplexityRequest (/home/runner/workspace/server/services/perplexity.ts:101:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async processBookAnalysisWithPerplexity (/home/runner/workspace/server/services/perplexity.ts:199:22)
+    at async processBookAnalysis (/home/runner/workspace/server/services/bookAnalysis.ts:25:30)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:138:30)
+
+[2025-05-08 11:26:39] ERROR FROM Perplexity
+{
+  "error": "Perplexity API request failed",
+  "message": "Perplexity API error (400): {\"error\":{\"message\":\"[\\\"At body -> response_format -> ResponseFormatText -> type: Input should be 'text'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> type: Input should be 'json_schema'\\\", \\\"At body -> response_format -> ResponseFormatJSONSchema -> json_schema: Field required\\\", \\\"At body -> response_format -> ResponseFormatRegex -> type: Input should be 'regex'\\\", \\\"At body -> response_format -> ResponseFormatRegex -> regex: Field required\\\"]\",\"type\":\"bad_request\",\"code\":400}}"
+}
+
+[2025-05-08 11:26:39] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-135-0",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 11:26:53] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Die Geschichte der Bienen"
+}
