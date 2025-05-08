@@ -1,27 +1,19 @@
-import { BookAnalysisRequest, Book } from "@shared/schema";
+import { Book, BookAnalysisRequest } from "@shared/schema";
 import { apiLogger } from "../utils/logger";
 
-// Define the structure of a Perplexity API request
 interface PerplexityRequest {
   model: string;
   messages: {
     role: "system" | "user" | "assistant";
     content: string;
   }[];
-  max_tokens?: number;
   temperature?: number;
   top_p?: number;
-  search_domain_filter?: string[];
-  return_images?: boolean;
-  return_related_questions?: boolean;
-  search_recency_filter?: string;
-  top_k?: number;
   stream?: boolean;
   presence_penalty?: number;
   frequency_penalty?: number;
 }
 
-// Define the structure of a Perplexity API response
 interface PerplexityResponse {
   id: string;
   model: string;
@@ -35,10 +27,6 @@ interface PerplexityResponse {
       role: string;
       content: string;
     };
-    delta?: {
-      role: string;
-      content: string;
-    };
   }[];
   usage: {
     prompt_tokens: number;
@@ -47,113 +35,92 @@ interface PerplexityResponse {
   };
 }
 
-// Make a request to the Perplexity API
+// Helper function to make a single request to the Perplexity API
 async function makePerplexityRequest(
   messages: PerplexityRequest["messages"],
   options: Partial<PerplexityRequest> = {}
 ): Promise<PerplexityResponse> {
-  const apiKey = process.env.PERPLEXITY_API_KEY;
-  if (!apiKey) {
-    throw new Error("PERPLEXITY_API_KEY environment variable is required");
+  const baseUrl = "https://api.perplexity.ai/chat/completions";
+  
+  // Default model for Perplexity API
+  const model = "llama-3.1-sonar-small-128k-online";
+  
+  // Check if API key is available
+  if (!process.env.PERPLEXITY_API_KEY) {
+    throw new Error("PERPLEXITY_API_KEY environment variable is not set");
   }
 
-  // Default options with sensible values
-  const defaultOptions: Partial<PerplexityRequest> = {
-    model: "llama-3.1-sonar-small-128k-online",
-    temperature: 0.2,
-    top_p: 0.9,
-    return_images: false,
-    return_related_questions: false,
-    search_recency_filter: "month",
-    stream: false,
-    presence_penalty: 0,
-    frequency_penalty: 1,
-  };
-
-  // Combine default options with provided options and ensure model is always set
-  const requestOptions: PerplexityRequest = {
-    model: options.model || defaultOptions.model!, // Ensure model is always defined
+  const requestBody: PerplexityRequest = {
+    model,
     messages,
-    ...defaultOptions,
-    ...options,
+    temperature: options.temperature ?? 0.2,
+    top_p: options.top_p ?? 0.9,
+    stream: false,
+    presence_penalty: options.presence_penalty ?? 0,
+    frequency_penalty: options.frequency_penalty ?? 0,
   };
 
-  // Log the request details (redacted for security)
+  // Log the request for debugging
   apiLogger.logRequest("Perplexity", {
-    operation: "chat/completions",
-    model: requestOptions.model,
-    messageCount: requestOptions.messages.length,
-    promptPreview: requestOptions.messages[requestOptions.messages.length - 1].content.substring(0, 100) + "...",
+    operation: 'chat/completions',
+    model,
+    messageCount: messages.length,
+    promptPreview: messages[messages.length - 1].content.substring(0, 100) + '...'
   });
 
   try {
-    // Make the request to the Perplexity API
-    const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    const response = await fetch(baseUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${process.env.PERPLEXITY_API_KEY}`
       },
-      body: JSON.stringify(requestOptions),
+      body: JSON.stringify(requestBody)
     });
 
+    // Check if the response is okay
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Perplexity API error (${response.status}): ${errorText}`);
+      const errorResponse = await response.text();
+      
+      apiLogger.logError("Perplexity", {
+        status: response.status,
+        message: errorResponse
+      });
+      
+      throw new Error(`Perplexity API request failed with status ${response.status}: ${errorResponse}`);
     }
 
-    const data = await response.json();
-
-    // Log the successful response
+    // Parse the response
+    const responseData = await response.json();
+    
+    // Log the response for debugging
     apiLogger.logResponse("Perplexity", {
       status: response.status,
-      id: data.id,
-      model: data.model,
-      usage: data.usage,
-      citationCount: data.citations?.length || 0,
+      id: responseData.id,
+      model: responseData.model,
+      usage: responseData.usage,
+      citationCount: responseData.citations?.length || 0
     });
-
-    return data;
+    
+    return responseData;
   } catch (error) {
-    // Log the error
-    apiLogger.logError("Perplexity", error);
+    console.error(`[ERROR] Perplexity API request failed: ${error.message}`);
     throw error;
   }
 }
 
-// Process a book analysis request using Perplexity
-export async function processBookAnalysisWithPerplexity(
-  analysisRequest: BookAnalysisRequest
-): Promise<Partial<Book> | null> {
-  const { title, author, isbn, language } = analysisRequest;
-
-  // Determine if we have an ISBN
-  const hasISBN = !!isbn;
+// Get complete book information by ISBN using Perplexity
+export async function getBookByISBN(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
+  // Create a unique ID for this lookup for logging
+  const lookupId = `perplexity_isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using Perplexity`);
   
-  // Create the identifier string based on available information
-  // If ISBN is provided, ONLY use ISBN to ensure accurate matching
-  const identifiers = [];
-  if (hasISBN) {
-    identifiers.push(`ISBN: ${isbn}`);
-  } else {
-    // Only use title and author if ISBN is not available
-    if (title) identifiers.push(`Title: ${title}`);
-    if (author) identifiers.push(`Author: ${author}`);
-  }
-  const bookIdentifiers = identifiers.join(", ");
+  // Create a clear system message focused on accurate ISBN lookup
+  const systemMessage = `You are a professional librarian specializing in book metadata. Your task is to provide accurate information about a book with a specific ISBN.
 
-  // Use English for the query to get the most accurate information
-  const queryLanguage = "English";
-  // But request the response in the user's preferred language
-  const responseLanguage = language || "en";
+IMPORTANT: You must ONLY return information about the exact ISBN provided: ${isbn}. If you cannot find this specific ISBN, return null for all fields except the ISBN itself.
 
-  // Create the system message (instructions to Perplexity)
-  const systemMessage = `You are a professional librarian and book researcher with expertise in cataloging books and creating comprehensive metadata records. 
-Your task is to analyze a book and provide detailed information about it.
-${hasISBN ? 'CRITICAL: You must ONLY return information for the exact ISBN provided. If you cannot find the exact ISBN, return null fields with an empty summary.' : ''}
-
-Output Format:
-Provide a valid JSON response with the following structure:
+Provide your response in this JSON format:
 {
   "title": "Full book title",
   "subtitle": "Subtitle if available, otherwise null",
@@ -165,500 +132,219 @@ Provide a valid JSON response with the following structure:
   "pageCount": number of pages (as number),
   "dimensions": "Physical dimensions (e.g., '21 x 14 cm')",
   "binding": "Binding type (e.g., 'Hardcover', 'Paperback')",
-  "price": "Price with currency (e.g., '24,99')",
-  "isbn": "ISBN number with proper formatting",
+  "price": "Price with currency (e.g., '24,99 €')",
+  "isbn": "${isbn}",
   "language": "Original language of the book",
+  "translator": "Translator name if applicable, otherwise null",
+  "illustrator": "Illustrator name if applicable, otherwise null",
   "summary": "Detailed summary of approximately 1000 characters (150 words)",
   "genres": ["Genre1", "Genre2", "Genre3"],
   "themes": ["Theme1", "Theme2", "Theme3"],
   "readingLevel": "Reading level description",
-  "catalogNumber": "Library catalog classification number (if available)",
-  "secondaryClassification": "Secondary classification code (if available)",
+  "catalogNumber": "Library catalog classification number",
+  "secondaryClassification": "Secondary classification code",
   "interestCategory": "Interest category (e.g., 'IK: Geschichte; ab 10')",
-  "idBNumber": "ID-B reference number (if available)"
+  "idBNumber": "ID-B reference number if available"
 }
 
-Important Guidelines:
-1. Provide real, factual information only. Do not invent or fabricate details.
-2. If information is not available, use null for that field.
-3. For summary: Focus on the book's content, approximately 1000 characters (150 words).
-4. For genres: Provide 2-5 specific genres that accurately describe the book.
-5. For themes: Identify 2-5 main themes or subjects covered in the book.
-6. For readingLevel: Include target age group and reading difficulty when applicable.
-7. For catalogNumber and secondaryClassification: Provide standard library classification codes if known.
-8. Use German library standards for catalog formatting when appropriate.
-9. Respond in ${responseLanguage} language, but maintain proper names in their original form.
+Guidelines:
+1. ONLY provide information for the EXACT ISBN: ${isbn}
+2. Provide factual information only - do not fabricate data
+3. Use null for any fields where information is unavailable
+4. Ensure the summary is approximately 1000 characters (150 words)
+5. Provide the response in ${language} language
+6. Include 2-5 accurate genres and themes
+7. Include standard library classification information when available
 
-Do not show your reasoning process, just provide the JSON response.`;
+Return ONLY the JSON object, no introduction or explanation.`;
 
-  // Create the user message (the actual query)
-  const userMessage = `Find detailed information about the following book: ${bookIdentifiers}. 
-Provide real, factual information only. If information is not available, use null for that field.`;
+  // Simple user message that focuses solely on the ISBN
+  const userMessage = `Find complete information for book with ISBN: ${isbn}`;
 
-  // Log the analysis request
+  // Log the request
   apiLogger.logRequest("Perplexity", {
-    operation: "processBookAnalysis",
-    model: "llama-3.1-sonar-small-128k-online",
-    bookIdentifiers,
-    queryLanguage,
-    responseLanguage,
+    operation: "getBookByISBN",
+    isbn,
+    language,
+    lookupId
   });
 
   try {
-    // Make the request to Perplexity
+    // Make a single clean request to Perplexity
     const response = await makePerplexityRequest(
       [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage },
       ],
-      {
-        temperature: 0.2
-      }
+      { temperature: 0.1 } // Low temperature for factual accuracy
     );
 
-    // Extract the content from the response
+    // Get the raw response content
     const content = response.choices[0].message.content;
-
-    // Parse the JSON response
-    let bookData: Partial<Book>;
+    
     try {
-      bookData = JSON.parse(content);
-
-      // Validate the essential fields
+      // Parse the JSON response
+      const bookData = JSON.parse(content);
+      
+      // Verify that we have the essential data (title and author)
       if (!bookData.title || !bookData.author) {
+        console.log(`[${lookupId}] Perplexity returned incomplete data (missing title or author) for ISBN: ${isbn}`);
         apiLogger.logError("Perplexity", {
           error: "Missing essential fields in Perplexity response",
-          content: content.substring(0, 100) + "...",
+          isbn,
+          lookupId,
         });
         return null;
       }
       
-      // If ISBN was provided in the request, validate that the returned ISBN matches
-      if (isbn && bookData.isbn) {
-        // Normalize ISBNs by removing hyphens and spaces for comparison
-        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
-        const normalizedResponseISBN = bookData.isbn.replace(/[-\s]/g, '');
+      // Verify that the ISBN matches what we requested
+      if (bookData.isbn) {
+        const normalizedRequestedISBN = isbn.replace(/[-\s]/g, '');
+        const normalizedReturnedISBN = bookData.isbn.replace(/[-\s]/g, '');
         
-        // If ISBNs don't match, reject this response as it's for the wrong book
-        if (normalizedRequestISBN !== normalizedResponseISBN) {
+        if (normalizedRequestedISBN !== normalizedReturnedISBN) {
+          console.log(`[${lookupId}] ISBN mismatch: Requested ${isbn}, but Perplexity returned ${bookData.isbn}`);
           apiLogger.logError("Perplexity", {
             error: "ISBN mismatch in Perplexity response",
             requestedISBN: isbn,
             returnedISBN: bookData.isbn,
-            content: content.substring(0, 100) + "...",
+            lookupId,
           });
-          
-          console.log(`[ERROR] ISBN mismatch: Requested ${isbn}, but Perplexity returned ${bookData.isbn}`);
-          
-          // Return null to trigger fallback to OpenAI
           return null;
         }
       }
-
-      // Log successful processing
+      
+      // Log successful result
+      console.log(`[${lookupId}] Successfully retrieved book data from Perplexity: "${bookData.title}" by ${bookData.author}`);
       apiLogger.logResponse("Perplexity", {
-        operation: "processBookAnalysis",
+        operation: "getBookByISBN",
         status: "success",
-        bookTitle: bookData.title,
-        responseLength: content.length,
+        title: bookData.title,
+        author: bookData.author,
+        isbn,
+        lookupId,
       });
-
+      
       // Log the bibliographic data for debugging
-      console.log("[analysis] BIBLIOGRAPHIC DATA CHECK from Perplexity:");
+      console.log(`[${lookupId}] BIBLIOGRAPHIC DATA CHECK from Perplexity:`);
       console.log(`- Title: "${bookData.title}"`);
       console.log(`- Author: "${bookData.author}"`);
+      console.log(`- ISBN: ${bookData.isbn}`);
       console.log(`- Page Count: ${bookData.pageCount} (type: ${typeof bookData.pageCount})`);
       console.log(`- Dimensions: ${bookData.dimensions}`);
       console.log(`- Binding: ${bookData.binding}`);
       console.log(`- Edition: ${bookData.edition}`);
       console.log(`- Location: ${bookData.location}`);
       console.log(`- Publisher: ${bookData.publisher}`);
-
+      
       return bookData;
     } catch (error) {
+      // Handle JSON parsing errors
+      console.log(`[${lookupId}] Failed to parse Perplexity response for ISBN: ${isbn}`);
       apiLogger.logError("Perplexity", {
         error: "Failed to parse Perplexity response JSON",
         content: content.substring(0, 100) + "...",
         errorMessage: error.message,
+        lookupId,
       });
       return null;
     }
   } catch (error) {
+    // Handle API request errors
+    console.log(`[${lookupId}] Perplexity API request failed for ISBN: ${isbn}`);
     apiLogger.logError("Perplexity", {
       error: "Perplexity API request failed",
       message: error.message,
+      lookupId,
     });
     return null;
-  }
-}
-
-// Search for books using Perplexity
-export async function searchBooksWithPerplexity(
-  params: { query?: string; title?: string; author?: string; isbn?: string }
-): Promise<any[]> {
-  const { query, title, author, isbn } = params;
-  
-  // Determine if we have an ISBN
-  const hasISBN = !!isbn;
-  
-  // Create the search query based on available parameters
-  // If ISBN is provided, ONLY use ISBN to ensure accurate matching
-  let searchQuery = "";
-  if (hasISBN) {
-    searchQuery = `ISBN: ${isbn}`;
-  } else {
-    if (query) searchQuery += `Query: ${query} `;
-    if (title) searchQuery += `Title: ${title} `;
-    if (author) searchQuery += `Author: ${author} `;
-    searchQuery = searchQuery.trim();
-  }
-  
-  // If no search parameters are provided, return an empty array
-  if (!searchQuery) {
-    return [];
-  }
-
-  // Create the system message (instructions to Perplexity)
-  const systemMessage = `You are a professional book search engine. 
-Your task is to find books matching the given search parameters and return a list of results.
-
-Provide your answer in JSON format as an array of book objects with the following structure:
-[
-  {
-    "title": "Book title",
-    "subtitle": "Subtitle if available, otherwise null",
-    "author": "Author name",
-    "publisher": "Publisher name",
-    "publishedYear": year (as number),
-    "isbn": "ISBN (if available)",
-    "description": "Brief description of the book",
-    "categories": ["Category1", "Category2"],
-    "imageLinks": {
-      "thumbnail": "URL to thumbnail image if available"
-    }
-  },
-  ... additional books ...
-]
-
-Important Guidelines:
-1. Return only real books that match the search parameters.
-2. Limit the results to 5 books maximum.
-3. If no books match the search parameters, return an empty array [].
-4. If a field is not available, use null for that field.
-5. Be precise and accurate with book information.
-6. Do not invent or fabricate details about the books.
-
-Return only the JSON array with no additional text or explanations.`;
-
-  // Create the user message (the actual query)
-  const userMessage = `Search for books with the following parameters: ${searchQuery}`;
-
-  // Log the search request
-  apiLogger.logRequest("Perplexity", {
-    operation: "searchBooks",
-    searchQuery,
-  });
-
-  try {
-    // Make the request to Perplexity
-    const response = await makePerplexityRequest(
-      [
-        { role: "system", content: systemMessage },
-        { role: "user", content: userMessage },
-      ],
-      {
-        temperature: 0.1,
-        
-      }
-    );
-
-    // Extract the content from the response
-    const content = response.choices[0].message.content;
-
-    // Parse the JSON response
-    try {
-      const books = JSON.parse(content);
-      
-      // If ISBN was provided, validate that at least one book has a matching ISBN
-      if (hasISBN && Array.isArray(books) && books.length > 0) {
-        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
-        
-        // Filter books to only include those with matching ISBN
-        const matchingBooks = books.filter(book => {
-          if (!book.isbn) return false;
-          const normalizedBookISBN = book.isbn.replace(/[-\s]/g, '');
-          return normalizedRequestISBN === normalizedBookISBN;
-        });
-        
-        if (matchingBooks.length === 0) {
-          apiLogger.logError("Perplexity", {
-            error: "No matching ISBN in search results",
-            requestedISBN: isbn,
-            returnedCount: books.length
-          });
-          
-          console.log(`[ERROR] ISBN search mismatch: Requested ${isbn}, but no matching books found`);
-          return [];
-        }
-        
-        // Return only the exact ISBN matches
-        apiLogger.logResponse("Perplexity", {
-          operation: "searchBooks",
-          status: "success",
-          resultsCount: matchingBooks.length,
-          filteredByISBN: true
-        });
-        
-        return matchingBooks;
-      }
-      
-      // Log successful search
-      apiLogger.logResponse("Perplexity", {
-        operation: "searchBooks",
-        status: "success",
-        resultsCount: books.length,
-      });
-      
-      return books;
-    } catch (error) {
-      apiLogger.logError("Perplexity", {
-        error: "Failed to parse Perplexity search response JSON",
-        content: content.substring(0, 100) + "...",
-        errorMessage: error.message,
-      });
-      return [];
-    }
-  } catch (error) {
-    apiLogger.logError("Perplexity", {
-      error: "Perplexity API search request failed",
-      message: error.message,
-    });
-    return [];
   }
 }
 
 // Find similar books using Perplexity
-export async function findSimilarBooksWithPerplexity(book: Partial<Book>): Promise<any[]> {
-  const { title, author, genres: bookGenres, themes: bookThemes } = book;
+export async function findSimilarBooks(book: Partial<Book>, language: string = "de"): Promise<any[]> {
+  const { title, author, genres, themes } = book;
   
-  // Safely handle potential null/undefined values for arrays
-  const genres = Array.isArray(bookGenres) ? bookGenres : [];
-  const themes = Array.isArray(bookThemes) ? bookThemes : [];
-  
-  // Create a description of the book to find similar books
-  let bookDescription = "";
-  if (title) bookDescription += `Title: ${title} `;
-  if (author) bookDescription += `Author: ${author} `;
-  if (genres.length > 0) bookDescription += `Genres: ${genres.join(", ")} `;
-  if (themes.length > 0) bookDescription += `Themes: ${themes.join(", ")} `; 
-  bookDescription = bookDescription.trim();
-  
-  // If insufficient information is provided, return an empty array
+  // Ensure we have minimum required information
   if (!title || !author) {
     return [];
   }
+  
+  // Create a unique ID for this request
+  const requestId = `perplexity_similar_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${requestId}] Finding similar books to "${title}" by ${author}`);
+  
+  // Create a clean system message
+  const systemMessage = `You are a professional librarian with expertise in book recommendations. Your task is to find books similar to the provided book information.
 
-  // Create the system message (instructions to Perplexity)
-  const systemMessage = `You are a professional book recommendation system.
-Your task is to find books that are similar to the provided book and return a list of recommendations.
+Book information:
+- Title: ${title}
+- Author: ${author}
+${genres && genres.length > 0 ? `- Genres: ${genres.join(", ")}` : ""}
+${themes && themes.length > 0 ? `- Themes: ${themes.join(", ")}` : ""}
 
-Provide your answer in JSON format as an array of book objects with the following structure:
+Provide your recommendations as a JSON array of book objects with this structure:
 [
   {
     "title": "Book title",
     "subtitle": "Subtitle if available, otherwise null",
     "author": "Author name",
-    "publisher": "Publisher name",
+    "publisher": "Publisher name if available",
     "publishedYear": year (as number),
-    "isbn": "ISBN (if available)",
-    "description": "Brief description of the book",
-    "categories": ["Category1", "Category2"],
-    "imageLinks": {
-      "thumbnail": "URL to thumbnail image if available"
-    },
-    "similarityReason": "Brief explanation of why this book is similar to the original"
+    "isbn": "ISBN if available",
+    "summary": "Brief description of the book",
+    "genres": ["Genre1", "Genre2"],
+    "similarityReason": "Brief explanation of why this book is similar"
   },
   ... additional books ...
 ]
 
-Important Guidelines:
-1. Find books that are genuinely similar in theme, style, content, or genre to the provided book.
-2. Do not include the original book in the recommendations.
-3. Limit the results to 5 books maximum.
-4. Be precise and accurate with book information.
-5. Include a brief explanation of why each book is similar to the original.
-6. Do not invent or fabricate details about the books.
+Guidelines:
+1. Recommend 3-5 books that are genuinely similar in theme, style, or content
+2. DO NOT include the original book in your recommendations
+3. Provide accurate information - do not fabricate details
+4. Provide the response in ${language} language
+5. Include a brief reason for each recommendation
+6. Focus on high-quality literary recommendations
 
-Return only the JSON array with no additional text or explanations.`;
+Return ONLY the JSON array, no introduction or explanation.`;
 
-  // Create the user message (the actual query)
-  const userMessage = `Find books similar to the following: ${bookDescription}`;
-
-  // Log the similar books request
-  apiLogger.logRequest("Perplexity", {
-    operation: "findSimilarBooks",
-    bookDescription,
-  });
+  // Simple user message
+  const userMessage = `Find books similar to "${title}" by ${author}`;
 
   try {
-    // Make the request to Perplexity
+    // Make a single clean request to Perplexity
     const response = await makePerplexityRequest(
       [
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage },
       ],
-      {
-        temperature: 0.3,
-        
-      }
+      { temperature: 0.3 } // Slightly higher temperature for creative recommendations
     );
 
-    // Extract the content from the response
+    // Get the raw response content
     const content = response.choices[0].message.content;
-
-    // Parse the JSON response
+    
     try {
+      // Parse the JSON response
       const similarBooks = JSON.parse(content);
       
-      // Log successful search
-      apiLogger.logResponse("Perplexity", {
-        operation: "findSimilarBooks",
-        status: "success",
-        resultsCount: similarBooks.length,
-      });
+      if (!Array.isArray(similarBooks) || similarBooks.length === 0) {
+        console.log(`[${requestId}] Perplexity returned no valid similar books`);
+        return [];
+      }
       
+      // Log success
+      console.log(`[${requestId}] Successfully found ${similarBooks.length} similar books`);
       return similarBooks;
     } catch (error) {
-      apiLogger.logError("Perplexity", {
-        error: "Failed to parse Perplexity similar books response JSON",
-        content: content.substring(0, 100) + "...",
-        errorMessage: error.message,
-      });
+      // Handle JSON parsing errors
+      console.log(`[${requestId}] Failed to parse Perplexity similar books response`);
       return [];
     }
   } catch (error) {
-    apiLogger.logError("Perplexity", {
-      error: "Perplexity API similar books request failed",
-      message: error.message,
-    });
+    // Handle API request errors
+    console.log(`[${requestId}] Perplexity API request failed for similar books`);
     return [];
-  }
-}
-
-// Get book by ISBN using Perplexity
-export async function getBookByISBNWithPerplexity(isbn: string): Promise<any | null> {
-  // Create the system message (instructions to Perplexity)
-  const systemMessage = `You are a professional book researcher specializing in ISBN lookups.
-Your task is to find detailed information about a book with the given ISBN.
-
-Provide your answer in JSON format with the following structure:
-{
-  "title": "Book title",
-  "subtitle": "Subtitle if available, otherwise null",
-  "author": "Author name",
-  "publisher": "Publisher name",
-  "publishedYear": year (as number),
-  "isbn": "${isbn}",
-  "description": "Brief description of the book",
-  "pageCount": number of pages (as number),
-  "categories": ["Category1", "Category2"],
-  "language": "Book language code (e.g., 'en', 'de')",
-  "imageLinks": {
-    "thumbnail": "URL to thumbnail image if available"
-  }
-}
-
-Important Guidelines:
-1. If you cannot find a book with this ISBN, return null.
-2. Be precise and accurate with book information.
-3. If a field is not available, use null for that field.
-4. Do not invent or fabricate details about the book.
-
-Return only the JSON object with no additional text or explanations.`;
-
-  // Create the user message (the actual query)
-  const userMessage = `Find detailed information about the book with ISBN: ${isbn}`;
-
-  // Log the ISBN lookup request
-  apiLogger.logRequest("Perplexity", {
-    operation: "getBookByISBN",
-    isbn,
-  });
-
-  try {
-    // Make the request to Perplexity
-    const response = await makePerplexityRequest(
-      [
-        { role: "system", content: systemMessage },
-        { role: "user", content: userMessage },
-      ],
-      {
-        temperature: 0.1,
-        
-      }
-    );
-
-    // Extract the content from the response
-    const content = response.choices[0].message.content;
-
-    // Parse the JSON response
-    try {
-      const bookData = JSON.parse(content);
-      
-      // If the bookData is null or doesn't have a title, consider it not found
-      if (!bookData || !bookData.title) {
-        apiLogger.logResponse("Perplexity", {
-          operation: "getBookByISBN",
-          isbn,
-          found: false,
-        });
-        return null;
-      }
-      
-      // Validate that the returned ISBN matches the requested ISBN
-      if (bookData.isbn) {
-        // Normalize ISBNs by removing hyphens and spaces for comparison
-        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
-        const normalizedResponseISBN = bookData.isbn.replace(/[-\s]/g, '');
-        
-        // If ISBNs don't match, reject this response as it's for the wrong book
-        if (normalizedRequestISBN !== normalizedResponseISBN) {
-          apiLogger.logError("Perplexity", {
-            error: "ISBN mismatch in Perplexity response for ISBN lookup",
-            requestedISBN: isbn,
-            returnedISBN: bookData.isbn
-          });
-          
-          console.log(`[ERROR] ISBN lookup mismatch: Requested ${isbn}, but Perplexity returned ${bookData.isbn}`);
-          
-          // Return null to trigger fallback to OpenAI
-          return null;
-        }
-      }
-      
-      // Log successful lookup
-      apiLogger.logResponse("Perplexity", {
-        operation: "getBookByISBN",
-        isbn,
-        found: true,
-        title: bookData.title,
-        author: bookData.author,
-      });
-      
-      return bookData;
-    } catch (error) {
-      apiLogger.logError("Perplexity", {
-        error: "Failed to parse Perplexity ISBN lookup response JSON",
-        content: content.substring(0, 100) + "...",
-        errorMessage: error.message,
-      });
-      return null;
-    }
-  } catch (error) {
-    apiLogger.logError("Perplexity", {
-      error: "Perplexity API ISBN lookup request failed",
-      message: error.message,
-    });
-    return null;
   }
 }

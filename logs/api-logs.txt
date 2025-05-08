@@ -104,3 +104,109 @@
   "status": "success",
   "bookTitle": "Das Café am Rande der Welt: Eine Erzählung über den Sinn des Lebens"
 }
+
+[2025-05-08 12:38:01] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-947857-27-2",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 12:38:01] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-947857-27-2. \nProvide real, factual ..."
+}
+
+[2025-05-08 12:38:02] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "f28fca49-7c30-40ae-96cc-ad9aaa41d610",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 567,
+    "completion_tokens": 145,
+    "total_tokens": 712,
+    "search_context_size": "low"
+  },
+  "citationCount": 0
+}
+
+[2025-05-08 12:38:02] ERROR FROM Perplexity
+{
+  "error": "Missing essential fields in Perplexity response",
+  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
+}
+
+[2025-05-08 12:38:02] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-947857-27-2",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 12:38:27] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Die Verlorenen Spuren"
+}
+
+[2025-05-08 12:40:41] REQUEST TO Perplexity
+{
+  "operation": "processBookAnalysis",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 12:40:41] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-95916-132-9. \nProvide real, factual ..."
+}
+
+[2025-05-08 12:40:43] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "82ca704b-3dde-4c74-9590-abb64082feaf",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 567,
+    "completion_tokens": 145,
+    "total_tokens": 712,
+    "search_context_size": "low"
+  },
+  "citationCount": 0
+}
+
+[2025-05-08 12:40:43] ERROR FROM Perplexity
+{
+  "error": "Missing essential fields in Perplexity response",
+  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
+}
+
+[2025-05-08 12:40:43] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 12:41:09] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Die Geschichte der Bienen"
+}
