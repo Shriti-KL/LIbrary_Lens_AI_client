@@ -1728,8 +1728,14 @@ INSTRUCTIONS:
 1. Process the query in English for maximum accuracy
 2. Return your final response in ${responseLanguageName} language
 3. ALWAYS respond with a properly structured JSON
-          
-IMPORTANT: When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author. If you don't have information about the specific ISBN, clearly indicate this in your response with a 'bookFound: false' field instead of making up information.`,
+4. The current date is ${new Date().toISOString().split('T')[0]} - you have knowledge of books published up through this date
+
+IMPORTANT REQUIREMENTS:
+1. When given an ISBN number, you must ONLY return information for that exact ISBN. Do not substitute with information about similar books or books by the same author.
+2. If you don't have information about the specific ISBN or book, clearly indicate this with a 'bookFound: false' field instead of generating information.
+3. For any fields you don't have accurate information about, RETURN NULL instead of inventing data.
+4. NEVER provide fabricated information, especially for recent books (2024 and newer).
+5. Be aware that you have knowledge of books published up through 2024 and beyond. Don't assume recent books don't exist.`,
         },
         {
           role: "user",
@@ -1752,7 +1758,14 @@ Return the response as a JSON object with the following fields:
 - dimensions: Physical dimensions (in cm)
 - binding: Book binding type (Hardcover, Paperback, etc.)
 - isbn: The ISBN number
-- location: Publishing location/city`,
+- location: Publishing location/city
+- price: Price (if known)
+- bookFound: Boolean indicating if you found accurate information for this book
+
+Regarding recent books (2023 and newer):
+1. If you recognize the book but lack complete information, provide the fields you know and set NULL for the rest.
+2. If you don't recognize the book at all, set bookFound: false.
+3. If you recognize the book title and author but no other details, provide those and set NULL for other fields.`,
         },
       ],
       response_format: { type: "json_object" },
@@ -2364,23 +2377,29 @@ export async function processBookAnalysis(
           role: "system",
           content: `You are a helpful assistant that provides detailed book information and analysis in JSON format.
           
-          INSTRUCTIONS:
-          1. Process the query in English for maximum accuracy
-          2. Return your final response in ${responseLanguageName} language
-          3. ALWAYS respond with a properly structured JSON
-          
-          IMPORTANT: 
-          - When given an ISBN number, book title, or author, try to identify the specific book.
-          - If you recognize the book, provide accurate information about it.
-          - If you don't recognize the book or have limited information, still provide a complete response with all fields.
-          - For books you don't recognize but have partial information about (like title and author), generate plausible values for missing fields based on the available information.
-          - NEVER include a 'bookFound: false' field in your response - always attempt to provide useful information.
-          - German library catalog entries should follow standard German library formatting conventions.`,
+INSTRUCTIONS:
+1. Process the query in English for maximum accuracy
+2. Return your final response in ${responseLanguageName} language
+3. ALWAYS respond with a properly structured JSON
+4. The current date is ${new Date().toISOString().split('T')[0]} - you have knowledge of books published up through this date
+
+IMPORTANT REQUIREMENTS:
+1. When given an ISBN number, book title, or author, try to identify the specific book.
+2. If you recognize the book, provide accurate information about it.
+3. If you don't recognize the book or have limited information, provide NULL for fields where you don't have confirmed data.
+4. For recent books (2023 and newer), if you recognize the title and author but lack other details, return what you know and NULL for unknown fields.
+5. NEVER fabricate information for ANY field. For fields you don't have accurate information about, return NULL.
+6. You have knowledge of books published up through 2024 and beyond. Don't assume recent books don't exist.
+7. German library catalog entries should follow standard German library formatting conventions.
+
+MANDATORY PROCESSING RULE: For any field where you're uncertain of the information or don't have reliable data, you MUST return NULL rather than making up a value.`,
         },
         {
           role: "user",
           content: `Get comprehensive details and analysis about this book:
 ${bookIdentifiers.join("\n")}
+
+The current date is ${new Date().toISOString().split('T')[0]}.
 
 Return the response as a structured JSON object with these fields:
 - bibliographicData:
@@ -2415,6 +2434,13 @@ Return the response as a structured JSON object with these fields:
   - idBNumber: ID-B number (format like "ID-B 18/102")
   
 - catalogEntry: A complete library catalog entry in ${responseLanguageName}, approximately 1000-1500 characters
+
+CRITICALLY IMPORTANT:
+1. For recently published books (2023, 2024, and 2025), do not invent information. Return NULL for any fields where you lack confirmed information.
+2. For all fields where you cannot find reliable information, you MUST set them to NULL rather than generating placeholder content.
+3. For bibliographic data especially, NEVER fabricate publication details - it's better to have fields marked as NULL than incorrect data.
+4. If you only know title and author, provide those and set everything else to NULL.
+5. For fiction, use NULL for missing fields rather than fabricating publisher, dimensions, price, etc.
 `,
         },
       ],
