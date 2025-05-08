@@ -1014,3 +1014,173 @@
     "isbn": "978-3-498-03567-9"
   }
 }
+
+[2025-05-08 08:33:53] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": " 978-3-95916-135-0",
+    "cleanedISBN": "9783959161350"
+  }
+}
+
+[2025-05-08 08:33:53] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161350",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 08:33:53] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161350",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 08:33:53] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": " 978-3-95916-135-0",
+  "found": true,
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
+}
+
+[2025-05-08 08:33:53] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN:  978-3-95916-135-0, Title: Abenteuer auf Römö, Author: Birgit Hedemann",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 08:33:56] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Abenteuer auf Römö"
+}
+
+[2025-05-08 08:34:43] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-630-87572-9",
+    "cleanedISBN": "9783630875729"
+  }
+}
+
+[2025-05-08 08:34:43] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783630875729&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783630875729",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 08:34:43] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783630875729",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 08:34:43] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-630-87572-9",
+  "found": true,
+  "title": "Neujahr",
+  "author": "Juli Zeh"
+}
+
+[2025-05-08 08:34:43] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-630-87572-9, Title: Neujahr, Author: Juli Zeh",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 08:35:01] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Neujahr"
+}
+
+[2025-05-08 08:36:06] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-630-87572-9",
+    "cleanedISBN": "9783630875729"
+  }
+}
+
+[2025-05-08 08:36:06] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783630875729&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783630875729",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 08:36:06] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783630875729",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 08:36:06] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-630-87572-9",
+  "found": true,
+  "title": "Neujahr",
+  "author": "Juli Zeh"
+}
+
+[2025-05-08 08:36:06] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Neujahr",
+    "author": "Juli Zeh",
+    "isbn": "978-3-630-87572-9"
+  }
+}
+
+[2025-05-08 08:36:09] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "status": "success",
+  "bookTitle": "Neujahr"
+}

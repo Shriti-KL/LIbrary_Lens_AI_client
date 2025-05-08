@@ -2326,6 +2326,60 @@ export async function processBookAnalysis(
       language: analysisRequest.language || "de",
     });
 
+    // First, try to get reliable metadata from Google Books API
+    let googleBookData: any = null;
+    let contextData = null;
+    let publicationYear = null;
+
+    if (analysisRequest.isbn) {
+      try {
+        console.log(`[${analysisId}] Fetching data from Google Books API for ISBN: ${analysisRequest.isbn}`);
+        googleBookData = await googleBooks.getBookByISBN(analysisRequest.isbn);
+        
+        if (googleBookData && googleBookData.volumeInfo) {
+          const volumeInfo = googleBookData.volumeInfo;
+          
+          // Extract the publication year for specific contextualization
+          if (volumeInfo.publishedDate) {
+            publicationYear = parseInt(volumeInfo.publishedDate.substring(0, 4));
+            console.log(`[${analysisId}] Publication year from Google Books: ${publicationYear}`);
+          }
+          
+          // Create structured context from volumeInfo for OpenAI
+          contextData = {
+            title: volumeInfo.title || analysisRequest.title,
+            author: (volumeInfo.authors && volumeInfo.authors.length > 0) ? 
+                   volumeInfo.authors[0] : analysisRequest.author,
+            authors: volumeInfo.authors || (analysisRequest.author ? [analysisRequest.author] : null),
+            publisher: volumeInfo.publisher || null,
+            publishedYear: publicationYear,
+            publishedDate: volumeInfo.publishedDate || null,
+            pageCount: volumeInfo.pageCount || null,
+            isbn: analysisRequest.isbn,
+            language: volumeInfo.language || "de",
+            categories: volumeInfo.categories || null,
+            description: volumeInfo.description || null,
+            mainCategory: volumeInfo.mainCategory || null,
+            averageRating: volumeInfo.averageRating || null,
+            ratingsCount: volumeInfo.ratingsCount || null,
+            maturityRating: volumeInfo.maturityRating || null,
+            printType: volumeInfo.printType || null,
+            isEbook: volumeInfo.isEbook || null,
+            industryIdentifiers: volumeInfo.industryIdentifiers || null,
+            dimensions: volumeInfo.dimensions || null,
+            contentVersion: volumeInfo.contentVersion || null,
+            imageLinks: volumeInfo.imageLinks || null,
+            saleInfo: googleBookData.saleInfo || null,
+          };
+          
+          console.log(`[${analysisId}] Google Books data found for "${contextData.title}" by "${contextData.author}"`);
+        }
+      } catch (error) {
+        console.error(`[${analysisId}] Error fetching from Google Books:`, error);
+        // Continue without Google Books data
+      }
+    }
+
     // Gather all available book information to send to OpenAI
     const bookIdentifiers = [];
     if (analysisRequest.isbn)
@@ -2334,6 +2388,11 @@ export async function processBookAnalysis(
       bookIdentifiers.push(`Title: ${analysisRequest.title}`);
     if (analysisRequest.author)
       bookIdentifiers.push(`Author: ${analysisRequest.author}`);
+    
+    // If we know the publication year, add it prominently to the identifiers
+    if (publicationYear) {
+      bookIdentifiers.push(`Publication Year: ${publicationYear}`);
+    }
 
     if (bookIdentifiers.length === 0) {
       throw new Error(
@@ -2383,14 +2442,18 @@ INSTRUCTIONS:
 3. ALWAYS respond with a properly structured JSON
 4. The current date is ${new Date().toISOString().split('T')[0]} - you have knowledge of books published up through this date
 
-IMPORTANT REQUIREMENTS:
-1. When given an ISBN number, book title, or author, try to identify the specific book.
-2. If you recognize the book, provide accurate information about it.
-3. If you don't recognize the book or have limited information, provide NULL for fields where you don't have confirmed data.
-4. For recent books (2023 and newer), if you recognize the title and author but lack other details, return what you know and NULL for unknown fields.
-5. NEVER fabricate information for ANY field. For fields you don't have accurate information about, return NULL.
-6. You have knowledge of books published up through 2024 and beyond. Don't assume recent books don't exist.
-7. German library catalog entries should follow standard German library formatting conventions.
+IMPORTANT BEHAVIOR RULES:
+1. When verified Google Books metadata is provided, use it as your primary trusted source for all bibliographic data
+2. For ALL books (especially recent ones from 2023-2025), if you don't have verified information about a field, set it to NULL
+3. For ALL books, NEVER invent or generate metadata without certainty - return NULL for any uncertain field
+4. Only generate summaries, genres, themes, and reading level assessments when you have sufficient knowledge about the book content
+5. You must NOT fabricate information about plot, characters, or themes if you're uncertain about a book's content
+6. For recent books where you don't know the content, return NULL for summary, genres, themes, etc.
+
+GOOGLE BOOKS DATA HANDLING:
+1. When Google Books data is provided, it should be treated as verified factual information
+2. For fields present in Google Books data, use those values exactly without modification
+3. For missing fields in Google Books data, return NULL unless you have high confidence in your own information
 
 MANDATORY PROCESSING RULE: For any field where you're uncertain of the information or don't have reliable data, you MUST return NULL rather than making up a value.`,
         },
@@ -2400,6 +2463,13 @@ MANDATORY PROCESSING RULE: For any field where you're uncertain of the informati
 ${bookIdentifiers.join("\n")}
 
 The current date is ${new Date().toISOString().split('T')[0]}.
+
+${contextData ? `
+VERIFIED METADATA FROM GOOGLE BOOKS API:
+${JSON.stringify(contextData, null, 2)}
+
+IMPORTANT: Use this verified Google Books data as your primary source of information. This data is confirmed to be accurate.
+` : ''}
 
 Return the response as a structured JSON object with these fields:
 - bibliographicData:
@@ -2441,6 +2511,8 @@ CRITICALLY IMPORTANT:
 3. For bibliographic data especially, NEVER fabricate publication details - it's better to have fields marked as NULL than incorrect data.
 4. If you only know title and author, provide those and set everything else to NULL.
 5. For fiction, use NULL for missing fields rather than fabricating publisher, dimensions, price, etc.
+6. This book was published in ${publicationYear ? publicationYear : 'an unknown year'} - treat it accordingly based on this date in your analysis.
+7. For recent books (${new Date().getFullYear()-2} and newer), if you cannot find enough details about the content from verified sources, return NULL for summary, genres, themes, etc. rather than inventing content.
 `,
         },
       ],
