@@ -22,7 +22,6 @@ export const books = pgTable("books", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   author: text("author").notNull(),
-  subtitle: text("subtitle"),             // Book subtitle
   isbn: text("isbn"),
   coverImageUrl: text("cover_image_url"),
   publisher: text("publisher"),
@@ -39,15 +38,11 @@ export const books = pgTable("books", {
   
   // Physical book properties
   dimensions: text("dimensions"),         // Physical dimensions (e.g., "21 x 15 cm")
-  
-  // New fields for enhanced book metadata
-  translator: text("translator"),         // Book translator 
-  illustrator: text("illustrator"),       // Book illustrator
-  edition: text("edition"),               // Edition information
-  location: text("location"),             // Publishing location/city
-  binding: text("binding"),               // Binding type (hardcover, paperback)
-  price: text("price"),                   // Price information
+  edition: text("edition"),               // Edition information (e.g., "First Edition")
   language: text("language").default("de"), // Language of the content (de, en, fr, es, zh)
+  location: text("location"),             // Library location (e.g., "Main Library, Section B")
+  binding: text("binding"),               // Binding type (e.g., "Hardcover", "Paperback")
+  price: text("price"),                   // Price information
   series: text("series"),                 // Series information
   contributors: jsonb("contributors").default([]), // Other contributors (editors, translators, etc.)
   
@@ -72,12 +67,10 @@ export const insertBookSchema = createInsertSchema(books)
 export const bookAnalysisSchema = z.object({
   title: z.string().optional(),
   author: z.string().optional(),
-  subtitle: z.string().nullable().optional(), // Book subtitle
   isbn: z.string().nullable().optional(),
   coverImage: z.string().optional(), // base64 encoded image for URL
   coverImageData: z.string().optional(), // base64 encoded image data with mimetype prefix
   coverImageUrl: z.string().nullable().optional(), // External URL for cover image
-  hasCoverImage: z.boolean().optional(), // Flag indicating if this book has a cover image
   publisher: z.string().nullable().optional(),
   publishedYear: z.number().nullable().optional(),
   pageCount: z.number().nullable().optional(),
@@ -91,17 +84,6 @@ export const bookAnalysisSchema = z.object({
   userId: z.number().nullable().optional(),
   language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional(), // The language to generate content in (e.g. "en", "de", "es", etc.)
   isUserEntry: z.boolean().optional(), // Flag indicating if this is user-entered data (should be corrected)
-  
-  // Physical book properties
-  dimensions: z.string().nullable().optional(), // Physical dimensions (e.g., "21 x 15 cm")
-  
-  // New fields for enhanced book metadata
-  translator: z.string().nullable().optional(), // Book translator 
-  illustrator: z.string().nullable().optional(), // Book illustrator
-  edition: z.string().nullable().optional(), // Edition information
-  location: z.string().nullable().optional(), // Publishing location/city
-  binding: z.string().nullable().optional(), // Binding type (hardcover, paperback)
-  price: z.string().nullable().optional(), // Price information
   
   // Library catalog specific fields
   catalogNumber: z.string().nullable().optional(),
