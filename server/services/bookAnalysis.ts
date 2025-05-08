@@ -83,11 +83,11 @@ export async function processBookAnalysis(
         author: null as unknown as string
       } as Partial<Book>;
       
-    } catch (error) {
-      console.log(`[${analysisId}] Error during book analysis:`, error.message || error);
+    } catch (error: any) {
+      console.log(`[${analysisId}] Error during book analysis:`, error?.message || String(error));
       apiLogger.logError("BookAnalysis", {
         error: "Book analysis failed",
-        message: error.message || "Unknown error",
+        message: error?.message || "Unknown error",
         isbn,
         analysisId
       });
@@ -121,11 +121,11 @@ export async function processBookAnalysis(
         author: analysisRequest.author || null as unknown as string
       } as Partial<Book>;
       
-    } catch (error) {
-      console.log(`[${analysisId}] Error during book analysis:`, error.message || error);
+    } catch (error: any) {
+      console.log(`[${analysisId}] Error during book analysis:`, error?.message || String(error));
       apiLogger.logError("BookAnalysis", {
         error: "Book analysis failed",
-        message: error.message || "Unknown error",
+        message: error?.message || "Unknown error",
         title: analysisRequest.title,
         author: analysisRequest.author,
         analysisId

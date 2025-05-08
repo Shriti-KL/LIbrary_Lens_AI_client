@@ -103,8 +103,8 @@ async function makePerplexityRequest(
     });
     
     return responseData;
-  } catch (error) {
-    console.error(`[ERROR] Perplexity API request failed: ${error.message}`);
+  } catch (error: any) {
+    console.error(`[ERROR] Perplexity API request failed: ${error?.message || String(error)}`);
     throw error;
   }
 }
@@ -238,23 +238,23 @@ Return ONLY the JSON object, no introduction or explanation.`;
       console.log(`- Publisher: ${bookData.publisher}`);
       
       return bookData;
-    } catch (error) {
+    } catch (error: any) {
       // Handle JSON parsing errors
       console.log(`[${lookupId}] Failed to parse Perplexity response for ISBN: ${isbn}`);
       apiLogger.logError("Perplexity", {
         error: "Failed to parse Perplexity response JSON",
         content: content.substring(0, 100) + "...",
-        errorMessage: error.message,
+        errorMessage: error?.message || String(error),
         lookupId,
       });
       return null;
     }
-  } catch (error) {
+  } catch (error: any) {
     // Handle API request errors
     console.log(`[${lookupId}] Perplexity API request failed for ISBN: ${isbn}`);
     apiLogger.logError("Perplexity", {
       error: "Perplexity API request failed",
-      message: error.message,
+      message: error?.message || String(error),
       lookupId,
     });
     return null;
@@ -280,8 +280,8 @@ export async function findSimilarBooks(book: Partial<Book>, language: string = "
 Book information:
 - Title: ${title}
 - Author: ${author}
-${genres && genres.length > 0 ? `- Genres: ${genres.join(", ")}` : ""}
-${themes && themes.length > 0 ? `- Themes: ${themes.join(", ")}` : ""}
+${genres && Array.isArray(genres) && genres.length > 0 ? `- Genres: ${genres.join(", ")}` : ""}
+${themes && Array.isArray(themes) && themes.length > 0 ? `- Themes: ${themes.join(", ")}` : ""}
 
 Provide your recommendations as a JSON array of book objects with this structure:
 [
@@ -337,14 +337,14 @@ Return ONLY the JSON array, no introduction or explanation.`;
       // Log success
       console.log(`[${requestId}] Successfully found ${similarBooks.length} similar books`);
       return similarBooks;
-    } catch (error) {
+    } catch (error: any) {
       // Handle JSON parsing errors
-      console.log(`[${requestId}] Failed to parse Perplexity similar books response`);
+      console.log(`[${requestId}] Failed to parse Perplexity similar books response: ${error?.message || String(error)}`);
       return [];
     }
-  } catch (error) {
+  } catch (error: any) {
     // Handle API request errors
-    console.log(`[${requestId}] Perplexity API request failed for similar books`);
+    console.log(`[${requestId}] Perplexity API request failed for similar books: ${error?.message || String(error)}`);
     return [];
   }
 }

@@ -558,8 +558,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxResults
       };
       
-      // Import the searchBooks function from bookAnalysis service
-      const { searchBooks } = await import("./services/bookAnalysis");
+      // Import the searchBooks function from googleBooks service
+      const { searchBooks } = await import("./services/googleBooks");
       const results = await searchBooks(searchParams);
       
       res.status(200).json(results);
@@ -577,9 +577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
-      // Import the getBookByISBN function from bookAnalysis service
-      const { getBookByISBN } = await import("./services/bookAnalysis");
-      const book = await getBookByISBN(isbn);
+      // Import the getBookByISBNWithFallback function from bookAnalysis service
+      const { getBookByISBNWithFallback } = await import("./services/bookAnalysis");
+      const book = await getBookByISBNWithFallback(isbn, req.query.language as string || "de");
       
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
@@ -600,9 +600,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
-      // Import the searchSimilarBooks function from bookAnalysis service
-      const { searchSimilarBooks } = await import("./services/bookAnalysis");
-      const similarBooks = await searchSimilarBooks(bookInfo);
+      // Import the getSimilarBooks function from bookAnalysis service
+      const { getSimilarBooks } = await import("./services/bookAnalysis");
+      const similarBooks = await getSimilarBooks(bookInfo);
       
       res.status(200).json(similarBooks);
     } catch (error) {
