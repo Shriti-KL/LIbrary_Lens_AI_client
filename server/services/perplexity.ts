@@ -70,11 +70,12 @@ async function makePerplexityRequest(
     frequency_penalty: 1,
   };
 
-  // Combine default options with provided options
+  // Combine default options with provided options and ensure model is always set
   const requestOptions: PerplexityRequest = {
+    model: options.model || defaultOptions.model!, // Ensure model is always defined
+    messages,
     ...defaultOptions,
     ...options,
-    messages,
   };
 
   // Log the request details (redacted for security)
@@ -123,7 +124,7 @@ async function makePerplexityRequest(
 // Process a book analysis request using Perplexity
 export async function processBookAnalysisWithPerplexity(
   analysisRequest: BookAnalysisRequest
-): Promise<Partial<Book>> {
+): Promise<Partial<Book> | null> {
   const { title, author, isbn, language } = analysisRequest;
 
   // Determine if we have an ISBN
