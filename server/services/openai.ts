@@ -554,7 +554,7 @@ ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse 4-5' or 'Alter 12-14' for German), and 'score' (a number from 1-10 representing complexity).\n\n${contextText}`,
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse' or 'Alter' for German), and 'score' (a number from 1-10 representing complexity).\n\n${contextText}`,
         },
       ],
       response_format: { type: "json_object" },
@@ -831,9 +831,9 @@ ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ""}`;
           role: "user",
           content: `Generate German library catalog specific fields for this book. 
 Return a JSON object with the following fields:
-- catalogNumber: an ASB classification number (like "103.485.0")
+- catalogNumber: an ASB classification number
 - categories: an array of applicable ASB categories
-- secondaryClassification: a secondary classification like "4.3/Y" or "6.1/Aax"
+- secondaryClassification: a secondary classification
 - reviewerName: a German reviewer name in the format "Firstname Lastname"
 - interestCategory: an interest category in the format "IK: Category; ab X" where X is an age
 - idBNumber: an ID-B number in the format "ID-B YY/ZZ" where YY is the year and ZZ is a sequence number
@@ -982,35 +982,16 @@ Important details for bibliographic estimation:
           role: "user",
           content: `Based on the available information about "${bookInfo.title}" by "${bookInfo.author}", provide realistic estimates for the missing bibliographic data.
 
-Return a JSON object with the following fields that are UNIQUELY tailored to THIS SPECIFIC BOOK:
-- pageCount: A precise, realistic page count based on this book's specific genre, content complexity, and target audience. NEVER use generic counts like 250, 300, or 320 as defaults. (provide just the number)
-- binding: The likely binding type for this book (e.g., "Hardcover", "Taschenbuch", "Gebunden", etc.)
-- dimensions: Realistic physical dimensions for this book (e.g., "14.5 x 21.2 cm") that reflect the book's type
-- edition: Likely edition information (e.g., "1. Auflage", "Zweite Ausgabe", etc.)
+Return a JSON object with the following fields:
+- pageCount: provide the number of pages for this book 
+- binding: The binding type for this book (e.g., "Hardcover", "Paperback", etc.)
+- dimensions: physical dimensions for this book in cm
+- edition: Likely edition information
 - location: Publisher's location/city
-- publisher: Publisher name (if missing)
+- publisher: Publisher name
 
 CRITICAL GUIDELINES:
-1. EVERY BOOK MUST HAVE DISTINCT BIBLIOGRAPHIC VALUES - no two books should have identical page counts or dimensions
-2. For pageCount, use these guidelines based on genre and reading level:
-   - Children's picture books: 24-48 pages
-   - Early readers: 48-96 pages
-   - Middle-grade fiction: 128-224 pages
-   - Young adult fiction: 224-384 pages
-   - Adult fiction: 256-496 pages depending on genre (thrillers shorter, fantasy longer)
-   - Academic/scholarly works: 288-672 pages
-   - Choose a SPECIFIC number within these ranges, never a round number like 300 or 350
-
-3. For dimensions, vary by book type:
-   - Children's books: Typically larger format (21 x 29.7 cm or 22.5 x 27 cm)
-   - Mass market paperbacks: Smaller format (10.5 x 17.5 cm)
-   - Trade paperbacks: Medium format (13.5 x 21 cm)
-   - Hardcover fiction: Standard format (14.5 x 22 cm)
-   - Coffee table/art books: Large format (23 x 28 cm)
-   - Choose SPECIFIC dimensions with decimal precision (like 14.8 x 21.3 cm)
-
-4. If you cannot estimate a specific field with confidence, leave it as null
-5. Use the book's genre, period, and content complexity to inform your estimates
+Do not estimate any specific field, if information is missing leave it as null
 
 Available information:
 ${context}`,
@@ -1726,13 +1707,13 @@ ${bookInfo.summary ? `Summary preview: ${bookInfo.summary.substring(0, 150)}...`
       responseLanguage === "de"
         ? "German"
         : responseLanguage === "en"
-        ? "English"
-        : responseLanguage === "fr"
-        ? "French"
-        : responseLanguage === "es"
-        ? "Spanish"
-        : "German";
-        
+          ? "English"
+          : responseLanguage === "fr"
+            ? "French"
+            : responseLanguage === "es"
+              ? "Spanish"
+              : "German";
+
     // Query OpenAI to enrich the book's metadata with a simple but structured prompt
     // Using English for the query but requesting response in user's language
     const response = await openai.chat.completions.create({
@@ -1797,22 +1778,28 @@ Return the response as a JSON object with the following fields:
         "Raw OpenAI enrichment response:",
         JSON.stringify(enrichedData).substring(0, 500) + "...",
       );
-      
+
       // Check if the book was not found
       if (enrichedData.bookFound === false) {
-        console.log(`[${enrichmentId}] OpenAI indicates book not found for ISBN: ${bookInfo.isbn}`);
+        console.log(
+          `[${enrichmentId}] OpenAI indicates book not found for ISBN: ${bookInfo.isbn}`,
+        );
         return bookInfo; // Return original info if book not found
       }
-      
+
       // Verify if the returned ISBN matches the requested ISBN (if an ISBN was provided)
       if (bookInfo.isbn) {
-        const requestedIsbn = bookInfo.isbn.replace(/[^0-9X]/gi, '');
-        const returnedIsbn = enrichedData.isbn?.replace(/[^0-9X]/gi, '');
-        
+        const requestedIsbn = bookInfo.isbn.replace(/[^0-9X]/gi, "");
+        const returnedIsbn = enrichedData.isbn?.replace(/[^0-9X]/gi, "");
+
         if (returnedIsbn && requestedIsbn !== returnedIsbn) {
-          console.log(`[${enrichmentId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`);
-          console.log(`[${enrichmentId}] This suggests OpenAI may have provided information for a different book.`);
-          
+          console.log(
+            `[${enrichmentId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`,
+          );
+          console.log(
+            `[${enrichmentId}] This suggests OpenAI may have provided information for a different book.`,
+          );
+
           // Add warning metadata
           enrichedData.metadata = enrichedData.metadata || {};
           enrichedData.metadata.isbnMismatch = true;
@@ -1936,22 +1923,28 @@ export async function enrichBookMetadata(
   try {
     // Create a unique ID for this request
     const enrichmentId = `enrich_hybrid_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    console.log(`[${enrichmentId}] Starting hybrid book metadata enrichment for "${bookInfo.title || bookInfo.isbn}" by "${bookInfo.author || "unknown"}"`);
-    
+    console.log(
+      `[${enrichmentId}] Starting hybrid book metadata enrichment for "${bookInfo.title || bookInfo.isbn}" by "${bookInfo.author || "unknown"}"`,
+    );
+
     // STEP 1: Get accurate base information from Google Books API
     let googleBooksData: Partial<Book> = { ...bookInfo };
-    
+
     if (bookInfo.isbn) {
       try {
-        console.log(`[${enrichmentId}] Fetching book data from Google Books API using ISBN: ${bookInfo.isbn}`);
+        console.log(
+          `[${enrichmentId}] Fetching book data from Google Books API using ISBN: ${bookInfo.isbn}`,
+        );
         const googleBook = await googleBooks.getBookByISBN(bookInfo.isbn);
-        
+
         if (googleBook && googleBook.volumeInfo) {
-          console.log(`[${enrichmentId}] Google Books API returned data for ISBN: ${bookInfo.isbn}`);
-          
+          console.log(
+            `[${enrichmentId}] Google Books API returned data for ISBN: ${bookInfo.isbn}`,
+          );
+
           // Extract the relevant fields from Google Books response
           const volumeInfo = googleBook.volumeInfo;
-          
+
           // Extract subtitle if available (often part of the title with a separator)
           let mainTitle = volumeInfo.title || "";
           let subtitle = null;
@@ -1962,43 +1955,47 @@ export async function enrichBookMetadata(
           } else if (volumeInfo.subtitle) {
             subtitle = volumeInfo.subtitle;
           }
-          
+
           // Extract price information if available
           let price = null;
           if (volumeInfo.saleInfo && volumeInfo.saleInfo.listPrice) {
             price = `${volumeInfo.saleInfo.listPrice.amount} ${volumeInfo.saleInfo.listPrice.currencyCode}`;
           }
-          
+
           // Extract translator and illustrator from volumeInfo.authors or other contributors
           let translator = null;
           let illustrator = null;
-          
+
           // Extract edition info (may be in volumeInfo.contentVersion or title)
           let edition = null;
           if (volumeInfo.contentVersion) {
             edition = volumeInfo.contentVersion;
           }
-          
+
           // Extract place/location from publisher or publisherInfo if available
           let location = null;
-          
+
           // Extract size/dimensions from volumeInfo
           let dimensions = null;
           if (volumeInfo.dimensions) {
             dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
           }
-          
+
           // Extract binding type from volumeInfo
           let binding = null;
           if (volumeInfo.printType) {
-            binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
+            binding =
+              volumeInfo.printType === "BOOK"
+                ? "Hardcover"
+                : volumeInfo.printType;
           }
-          
+
           // Log missing fields for debugging
           const missingFields = [];
           if (!mainTitle) missingFields.push("title");
           if (!subtitle) missingFields.push("subtitle");
-          if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("author");
+          if (!volumeInfo.authors || volumeInfo.authors.length === 0)
+            missingFields.push("author");
           if (!translator) missingFields.push("translator");
           if (!illustrator) missingFields.push("illustrator");
           if (!edition) missingFields.push("edition");
@@ -2009,27 +2006,39 @@ export async function enrichBookMetadata(
           if (!dimensions) missingFields.push("size");
           if (!binding) missingFields.push("binding");
           if (!price) missingFields.push("price");
-          
+
           if (missingFields.length > 0) {
-            console.log(`[${enrichmentId}] Google Books API missing fields: ${missingFields.join(", ")}`);
+            console.log(
+              `[${enrichmentId}] Google Books API missing fields: ${missingFields.join(", ")}`,
+            );
           }
-          
+
           // Update our book info with Google Books data
           googleBooksData = {
             ...bookInfo,
             title: bookInfo.title || mainTitle,
-            subtitle: bookInfo.subtitle || subtitle, 
-            author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            subtitle: bookInfo.subtitle || subtitle,
+            author:
+              bookInfo.author ||
+              (volumeInfo.authors && volumeInfo.authors.length > 0
+                ? volumeInfo.authors[0]
+                : null),
             translator: bookInfo.translator || translator,
             illustrator: bookInfo.illustrator || illustrator,
             publisher: bookInfo.publisher || volumeInfo.publisher,
-            publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+            publishedYear:
+              bookInfo.publishedYear ||
+              (volumeInfo.publishedDate
+                ? parseInt(volumeInfo.publishedDate.substring(0, 4))
+                : null),
             pageCount: bookInfo.pageCount || volumeInfo.pageCount,
             // Other fields
             summary: bookInfo.summary || volumeInfo.description,
             language: bookInfo.language || volumeInfo.language || "de",
             // Get cover image if available
-            coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+            coverImageUrl:
+              bookInfo.coverImageUrl ||
+              (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
             // Extract ISBN if available
             isbn: bookInfo.isbn, // Keep original ISBN format
             edition: bookInfo.edition || edition,
@@ -2042,40 +2051,58 @@ export async function enrichBookMetadata(
               ...(bookInfo.metadata || {}),
               source: "google_books",
               googleBookId: googleBook.id,
-              ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
-              ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
-              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {}),
-              missingFields: missingFields.length > 0 ? missingFields : undefined
-            }
+              ...(volumeInfo.categories
+                ? { categories: volumeInfo.categories }
+                : {}),
+              ...(volumeInfo.averageRating
+                ? { averageRating: volumeInfo.averageRating }
+                : {}),
+              ...(volumeInfo.ratingsCount
+                ? { ratingsCount: volumeInfo.ratingsCount }
+                : {}),
+              missingFields:
+                missingFields.length > 0 ? missingFields : undefined,
+            },
           };
-          
-          console.log(`[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`);
+
+          console.log(
+            `[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`,
+          );
         } else {
-          console.log(`[${enrichmentId}] Google Books API did not return data for ISBN: ${bookInfo.isbn}`);
+          console.log(
+            `[${enrichmentId}] Google Books API did not return data for ISBN: ${bookInfo.isbn}`,
+          );
         }
       } catch (error) {
-        console.error(`[${enrichmentId}] Error fetching from Google Books API:`, error);
+        console.error(
+          `[${enrichmentId}] Error fetching from Google Books API:`,
+          error,
+        );
         // Continue with original data if Google Books fails
       }
     } else if (bookInfo.title) {
       try {
-        console.log(`[${enrichmentId}] Fetching book data from Google Books API using title: "${bookInfo.title}"`);
+        console.log(
+          `[${enrichmentId}] Fetching book data from Google Books API using title: "${bookInfo.title}"`,
+        );
         const searchParams = {
           query: bookInfo.title,
           title: bookInfo.title,
           ...(bookInfo.author ? { author: bookInfo.author } : {}),
-          maxResults: 1
+          maxResults: 1,
         };
-        
+
         const searchResults = await googleBooks.searchBooks(searchParams);
-        
+
         if (searchResults && searchResults.length > 0) {
           const googleBook = searchResults[0];
-          console.log(`[${enrichmentId}] Google Books API returned data for title: "${bookInfo.title}"`);
-          
+          console.log(
+            `[${enrichmentId}] Google Books API returned data for title: "${bookInfo.title}"`,
+          );
+
           // Extract the relevant fields from Google Books response
           const volumeInfo = googleBook.volumeInfo;
-          
+
           // Extract subtitle if available (often part of the title with a separator)
           let mainTitle = volumeInfo.title || "";
           let subtitle = null;
@@ -2086,43 +2113,47 @@ export async function enrichBookMetadata(
           } else if (volumeInfo.subtitle) {
             subtitle = volumeInfo.subtitle;
           }
-          
+
           // Extract price information if available
           let price = null;
           if (volumeInfo.saleInfo && volumeInfo.saleInfo.listPrice) {
             price = `${volumeInfo.saleInfo.listPrice.amount} ${volumeInfo.saleInfo.listPrice.currencyCode}`;
           }
-          
+
           // Extract translator and illustrator from volumeInfo.authors or other contributors
           let translator = null;
           let illustrator = null;
-          
+
           // Extract edition info (may be in volumeInfo.contentVersion or title)
           let edition = null;
           if (volumeInfo.contentVersion) {
             edition = volumeInfo.contentVersion;
           }
-          
+
           // Extract place/location from publisher or publisherInfo if available
           let location = null;
-          
+
           // Extract size/dimensions from volumeInfo
           let dimensions = null;
           if (volumeInfo.dimensions) {
             dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
           }
-          
+
           // Extract binding type from volumeInfo
           let binding = null;
           if (volumeInfo.printType) {
-            binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
+            binding =
+              volumeInfo.printType === "BOOK"
+                ? "Hardcover"
+                : volumeInfo.printType;
           }
-          
+
           // Log missing fields for debugging
           const missingFields = [];
           if (!mainTitle) missingFields.push("title");
           if (!subtitle) missingFields.push("subtitle");
-          if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("author");
+          if (!volumeInfo.authors || volumeInfo.authors.length === 0)
+            missingFields.push("author");
           if (!translator) missingFields.push("translator");
           if (!illustrator) missingFields.push("illustrator");
           if (!edition) missingFields.push("edition");
@@ -2133,32 +2164,50 @@ export async function enrichBookMetadata(
           if (!dimensions) missingFields.push("size");
           if (!binding) missingFields.push("binding");
           if (!price) missingFields.push("price");
-          
+
           if (missingFields.length > 0) {
-            console.log(`[${enrichmentId}] Google Books API missing fields for title search: ${missingFields.join(", ")}`);
+            console.log(
+              `[${enrichmentId}] Google Books API missing fields for title search: ${missingFields.join(", ")}`,
+            );
           }
-          
+
           // Update our book info with Google Books data - keep the title from user input
           googleBooksData = {
             ...bookInfo,
             title: bookInfo.title || mainTitle,
-            subtitle: bookInfo.subtitle || subtitle, 
-            author: bookInfo.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+            subtitle: bookInfo.subtitle || subtitle,
+            author:
+              bookInfo.author ||
+              (volumeInfo.authors && volumeInfo.authors.length > 0
+                ? volumeInfo.authors[0]
+                : null),
             translator: bookInfo.translator || translator,
             illustrator: bookInfo.illustrator || illustrator,
             publisher: bookInfo.publisher || volumeInfo.publisher,
-            publishedYear: bookInfo.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+            publishedYear:
+              bookInfo.publishedYear ||
+              (volumeInfo.publishedDate
+                ? parseInt(volumeInfo.publishedDate.substring(0, 4))
+                : null),
             pageCount: bookInfo.pageCount || volumeInfo.pageCount,
             // Other fields
             summary: bookInfo.summary || volumeInfo.description,
             language: bookInfo.language || volumeInfo.language || "de",
             // Get cover image if available
-            coverImageUrl: bookInfo.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+            coverImageUrl:
+              bookInfo.coverImageUrl ||
+              (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
             // Extract ISBN if available
-            isbn: bookInfo.isbn || (volumeInfo.industryIdentifiers ? 
-                   volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13")?.identifier || 
-                   volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10")?.identifier : 
-                   null),
+            isbn:
+              bookInfo.isbn ||
+              (volumeInfo.industryIdentifiers
+                ? volumeInfo.industryIdentifiers.find(
+                    (id: any) => id.type === "ISBN_13",
+                  )?.identifier ||
+                  volumeInfo.industryIdentifiers.find(
+                    (id: any) => id.type === "ISBN_10",
+                  )?.identifier
+                : null),
             edition: bookInfo.edition || edition,
             location: bookInfo.location || location,
             dimensions: bookInfo.dimensions || dimensions,
@@ -2169,32 +2218,49 @@ export async function enrichBookMetadata(
               ...(bookInfo.metadata || {}),
               source: "google_books",
               googleBookId: googleBook.id,
-              ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
-              ...(volumeInfo.averageRating ? { averageRating: volumeInfo.averageRating } : {}),
-              ...(volumeInfo.ratingsCount ? { ratingsCount: volumeInfo.ratingsCount } : {}),
-              missingFields: missingFields.length > 0 ? missingFields : undefined
-            }
+              ...(volumeInfo.categories
+                ? { categories: volumeInfo.categories }
+                : {}),
+              ...(volumeInfo.averageRating
+                ? { averageRating: volumeInfo.averageRating }
+                : {}),
+              ...(volumeInfo.ratingsCount
+                ? { ratingsCount: volumeInfo.ratingsCount }
+                : {}),
+              missingFields:
+                missingFields.length > 0 ? missingFields : undefined,
+            },
           };
-          
-          console.log(`[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`);
+
+          console.log(
+            `[${enrichmentId}] Updated book info with Google Books data: "${googleBooksData.title}" by "${googleBooksData.author}"`,
+          );
         } else {
-          console.log(`[${enrichmentId}] Google Books API did not return data for title: "${bookInfo.title}"`);
+          console.log(
+            `[${enrichmentId}] Google Books API did not return data for title: "${bookInfo.title}"`,
+          );
         }
       } catch (error) {
-        console.error(`[${enrichmentId}] Error searching Google Books API:`, error);
+        console.error(
+          `[${enrichmentId}] Error searching Google Books API:`,
+          error,
+        );
         // Continue with original data if Google Books fails
       }
     }
-    
+
     // STEP 2: Enrich with OpenAI to get additional library-specific data
     // Only use OpenAI if we have at least a title or ISBN
     if (googleBooksData.title || googleBooksData.isbn) {
-      console.log(`[${enrichmentId}] Enriching book data with OpenAI using base data from Google Books`);
-      
+      console.log(
+        `[${enrichmentId}] Enriching book data with OpenAI using base data from Google Books`,
+      );
+
       // Note: We're now passing Google Books enhanced data to OpenAI
       // This way OpenAI will have accurate base information to work with
-      const openAIEnrichedData = await enrichBookMetadataWithOpenAI(googleBooksData);
-      
+      const openAIEnrichedData =
+        await enrichBookMetadataWithOpenAI(googleBooksData);
+
       // Merge the two data sources, giving precedence to Google Books for basic bibliographic data
       // but using OpenAI for more specialized library data
       return {
@@ -2203,18 +2269,19 @@ export async function enrichBookMetadata(
         title: googleBooksData.title || openAIEnrichedData.title,
         author: googleBooksData.author || openAIEnrichedData.author,
         publisher: googleBooksData.publisher || openAIEnrichedData.publisher,
-        publishedYear: googleBooksData.publishedYear || openAIEnrichedData.publishedYear,
+        publishedYear:
+          googleBooksData.publishedYear || openAIEnrichedData.publishedYear,
         pageCount: googleBooksData.pageCount || openAIEnrichedData.pageCount,
         isbn: googleBooksData.isbn || openAIEnrichedData.isbn,
         // Combine metadata from both sources
         metadata: {
           ...(googleBooksData.metadata || {}),
           ...(openAIEnrichedData.metadata || {}),
-          hybridEnrichment: true
-        }
+          hybridEnrichment: true,
+        },
       };
     }
-    
+
     return googleBooksData;
   } catch (error: any) {
     console.error("Error in hybrid book metadata enrichment:", error);
@@ -2222,7 +2289,7 @@ export async function enrichBookMetadata(
       operation: "enrichBookMetadata",
       error: error.message || String(error),
       bookTitle: bookInfo.title,
-      isbn: bookInfo.isbn
+      isbn: bookInfo.isbn,
     });
     // Return original book info if all enrichment fails
     return bookInfo;
@@ -2360,36 +2427,53 @@ Return the response as a structured JSON object with these fields:
       console.log(
         `[${analysisId}] Successfully received comprehensive book analysis from OpenAI`,
       );
-      
+
       // Check if the book was not found in OpenAI's knowledge
       if (result.bookFound === false) {
-        console.log(`[${analysisId}] OpenAI indicates book not found for identifiers: ${bookIdentifiers.join(", ")}`);
-        console.log(`[${analysisId}] Using only Google Books data for this book`);
-        
+        console.log(
+          `[${analysisId}] OpenAI indicates book not found for identifiers: ${bookIdentifiers.join(", ")}`,
+        );
+        console.log(
+          `[${analysisId}] Using only Google Books data for this book`,
+        );
+
         // Instead of throwing an error, let's use the existing metadata from Google Books if available
         // This way we're using the hybrid approach to its full potential
-        
+
         // Get basic book data using Google Books API
         let googleData: Partial<Book> = { ...analysisRequest };
-        
+
         try {
           if (analysisRequest.isbn) {
-            console.log(`[${analysisId}] Fetching data from Google Books API for ISBN: ${analysisRequest.isbn}`);
-            const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
-            
+            console.log(
+              `[${analysisId}] Fetching data from Google Books API for ISBN: ${analysisRequest.isbn}`,
+            );
+            const googleBook = await googleBooks.getBookByISBN(
+              analysisRequest.isbn,
+            );
+
             if (googleBook && googleBook.volumeInfo) {
               const volumeInfo = googleBook.volumeInfo;
-              
+
               // Update with Google Books data
               googleData = {
                 ...analysisRequest,
                 title: analysisRequest.title || volumeInfo.title,
-                author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+                author:
+                  analysisRequest.author ||
+                  (volumeInfo.authors && volumeInfo.authors.length > 0
+                    ? volumeInfo.authors[0]
+                    : ""),
                 publisher: volumeInfo.publisher || null,
-                publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+                publishedYear: volumeInfo.publishedDate
+                  ? parseInt(volumeInfo.publishedDate.substring(0, 4))
+                  : null,
                 pageCount: volumeInfo.pageCount || null,
                 language: volumeInfo.language || "de",
-                coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+                coverImageUrl:
+                  (volumeInfo.imageLinks
+                    ? volumeInfo.imageLinks.thumbnail
+                    : null) || analysisRequest.coverImageUrl,
                 summary: volumeInfo.description || null,
                 // Add any missing fields with null values
                 genres: null,
@@ -2401,47 +2485,61 @@ Return the response as a structured JSON object with these fields:
                   googleBookId: googleBook.id,
                   categories: volumeInfo.categories || [],
                   openaiStatus: "book_not_found",
-                  coverImage: !!analysisRequest.coverImageData
-                }
+                  coverImage: !!analysisRequest.coverImageData,
+                },
               };
-              
-              console.log(`[${analysisId}] Successfully got Google Books data for: "${googleData.title}" by "${googleData.author}"`);
+
+              console.log(
+                `[${analysisId}] Successfully got Google Books data for: "${googleData.title}" by "${googleData.author}"`,
+              );
               return googleData;
             }
           }
-          
+
           // If we reach here, either no ISBN was provided or Google Books didn't find the book either
-          console.log(`[${analysisId}] Google Books API did not return data for this book`);
+          console.log(
+            `[${analysisId}] Google Books API did not return data for this book`,
+          );
           return {
             ...analysisRequest,
             metadata: {
               source: "user_input",
               openaiStatus: "book_not_found",
-              googleBooksStatus: "book_not_found"
-            }
+              googleBooksStatus: "book_not_found",
+            },
           };
         } catch (error) {
-          console.error(`[${analysisId}] Error fetching from Google Books API:`, error);
+          console.error(
+            `[${analysisId}] Error fetching from Google Books API:`,
+            error,
+          );
           // Continue with just the user input data
           return {
             ...analysisRequest,
             metadata: {
               source: "user_input",
               openaiStatus: "book_not_found",
-              googleBooksStatus: "error"
-            }
+              googleBooksStatus: "error",
+            },
           };
         }
       }
-      
+
       // Verify if the returned ISBN matches the requested ISBN (if an ISBN was provided)
-      const requestedIsbn = analysisRequest.isbn?.replace(/[^0-9X]/gi, '');
-      const returnedIsbn = result.bibliographicData?.isbn?.replace(/[^0-9X]/gi, '');
-      
+      const requestedIsbn = analysisRequest.isbn?.replace(/[^0-9X]/gi, "");
+      const returnedIsbn = result.bibliographicData?.isbn?.replace(
+        /[^0-9X]/gi,
+        "",
+      );
+
       if (requestedIsbn && returnedIsbn && requestedIsbn !== returnedIsbn) {
-        console.log(`[${analysisId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`);
-        console.log(`[${analysisId}] This suggests OpenAI may have provided information for a different book.`);
-        
+        console.log(
+          `[${analysisId}] WARNING: ISBN mismatch detected! Requested: ${requestedIsbn}, Returned: ${returnedIsbn}`,
+        );
+        console.log(
+          `[${analysisId}] This suggests OpenAI may have provided information for a different book.`,
+        );
+
         // We'll still return the data, but with a warning in the metadata
         result.metadata = result.metadata || {};
         result.metadata.isbnMismatch = true;
@@ -2524,31 +2622,46 @@ Return the response as a structured JSON object with these fields:
         error: error.message || String(error),
         bookIdentifiers: bookIdentifiers.join(", "),
       });
-      
+
       // Instead of throwing an error, try to recover with Google Books data
-      console.log(`[${analysisId}] Attempting to recover with Google Books data`);
-      
+      console.log(
+        `[${analysisId}] Attempting to recover with Google Books data`,
+      );
+
       // Get basic book data using Google Books API as a fallback
       let googleData: Partial<Book> = { ...analysisRequest };
-      
+
       try {
         if (analysisRequest.isbn) {
-          console.log(`[${analysisId}] Fetching fallback data from Google Books API for ISBN: ${analysisRequest.isbn}`);
-          const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
-          
+          console.log(
+            `[${analysisId}] Fetching fallback data from Google Books API for ISBN: ${analysisRequest.isbn}`,
+          );
+          const googleBook = await googleBooks.getBookByISBN(
+            analysisRequest.isbn,
+          );
+
           if (googleBook && googleBook.volumeInfo) {
             const volumeInfo = googleBook.volumeInfo;
-            
+
             // Update with Google Books data
             googleData = {
               ...analysisRequest,
               title: analysisRequest.title || volumeInfo.title,
-              author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+              author:
+                analysisRequest.author ||
+                (volumeInfo.authors && volumeInfo.authors.length > 0
+                  ? volumeInfo.authors[0]
+                  : ""),
               publisher: volumeInfo.publisher || null,
-              publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+              publishedYear: volumeInfo.publishedDate
+                ? parseInt(volumeInfo.publishedDate.substring(0, 4))
+                : null,
               pageCount: volumeInfo.pageCount || null,
               language: volumeInfo.language || "de",
-              coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+              coverImageUrl:
+                (volumeInfo.imageLinks
+                  ? volumeInfo.imageLinks.thumbnail
+                  : null) || analysisRequest.coverImageUrl,
               summary: volumeInfo.description || null,
               // Add any missing fields with null values
               genres: null,
@@ -2561,15 +2674,17 @@ Return the response as a structured JSON object with these fields:
                 categories: volumeInfo.categories || [],
                 openaiStatus: "parse_error",
                 openaiError: error.message || String(error),
-                coverImage: !!analysisRequest.coverImageData
-              }
+                coverImage: !!analysisRequest.coverImageData,
+              },
             };
-            
-            console.log(`[${analysisId}] Successfully recovered with Google Books data for: "${googleData.title}" by "${googleData.author}"`);
+
+            console.log(
+              `[${analysisId}] Successfully recovered with Google Books data for: "${googleData.title}" by "${googleData.author}"`,
+            );
             return googleData;
           }
         }
-        
+
         // If we can't recover, return user input with error information
         return {
           ...analysisRequest,
@@ -2577,12 +2692,15 @@ Return the response as a structured JSON object with these fields:
             source: "user_input",
             openaiStatus: "parse_error",
             openaiError: error.message || String(error),
-            googleBooksStatus: "book_not_found"
-          }
+            googleBooksStatus: "book_not_found",
+          },
         };
       } catch (googleError) {
-        console.error(`[${analysisId}] Error fetching fallback data from Google Books API:`, googleError);
-        
+        console.error(
+          `[${analysisId}] Error fetching fallback data from Google Books API:`,
+          googleError,
+        );
+
         // If all else fails, just return the user's input
         return {
           ...analysisRequest,
@@ -2590,54 +2708,69 @@ Return the response as a structured JSON object with these fields:
             source: "user_input",
             openaiStatus: "parse_error",
             openaiError: error.message || String(error),
-            googleBooksStatus: "error"
-          }
+            googleBooksStatus: "error",
+          },
         };
       }
     }
   } catch (error: any) {
     console.error("Error processing book analysis:", error);
-    
+
     // Even here, try to return something useful instead of failing completely
     try {
       const analysisId = `recovery_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      console.log(`[${analysisId}] Final recovery attempt with Google Books data after critical error`);
-      
+      console.log(
+        `[${analysisId}] Final recovery attempt with Google Books data after critical error`,
+      );
+
       if (analysisRequest.isbn) {
-        const googleBook = await googleBooks.getBookByISBN(analysisRequest.isbn);
-        
+        const googleBook = await googleBooks.getBookByISBN(
+          analysisRequest.isbn,
+        );
+
         if (googleBook && googleBook.volumeInfo) {
           const volumeInfo = googleBook.volumeInfo;
-          
-          console.log(`[${analysisId}] Successfully recovered with Google Books after critical error`);
-          
+
+          console.log(
+            `[${analysisId}] Successfully recovered with Google Books after critical error`,
+          );
+
           return {
             ...analysisRequest,
             title: analysisRequest.title || volumeInfo.title,
-            author: analysisRequest.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : ""),
+            author:
+              analysisRequest.author ||
+              (volumeInfo.authors && volumeInfo.authors.length > 0
+                ? volumeInfo.authors[0]
+                : ""),
             publisher: volumeInfo.publisher || null,
-            publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+            publishedYear: volumeInfo.publishedDate
+              ? parseInt(volumeInfo.publishedDate.substring(0, 4))
+              : null,
             pageCount: volumeInfo.pageCount || null,
             language: volumeInfo.language || "de",
-            coverImageUrl: (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null) || analysisRequest.coverImageUrl,
+            coverImageUrl:
+              (volumeInfo.imageLinks
+                ? volumeInfo.imageLinks.thumbnail
+                : null) || analysisRequest.coverImageUrl,
             summary: volumeInfo.description || null,
             metadata: {
               source: "google_books",
               criticalError: error.message || String(error),
               recoverySource: "google_books",
-              recoverMode: "emergency"
-            }
+              recoverMode: "emergency",
+            },
           };
         }
       }
-      
+
       // Last resort - just return what was given to us
       return {
         ...analysisRequest,
         metadata: {
           source: "user_input",
-          criticalError: error.message || String(error)
-        }
+          criticalError: error.message || String(error),
+        },
       };
     } catch (recoveryError) {
       // At this point, we've tried everything we can - throw the original error
