@@ -439,14 +439,18 @@ Return only the JSON array with no additional text or explanations.`;
 
 // Find similar books using Perplexity
 export async function findSimilarBooksWithPerplexity(book: Partial<Book>): Promise<any[]> {
-  const { title, author, genres, themes } = book;
+  const { title, author, genres: bookGenres, themes: bookThemes } = book;
+  
+  // Safely handle potential null/undefined values for arrays
+  const genres = Array.isArray(bookGenres) ? bookGenres : [];
+  const themes = Array.isArray(bookThemes) ? bookThemes : [];
   
   // Create a description of the book to find similar books
   let bookDescription = "";
   if (title) bookDescription += `Title: ${title} `;
   if (author) bookDescription += `Author: ${author} `;
-  if (genres && genres.length > 0) bookDescription += `Genres: ${genres.join(", ")} `;
-  if (themes && themes.length > 0) bookDescription += `Themes: ${themes.join(", ")} `;
+  if (genres.length > 0) bookDescription += `Genres: ${genres.join(", ")} `;
+  if (themes.length > 0) bookDescription += `Themes: ${themes.join(", ")} `; 
   bookDescription = bookDescription.trim();
   
   // If insufficient information is provided, return an empty array

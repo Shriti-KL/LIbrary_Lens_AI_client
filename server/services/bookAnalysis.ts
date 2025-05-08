@@ -19,10 +19,27 @@ export async function processBookAnalysis(
     language: analysisRequest.language
   });
 
+  // If we have an ISBN, only use that for lookup - discard any potentially incorrect title/author
+  const hasISBN = !!analysisRequest.isbn;
+  let cleanedRequest: BookAnalysisRequest;
+  
+  if (hasISBN) {
+    // When we have an ISBN, ignore any other identifying information to prevent conflicts
+    cleanedRequest = {
+      ...analysisRequest,
+      title: '',  // Clear title to avoid using incorrect data
+      author: '', // Clear author to avoid using incorrect data
+    };
+    console.log(`[${analysisId}] Using ISBN only for lookup: ${analysisRequest.isbn}`);
+  } else {
+    // If no ISBN, use provided title and author
+    cleanedRequest = analysisRequest;
+  }
+
   try {
-    // First, try using Perplexity API
+    // First, try using Perplexity API with clean request
     console.log(`[${analysisId}] Attempting to process book analysis with Perplexity`);
-    const perplexityResult = await processBookAnalysisWithPerplexity(analysisRequest);
+    const perplexityResult = await processBookAnalysisWithPerplexity(cleanedRequest);
     
     // If Perplexity returned valid data with title and author, use it
     if (perplexityResult && perplexityResult.title && perplexityResult.author) {
@@ -30,9 +47,27 @@ export async function processBookAnalysis(
       return perplexityResult;
     }
     
-    // If Perplexity failed or returned incomplete data, fall back to OpenAI
+    // If Perplexity failed or returned incomplete data, fall back to OpenAI with clean request
     console.log(`[${analysisId}] Perplexity processing failed or returned incomplete data, falling back to OpenAI`);
-    const openAIResult = await processBookAnalysisWithOpenAI(analysisRequest);
+    const openAIResult = await processBookAnalysisWithOpenAI(cleanedRequest);
+    
+    // Validate that OpenAI results match ISBN if provided
+    if (hasISBN && openAIResult && openAIResult.isbn) {
+      const normalizedRequestISBN = analysisRequest.isbn!.replace(/[-\s]/g, '');
+      const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
+      
+      if (normalizedRequestISBN !== normalizedResultISBN) {
+        console.log(`[${analysisId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${analysisRequest.isbn}, Received: ${openAIResult.isbn}`);
+        // Return a minimal result with the original ISBN but no potentially incorrect data
+        // Cast to unknown first to avoid type issues
+        return {
+          isbn: analysisRequest.isbn,
+          title: null as unknown as string,
+          author: null as unknown as string,
+          summary: null as unknown as string
+        } as Partial<Book>;
+      }
+    }
     
     console.log(`[${analysisId}] Completed book analysis with OpenAI fallback`);
     return openAIResult;
@@ -44,10 +79,28 @@ export async function processBookAnalysis(
       analysisId
     });
     
-    // Try OpenAI as a last resort if not already tried
+    // Try OpenAI as a last resort if not already tried, still with clean request
     try {
       console.log(`[${analysisId}] Error with Perplexity, falling back to OpenAI`);
-      const openAIResult = await processBookAnalysisWithOpenAI(analysisRequest);
+      const openAIResult = await processBookAnalysisWithOpenAI(cleanedRequest);
+      
+      // Validate that OpenAI results match ISBN if provided
+      if (hasISBN && openAIResult && openAIResult.isbn) {
+        const normalizedRequestISBN = analysisRequest.isbn!.replace(/[-\s]/g, '');
+        const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
+        
+        if (normalizedRequestISBN !== normalizedResultISBN) {
+          console.log(`[${analysisId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${analysisRequest.isbn}, Received: ${openAIResult.isbn}`);
+          // Return a minimal result with the original ISBN but no potentially incorrect data
+          // Cast to unknown first to avoid type issues
+          return {
+            isbn: analysisRequest.isbn,
+            title: null as unknown as string,
+            author: null as unknown as string,
+            summary: null as unknown as string
+          } as Partial<Book>;
+        }
+      }
       
       console.log(`[${analysisId}] Completed book analysis with OpenAI fallback after error`);
       return openAIResult;
@@ -57,6 +110,20 @@ export async function processBookAnalysis(
         message: fallbackError.message,
         analysisId
       });
+      
+      // If both services fail with ISBN, return minimal book data rather than throwing
+      if (hasISBN) {
+        console.log(`[${analysisId}] Both services failed, returning minimal book data with just ISBN`);
+        // Cast to unknown first to avoid type issues
+        return {
+          isbn: analysisRequest.isbn,
+          title: null as unknown as string,
+          author: null as unknown as string,
+          summary: null as unknown as string
+        } as Partial<Book>;
+      }
+      
+      // If we don't have an ISBN, there's not much we can do
       throw fallbackError;
     }
   }
@@ -147,36 +214,107 @@ export async function searchBooks(params: any): Promise<{ items: any[] }> {
 
 // Function to get book by ISBN with fallback strategy
 export async function getBookByISBN(isbn: string): Promise<any | null> {
+  // Create a unique ID for this lookup request for logging
+  const lookupId = `isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  
+  console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
+  
   try {
     // First, try using Perplexity API
+    console.log(`[${lookupId}] Attempting to look up book with Perplexity`);
     const { getBookByISBNWithPerplexity } = await import("./perplexity");
     const perplexityResult = await getBookByISBNWithPerplexity(isbn);
     
-    // If Perplexity returned valid data, use it
+    // If Perplexity returned valid data, validate ISBN and use it
     if (perplexityResult && perplexityResult.title) {
-      return perplexityResult;
+      // Validate that the returned ISBN matches the requested ISBN
+      if (perplexityResult.isbn) {
+        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+        const normalizedResultISBN = perplexityResult.isbn.replace(/[-\s]/g, '');
+        
+        if (normalizedRequestISBN !== normalizedResultISBN) {
+          console.log(`[${lookupId}] ERROR: Perplexity returned a book with a different ISBN. Requested: ${isbn}, Received: ${perplexityResult.isbn}`);
+          // Continue to OpenAI as fallback
+        } else {
+          console.log(`[${lookupId}] Successfully retrieved book info from Perplexity`);
+          return perplexityResult;
+        }
+      } else {
+        console.log(`[${lookupId}] Successfully retrieved book info from Perplexity`);
+        return perplexityResult;
+      }
     }
     
-    // If Perplexity failed or returned no data, fall back to OpenAI
+    // If Perplexity failed or returned no data or wrong ISBN, fall back to OpenAI
+    console.log(`[${lookupId}] Perplexity lookup failed or returned incorrect data, falling back to OpenAI`);
     const { getBookByISBN: getBookByISBNWithOpenAI } = await import("./openai");
-    return await getBookByISBNWithOpenAI(isbn);
+    const openAIResult = await getBookByISBNWithOpenAI(isbn);
+    
+    // Validate that OpenAI result has a matching ISBN
+    if (openAIResult && openAIResult.isbn) {
+      const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+      const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
+      
+      if (normalizedRequestISBN !== normalizedResultISBN) {
+        console.log(`[${lookupId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${isbn}, Received: ${openAIResult.isbn}`);
+        // Cast to unknown first to avoid type issues
+        return {
+          isbn: isbn,
+          title: null as unknown as string,
+          author: null as unknown as string
+        };
+      }
+    }
+    
+    console.log(`[${lookupId}] Successfully retrieved book info from OpenAI`);
+    return openAIResult;
   } catch (error) {
     // Log the error
     apiLogger.logError("GetBookByISBN", {
       error: "Book ISBN lookup failed",
-      message: error.message
+      message: error.message,
+      lookupId
     });
     
     // Try OpenAI as a last resort if not already tried
     try {
+      console.log(`[${lookupId}] Error with Perplexity, falling back to OpenAI`);
       const { getBookByISBN: getBookByISBNWithOpenAI } = await import("./openai");
-      return await getBookByISBNWithOpenAI(isbn);
+      const openAIResult = await getBookByISBNWithOpenAI(isbn);
+      
+      // Validate that OpenAI result has a matching ISBN
+      if (openAIResult && openAIResult.isbn) {
+        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
+        const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
+        
+        if (normalizedRequestISBN !== normalizedResultISBN) {
+          console.log(`[${lookupId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${isbn}, Received: ${openAIResult.isbn}`);
+          // Cast to unknown first to avoid type issues
+          return {
+            isbn: isbn,
+            title: null as unknown as string,
+            author: null as unknown as string
+          };
+        }
+      }
+      
+      console.log(`[${lookupId}] Successfully retrieved book info from OpenAI after error`);
+      return openAIResult;
     } catch (fallbackError) {
       apiLogger.logError("GetBookByISBN", {
         error: "OpenAI fallback also failed",
-        message: fallbackError.message
+        message: fallbackError.message,
+        lookupId
       });
-      return null;
+      
+      // Return minimal data with just the ISBN when both services fail
+      console.log(`[${lookupId}] Both services failed, returning minimal book data with just ISBN`);
+      // Cast to unknown first to avoid type issues
+      return {
+        isbn: isbn,
+        title: null as unknown as string,
+        author: null as unknown as string
+      };
     }
   }
 }
