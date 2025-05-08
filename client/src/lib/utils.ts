@@ -151,15 +151,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Top-left ASB label
   doc.text("ASB:", 22, yPos);
   
-  // Top-right catalog number (e.g., 103.485.0)
-  const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1"];
-  const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
+  // Top-right catalog number
+  const asbNumber = book.catalogNumber || "";
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
   // Second line - secondary classification under ASB
   yPos += 7;
-  const secondaryOptions = ["4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
-  const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
+  const secondaryCode = book.secondaryClassification || "";
   doc.text(secondaryCode, 22, yPos);
   
   yPos += 15; // Space after classifications
@@ -237,16 +235,16 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Build full publication string following the exact format in the sample image
   let publicationInfo = '';
   
-  // Start with edition information - using format from sample image
-  publicationInfo += book.edition || '1. Auflage';
+  // Start with edition information
+  publicationInfo += book.edition || '';
   
-  // Add location and publisher - using format from sample image
-  const location = book.location || 'München';
-  const publisher = book.publisher || 'C.H.Beck';
+  // Add location and publisher 
+  const location = book.location || '';
+  const publisher = book.publisher || '';
   publicationInfo += `. - ${location} : ${publisher}`;
   
-  // Add year - using format from sample image
-  publicationInfo += `, ${book.publishedYear || '2025'}`;
+  // Add year
+  publicationInfo += book.publishedYear ? `, ${book.publishedYear}` : ``;
   
   // Add physical description - pages
   publicationInfo += `. - ${book.pageCount || ''} Seiten`;
@@ -271,8 +269,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Add dimensions - using format from sample image
-  publicationInfo += ` ; ${book.dimensions || '21 cm'}`;
+  // Add dimensions if available
+  publicationInfo += book.dimensions ? ` ; ${book.dimensions}` : ``;
   
   // Add series information, publisher info, or other parenthetical information if available
   if (book.series) {
