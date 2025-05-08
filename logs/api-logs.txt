@@ -3175,3 +3175,223 @@
   "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
   "author": "Sven Nordqvist"
 }
+
+[2025-05-08 06:00:17] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-96129-473-2",
+    "cleanedISBN": "9783961294732"
+  }
+}
+
+[2025-05-08 06:00:17] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783961294732"
+  }
+}
+
+[2025-05-08 06:00:17] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783961294732",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:00:17] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-96129-473-2",
+  "found": true,
+  "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "author": "Sven Nordqvist"
+}
+
+[2025-05-08 06:00:17] REQUEST TO OpenAI API
+{
+  "operation": "completeBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+    "author": "Sven Nordqvist",
+    "isbn": "978-3-96129-473-2"
+  },
+  "fieldsToComplete": {
+    "0": "publisher",
+    "1": "pageCount",
+    "2": "translator",
+    "3": "illustrator",
+    "4": "edition",
+    "5": "location",
+    "6": "dimensions",
+    "7": "binding",
+    "8": "price",
+    "9": "summary",
+    "10": "genres",
+    "11": "themes"
+  }
+}
+
+[2025-05-08 06:00:27] RESPONSE FROM OpenAI API
+{
+  "operation": "completeBookMetadata",
+  "status": "success",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker"
+}
+
+[2025-05-08 06:04:05] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-96129-473-2",
+    "cleanedISBN": "9783961294732"
+  }
+}
+
+[2025-05-08 06:04:05] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783961294732"
+  }
+}
+
+[2025-05-08 06:04:06] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783961294732",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:04:06] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-96129-473-2",
+  "found": true,
+  "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "author": "Sven Nordqvist"
+}
+
+[2025-05-08 06:16:38] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-98702-122-0",
+    "cleanedISBN": "9783987021220"
+  }
+}
+
+[2025-05-08 06:16:38] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783987021220"
+  }
+}
+
+[2025-05-08 06:16:39] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783987021220",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:16:39] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-98702-122-0",
+  "found": true,
+  "title": "Das neue Universum",
+  "author": "Christoph Thomas Link"
+}
+
+[2025-05-08 06:16:39] REQUEST TO OpenAI API
+{
+  "operation": "completeBookMetadata",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Das neue Universum",
+    "author": "Christoph Thomas Link",
+    "isbn": "978-3-98702-122-0"
+  },
+  "fieldsToComplete": {
+    "0": "publisher",
+    "1": "pageCount",
+    "2": "translator",
+    "3": "illustrator",
+    "4": "edition",
+    "5": "location",
+    "6": "dimensions",
+    "7": "binding",
+    "8": "price",
+    "9": "summary",
+    "10": "genres",
+    "11": "themes"
+  }
+}
+
+[2025-05-08 06:16:50] RESPONSE FROM OpenAI API
+{
+  "operation": "completeBookMetadata",
+  "status": "success",
+  "bookTitle": "Das neue Universum"
+}
+
+[2025-05-08 06:37:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-98702-122-0",
+    "cleanedISBN": "9783987021220"
+  }
+}
+
+[2025-05-08 06:37:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783987021220"
+  }
+}
+
+[2025-05-08 06:37:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783987021220",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:37:28] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-98702-122-0",
+  "found": true,
+  "title": "Das neue Universum",
+  "author": "Christoph Thomas Link"
+}
