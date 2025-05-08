@@ -136,38 +136,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Always enrich book metadata with OpenAI to get proper spelling and capitalization
-      console.log(`[${requestId}] Enriching book metadata with OpenAI`);
-      let enrichedBookInfo = await enrichBookMetadata(validatedData);
+      // First get basic metadata from Google Books (without OpenAI)
+      console.log(`[${requestId}] Getting basic metadata from Google Books`);
+      let googleBooksData = validatedData;
       
-      // Log what got corrected from OpenAI data
-      if (enrichedBookInfo.title !== validatedData.title) {
-        console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
+      try {
+        if (validatedData.isbn) {
+          const googleBook = await googleBooks.getBookByISBN(validatedData.isbn);
+          
+          if (googleBook && googleBook.volumeInfo) {
+            const volumeInfo = googleBook.volumeInfo;
+            
+            // Extract subtitle if available
+            let mainTitle = volumeInfo.title || "";
+            let subtitle = null;
+            if (mainTitle && mainTitle.includes(" - ")) {
+              const parts = mainTitle.split(" - ");
+              mainTitle = parts[0];
+              subtitle = parts.slice(1).join(" - ");
+            } else if (volumeInfo.subtitle) {
+              subtitle = volumeInfo.subtitle;
+            }
+            
+            // Extract other fields
+            let edition = volumeInfo.contentVersion || null;
+            let dimensions = null;
+            if (volumeInfo.dimensions) {
+              dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
+            }
+            
+            let binding = null;
+            if (volumeInfo.printType) {
+              binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
+            }
+            
+            // Extract location from publisher if available
+            let location = null;
+            
+            // Extract price information from saleInfo
+            let price = null;
+            if (googleBook.saleInfo && googleBook.saleInfo.listPrice) {
+              price = `${googleBook.saleInfo.listPrice.amount} ${googleBook.saleInfo.listPrice.currencyCode}`;
+            }
+            
+            // Update our book info with Google Books data
+            googleBooksData = {
+              ...validatedData,
+              title: validatedData.title || mainTitle,
+              subtitle: validatedData.subtitle || subtitle, 
+              author: validatedData.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+              publisher: validatedData.publisher || volumeInfo.publisher,
+              publishedYear: validatedData.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
+              pageCount: validatedData.pageCount || volumeInfo.pageCount,
+              language: validatedData.language || volumeInfo.language || "de",
+              coverImageUrl: validatedData.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
+              edition: validatedData.edition || edition,
+              location: validatedData.location || location,
+              dimensions: validatedData.dimensions || dimensions,
+              binding: validatedData.binding || binding,
+              price: validatedData.price || price,
+              metadata: {
+                ...(validatedData.metadata || {}),
+                source: "google_books",
+                googleBookId: googleBook.id,
+                ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
+                coverImage: !!validatedData.coverImageData
+              }
+            };
+            
+            // Log what got corrected from Google Books data
+            if (googleBooksData.title !== validatedData.title) {
+              console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${googleBooksData.title}"`);
+            }
+            
+            if (googleBooksData.author !== validatedData.author) {
+              console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${googleBooksData.author}"`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[${requestId}] Error fetching from Google Books API:`, error);
+        // Continue with original data if Google Books fails
       }
       
-      if (enrichedBookInfo.author !== validatedData.author) {
-        console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
-      }
-      
-      // For manual entries without a cover image, fetch from OpenAI-provided URL if we found a match
-      if (!req.file && enrichedBookInfo.coverImageUrl) {
-        console.log(`[${requestId}] Using cover image from provided URL: ${enrichedBookInfo.coverImageUrl}`);
+      // For manual entries without a cover image, fetch from Google Books URL if available
+      if (!req.file && googleBooksData.coverImageUrl) {
+        console.log(`[${requestId}] Using cover image from provided URL: ${googleBooksData.coverImageUrl}`);
         
         try {
-          // Fetch the cover image from the URL provided by OpenAI
-          const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
+          // Fetch the cover image from the URL
+          const imageResponse = await fetch(googleBooksData.coverImageUrl);
           
           if (imageResponse.ok) {
             const imageBuffer = await imageResponse.arrayBuffer();
             const base64Image = Buffer.from(imageBuffer).toString('base64');
             
             // Determine image type from URL
-            const imageType = enrichedBookInfo.coverImageUrl.endsWith('.jpg') || 
-                             enrichedBookInfo.coverImageUrl.endsWith('.jpeg') 
+            const imageType = googleBooksData.coverImageUrl.endsWith('.jpg') || 
+                             googleBooksData.coverImageUrl.endsWith('.jpeg') 
                              ? 'image/jpeg' : 'image/png';
             
             // Add the image to the book info
-            enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
+            googleBooksData.coverImageData = `data:${imageType};base64,${base64Image}`;
             console.log(`[${requestId}] Successfully fetched cover image from URL`);
           }
         } catch (error) {
@@ -175,9 +245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Process book analysis with OpenAI
+      // Process book analysis with a single OpenAI call (will handle missing metadata, summary, genres, and themes)
       console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      const analysisResult = await processBookAnalysis(enrichedBookInfo);
+      const analysisResult = await processBookAnalysis(googleBooksData);
       
       // Log bibliographic data in detail before sending response
       console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
