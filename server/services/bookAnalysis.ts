@@ -206,8 +206,8 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       author: null as unknown as string
     } as Partial<Book>;
     
-  } catch (error) {
-    console.log(`[${lookupId}] Error during book lookup:`, error.message || error);
+  } catch (error: any) {
+    console.log(`[${lookupId}] Error during book lookup:`, error?.message || String(error));
     
     // Return minimal data with just the ISBN
     return {
@@ -271,8 +271,8 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
           )
         };
       }
-    } catch (error) {
-      console.log(`Error enriching book metadata:`, error.message || error);
+    } catch (error: any) {
+      console.log(`Error enriching book metadata:`, error?.message || String(error));
     }
   }
   
@@ -306,15 +306,15 @@ export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
     console.log(`No similar books found with Perplexity, falling back to OpenAI`);
     const { searchSimilarBooks } = await import("./openai");
     return await searchSimilarBooks(book);
-  } catch (error) {
-    console.log(`Error finding similar books:`, error.message || error);
+  } catch (error: any) {
+    console.log(`Error finding similar books:`, error?.message || String(error));
     
     // Try OpenAI as fallback
     try {
       const { searchSimilarBooks } = await import("./openai");
       return await searchSimilarBooks(book);
-    } catch (fallbackError) {
-      console.log(`OpenAI fallback also failed:`, fallbackError.message || fallbackError);
+    } catch (fallbackError: any) {
+      console.log(`OpenAI fallback also failed:`, fallbackError?.message || String(fallbackError));
       return [];
     }
   }
