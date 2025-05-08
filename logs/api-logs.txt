@@ -3225,3 +3225,277 @@
   "title": "Eragon - der Auftrag des Ältesten",
   "author": "Christopher Paolini"
 }
+
+[2025-05-08 06:47:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783442490554",
+    "cleanedISBN": "9783442490554"
+  }
+}
+
+[2025-05-08 06:47:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783442490554&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783442490554",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 06:47:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783442490554",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:47:28] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783442490554",
+  "found": true,
+  "title": "Eisiger Nebel",
+  "author": "Hendrik Berg"
+}
+
+[2025-05-08 06:47:28] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Eisiger Nebel",
+    "author": "Hendrik Berg",
+    "isbn": "9783442490554"
+  }
+}
+
+[2025-05-08 06:47:32] RESPONSE FROM OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "status": "success",
+  "bookTitle": "Eisiger Nebel"
+}
+
+[2025-05-08 06:47:32] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 9783442490554, Title: Eisiger Nebel, Author: Hendrik Berg",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 06:47:33] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783442490554",
+    "cleanedISBN": "9783442490554"
+  }
+}
+
+[2025-05-08 06:47:33] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783442490554&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783442490554",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 06:47:33] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783442490554",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:47:33] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783442490554",
+  "found": true,
+  "title": "Eisiger Nebel",
+  "author": "Hendrik Berg"
+}
+
+[2025-05-08 06:47:47] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9781503280786",
+    "cleanedISBN": "9781503280786"
+  }
+}
+
+[2025-05-08 06:47:47] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9781503280786&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9781503280786",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 06:47:47] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9781503280786",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:47:47] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9781503280786",
+  "found": true,
+  "title": "Moby Dick",
+  "author": "Herman Melville"
+}
+
+[2025-05-08 06:47:47] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Moby Dick",
+    "author": "Herman Melville",
+    "isbn": "9781503280786"
+  }
+}
+
+[2025-05-08 06:47:48] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 9781503280786, Title: Moby Dick, Author: Herman Melville",
+  "queryLanguage": "English",
+  "responseLanguage": "en"
+}
+
+[2025-05-08 06:48:03] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Moby Dick"
+}
+
+[2025-05-08 06:48:05] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783940111470",
+    "cleanedISBN": "9783940111470"
+  }
+}
+
+[2025-05-08 06:48:05] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783940111470&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783940111470",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 06:48:05] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783940111470",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:48:05] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783940111470",
+  "found": true,
+  "title": "Die Wiedergeburt der Sterne nach dem Feuerwerk",
+  "author": "Günter Ullmann"
+}
+
+[2025-05-08 06:48:05] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Die Wiedergeburt der Sterne nach dem Feuerwerk",
+    "author": "Günter Ullmann",
+    "isbn": "9783940111470"
+  }
+}
+
+[2025-05-08 06:48:06] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 9783940111470, Title: Die Wiedergeburt der Sterne nach dem Feuerwerk, Author: Günter Ullmann",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 06:48:07] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783940111470",
+    "cleanedISBN": "9783940111470"
+  }
+}
+
+[2025-05-08 06:48:07] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783940111470&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783940111470",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 06:48:08] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783940111470",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 06:48:08] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783940111470",
+  "found": true,
+  "title": "Die Wiedergeburt der Sterne nach dem Feuerwerk",
+  "author": "Günter Ullmann"
+}

@@ -91,6 +91,46 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
       itemCount: data.items?.length || 0
     });
     
+    // Log the first item's details if available (for debugging)
+    if (data.items && data.items.length > 0) {
+      const firstItem = data.items[0];
+      const volumeInfo = firstItem.volumeInfo || {};
+      
+      console.log("Google Books API response details:", {
+        id: firstItem.id,
+        title: volumeInfo.title,
+        subtitle: volumeInfo.subtitle,
+        authors: volumeInfo.authors,
+        publisher: volumeInfo.publisher,
+        publishedDate: volumeInfo.publishedDate,
+        language: volumeInfo.language,
+        printType: volumeInfo.printType,
+        pageCount: volumeInfo.pageCount,
+        categories: volumeInfo.categories,
+        imageLinks: volumeInfo.imageLinks,
+        contentVersion: volumeInfo.contentVersion,
+        industryIdentifiers: volumeInfo.industryIdentifiers,
+        dimensions: volumeInfo.dimensions,
+        // Other relevant fields
+        saleInfo: firstItem.saleInfo
+      });
+      
+      // Missing fields for requirements
+      const missingFields = [];
+      if (!volumeInfo.subtitle) missingFields.push("subtitle");
+      if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("authors");
+      if (!volumeInfo.publisher) missingFields.push("publisher");
+      if (!volumeInfo.publishedDate) missingFields.push("publishedDate");
+      if (!volumeInfo.pageCount) missingFields.push("pageCount");
+      if (!volumeInfo.dimensions) missingFields.push("dimensions");
+      if (!volumeInfo.printType) missingFields.push("printType/binding");
+      if (!firstItem.saleInfo || !firstItem.saleInfo.listPrice) missingFields.push("price");
+      
+      if (missingFields.length > 0) {
+        console.log("Google Books API missing fields:", missingFields.join(", "));
+      }
+    }
+    
     return data.items || [];
   } catch (error: any) {
     console.error("Error searching Google Books:", error);
