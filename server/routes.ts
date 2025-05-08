@@ -12,6 +12,7 @@ import {
   searchSimilarBooks,
   enrichBookMetadata
 } from "./services/openai";
+import * as googleBooks from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -180,11 +181,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             // Update our book info with Google Books data
-            googleBooksData = {
+            // Ensure that title and author are never undefined
+            const updatedData = {
               ...validatedData,
-              title: validatedData.title || mainTitle,
+              title: validatedData.title || mainTitle || "",
               subtitle: validatedData.subtitle || subtitle, 
-              author: validatedData.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : null),
+              author: validatedData.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : "") || "",
               publisher: validatedData.publisher || volumeInfo.publisher,
               publishedYear: validatedData.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
               pageCount: validatedData.pageCount || volumeInfo.pageCount,
@@ -204,18 +206,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             };
             
+            googleBooksData = updatedData;
+            
             // Log what got corrected from Google Books data
-            if (googleBooksData.title !== validatedData.title) {
+            if (googleBooksData.title !== validatedData.title && validatedData.title) {
               console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${googleBooksData.title}"`);
             }
             
-            if (googleBooksData.author !== validatedData.author) {
+            if (googleBooksData.author !== validatedData.author && validatedData.author) {
               console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${googleBooksData.author}"`);
             }
           }
         }
-      } catch (error) {
-        console.error(`[${requestId}] Error fetching from Google Books API:`, error);
+      } catch (error: unknown) {
+        console.error(`[${requestId}] Error fetching from Google Books API:`, error instanceof Error ? error.message : String(error));
         // Continue with original data if Google Books fails
       }
       
