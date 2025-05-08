@@ -138,3 +138,250 @@
     "isbn": "978-3-8497-0575-6"
   }
 }
+
+[2025-05-08 07:32:51] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": " 9780060584757",
+    "cleanedISBN": "9780060584757"
+  }
+}
+
+[2025-05-08 07:32:51] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9780060584757",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:32:51] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9780060584757",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:32:51] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": " 9780060584757",
+  "found": true,
+  "title": "Mystic River",
+  "author": "Dennis Lehane"
+}
+
+[2025-05-08 07:32:51] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN:  9780060584757, Title: Mystic River, Author: Dennis Lehane",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:33:06] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Mystic River"
+}
+
+[2025-05-08 07:33:18] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9780060584757",
+    "cleanedISBN": "9780060584757"
+  }
+}
+
+[2025-05-08 07:33:18] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9780060584757",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:18] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9780060584757",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:18] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9780060584757",
+  "found": true,
+  "title": "Mystic River",
+  "author": "Dennis Lehane"
+}
+
+[2025-05-08 07:33:18] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Mystic River",
+    "author": "Dennis Lehane",
+    "isbn": "9780060584757"
+  }
+}
+
+[2025-05-08 07:33:57] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:33:57] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:57] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:57] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:33:57] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:33:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:33:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:59] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:59] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:34:20] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:34:20] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:34:20] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:34:20] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:34:20] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Starke Signale",
+    "author": "Michel Reimon",
+    "isbn": "978-3-8497-0575-6"
+  }
+}
