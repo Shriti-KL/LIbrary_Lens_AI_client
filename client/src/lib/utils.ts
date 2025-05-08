@@ -296,21 +296,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type and price - exact format from sample
-    const bindingTypes = ['Festeinband', 'Broschur', 'Taschenbuch', 'Gebunden'];
-    const bindingInfo = book.binding || bindingTypes[Math.floor(Math.random() * bindingTypes.length)];
-    
-    // Format as "ISBN XXX-X-XXX-XXXX-X - Binding - EUR XX.XX" - matching sample exactly
-    isbnLine += ` - ${bindingInfo}`;
+    // Add binding type if available
+    if (book.binding) {
+      isbnLine += ` - ${book.binding}`;
+    }
     
     // Add price if available (with comma, not period, for decimal values in German format)
     if (book.price) {
       isbnLine += ` : EUR ${book.price.toString().replace('.', ',')}`;
-    } else {
-      // Add a generic default price formatted with German decimal comma
-      const priceOptions = ['12,99', '24,99', '28,00', '19,95', '14,99'];
-      const price = priceOptions[Math.floor(Math.random() * priceOptions.length)];
-      isbnLine += ` : EUR ${price}`;
     }
     
     doc.setFont("helvetica", "normal");
@@ -382,29 +375,26 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // Use reviewer name if available or default ones from the sample
-  const reviewerOptions = ["Dagmar List", "Rouven Haus", "Tobias Herger", "Larissa Dämmig"];
-  const reviewerName = book.reviewerName || reviewerOptions[Math.floor(Math.random() * reviewerOptions.length)];
-  
-  doc.text(reviewerName, 190, yPos, { align: 'right' });
+  // Use reviewer name if available
+  if (book.reviewerName) {
+    doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+  }
   
   // --- 8. Interest category (IK) and ID-B number on bottom left ---
   yPos += 10;
   
-  // Interest category from sample - use exact same format as in the reference
-  const ikOptions = ["IK: Basteln; ab 4", "IK: Wissen von A-Z; ab 14", "IK: Geschichte", "IK: Biografie; ab 10"];
-  const interestCategory = book.interestCategory || ikOptions[Math.floor(Math.random() * ikOptions.length)];
+  // Interest category if available
+  if (book.interestCategory) {
+    doc.setFont("helvetica", "bold");
+    doc.text(book.interestCategory, 22, yPos);
+    yPos += 5;
+  }
   
-  doc.setFont("helvetica", "bold");
-  doc.text(interestCategory, 22, yPos);
-  
-  yPos += 5;
-  
-  // ID-B number from sample - matches exactly the format in the reference image
-  const idBNumber = book.idBNumber || `ID-B ${Math.floor(Math.random() * 25) + 1}/${Math.floor(Math.random() * 35) + 1}`;
-  
-  doc.setFont("helvetica", "normal");
-  doc.text(idBNumber, 22, yPos);
+  // ID-B number if available
+  if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, 22, yPos);
+  }
   
   // --- 9. Add Barcode and footer ---
   yPos += 10;
@@ -520,15 +510,17 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.text("ASB:", x + 5, currentY);
   
   // ASB number right
-  const catalogOptions = ["103.485.0", "103.992.7", "103.612.3", "102.861.1", "104.027.4", "104.027.2"];
-  const asbNumber = book.catalogNumber || catalogOptions[Math.floor(Math.random() * catalogOptions.length)];
-  doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
+  const asbNumber = book.catalogNumber || "";
+  if (asbNumber) {
+    doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
+  }
   
   // Secondary classification under ASB
   currentY += 5;
-  const secondaryOptions = ["4.1, 4.3/C", "4.3/Y", "6.1/Aax", "Ee", "Emp 614"];
-  const secondaryCode = book.secondaryClassification || secondaryOptions[Math.floor(Math.random() * secondaryOptions.length)];
-  doc.text(secondaryCode, x + 5, currentY);
+  const secondaryCode = book.secondaryClassification || "";
+  if (secondaryCode) {
+    doc.text(secondaryCode, x + 5, currentY);
+  }
   
   currentY += 8;
   
@@ -568,17 +560,39 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   currentY += 2;
   
   // --- Publication info - condensed ---
-  const pubInfo = `${book.edition || '1. Aufl.'} - ${book.location || 'München'}: ${book.publisher || 'Verlag'}, ${book.publishedYear || '2025'} - ${book.pageCount || ''} S. ; ${book.dimensions || '21 cm'}`;
-  const pubLines = doc.splitTextToSize(pubInfo, width - 10);
-  for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
-    doc.text(pubLines[i], x + 5, currentY);
-    currentY += 4;
+  let pubInfo = "";
+  
+  // Add components only if they exist
+  if (book.edition) pubInfo += book.edition;
+  if (book.location) pubInfo += pubInfo.length > 0 ? ` - ${book.location}` : book.location;
+  if (book.publisher) pubInfo += pubInfo.length > 0 ? `: ${book.publisher}` : book.publisher;
+  if (book.publishedYear) pubInfo += pubInfo.length > 0 ? `, ${book.publishedYear}` : `${book.publishedYear}`;
+  if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` - ${book.pageCount} S.` : `${book.pageCount} S.`;
+  if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
+  
+  if (pubInfo.length > 0) {
+    const pubLines = doc.splitTextToSize(pubInfo, width - 10);
+    for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
+      doc.text(pubLines[i], x + 5, currentY);
+      currentY += 4;
+    }
   }
   
   // --- ISBN and price - condensed ---
   if (book.isbn) {
     currentY += 2;
-    const isbnText = `ISBN ${formatISBN(book.isbn)} - ${book.binding || 'Festeinband'} : EUR ${book.price || '24,99'}`;
+    let isbnText = `ISBN ${formatISBN(book.isbn)}`;
+    
+    // Add binding type if available
+    if (book.binding) {
+      isbnText += ` - ${book.binding}`;
+    }
+    
+    // Add price if available
+    if (book.price) {
+      isbnText += ` : EUR ${book.price.toString().replace('.', ',')}`;
+    }
+    
     doc.text(doc.splitTextToSize(isbnText, width - 10)[0], x + 5, currentY);
     currentY += 5;
   }
@@ -648,20 +662,19 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // --- IK category and ID-B number ---
   currentY = y + height - 30;
   
-  // Interest category
-  const ikOptions = ["IK: Abenteuer, Meer; ab 8", "IK: Abenteuer, Andere Länder; ab 8", "IK: Geschichte; ab 10"];
-  const interestCategory = book.interestCategory || ikOptions[Math.floor(Math.random() * ikOptions.length)];
+  // Interest category if available
+  if (book.interestCategory) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(gridFontSize - 1);
+    doc.text(book.interestCategory, x + 5, currentY);
+    currentY += 4;
+  }
   
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(gridFontSize - 1);
-  doc.text(interestCategory, x + 5, currentY);
-  
-  currentY += 4;
-  
-  // ID-B number
-  const idBNumber = book.idBNumber || `ID-B ${Math.floor(Math.random() * 25) + 1}/${Math.floor(Math.random() * 35) + 1}`;
-  doc.setFont("helvetica", "normal");
-  doc.text(idBNumber, x + 5, currentY);
+  // ID-B number if available
+  if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, x + 5, currentY);
+  }
   
   // --- Barcode and footer ---
   // Draw simplified barcode
