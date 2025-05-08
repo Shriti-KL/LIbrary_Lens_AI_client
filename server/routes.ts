@@ -4,15 +4,13 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
+import { analyzeBookCover } from "./services/openai"; // Keep this for now as we'll still use it for cover image analysis
 import { 
-  processBookAnalysis, 
-  analyzeBookCover,
+  processBookAnalysis,
   searchBooks,
   getBookByISBN,
-  searchSimilarBooks,
-  enrichBookMetadata
-} from "./services/openai";
-import * as googleBooks from "./services/googleBooks";
+  searchSimilarBooks
+} from "./services/bookAnalysis";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -137,121 +135,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // First get basic metadata from Google Books (without OpenAI)
-      console.log(`[${requestId}] Getting basic metadata from Google Books`);
-      let googleBooksData = validatedData;
-      
-      try {
-        if (validatedData.isbn) {
-          const googleBook = await googleBooks.getBookByISBN(validatedData.isbn);
-          
-          if (googleBook && googleBook.volumeInfo) {
-            const volumeInfo = googleBook.volumeInfo;
-            
-            // Extract subtitle if available
-            let mainTitle = volumeInfo.title || "";
-            let subtitle = null;
-            if (mainTitle && mainTitle.includes(" - ")) {
-              const parts = mainTitle.split(" - ");
-              mainTitle = parts[0];
-              subtitle = parts.slice(1).join(" - ");
-            } else if (volumeInfo.subtitle) {
-              subtitle = volumeInfo.subtitle;
-            }
-            
-            // Extract other fields
-            let edition = volumeInfo.contentVersion || null;
-            let dimensions = null;
-            if (volumeInfo.dimensions) {
-              dimensions = `${volumeInfo.dimensions.height} x ${volumeInfo.dimensions.width} x ${volumeInfo.dimensions.thickness}`;
-            }
-            
-            let binding = null;
-            if (volumeInfo.printType) {
-              binding = volumeInfo.printType === "BOOK" ? "Hardcover" : volumeInfo.printType;
-            }
-            
-            // Extract location from publisher if available
-            let location = null;
-            
-            // Extract price information from saleInfo
-            let price = null;
-            if (googleBook.saleInfo && googleBook.saleInfo.listPrice) {
-              price = `${googleBook.saleInfo.listPrice.amount} ${googleBook.saleInfo.listPrice.currencyCode}`;
-            }
-            
-            // Update our book info with Google Books data
-            // Ensure that title and author are never undefined
-            const updatedData = {
-              ...validatedData,
-              title: validatedData.title || mainTitle || "",
-              subtitle: validatedData.subtitle || subtitle, 
-              author: validatedData.author || (volumeInfo.authors && volumeInfo.authors.length > 0 ? volumeInfo.authors[0] : "") || "",
-              publisher: validatedData.publisher || volumeInfo.publisher,
-              publishedYear: validatedData.publishedYear || (volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null),
-              pageCount: validatedData.pageCount || volumeInfo.pageCount,
-              language: validatedData.language || volumeInfo.language || "de",
-              coverImageUrl: validatedData.coverImageUrl || (volumeInfo.imageLinks ? volumeInfo.imageLinks.thumbnail : null),
-              edition: validatedData.edition || edition,
-              location: validatedData.location || location,
-              dimensions: validatedData.dimensions || dimensions,
-              binding: validatedData.binding || binding,
-              price: validatedData.price || price,
-              metadata: {
-                ...(validatedData.metadata || {}),
-                source: "google_books",
-                googleBookId: googleBook.id,
-                ...(volumeInfo.categories ? { categories: volumeInfo.categories } : {}),
-                coverImage: !!validatedData.coverImageData
-              }
-            };
-            
-            googleBooksData = updatedData;
-            
-            // Log what got corrected from Google Books data
-            if (googleBooksData.title !== validatedData.title && validatedData.title) {
-              console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${googleBooksData.title}"`);
-            }
-            
-            if (googleBooksData.author !== validatedData.author && validatedData.author) {
-              console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${googleBooksData.author}"`);
-            }
-          }
-        }
-      } catch (error: unknown) {
-        console.error(`[${requestId}] Error fetching from Google Books API:`, error instanceof Error ? error.message : String(error));
-        // Continue with original data if Google Books fails
-      }
-      
-      // For manual entries without a cover image, fetch from Google Books URL if available
-      if (!req.file && googleBooksData.coverImageUrl) {
-        console.log(`[${requestId}] Using cover image from provided URL: ${googleBooksData.coverImageUrl}`);
-        
-        try {
-          // Fetch the cover image from the URL
-          const imageResponse = await fetch(googleBooksData.coverImageUrl);
-          
-          if (imageResponse.ok) {
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Image = Buffer.from(imageBuffer).toString('base64');
-            
-            // Determine image type from URL
-            const imageType = googleBooksData.coverImageUrl.endsWith('.jpg') || 
-                             googleBooksData.coverImageUrl.endsWith('.jpeg') 
-                             ? 'image/jpeg' : 'image/png';
-            
-            // Add the image to the book info
-            googleBooksData.coverImageData = `data:${imageType};base64,${base64Image}`;
-            console.log(`[${requestId}] Successfully fetched cover image from URL`);
-          }
-        } catch (error) {
-          console.error(`[${requestId}] Error fetching cover image:`, error);
-        }
-      }
-      
-      // Process book analysis with a single OpenAI call (will handle missing metadata, summary, genres, and themes)
-      console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      const analysisResult = await processBookAnalysis(googleBooksData);
+      // Process book analysis directly with Perplexity (fallback to OpenAI if needed)
+      console.log(`[${requestId}] Processing book analysis with Perplexity/OpenAI`);
+      const analysisResult = await processBookAnalysis(validatedData);
       
       // Log bibliographic data in detail before sending response
       console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
@@ -344,13 +230,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Always enrich with OpenAI to ensure proper spelling and capitalization
+      // Always enrich with Perplexity/OpenAI to ensure proper spelling and capitalization
       let enrichedData = bookData;
       
       // Only attempt to enrich if we have at least a title or ISBN
       if (bookData.title || bookData.isbn) {
         try {
-          // Mark as a user entry to prioritize OpenAI data
+          // Import the enrichBookMetadata function from bookAnalysis
+          const { enrichBookMetadata } = await import("./services/bookAnalysis");
+          
+          // Mark as a user entry to prioritize user-entered data
           const tempData = { ...bookData, isUserEntry: true };
           enrichedData = await enrichBookMetadata(tempData);
           
@@ -420,7 +309,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isUserEntry: true // Mark as user entry to prioritize OpenAI data
             };
             
-            // Enrich with OpenAI
+            // Import the enrichBookMetadata function from bookAnalysis
+            const { enrichBookMetadata } = await import("./services/bookAnalysis");
+            
+            // Enrich with Perplexity/OpenAI
             const enrichedData = await enrichBookMetadata(fullBookData);
             
             // Log what was corrected
@@ -562,11 +454,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Step 1: Analyze cover using OpenAI Vision
             console.log("Step 1: Analyzing book cover with OpenAI Vision...");
+            
+            // Import the analyzeBookCover function from OpenAI service
+            const { analyzeBookCover } = await import("./services/openai");
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Process full analysis with GoogleBooks + OpenAI in one step
+            // Step 2: Process full analysis with Perplexity/OpenAI
             console.log("Step 2: Processing complete book analysis...");
+            // Import the processBookAnalysis function from bookAnalysis service
+            const { processBookAnalysis } = await import("./services/bookAnalysis");
             const analysisResult = await processBookAnalysis({
               ...coverAnalysis,
               // Ensure title and author are available
@@ -642,7 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Book information lookup endpoints (powered by OpenAI)
   
-  // GET /api/books/lookup - Search books via OpenAI
+  // GET /api/books/lookup - Search books via Perplexity/OpenAI
   app.get("/api/books/lookup", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
@@ -663,14 +560,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxResults
       };
       
+      // Import the searchBooks function from bookAnalysis service
+      const { searchBooks } = await import("./services/bookAnalysis");
       const results = await searchBooks(searchParams);
+      
       res.status(200).json(results);
     } catch (error) {
       res.status(500).json({ message: `Error searching books: ${error.message}` });
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via OpenAI
+  // GET /api/books/isbn/:isbn - Get book by ISBN via Perplexity/OpenAI
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
@@ -679,6 +579,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
+      // Import the getBookByISBN function from bookAnalysis service
+      const { getBookByISBN } = await import("./services/bookAnalysis");
       const book = await getBookByISBN(isbn);
       
       if (!book) {
@@ -691,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // POST /api/books/similar - Get similar books via OpenAI
+  // POST /api/books/similar - Get similar books via Perplexity/OpenAI
   app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {
       const bookInfo = req.body;
@@ -700,7 +602,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
+      // Import the searchSimilarBooks function from bookAnalysis service
+      const { searchSimilarBooks } = await import("./services/bookAnalysis");
       const similarBooks = await searchSimilarBooks(bookInfo);
+      
       res.status(200).json(similarBooks);
     } catch (error) {
       res.status(500).json({ message: `Error finding similar books: ${error.message}` });
