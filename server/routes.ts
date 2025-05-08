@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate a unique ID for this analysis request for tracking
       const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      console.log(`[${requestId}] Starting book analysis`);
+      console.log(`[${requestId}] Starting book analysis with streamlined approach (1 Google Books + 1 OpenAI request)`);
       
       // Parse the body data first
       if (req.body) {
@@ -136,62 +136,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Always enrich book metadata with OpenAI to get proper spelling and capitalization
-      console.log(`[${requestId}] Enriching book metadata with OpenAI`);
-      let enrichedBookInfo = await enrichBookMetadata(validatedData);
+      // STEP 1: Get data from Google Books API and identify missing fields
+      console.log(`[${requestId}] STEP 1: Making ONE request to Google Books API to get metadata`);
+      const { bookData: googleBooksData, missingFields } = await enrichBookMetadata(validatedData);
       
-      // Log what got corrected from OpenAI data
-      if (enrichedBookInfo.title !== validatedData.title) {
-        console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
+      console.log(`[${requestId}] Google Books API returned data with ${missingFields.length} missing fields to complete`);
+      
+      // Log what was found/corrected from Google Books data
+      if (googleBooksData.title !== validatedData.title && googleBooksData.title) {
+        console.log(`[${requestId}] Title was updated by Google Books: "${validatedData.title}" → "${googleBooksData.title}"`);
       }
       
-      if (enrichedBookInfo.author !== validatedData.author) {
-        console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
+      if (googleBooksData.author !== validatedData.author && googleBooksData.author) {
+        console.log(`[${requestId}] Author was updated by Google Books: "${validatedData.author}" → "${googleBooksData.author}"`);
       }
       
-      // For manual entries without a cover image, fetch from OpenAI-provided URL if we found a match
-      if (!req.file && enrichedBookInfo.coverImageUrl) {
-        console.log(`[${requestId}] Using cover image from provided URL: ${enrichedBookInfo.coverImageUrl}`);
+      // For entries without a cover image, fetch from Google-provided URL if we found a match
+      if (!req.file && googleBooksData.coverImageUrl) {
+        console.log(`[${requestId}] Using cover image from Google Books API: ${googleBooksData.coverImageUrl}`);
         
         try {
-          // Fetch the cover image from the URL provided by OpenAI
-          const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
+          // Fetch the cover image from the URL provided by Google Books
+          const imageResponse = await fetch(googleBooksData.coverImageUrl);
           
           if (imageResponse.ok) {
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Image = Buffer.from(imageBuffer).toString('base64');
+            const buffer = await imageResponse.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
             
-            // Determine image type from URL
-            const imageType = enrichedBookInfo.coverImageUrl.endsWith('.jpg') || 
-                             enrichedBookInfo.coverImageUrl.endsWith('.jpeg') 
-                             ? 'image/jpeg' : 'image/png';
+            // Store the image data
+            googleBooksData.coverImageData = `data:${contentType};base64,${base64}`;
+            googleBooksData.hasCoverImage = true;
             
-            // Add the image to the book info
-            enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
-            console.log(`[${requestId}] Successfully fetched cover image from URL`);
+            console.log(`[${requestId}] Successfully fetched cover image from Google Books API`);
           }
         } catch (error) {
           console.error(`[${requestId}] Error fetching cover image:`, error);
         }
       }
       
-      // Process book analysis with OpenAI
-      console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      const analysisResult = await processBookAnalysis(enrichedBookInfo);
+      // Import the completeBookMetadata function from our new module
+      const { completeBookMetadata } = await import('./services/newOpenai');
+      
+      // STEP 2: Send ONE request to OpenAI to fill missing metadata and generate analysis content
+      console.log(`[${requestId}] STEP 2: Making ONE request to OpenAI to complete book metadata and generate analysis`);
+      console.log(`[${requestId}] Fields to complete with OpenAI: ${missingFields.join(', ')}`);
+      const finalBookData = await completeBookMetadata(googleBooksData, missingFields);
       
       // Log bibliographic data in detail before sending response
       console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
-      console.log(`- Title: "${analysisResult.title}"`);
-      console.log(`- Author: "${analysisResult.author}"`);
-      console.log(`- Page Count: ${analysisResult.pageCount} (type: ${typeof analysisResult.pageCount})`);
-      console.log(`- Dimensions: ${analysisResult.dimensions}`);
-      console.log(`- Binding: ${analysisResult.binding}`);
-      console.log(`- Edition: ${analysisResult.edition}`);
-      console.log(`- Location: ${analysisResult.location}`);
-      console.log(`- Publisher: ${analysisResult.publisher}`);
+      console.log(`- Title: "${finalBookData.title}"`);
+      console.log(`- Author: "${finalBookData.author}"`);
+      console.log(`- Page Count: ${finalBookData.pageCount} (type: ${typeof finalBookData.pageCount})`);
+      console.log(`- Dimensions: ${finalBookData.dimensions}`);
+      console.log(`- Binding: ${finalBookData.binding}`);
+      console.log(`- Edition: ${finalBookData.edition}`);
+      console.log(`- Location: ${finalBookData.location}`);
+      console.log(`- Publisher: ${finalBookData.publisher}`);
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
-      res.status(200).json(analysisResult);
+      res.status(200).json(finalBookData);
     } catch (error) {
       console.error("Book analysis error:", error);
       res.status(500).json({ message: `Error analyzing book: ${error.message}` });

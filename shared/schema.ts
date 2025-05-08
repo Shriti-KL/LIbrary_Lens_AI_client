@@ -22,6 +22,7 @@ export const books = pgTable("books", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   author: text("author").notNull(),
+  subtitle: text("subtitle"),             // Book subtitle
   isbn: text("isbn"),
   coverImageUrl: text("cover_image_url"),
   publisher: text("publisher"),
@@ -38,6 +39,14 @@ export const books = pgTable("books", {
   
   // Physical book properties
   dimensions: text("dimensions"),         // Physical dimensions (e.g., "21 x 15 cm")
+  
+  // New fields for enhanced book metadata
+  translator: text("translator"),         // Book translator 
+  illustrator: text("illustrator"),       // Book illustrator
+  edition: text("edition"),               // Edition information
+  location: text("location"),             // Publishing location/city
+  binding: text("binding"),               // Binding type (hardcover, paperback)
+  price: text("price"),                   // Price information
   edition: text("edition"),               // Edition information (e.g., "First Edition")
   language: text("language").default("de"), // Language of the content (de, en, fr, es, zh)
   location: text("location"),             // Library location (e.g., "Main Library, Section B")
