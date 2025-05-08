@@ -210,3 +210,163 @@
   "status": "success",
   "bookTitle": "Die Geschichte der Bienen"
 }
+
+[2025-05-08 12:58:43] REQUEST TO Perplexity
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "language": "de",
+  "lookupId": "perplexity_isbn_1746709123934_ud0eq"
+}
+
+[2025-05-08 12:58:43] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-132-9..."
+}
+
+[2025-05-08 12:58:47] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "dc542bba-3357-4220-8b14-8a2081484978",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 511,
+    "completion_tokens": 327,
+    "total_tokens": 838,
+    "search_context_size": "low"
+  },
+  "citationCount": 5
+}
+
+[2025-05-08 12:58:47] RESPONSE FROM Perplexity
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Sorg, Marion",
+  "isbn": "978-3-95916-132-9",
+  "lookupId": "perplexity_isbn_1746709123934_ud0eq"
+}
+
+[2025-05-08 13:01:56] REQUEST TO Perplexity
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "language": "German",
+  "lookupId": "perplexity_isbn_1746709316052_3sxbs"
+}
+
+[2025-05-08 13:01:56] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-132-9..."
+}
+
+[2025-05-08 13:01:59] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "3321c365-1bf8-4c70-a85c-887e97d0a3c9",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 511,
+    "completion_tokens": 308,
+    "total_tokens": 819,
+    "search_context_size": "low"
+  },
+  "citationCount": 5
+}
+
+[2025-05-08 13:01:59] RESPONSE FROM Perplexity
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg",
+  "isbn": "978-3-95916-132-9",
+  "lookupId": "perplexity_isbn_1746709316052_3sxbs"
+}
+
+[2025-05-08 13:02:01] REQUEST TO Perplexity
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-135-0",
+  "language": "de",
+  "lookupId": "perplexity_isbn_1746709321361_ntog0"
+}
+
+[2025-05-08 13:02:01] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-135-0..."
+}
+
+[2025-05-08 13:02:03] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "537778b2-6ac1-4ae2-99dd-721025c5bc10",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 511,
+    "completion_tokens": 330,
+    "total_tokens": 841,
+    "search_context_size": "low"
+  },
+  "citationCount": 5
+}
+
+[2025-05-08 13:02:03] RESPONSE FROM Perplexity
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann",
+  "isbn": "978-3-95916-135-0",
+  "lookupId": "perplexity_isbn_1746709321361_ntog0"
+}
+
+[2025-05-08 13:03:19] REQUEST TO Perplexity
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-135-0",
+  "language": "German",
+  "lookupId": "perplexity_isbn_1746709399097_0aect"
+}
+
+[2025-05-08 13:03:19] REQUEST TO Perplexity
+{
+  "operation": "chat/completions",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messageCount": 2,
+  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-135-0..."
+}
+
+[2025-05-08 13:03:21] RESPONSE FROM Perplexity
+{
+  "status": 200,
+  "id": "d0b97a8b-77a1-48bf-9b50-6df5e8b51be5",
+  "model": "llama-3.1-sonar-small-128k-online",
+  "usage": {
+    "prompt_tokens": 511,
+    "completion_tokens": 340,
+    "total_tokens": 851,
+    "search_context_size": "low"
+  },
+  "citationCount": 5
+}
+
+[2025-05-08 13:03:21] RESPONSE FROM Perplexity
+{
+  "operation": "getBookByISBN",
+  "status": "success",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann",
+  "isbn": "978-3-95916-135-0",
+  "lookupId": "perplexity_isbn_1746709399097_0aect"
+}

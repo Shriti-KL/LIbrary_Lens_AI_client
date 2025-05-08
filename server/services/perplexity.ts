@@ -116,9 +116,13 @@ export async function getBookByISBN(isbn: string, language: string = "de"): Prom
   console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using Perplexity`);
   
   // Create a clear system message focused on accurate ISBN lookup
-  const systemMessage = `You are a professional librarian specializing in book metadata. Your task is to provide accurate information about a book with a specific ISBN.
+  const systemMessage = `You are a professional librarian specializing in book metadata with access to global bibliographic databases. Your task is to provide accurate information about a book with a specific ISBN.
 
-IMPORTANT: You must ONLY return information about the exact ISBN provided: ${isbn}. If you cannot find this specific ISBN, return null for all fields except the ISBN itself.
+CRITICALLY IMPORTANT: 
+- You must ONLY return information about the EXACT ISBN provided: ${isbn}.
+- If you cannot find this exact ISBN or are uncertain about any data, return null for all fields except the ISBN itself.
+- NEVER invent or fabricate book data - accuracy is essential.
+- It is BETTER to return null values than to provide incorrect information.
 
 Provide your response in this JSON format:
 {
@@ -147,14 +151,21 @@ Provide your response in this JSON format:
   "idBNumber": "ID-B reference number if available"
 }
 
-Guidelines:
+Critical Guidelines:
 1. ONLY provide information for the EXACT ISBN: ${isbn}
-2. Provide factual information only - do not fabricate data
-3. Use null for any fields where information is unavailable
-4. Ensure the summary is approximately 1000 characters (150 words)
+2. If you cannot find adequate information about this specific ISBN, simply return:
+   {
+     "isbn": "${isbn}",
+     "title": null,
+     "author": null
+   }
+3. Never fabricate or guess at data - use null for any fields where verifiable information is unavailable
+4. Ensure the summary contains specific details from the actual book, approximately 1000 characters (150 words)
 5. Provide the response in ${language} language
-6. Include 2-5 accurate genres and themes
+6. Include 2-5 accurate genres and themes that reflect the book's actual content
 7. Include standard library classification information when available
+8. The ISBN must be included verbatim in your response
+9. Be especially careful that the author and title match the exact ISBN
 
 Return ONLY the JSON object, no introduction or explanation.`;
 
@@ -212,6 +223,116 @@ Return ONLY the JSON object, no introduction or explanation.`;
           });
           return null;
         }
+      }
+      
+      // Additional validation checks to detect incorrect responses
+      const dataIntegrityChecks = [
+        // Check 1: ISBN at least appears in the summary or any metadata field
+        { 
+          check: () => {
+            // First verify the ISBN appears in any key metadata fields
+            const isbnNoHyphens = isbn.replace(/[-\s]/g, '');
+            const summaryText = bookData.summary || '';
+            const publisherText = bookData.publisher || '';
+            const authorText = bookData.author || '';
+            const titleText = bookData.title || '';
+            
+            // Look for ISBN digits in the key metadata
+            const textToCheck = `${summaryText} ${publisherText} ${authorText} ${titleText}`;
+            const containsISBNPattern = isbnNoHyphens.replace(/(.{3})/g, '$1[\\s-]*').replace(/^(97[89])/, '(?:$1)?');
+            const hasISBNMentioned = new RegExp(containsISBNPattern).test(textToCheck.replace(/[-\s]/g, ''));
+            
+            return hasISBNMentioned;
+          },
+          errorMessage: "ISBN is not mentioned or present in any of the book's metadata fields"
+        },
+        
+        // Check 2: Require minimum book metadata to be populated
+        {
+          check: () => {
+            // Ensure we have at least 3 of these key fields
+            const requiredFields = [
+              bookData.publisher,
+              bookData.publishedYear,
+              bookData.pageCount,
+              bookData.binding,
+              bookData.genres && Array.isArray(bookData.genres) && bookData.genres.length > 0,
+              bookData.location,
+              bookData.language
+            ];
+            
+            const validFieldCount = requiredFields.filter(field => field).length;
+            return validFieldCount >= 3;
+          },
+          errorMessage: "Insufficient metadata provided - book data appears to be fabricated"
+        },
+        
+        // Check 3: Genres and themes should be consistent with book content and specific 
+        {
+          check: () => {
+            // Check for overly generic themes/genres which indicate a made-up response
+            const genericTerms = ['fiction', 'non-fiction', 'literature', 'book', 'novel', 'story'];
+            const genres = Array.isArray(bookData.genres) ? bookData.genres : [];
+            const themes = Array.isArray(bookData.themes) ? bookData.themes : [];
+            
+            // If we have genres/themes, they shouldn't all be generic terms
+            if (genres.length > 0 || themes.length > 0) {
+              const allItems = [...genres, ...themes].map(item => item?.toLowerCase?.() || '');
+              const specificItems = allItems.filter(item => 
+                !genericTerms.some(term => item === term || item.includes(`${term}`))
+              );
+              
+              // At least 50% of genres/themes should be specific
+              return specificItems.length >= Math.ceil(allItems.length * 0.5);
+            }
+            
+            return true; // Skip this check if no genres/themes provided
+          },
+          errorMessage: "Genres and themes appear to be generic and not specific to this book"
+        },
+        
+        // Check 4: Summary should be substantial and specific
+        {
+          check: () => {
+            const summary = bookData.summary || '';
+            
+            // Summary should be of reasonable length (at least 300 chars)
+            if (summary.length < 300) {
+              return false;
+            }
+            
+            // Check for specific content - the summary should mention the title or characters
+            // or specific plot elements
+            const titleWords = bookData.title.split(/\s+/).filter((w: string) => w.length > 3);
+            const titleMentioned = titleWords.some((word: string) => 
+              summary.toLowerCase().includes(word.toLowerCase())
+            );
+            
+            // The summary should include some specific details that give confidence
+            // it's actually about this book
+            return titleMentioned || summary.includes(bookData.author);
+          },
+          errorMessage: "Summary appears generic, too short, or unrelated to the book"
+        }
+      ];
+      
+      // Run all integrity checks
+      const failedChecks = dataIntegrityChecks
+        .filter(check => !check.check())
+        .map(check => check.errorMessage);
+      
+      if (failedChecks.length > 0) {
+        console.log(`[${lookupId}] Perplexity response failed integrity checks for ISBN ${isbn}:`);
+        failedChecks.forEach(error => console.log(`[${lookupId}] - ${error}`));
+        
+        apiLogger.logError("Perplexity", {
+          error: "Data integrity check failed",
+          isbn,
+          lookupId,
+          reasons: failedChecks
+        });
+        
+        return null;
       }
       
       // Log successful result
