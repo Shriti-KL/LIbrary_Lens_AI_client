@@ -110,54 +110,82 @@ export async function processBookAnalysis(
       author: analysisRequest.author,
     });
 
-    // Prepare context with all available information
+    // Prepare context with all available information as a comprehensive JSON object
     const bookContext = {
+      // Basic book metadata
       isbn: analysisRequest.isbn || null,
       title: analysisRequest.title || null,
+      subtitle: analysisRequest.subtitle || null,
       author: analysisRequest.author || null,
+      
+      // Publishing information
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
       pageCount: analysisRequest.pageCount || null,
       language: language,
+      edition: analysisRequest.edition || null,
+      
+      // Content-related information
       originalDescription: analysisRequest.summary || null,
+      existingGenres: analysisRequest.genres || null,
+      existingThemes: analysisRequest.themes || null,
+      
+      // Physical attributes
+      binding: analysisRequest.binding || null,
+      dimensions: analysisRequest.dimensions || null,
+      coverImageUrl: analysisRequest.coverImageUrl || null,
+      
+      // Additional metadata
+      translator: analysisRequest.translator || null,
+      illustrator: analysisRequest.illustrator || null,
+      price: analysisRequest.price || null,
+      
+      // German-specific library fields
+      deweyDecimal: analysisRequest.deweyDecimal || null,
+      catalogNumber: analysisRequest.catalogNumber || null,
+      secondaryClassification: analysisRequest.secondaryClassification || null,
+      interestCategory: analysisRequest.interestCategory || null
     };
     
-    // Send request to OpenAI
+    // Send request to OpenAI with structured JSON context and request structured JSON response
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: `You are a book metadata expert specializing in library cataloging. Generate missing metadata for books and enhance existing data. Always respond in ${languageName}.`,
+          content: `You are a book metadata expert specializing in library cataloging according to German library standards. Generate missing metadata for books and enhance existing data. Always respond in ${languageName} with a properly structured JSON object.`,
         },
         {
           role: "user",
-          content: `I need to enrich the metadata for the following book and prepare it for a library catalog.
+          content: `I need to enrich the metadata for the following book and prepare it for a German library catalog system.
 
-Book information:
+BOOK METADATA:
 ${JSON.stringify(bookContext, null, 2)}
 
-Please provide the following:
-1. A concise summary of approximately 150 words (1000 characters) that describes the book's content, major themes, and significance.
-2. 3-5 relevant genres for the book that would be appropriate for library categorization.
-3. 2-4 major themes explored in the book.
-4. A reading level assessment (Children, Young Adult, Adult, or Academic).
-5. Any additional bibliographic data that might be missing (if you can determine it from the existing information).
+Please analyze this information and generate the following fields:
 
-Please return your response as a JSON object with the following structure:
+1. summary: A concise summary of approximately 150 words (1000 characters) that describes the book's content.
+2. genres: An array of 3-5 relevant genres for the book (as strings).
+3. themes: An array of 2-4 major themes explored in the book (as strings).
+4. readingLevel: Reading level assessment (Kinder, Jugendliche, Erwachsene, or Akademisch).
+5. binding: The binding type if not already provided (Hardcover, Taschenbuch, etc.).
+
+Return ONLY a JSON object with this exact structure:
 {
-  "title": "...",  // Use existing or improve if necessary
-  "author": "...",  // Use existing or improve if necessary
+  "title": "The exact book title",
+  "subtitle": "The subtitle if any",
+  "author": "Complete author name",
+  "summary": "Your generated summary...",
+  "genres": ["Genre 1", "Genre 2", "Genre 3"],
+  "themes": ["Theme 1", "Theme 2"],
+  "readingLevel": "Reading level assessment",
+  "binding": "Book binding type",
   "isbn": "...",  // Use existing or normalize if necessary
   "publisher": "...",  // Use existing or add if missing
   "publishedYear": xxxx,  // Year as number
   "pageCount": xxx,  // Number of pages as number
   "language": "...",  // Language code (e.g., "de" for German)
-  "summary": "...",  // ~150 word summary
-  "genres": ["...", "...", "..."],  // 3-5 genres
-  "themes": ["...", "...", "..."],  // 2-4 themes
-  "readingLevel": "...",  // Reading level assessment
-  "binding": "..."  // Book binding if known
+  "readingLevel": "..."  // Reading level assessment
 }
 
 IMPORTANT: For any fields where you don't have information and cannot reasonably determine it from context, use null. DO NOT invent data.`,
