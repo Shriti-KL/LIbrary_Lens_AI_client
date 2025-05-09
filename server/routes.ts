@@ -131,8 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Process book analysis directly with Perplexity (fallback to OpenAI if needed)
-      console.log(`[${requestId}] Processing book analysis with Perplexity/OpenAI`);
+      // Process book analysis with OpenAI
+      console.log(`[${requestId}] Processing book analysis with OpenAI`);
       // Import the processBookAnalysis function from bookAnalysis service
       const { processBookAnalysis } = await import("./services/bookAnalysis");
       const analysisResult = await processBookAnalysis(validatedData);
@@ -322,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Import the enrichBookMetadata function from bookAnalysis
             const { enrichBookMetadata } = await import("./services/bookAnalysis");
             
-            // Enrich with Perplexity/OpenAI
+            // Enrich with OpenAI
             const enrichedData = await enrichBookMetadata(fullBookData);
             
             // Log what was corrected
@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Process full analysis with Perplexity/OpenAI
+            // Step 2: Process full analysis with OpenAI
             console.log("Step 2: Processing complete book analysis...");
             // Import the processBookAnalysis function from bookAnalysis service
             const { processBookAnalysis } = await import("./services/bookAnalysis");
@@ -551,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Book information lookup endpoints (powered by OpenAI)
   
-  // GET /api/books/lookup - Search books via Perplexity/OpenAI
+  // GET /api/books/lookup - Search books via Google Books
   app.get("/api/books/lookup", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via Perplexity/OpenAI
+  // GET /api/books/isbn/:isbn - Get book by ISBN via Google Books and OpenAI
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
@@ -605,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // POST /api/books/similar - Get similar books via Perplexity/OpenAI
+  // POST /api/books/similar - Get similar books via OpenAI
   app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {
       const bookInfo = req.body;

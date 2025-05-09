@@ -286,7 +286,7 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       const otherContributors = volumeInfo.authors.slice(1);
       
       // Look for patterns indicating roles in contributor names
-      otherContributors.forEach(contributor => {
+      otherContributors.forEach((contributor: string) => {
         if (/illustr/i.test(contributor) || /bilder/i.test(contributor)) {
           illustrator = contributor.replace(/\(.*?\)/g, '').trim(); // Remove role description if present
         } else if (/übersetz/i.test(contributor) || /transl/i.test(contributor)) {
