@@ -112,10 +112,14 @@ export default function BookDetail() {
   
   // Handle input change for edited fields
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    
+    // For number fields, convert the string value to a number or null for empty strings
+    const processedValue = type === 'number' && value !== '' ? parseInt(value, 10) : value;
+    
     setEditedBook(prev => ({
       ...prev,
-      [name]: value,
+      [name]: processedValue,
     }));
   };
   
@@ -248,67 +252,14 @@ export default function BookDetail() {
         </div>
       </div>
       
-      {/* Book content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column - Cover image & metadata */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardContent className="p-4">
-              {book.coverImageUrl ? (
-                <div className="aspect-[2/3] overflow-hidden rounded-md mb-4">
-                  <img 
-                    src={book.coverImageUrl} 
-                    alt={book.title} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="aspect-[2/3] flex items-center justify-center bg-neutral-100 rounded-md mb-4">
-                  <Bookmark className="h-12 w-12 text-neutral-400" />
-                </div>
-              )}
-              
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('isbn')}</h4>
-                  <p className="text-sm">{book.isbn ? formatISBN(book.isbn) : t('notAvailable')}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('publisher')}</h4>
-                  <p className="text-sm">{book.publisher || t('notAvailable')}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('publishedYear')}</h4>
-                  <p className="text-sm">{book.publishedYear || t('notAvailable')}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('pageCount')}</h4>
-                  <p className="text-sm">{book.pageCount || t('notAvailable')}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('readingLevel')}</h4>
-                  <p className="text-sm">{book.readingLevel || t('notAvailable')}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-neutral-500">{t('deweyDecimal')}</h4>
-                  <p className="text-sm">{book.deweyDecimal || t('notAvailable')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Right column - Book details */}
-        <div className="md:col-span-2">
-          <Card>
-            <CardContent className="p-6">
-              {isEditing ? (
-                <div className="space-y-4">
+      {/* Book content in ekz-Informationsdienst format */}
+      <div className="mx-auto max-w-4xl">
+        <Card>
+          <CardContent className="p-6">
+            {isEditing ? (
+              <div className="space-y-4">
+                {/* Book details form in the ekz-Informationsdienst layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-neutral-700">{t('title')}</label>
                     <Input 
@@ -330,88 +281,323 @@ export default function BookDetail() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">{t('summary')}</label>
-                    <Textarea 
-                      name="summary"
-                      value={editedBook.summary || ''}
+                    <label className="text-sm font-medium text-neutral-700">{t('isbn')}</label>
+                    <Input 
+                      name="isbn"
+                      value={editedBook.isbn || ''}
                       onChange={handleInputChange}
-                      className="w-full min-h-[150px]"
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('publisher')}</label>
+                    <Input 
+                      name="publisher"
+                      value={editedBook.publisher || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('publishedYear')}</label>
+                    <Input 
+                      name="publishedYear"
+                      type="number"
+                      value={editedBook.publishedYear || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('pages')}</label>
+                    <Input 
+                      name="pageCount"
+                      type="number"
+                      value={editedBook.pageCount || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('dimensions')}</label>
+                    <Input 
+                      name="dimensions"
+                      value={editedBook.dimensions || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                      placeholder="e.g. 21 x 15 cm"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('binding')}</label>
+                    <Input 
+                      name="binding"
+                      value={editedBook.binding || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                      placeholder="e.g. Festeinband, Taschenbuch"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('edition')}</label>
+                    <Input 
+                      name="edition"
+                      value={editedBook.edition || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                      placeholder="e.g. 1. Auflage"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('location')}</label>
+                    <Input 
+                      name="location"
+                      value={editedBook.location || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                      placeholder="e.g. München, Berlin"
                     />
                   </div>
                 </div>
-              ) : (
-                <>
-                  <h1 className="text-2xl font-serif font-semibold text-neutral-900 mb-2">
-                    {book.title}
-                  </h1>
-                  <p className="text-lg text-neutral-700 mb-4">
-                    {t('by')} {book.author}
-                  </p>
-                  
-                  {/* Genres */}
-                  {Array.isArray(book.genres) && book.genres.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {book.genres.map((genre: string, index: number) => (
-                        <Badge key={index} variant="outline" className="bg-primary/10">
-                          {genre}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Summary */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-neutral-900 mb-3">
-                      {t('summary')}
-                    </h3>
-                    <div className="prose prose-neutral">
-                      <p className="text-neutral-700 whitespace-pre-line">
-                        {book.summary || t('noSummaryAvailable')}
-                      </p>
-                    </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">{t('illustrator')}</label>
+                  <Input 
+                    name="illustrator"
+                    value={
+                      editedBook.contributors && 
+                      Array.isArray(editedBook.contributors) && 
+                      editedBook.contributors.length > 0
+                        ? editedBook.contributors
+                            .filter(c => 
+                              typeof c === 'object' && 
+                              c !== null && 
+                              'role' in c && 
+                              typeof c.role === 'string' && 
+                              c.role.toLowerCase().includes('illustr')
+                            )
+                            .map(c => (typeof c === 'object' && c !== null && 'name' in c && typeof c.name === 'string') ? c.name : '')
+                            .filter(Boolean)
+                            .join(', ')
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const illustratorName = e.target.value;
+                      let contributors: Array<{role: string, name: string}> = [];
+                      
+                      // If we have existing contributors, filter out illustrators and keep others
+                      if (editedBook.contributors && Array.isArray(editedBook.contributors)) {
+                        contributors = editedBook.contributors
+                          .filter(c => 
+                            typeof c === 'object' && 
+                            c !== null && 
+                            'role' in c && 
+                            typeof c.role === 'string' && 
+                            !c.role.toLowerCase().includes('illustr')
+                          ) as Array<{role: string, name: string}>;
+                      }
+                      
+                      // Add new illustrator if provided
+                      if (illustratorName.trim()) {
+                        contributors.push({
+                          role: 'illustrator',
+                          name: illustratorName.trim()
+                        });
+                      }
+                      
+                      setEditedBook(prev => ({
+                        ...prev,
+                        contributors
+                      }));
+                    }}
+                    className="w-full"
+                    placeholder="e.g. Maria Schmidt"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-neutral-700">{t('summary')}</label>
+                  <Textarea 
+                    name="summary"
+                    value={editedBook.summary || ''}
+                    onChange={handleInputChange}
+                    className="w-full min-h-[150px]"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                {/* ASB Classification and catalog numbers at top */}
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-col items-start">
+                    {book.secondaryClassification && (
+                      <span className="text-sm font-bold">
+                        ASB: {book.secondaryClassification}
+                      </span>
+                    )}
                   </div>
                   
-                  {/* Themes */}
-                  {Array.isArray(book.themes) && book.themes.length > 0 && (
-                    <div className="mb-8">
-                      <h3 className="text-lg font-medium text-neutral-900 mb-3">
-                        {t('themes')}
-                      </h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {book.themes.map((theme: any, index: number) => {
-                          // Handle both string and object themes
-                          const themeText = typeof theme === 'string' 
-                            ? theme 
-                            : (theme.theme || theme.description || JSON.stringify(theme));
-                            
-                          return (
-                            <li key={index} className="text-neutral-700">
-                              {themeText}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
+                  <div className="flex flex-col items-end">
+                    {book.catalogNumber && (
+                      <span className="text-sm font-bold">
+                        {book.catalogNumber}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Main book information section */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  {/* Left column - Cover image */}
+                  <div className="md:col-span-1">
+                    {book.coverImageUrl ? (
+                      <div className="aspect-[2/3] overflow-hidden rounded-md">
+                        <img 
+                          src={book.coverImageUrl} 
+                          alt={book.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-[2/3] flex items-center justify-center bg-neutral-100 rounded-md">
+                        <Bookmark className="h-12 w-12 text-neutral-400" />
+                      </div>
+                    )}
+                  </div>
                   
-                  {/* Catalog Entry */}
-                  {book.catalogEntry && (
-                    <div>
-                      <h3 className="text-lg font-medium text-neutral-900 mb-3">
-                        {t('catalogEntry')}
-                      </h3>
-                      <div className="bg-neutral-50 p-4 rounded-md border border-neutral-200">
-                        <p className="text-neutral-700 whitespace-pre-line font-mono text-sm">
-                          {book.catalogEntry}
+                  {/* Right column - Formatted bibliographic information */}
+                  <div className="md:col-span-2">
+                    {/* Author and Title Line */}
+                    <div className="mb-4">
+                      <p className="font-bold mb-1">
+                        {book.author && book.author.includes(',') ? 
+                          book.author : 
+                          book.author?.split(' ').length > 1 ? 
+                            `${book.author?.split(' ').pop()}, ${book.author?.split(' ').slice(0, -1).join(' ')}` : 
+                            book.author}:
+                      </p>
+                      
+                      <p className="font-medium">
+                        {book.title} / {book.author}
+                        {book.contributors && 
+                          Array.isArray(book.contributors) && 
+                          book.contributors.length > 0 && 
+                          book.contributors.some(c => 
+                            typeof c === 'object' && 
+                            c !== null && 
+                            'role' in c && 
+                            typeof c.role === 'string' && 
+                            c.role.toLowerCase().includes('illustr')
+                          ) ? 
+                          `; ${book.contributors
+                            .filter(c => 
+                              typeof c === 'object' && 
+                              c !== null && 
+                              'role' in c && 
+                              typeof c.role === 'string' && 
+                              c.role.toLowerCase().includes('illustr')
+                            )
+                            .map(c => (typeof c === 'object' && c !== null && 'name' in c) ? c.name : '')
+                            .filter(Boolean)
+                            .join(', ')
+                          }` : ''}
+                        .
+                      </p>
+                    </div>
+                    
+                    {/* Publication Information */}
+                    <p className="mb-4">
+                      {book.edition ? `${book.edition}. ` : ''}
+                      {book.location ? `- ${book.location}: ` : '- '}
+                      {book.publisher ? book.publisher : ''}
+                      {book.publishedYear ? `, ${book.publishedYear}` : ''}
+                      {book.pageCount ? `. - ${book.pageCount} ${t('pages')}` : ''}
+                      {book.dimensions ? ` ; ${book.dimensions}` : ''}
+                      {book.series ? ` (${book.series})` : ''}
+                    </p>
+                    
+                    {/* ISBN, Binding, Price */}
+                    <p className="mb-6">
+                      {book.isbn ? `ISBN ${formatISBN(book.isbn)}` : ''}
+                      {book.binding ? ` : ${book.binding}` : ''}
+                      {book.price ? ` : EUR ${book.price}` : ''}
+                    </p>
+                    
+                    {/* Summary */}
+                    <div className="mb-6">
+                      <div className="prose prose-neutral max-w-none">
+                        <p className="text-neutral-700 whitespace-pre-line">
+                          {book.summary || t('noSummaryAvailable')}
                         </p>
                       </div>
                     </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    
+                    {/* Genres and Themes */}
+                    {(Array.isArray(book.genres) && book.genres.length > 0) || (Array.isArray(book.themes) && book.themes.length > 0) ? (
+                      <div className="mb-6">
+                        <div className="flex flex-wrap gap-2">
+                          {Array.isArray(book.genres) && book.genres.map((genre: string, index: number) => (
+                            <Badge key={`genre-${index}`} variant="outline" className="bg-primary/10">
+                              {genre}
+                            </Badge>
+                          ))}
+                          
+                          {Array.isArray(book.themes) && book.themes.map((theme: any, index: number) => {
+                            // Handle both string and object themes
+                            const themeText = typeof theme === 'string' 
+                              ? theme 
+                              : (theme.theme || theme.description || JSON.stringify(theme));
+                            
+                            return (
+                              <Badge key={`theme-${index}`} variant="secondary" className="bg-secondary/10">
+                                {themeText}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                
+                {/* Bottom section with ID categories and reviewer */}
+                <div className="flex flex-wrap justify-between items-end mt-4 border-t pt-4">
+                  <div className="flex flex-col items-start">
+                    {book.interestCategory && (
+                      <p className="font-bold mb-1">{book.interestCategory}</p>
+                    )}
+                    
+                    {book.idBNumber && (
+                      <p className="text-sm">{book.idBNumber}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col items-end">
+                    {book.reviewerName && (
+                      <p className="text-sm">{book.reviewerName}</p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Barcode placeholder and footer */}
+                <div className="flex flex-col items-center mt-8">
+                  <div className="w-64 h-12 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 mx-auto mb-1 flex items-center justify-center">
+                    {/* This is where a barcode would appear */}
+                    <span className="text-xs text-gray-500">{book.catalogNumber || book.isbn}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">ekz-Informationsdienst</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
       
       {/* Delete confirmation dialog */}
