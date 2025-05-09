@@ -240,34 +240,139 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       binding = "Buch"; // Default binding if we only know it's a book
     }
     
-    // Format the book data to match our schema
+    // Extract dimensions (only height in cm if available)
+    let dimensions = null;
+    if (volumeInfo.dimensions) {
+      if (volumeInfo.dimensions.height) {
+        dimensions = `${volumeInfo.dimensions.height} cm`;
+      }
+    }
+    
+    // Format ISBN with hyphens based on standard format
+    let formattedISBN = extractedISBN;
+    if (extractedISBN && extractedISBN.length > 9) {
+      // Apply hyphenation for ISBN-13
+      if (extractedISBN.length === 13) {
+        // Format for ISBN-13: 978-3-95916-132-9 (standard German format)
+        formattedISBN = extractedISBN.replace(/^(\d{3})(\d{1})(\d{5})(\d{3})(\d{1})$/, '$1-$2-$3-$4-$5');
+      }
+      // Apply hyphenation for ISBN-10
+      else if (extractedISBN.length === 10) {
+        // Format for ISBN-10: 3-95916-132-5 (standard German format)
+        formattedISBN = extractedISBN.replace(/^(\d{1})(\d{5})(\d{3})(\w{1})$/, '$1-$2-$3-$4');
+      }
+    }
+    
+    // Extract price information from saleInfo if available
+    let price = null;
+    if (bookData.saleInfo && bookData.saleInfo.listPrice) {
+      const listPrice = bookData.saleInfo.listPrice;
+      if (listPrice.amount && listPrice.currencyCode) {
+        price = `${listPrice.amount} ${listPrice.currencyCode}`;
+      }
+    }
+    
+    // Extract statement of responsibility (authors, illustrators, etc.)
+    let statementOfResponsibility = null;
+    let illustrator = null;
+    let translator = null;
+    
+    // Try to identify other contributors from author list patterns or description
+    if (volumeInfo.authors && volumeInfo.authors.length > 1) {
+      // The first author is usually the main author
+      const mainAuthor = volumeInfo.authors[0];
+      
+      // Other contributors might be among remaining authors
+      const otherContributors = volumeInfo.authors.slice(1);
+      
+      // Look for patterns indicating roles in contributor names
+      otherContributors.forEach(contributor => {
+        if (/illustr/i.test(contributor) || /bilder/i.test(contributor)) {
+          illustrator = contributor.replace(/\(.*?\)/g, '').trim(); // Remove role description if present
+        } else if (/übersetz/i.test(contributor) || /transl/i.test(contributor)) {
+          translator = contributor.replace(/\(.*?\)/g, '').trim(); // Remove role description if present
+        }
+      });
+      
+      // Create statement of responsibility
+      statementOfResponsibility = volumeInfo.authors.join("; ");
+    }
+    
+    // Extract edition information if available
+    let edition = null;
+    if (volumeInfo.contentVersion) {
+      const editionMatch = volumeInfo.contentVersion.match(/(\d+)\.(\d+)\.(\d+)/);
+      if (editionMatch) {
+        edition = `${editionMatch[1]}. Auflage`;
+      }
+    }
+    
+    // Extract location (place of publication) from publisher if available
+    let location = null;
+    if (volumeInfo.publisher) {
+      // Some publishers include location: "Location: Publisher"
+      const publisherParts = volumeInfo.publisher.split(":");
+      if (publisherParts.length > 1) {
+        location = publisherParts[0].trim();
+      }
+    }
+    
+    // Format the book data to match our schema with enhanced metadata
     const formattedBook: Partial<Book> = {
+      // Main author and title
       title: volumeInfo.title,
       subtitle: volumeInfo.subtitle || null,
-      author: volumeInfo.authors.join(", "),
+      author: volumeInfo.authors[0] || volumeInfo.authors.join(", "),
+      
+      // Statement of responsibility (author, illustrator, etc.)
+      statementOfResponsibility: statementOfResponsibility,
+      illustrator: illustrator,
+      translator: translator,
+      
+      // Edition statement
+      edition: edition,
+      
+      // Place of publication, publisher, year
+      location: location,
       publisher: volumeInfo.publisher || null,
       publishedYear: publishedYear,
+      
+      // Physical description
       pageCount: volumeInfo.pageCount || null,
-      isbn: extractedISBN,
+      dimensions: dimensions,
+      
+      // ISBN (with hyphenated format)
+      isbn: formattedISBN,
+      
+      // Binding and price information
+      binding: binding,
+      price: price,
+      
+      // Other metadata
       language: volumeInfo.language || language,
       summary: volumeInfo.description || null,
       genres: genres.length > 0 ? genres : null,
-      binding: binding,
       coverImageUrl: volumeInfo.imageLinks?.thumbnail || volumeInfo.imageLinks?.smallThumbnail || null,
       
-      // Set default values for other fields
-      dimensions: null,
-      edition: null,
-      location: null,
-      price: null,
-      translator: null,
-      illustrator: null,
+      // Set default values for other fields not available from Google Books API
       themes: null,
       readingLevel: null,
       catalogNumber: null,
       secondaryClassification: null,
       interestCategory: null,
       idBNumber: null,
+      
+      // Store raw metadata for debugging
+      metadata: {
+        rawGoogleBooksData: {
+          industryIdentifiers: volumeInfo.industryIdentifiers,
+          contentVersion: volumeInfo.contentVersion,
+          dimensions: volumeInfo.dimensions,
+          printType: volumeInfo.printType,
+          maturityRating: volumeInfo.maturityRating,
+          authors: volumeInfo.authors
+        }
+      }
     };
     
     // Log successful result
@@ -281,15 +386,24 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       lookupId,
     });
     
-    // Log the bibliographic data for debugging
+    // Log the enhanced bibliographic data for debugging
     console.log(`[${lookupId}] BIBLIOGRAPHIC DATA CHECK from Google Books:`);
     console.log(`- Title: "${formattedBook.title}"`);
-    console.log(`- Author: "${formattedBook.author}"`);
-    console.log(`- ISBN: ${formattedBook.isbn}`);
-    console.log(`- Page Count: ${formattedBook.pageCount} (type: ${typeof formattedBook.pageCount})`);
-    console.log(`- Binding: ${formattedBook.binding}`);
-    console.log(`- Publisher: ${formattedBook.publisher}`);
-    console.log(`- Published Year: ${formattedBook.publishedYear}`);
+    console.log(`- Subtitle: "${formattedBook.subtitle || 'N/A'}"`);
+    console.log(`- Main Author: "${formattedBook.author}"`);
+    console.log(`- Statement of Responsibility: ${formattedBook.statementOfResponsibility || 'N/A'}`);
+    console.log(`- Illustrator: ${formattedBook.illustrator || 'N/A'}`);
+    console.log(`- Translator: ${formattedBook.translator || 'N/A'}`);
+    console.log(`- Edition: ${formattedBook.edition || 'N/A'}`);
+    console.log(`- Location: ${formattedBook.location || 'N/A'}`);
+    console.log(`- Publisher: ${formattedBook.publisher || 'N/A'}`);
+    console.log(`- Published Year: ${formattedBook.publishedYear || 'N/A'}`);
+    console.log(`- Page Count: ${formattedBook.pageCount || 'N/A'}`);
+    console.log(`- Dimensions: ${formattedBook.dimensions || 'N/A'}`);
+    console.log(`- ISBN: ${formattedBook.isbn || 'N/A'}`);
+    console.log(`- Binding: ${formattedBook.binding || 'N/A'}`);
+    console.log(`- Price: ${formattedBook.price || 'N/A'}`);
+    console.log(`- Language: ${formattedBook.language || 'N/A'}`);
     console.log(`- Genres: ${formattedBook.genres && Array.isArray(formattedBook.genres) ? formattedBook.genres.join(", ") : "None"}`);
     
     return formattedBook;
