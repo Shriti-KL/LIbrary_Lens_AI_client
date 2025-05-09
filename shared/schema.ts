@@ -49,6 +49,7 @@ export const books = pgTable("books", {
   // Contributors
   translator: text("translator"),         // Translator
   illustrator: text("illustrator"),       // Illustrator
+  statementOfResponsibility: text("statement_of_responsibility"), // Statement of responsibility (author, illustrator, etc.)
   contributors: jsonb("contributors").default([]), // Other contributors (editors, translators, etc.)
   
   // German library catalog specific fields
@@ -94,6 +95,7 @@ export const bookAnalysisSchema = z.object({
   // Contributors
   translator: z.string().nullable().optional(),
   illustrator: z.string().nullable().optional(),
+  statementOfResponsibility: z.string().nullable().optional(),
   
   // Physical book properties 
   dimensions: z.string().nullable().optional(),

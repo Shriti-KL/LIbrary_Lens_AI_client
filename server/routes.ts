@@ -228,12 +228,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Always enrich with Perplexity/OpenAI to ensure proper spelling and capitalization
+      // Initialize enrichedData with bookData
       let enrichedData = bookData;
       
-      // Only attempt to enrich if we have at least a title or ISBN
-      if (bookData.title || bookData.isbn) {
+      // Check if this is coming from the analysis page
+      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && bookData.analyzed === true;
+      
+      // Only enrich if it's NOT from the analysis page or hasn't been analyzed already
+      if ((!isFromAnalysis) && (bookData.title || bookData.isbn)) {
         try {
+          console.log(`Book not from analysis page, enriching metadata`);
+          
           // Import the enrichBookMetadata function from bookAnalysis
           const { enrichBookMetadata } = await import("./services/bookAnalysis");
           
@@ -253,6 +258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error enriching book data before creation:", enrichError);
           // Continue with original data if enrichment fails
         }
+      } else if (isFromAnalysis) {
+        console.log(`Book already analyzed, skipping redundant enrichment`);
       }
       
       // Ensure required fields are still present after enrichment
@@ -558,8 +565,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxResults
       };
       
-      // Import the searchBooks function from bookAnalysis service
-      const { searchBooks } = await import("./services/bookAnalysis");
+      // Import the searchBooks function from googleBooks service
+      const { searchBooks } = await import("./services/googleBooks");
       const results = await searchBooks(searchParams);
       
       res.status(200).json(results);
@@ -577,9 +584,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
-      // Import the getBookByISBN function from bookAnalysis service
-      const { getBookByISBN } = await import("./services/bookAnalysis");
-      const book = await getBookByISBN(isbn);
+      // Import the getBookByISBNWithFallback function from bookAnalysis service
+      const { getBookByISBNWithFallback } = await import("./services/bookAnalysis");
+      const book = await getBookByISBNWithFallback(isbn, req.query.language as string || "de");
       
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
@@ -600,9 +607,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
-      // Import the searchSimilarBooks function from bookAnalysis service
-      const { searchSimilarBooks } = await import("./services/bookAnalysis");
-      const similarBooks = await searchSimilarBooks(bookInfo);
+      // Import the getSimilarBooks function from bookAnalysis service
+      const { getSimilarBooks } = await import("./services/bookAnalysis");
+      const similarBooks = await getSimilarBooks(bookInfo);
       
       res.status(200).json(similarBooks);
     } catch (error) {

@@ -1,229 +1,399 @@
 import { Book, BookAnalysisRequest } from "@shared/schema";
-import { processBookAnalysisWithPerplexity } from "./perplexity";
-import { processBookAnalysis as processBookAnalysisWithOpenAI } from "./openai";
-import { enrichBookMetadata as enrichBookMetadataWithOpenAI } from "./openai";
+import { getCompleteBookByISBN } from "./googleBooks";
 import { apiLogger } from "../utils/logger";
+import { processBookAnalysis as processBookAnalysisWithOpenAI } from "./openai";
 
-// Main function to process book analysis with fallback strategy
+/**
+ * Process a book analysis request with enhanced logic:
+ * 1. If ISBN is provided, first get metadata from Google Books API
+ * 2. Always use OpenAI to generate summary, identify genres/themes, and enhance metadata
+ * 3. Return error fields if both APIs fail
+ */
 export async function processBookAnalysis(
   analysisRequest: BookAnalysisRequest
 ): Promise<Partial<Book>> {
   // Create a unique ID for this analysis request for logging
   const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   
-  console.log(`[${analysisId}] ProcessBookAnalysis input:`, {
-    title: analysisRequest.title,
-    author: analysisRequest.author,
+  console.log(`[${analysisId}] Starting book analysis with request:`, {
+    hasISBN: !!analysisRequest.isbn,
+    hasTitle: !!analysisRequest.title,
+    hasAuthor: !!analysisRequest.author,
     hasCoverImage: !!analysisRequest.coverImageData,
-    isbn: analysisRequest.isbn,
     language: analysisRequest.language
   });
 
-  try {
-    // First, try using Perplexity API
-    console.log(`[${analysisId}] Attempting to process book analysis with Perplexity`);
-    const perplexityResult = await processBookAnalysisWithPerplexity(analysisRequest);
+  // Base book data to be enriched - start with an empty object
+  let baseBookData: Partial<Book> = {};
+  
+  // If ISBN is provided, use that specifically to get metadata from Google Books
+  if (analysisRequest.isbn) {
+    const isbn = analysisRequest.isbn;
+    console.log(`[${analysisId}] ISBN found: ${isbn} - Using clean ISBN-only lookup`);
     
-    // If Perplexity returned valid data with title and author, use it
-    if (perplexityResult && perplexityResult.title && perplexityResult.author) {
-      console.log(`[${analysisId}] Successfully processed book analysis with Perplexity`);
-      return perplexityResult;
+    try {
+      // First step: get metadata from Google Books API with the ISBN
+      console.log(`[${analysisId}] Retrieving book metadata from Google Books API using ISBN`);
+      const googleBooksResult = await getCompleteBookByISBN(isbn, analysisRequest.language || "de");
+      
+      // If Google Books API returned valid data, use it as base data
+      if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+        console.log(`[${analysisId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+        baseBookData = googleBooksResult;
+      } else {
+        console.log(`[${analysisId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+        // Still include the ISBN in base data
+        baseBookData = {
+          isbn,
+          language: analysisRequest.language || "de"
+        };
+      }
+    } catch (error: any) {
+      console.log(`[${analysisId}] Error retrieving data from Google Books:`, error?.message || String(error));
+      // Continue with just the ISBN
+      baseBookData = {
+        isbn,
+        language: analysisRequest.language || "de"
+      };
+    }
+  } 
+  // Handle non-ISBN cases (title/author)
+  else if (analysisRequest.title || analysisRequest.author) {
+    console.log(`[${analysisId}] No ISBN provided, using title/author as base data`);
+    baseBookData = {
+      title: analysisRequest.title || undefined,
+      author: analysisRequest.author || undefined,
+      language: analysisRequest.language || "de"
+    };
+  } else {
+    // Not enough information provided
+    console.log(`[${analysisId}] Insufficient information for book analysis`);
+    return {} as Partial<Book>;
+  }
+  
+  // Second step: Always use OpenAI to generate summary, identify genres/themes, and enhance metadata
+  console.log(`[${analysisId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
+  
+  try {
+    // Prepare OpenAI request with all available fields from Google Books
+    // First, create a base request with required fields to satisfy the type system
+    const openAiRequest: BookAnalysisRequest = {
+      isbn: baseBookData.isbn || null,
+      title: baseBookData.title || "",
+      author: baseBookData.author || "",
+      language: baseBookData.language || "de",
+      coverImageData: analysisRequest.coverImageData
+    };
+    
+    // Then add all the available fields from Google Books data for more context
+    // Include as much metadata as possible for OpenAI to use
+    if (baseBookData.subtitle) openAiRequest.subtitle = baseBookData.subtitle;
+    if (baseBookData.publisher) openAiRequest.publisher = baseBookData.publisher;
+    if (baseBookData.publishedYear) openAiRequest.publishedYear = baseBookData.publishedYear;
+    if (baseBookData.pageCount) openAiRequest.pageCount = baseBookData.pageCount;
+    if (baseBookData.binding) openAiRequest.binding = baseBookData.binding;
+    if (baseBookData.coverImageUrl) openAiRequest.coverImageUrl = baseBookData.coverImageUrl;
+    if (baseBookData.summary) openAiRequest.summary = baseBookData.summary;
+    if (baseBookData.genres && Array.isArray(baseBookData.genres)) openAiRequest.genres = baseBookData.genres;
+    
+    // Log the fields being sent to OpenAI
+    console.log(`[${analysisId}] Sending following fields to OpenAI:`, 
+      Object.keys(openAiRequest).filter(key => 
+        openAiRequest[key as keyof BookAnalysisRequest] !== undefined && 
+        openAiRequest[key as keyof BookAnalysisRequest] !== null
+      )
+    );
+    
+    // Call OpenAI to enhance the metadata and generate summary, genres, themes
+    const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
+    
+    // Merge the results, prioritizing reliable data
+    const mergedResult = {
+      ...openAIResult,
+      // Preserve these fields from Google Books (if they exist) as they're more reliable
+      isbn: baseBookData.isbn || openAIResult.isbn,
+      title: baseBookData.title || openAIResult.title,
+      author: baseBookData.author || openAIResult.author,
+      publisher: baseBookData.publisher || openAIResult.publisher,
+      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
+      pageCount: baseBookData.pageCount || openAIResult.pageCount,
+      language: baseBookData.language || openAIResult.language || "de"
+    };
+    
+    // Validate the result
+    if (mergedResult.title && mergedResult.author) {
+      console.log(`[${analysisId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
+      
+      // If we have an ISBN from both sources, verify they match
+      if (baseBookData.isbn && openAIResult.isbn && baseBookData.isbn !== openAIResult.isbn) {
+        console.log(`[${analysisId}] WARNING: ISBN mismatch between Google Books (${baseBookData.isbn}) and OpenAI (${openAIResult.isbn}). Using Google Books ISBN.`);
+      }
+      
+      return mergedResult;
     }
     
-    // If Perplexity failed or returned incomplete data, fall back to OpenAI
-    console.log(`[${analysisId}] Perplexity processing failed or returned incomplete data, falling back to OpenAI`);
-    const openAIResult = await processBookAnalysisWithOpenAI(analysisRequest);
+    // If we don't have a complete result, return what we have
+    console.log(`[${analysisId}] Partial book data processed, returning available information`);
+    return mergedResult;
     
-    console.log(`[${analysisId}] Completed book analysis with OpenAI fallback`);
-    return openAIResult;
-  } catch (error) {
-    // Log the error
+  } catch (error: any) {
+    console.log(`[${analysisId}] Error during OpenAI analysis:`, error?.message || String(error));
     apiLogger.logError("BookAnalysis", {
-      error: "Book analysis processing failed",
-      message: error.message,
+      error: "OpenAI book analysis failed",
+      message: error?.message || "Unknown error",
       analysisId
     });
     
-    // Try OpenAI as a last resort if not already tried
-    try {
-      console.log(`[${analysisId}] Error with Perplexity, falling back to OpenAI`);
-      const openAIResult = await processBookAnalysisWithOpenAI(analysisRequest);
-      
-      console.log(`[${analysisId}] Completed book analysis with OpenAI fallback after error`);
-      return openAIResult;
-    } catch (fallbackError) {
-      apiLogger.logError("BookAnalysis", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message,
-        analysisId
-      });
-      throw fallbackError;
-    }
+    // Return whatever base data we have from Google Books
+    console.log(`[${analysisId}] Returning base book data from Google Books due to OpenAI error`);
+    return baseBookData;
   }
 }
 
-// Function to enrich book metadata (add missing fields)
-export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Partial<Book>> {
+/**
+ * Function to get book information by ISBN with clean fallback logic
+ */
+export async function getBookByISBNWithFallback(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
+  const lookupId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
+  
+  // Base book data to be enriched - start with just the ISBN
+  let baseBookData: Partial<Book> = {
+    isbn,
+    language
+  };
+  
   try {
-    // We'll use the same analyzed book data processing as in processBookAnalysis
-    // But prioritize user-entered fields
+    // First step: get metadata from Google Books API
+    console.log(`[${lookupId}] Retrieving book metadata from Google Books API using ISBN`);
+    const googleBooksResult = await getCompleteBookByISBN(isbn, language);
     
-    // First, try using Perplexity API for enrichment
-    console.log(`Attempting to enrich book metadata with Perplexity`);
+    // If Google Books API returned valid data, use it as base data
+    if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+      console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+      baseBookData = googleBooksResult;
+    } else {
+      console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+    }
     
-    // Convert to BookAnalysisRequest format
-    const analysisRequest: BookAnalysisRequest = {
-      title: bookData.title || "",
-      author: bookData.author || "",
-      isbn: bookData.isbn || null,
-      language: bookData.language || "de",
-      isUserEntry: true
+    // Second step: Always use OpenAI to enhance the data
+    console.log(`[${lookupId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
+    
+    // Create a request for OpenAI with all available fields from Google Books
+    // First, create a base request with required fields to satisfy the type system
+    const request: BookAnalysisRequest = {
+      isbn: baseBookData.isbn || null,
+      title: baseBookData.title || "",
+      author: baseBookData.author || "",
+      language: baseBookData.language || language
     };
     
-    const perplexityResult = await processBookAnalysisWithPerplexity(analysisRequest);
+    // Then add all the available fields from Google Books data for more context
+    // Include as much metadata as possible for OpenAI to use
+    if (baseBookData.subtitle) request.subtitle = baseBookData.subtitle;
+    if (baseBookData.publisher) request.publisher = baseBookData.publisher;
+    if (baseBookData.publishedYear) request.publishedYear = baseBookData.publishedYear;
+    if (baseBookData.pageCount) request.pageCount = baseBookData.pageCount;
+    if (baseBookData.binding) request.binding = baseBookData.binding;
+    if (baseBookData.coverImageUrl) request.coverImageUrl = baseBookData.coverImageUrl;
+    if (baseBookData.summary) request.summary = baseBookData.summary;
+    if (baseBookData.genres && Array.isArray(baseBookData.genres)) request.genres = baseBookData.genres;
     
-    // If Perplexity returned valid data, use it for non-user fields
-    if (perplexityResult && perplexityResult.title && perplexityResult.author) {
-      console.log(`Successfully enriched book metadata with Perplexity`);
+    // Log the fields being sent to OpenAI
+    console.log(`[${lookupId}] Sending following fields to OpenAI:`, 
+      Object.keys(request).filter(key => 
+        request[key as keyof BookAnalysisRequest] !== undefined && 
+        request[key as keyof BookAnalysisRequest] !== null
+      )
+    );
+    
+    const openAIResult = await processBookAnalysisWithOpenAI(request);
+    
+    // Merge the results, prioritizing reliable data
+    const mergedResult = {
+      ...openAIResult,
+      // Preserve these fields from Google Books (if they exist) as they're more reliable
+      isbn: baseBookData.isbn || openAIResult.isbn,
+      title: baseBookData.title || openAIResult.title,
+      author: baseBookData.author || openAIResult.author,
+      publisher: baseBookData.publisher || openAIResult.publisher,
+      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
+      pageCount: baseBookData.pageCount || openAIResult.pageCount,
+      language: baseBookData.language || openAIResult.language || language
+    };
+    
+    // Validate the result
+    if (mergedResult.title && mergedResult.author) {
+      console.log(`[${lookupId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
       
-      // Merge the results, prioritizing original bookData fields that were explicitly set
+      // If we have an ISBN from both sources, verify they match
+      if (openAIResult.isbn && openAIResult.isbn !== isbn) {
+        console.log(`[${lookupId}] WARNING: ISBN mismatch between request (${isbn}) and OpenAI (${openAIResult.isbn}). Using requested ISBN.`);
+      }
+      
+      return mergedResult;
+    }
+    
+    // If we don't have a complete result but have something, return what we have
+    if (baseBookData.title || openAIResult.title) {
+      console.log(`[${lookupId}] Partial book data processed, returning available information`);
+      return mergedResult;
+    }
+    
+    // If both services failed, return minimal data with just the ISBN
+    console.log(`[${lookupId}] Both Google Books and OpenAI failed to return valid data for ISBN: ${isbn}`);
+    return baseBookData;
+    
+  } catch (error: any) {
+    console.log(`[${lookupId}] Error during book lookup:`, error?.message || String(error));
+    apiLogger.logError("BookLookup", {
+      error: "Book lookup failed",
+      message: error?.message || "Unknown error",
+      isbn,
+      lookupId
+    });
+    
+    // Return minimal data with just the ISBN
+    return baseBookData;
+  }
+}
+
+/**
+ * Function to enrich existing book metadata
+ */
+export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Partial<Book>> {
+  // If we have an ISBN, use it for enrichment
+  if (bookData.isbn) {
+    console.log(`Enriching book metadata using ISBN: ${bookData.isbn}`);
+    
+    // Get complete data using the ISBN
+    const enrichedData = await getBookByISBNWithFallback(bookData.isbn, bookData.language || "de");
+    
+    // If we got valid enriched data, merge it with original data (preserving original fields)
+    if (enrichedData && enrichedData.title) {
+      console.log(`Successfully enriched book metadata for "${enrichedData.title}"`);
+      
+      // Merge the data, prioritizing original explicit values
       return {
-        ...perplexityResult,
+        ...enrichedData,
         ...Object.fromEntries(
           Object.entries(bookData).filter(([_, value]) => value !== null && value !== undefined)
         )
       };
     }
+  }
+  
+  // If we couldn't enrich with ISBN, try using title and author
+  if (bookData.title && bookData.author) {
+    console.log(`Enriching book metadata using title/author: "${bookData.title}" by ${bookData.author}`);
     
-    // If Perplexity failed, fall back to OpenAI
-    console.log(`Perplexity enrichment failed, falling back to OpenAI`);
-    return await enrichBookMetadataWithOpenAI(bookData);
-  } catch (error) {
-    // Log the error
-    apiLogger.logError("BookEnrichment", {
-      error: "Book metadata enrichment failed",
-      message: error.message
-    });
-    
-    // Try OpenAI as a last resort
     try {
-      console.log(`Error with Perplexity enrichment, falling back to OpenAI`);
-      return await enrichBookMetadataWithOpenAI(bookData);
-    } catch (fallbackError) {
-      apiLogger.logError("BookEnrichment", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message
+      // Create a request for analysis with all available fields
+      // First, create a base request with required fields
+      const request: BookAnalysisRequest = {
+        title: bookData.title,
+        author: bookData.author,
+        isbn: null,
+        language: bookData.language || "de"
+      };
+      
+      // Then add any other available fields for better context
+      if (bookData.subtitle) request.subtitle = bookData.subtitle;
+      if (bookData.publisher) request.publisher = bookData.publisher;
+      if (bookData.publishedYear) request.publishedYear = bookData.publishedYear;
+      if (bookData.pageCount) request.pageCount = bookData.pageCount;
+      if (bookData.binding) request.binding = bookData.binding;
+      if (bookData.coverImageUrl) request.coverImageUrl = bookData.coverImageUrl;
+      if (bookData.summary) request.summary = bookData.summary;
+      if (bookData.genres && Array.isArray(bookData.genres)) request.genres = bookData.genres;
+      
+      console.log(`Sending following fields to OpenAI for title/author enrichment:`, 
+        Object.keys(request).filter(key => 
+          request[key as keyof BookAnalysisRequest] !== undefined && 
+          request[key as keyof BookAnalysisRequest] !== null
+        )
+      );
+      
+      // Use OpenAI for enrichment with title/author
+      const enrichedData = await processBookAnalysisWithOpenAI(request);
+      
+      // If we got valid enriched data, merge it with original data (preserving original fields)
+      if (enrichedData && enrichedData.title) {
+        console.log(`Successfully enriched book metadata for "${enrichedData.title}"`);
+        
+        // Merge the data, prioritizing original explicit values
+        return {
+          ...enrichedData,
+          ...Object.fromEntries(
+            Object.entries(bookData).filter(([_, value]) => value !== null && value !== undefined)
+          )
+        };
+      }
+    } catch (error: any) {
+      console.log(`Error enriching book metadata:`, error?.message || String(error));
+    }
+  }
+  
+  // If enrichment failed, return the original data
+  console.log(`Could not enrich book metadata, returning original data`);
+  return bookData;
+}
+
+/**
+ * Get similar books recommendations
+ */
+export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
+  // Import on demand to prevent circular dependencies
+  const { searchSimilarBooks: getSimilarBooksFromGoogleBooks } = await import("./googleBooks");
+  
+  if (!book.title || !book.author) {
+    console.log(`Cannot find similar books without title and author`);
+    return [];
+  }
+  
+  try {
+    console.log(`Finding similar books for "${book.title}" by ${book.author}`);
+    const similarBooks = await getSimilarBooksFromGoogleBooks(book);
+    
+    if (similarBooks && similarBooks.length > 0) {
+      console.log(`Found ${similarBooks.length} similar books from Google Books API`);
+      
+      // Transform the Google Books API results to match our expected format
+      const formattedBooks = similarBooks.map(book => {
+        const volumeInfo = book.volumeInfo || {};
+        
+        return {
+          title: volumeInfo.title || "Unknown Title",
+          subtitle: volumeInfo.subtitle || null,
+          author: volumeInfo.authors?.join(", ") || "Unknown Author",
+          publisher: volumeInfo.publisher || null,
+          publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+          isbn: volumeInfo.industryIdentifiers?.find((id: any) => id.type === "ISBN_13")?.identifier || 
+                volumeInfo.industryIdentifiers?.find((id: any) => id.type === "ISBN_10")?.identifier || null,
+          summary: volumeInfo.description || null,
+          genres: volumeInfo.categories || null,
+          similarityReason: `Similar to "${book.title}" based on ${book.author}'s works and genre recommendations`,
+          language: volumeInfo.language || "de",
+          coverImageUrl: volumeInfo.imageLinks?.thumbnail || null
+        };
       });
       
-      // Return original data if both services fail
-      return bookData;
-    }
-  }
-}
-
-// Function to search books with fallback strategy
-export async function searchBooks(params: any): Promise<{ items: any[] }> {
-  try {
-    // First, try using Perplexity API
-    const { searchBooksWithPerplexity } = await import("./perplexity");
-    const perplexityResults = await searchBooksWithPerplexity(params);
-    
-    // If Perplexity returned valid results, use them
-    if (perplexityResults && perplexityResults.length > 0) {
-      return { items: perplexityResults };
+      return formattedBooks;
     }
     
-    // If Perplexity failed or returned no results, fall back to OpenAI
-    const { searchBooks: searchBooksWithOpenAI } = await import("./openai");
-    return await searchBooksWithOpenAI(params);
-  } catch (error) {
-    // Log the error
-    apiLogger.logError("BookSearch", {
-      error: "Book search failed",
-      message: error.message
-    });
+    // Fall back to OpenAI
+    console.log(`No similar books found with Google Books API, falling back to OpenAI`);
+    const { searchSimilarBooks } = await import("./openai");
+    return await searchSimilarBooks(book);
+  } catch (error: any) {
+    console.log(`Error finding similar books:`, error?.message || String(error));
     
-    // Try OpenAI as a last resort if not already tried
+    // Try OpenAI as fallback
     try {
-      const { searchBooks: searchBooksWithOpenAI } = await import("./openai");
-      return await searchBooksWithOpenAI(params);
-    } catch (fallbackError) {
-      apiLogger.logError("BookSearch", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message
-      });
-      return { items: [] };
-    }
-  }
-}
-
-// Function to get book by ISBN with fallback strategy
-export async function getBookByISBN(isbn: string): Promise<any | null> {
-  try {
-    // First, try using Perplexity API
-    const { getBookByISBNWithPerplexity } = await import("./perplexity");
-    const perplexityResult = await getBookByISBNWithPerplexity(isbn);
-    
-    // If Perplexity returned valid data, use it
-    if (perplexityResult && perplexityResult.title) {
-      return perplexityResult;
-    }
-    
-    // If Perplexity failed or returned no data, fall back to OpenAI
-    const { getBookByISBN: getBookByISBNWithOpenAI } = await import("./openai");
-    return await getBookByISBNWithOpenAI(isbn);
-  } catch (error) {
-    // Log the error
-    apiLogger.logError("GetBookByISBN", {
-      error: "Book ISBN lookup failed",
-      message: error.message
-    });
-    
-    // Try OpenAI as a last resort if not already tried
-    try {
-      const { getBookByISBN: getBookByISBNWithOpenAI } = await import("./openai");
-      return await getBookByISBNWithOpenAI(isbn);
-    } catch (fallbackError) {
-      apiLogger.logError("GetBookByISBN", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message
-      });
-      return null;
-    }
-  }
-}
-
-// Function to search similar books with fallback strategy
-export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
-  try {
-    // First, try using Perplexity API
-    const { findSimilarBooksWithPerplexity } = await import("./perplexity");
-    const perplexityResults = await findSimilarBooksWithPerplexity(book);
-    
-    // If Perplexity returned valid results, use them
-    if (perplexityResults && perplexityResults.length > 0) {
-      return perplexityResults;
-    }
-    
-    // If Perplexity failed or returned no results, fall back to OpenAI
-    const { searchSimilarBooks: searchSimilarBooksWithOpenAI } = await import("./openai");
-    return await searchSimilarBooksWithOpenAI(book);
-  } catch (error) {
-    // Log the error
-    apiLogger.logError("SimilarBooks", {
-      error: "Similar books search failed",
-      message: error.message
-    });
-    
-    // Try OpenAI as a last resort if not already tried
-    try {
-      const { searchSimilarBooks: searchSimilarBooksWithOpenAI } = await import("./openai");
-      return await searchSimilarBooksWithOpenAI(book);
-    } catch (fallbackError) {
-      apiLogger.logError("SimilarBooks", {
-        error: "OpenAI fallback also failed",
-        message: fallbackError.message
-      });
+      const { searchSimilarBooks } = await import("./openai");
+      return await searchSimilarBooks(book);
+    } catch (fallbackError: any) {
+      console.log(`OpenAI fallback also failed:`, fallbackError?.message || String(fallbackError));
       return [];
     }
   }

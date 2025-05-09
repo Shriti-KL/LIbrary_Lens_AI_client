@@ -1,762 +1,102 @@
 
-[2025-05-08 07:23:08] REQUEST TO Google Books API
+[2025-05-09 06:40:04] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "method": "GET",
-  "operation": "getBookByISBN",
+  "operation": "getCompleteBookByISBN",
   "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
+    "isbn": "978-3-959161-35-0",
+    "cleanedISBN": "9783959161350"
   }
 }
 
-[2025-05-08 07:23:08] REQUEST TO Google Books API
+[2025-05-09 06:40:04] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "isbn:9783849705756",
+    "query": "isbn:9783959161350",
     "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-08 07:23:09] RESPONSE FROM Google Books API
+[2025-05-09 06:40:04] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
-  "query": "isbn:9783849705756",
+  "query": "isbn:9783959161350",
   "status": 200,
   "totalItems": 1,
   "itemCount": 1
 }
 
-[2025-05-08 07:23:09] RESPONSE FROM Google Books API
+[2025-05-09 06:40:04] RESPONSE FROM Google Books API
 {
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann",
+  "isbn": "978-3-959161-35-0",
+  "lookupId": "googlebooks_isbn_1746772804232_k2ghe"
 }
 
-[2025-05-08 07:23:09] REQUEST TO OpenAI API
+[2025-05-09 06:40:04] REQUEST TO OpenAI API
 {
   "operation": "processBookAnalysis",
   "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
+  "language": "de",
+  "isbn": "9783959161350",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
 }
 
-[2025-05-08 07:23:10] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:23:10] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:23:10] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:23:10] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:23:32] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:23:32] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:23:33] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:23:33] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:23:33] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Starke Signale",
-    "author": "Michel Reimon",
-    "isbn": "978-3-8497-0575-6"
-  }
-}
-
-[2025-05-08 07:32:51] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": " 9780060584757",
-    "cleanedISBN": "9780060584757"
-  }
-}
-
-[2025-05-08 07:32:51] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9780060584757",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:32:51] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9780060584757",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:32:51] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": " 9780060584757",
-  "found": true,
-  "title": "Mystic River",
-  "author": "Dennis Lehane"
-}
-
-[2025-05-08 07:32:51] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN:  9780060584757, Title: Mystic River, Author: Dennis Lehane",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:33:06] RESPONSE FROM OpenAI API
+[2025-05-09 06:40:11] RESPONSE FROM OpenAI API
 {
   "operation": "processBookAnalysis",
   "status": "success",
-  "bookTitle": "Mystic River"
-}
-
-[2025-05-08 07:33:18] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "9780060584757",
-    "cleanedISBN": "9780060584757"
-  }
-}
-
-[2025-05-08 07:33:18] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9780060584757",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:33:18] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9780060584757",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:33:18] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "9780060584757",
-  "found": true,
-  "title": "Mystic River",
-  "author": "Dennis Lehane"
-}
-
-[2025-05-08 07:33:18] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Mystic River",
-    "author": "Dennis Lehane",
-    "isbn": "9780060584757"
+  "usage": {
+    "prompt_tokens": 623,
+    "completion_tokens": 337,
+    "total_tokens": 960,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "summary",
+    "4": "genres",
+    "5": "themes",
+    "6": "readingLevel",
+    "7": "binding",
+    "8": "isbn",
+    "9": "publishedYear",
+    "10": "language"
   }
 }
 
-[2025-05-08 07:33:57] REQUEST TO Google Books API
+[2025-05-09 06:51:11] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:33:57] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:33:57] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:33:57] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:33:57] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:33:59] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:33:59] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:33:59] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:33:59] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:34:20] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:34:20] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:34:20] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:34:20] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:34:20] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Starke Signale",
-    "author": "Michel Reimon",
-    "isbn": "978-3-8497-0575-6"
-  }
-}
-
-[2025-05-08 07:41:39] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": " 9780060584757",
-    "cleanedISBN": "9780060584757"
-  }
-}
-
-[2025-05-08 07:41:39] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9780060584757",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:41:39] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9780060584757",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:41:39] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": " 9780060584757",
-  "found": true,
-  "title": "Mystic River",
-  "author": "Dennis Lehane"
-}
-
-[2025-05-08 07:41:39] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN:  9780060584757, Title: Mystic River, Author: Dennis Lehane",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:41:55] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Mystic River"
-}
-
-[2025-05-08 07:42:25] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:42:25] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:42:25] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:42:25] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:42:25] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:42:26] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:42:26] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:42:27] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:42:27] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:50:08] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:50:08] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:50:09] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:50:09] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:50:09] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:50:21] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Starke Signale"
-}
-
-[2025-05-08 07:51:36] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8497-0575-6",
-    "cleanedISBN": "9783849705756"
-  }
-}
-
-[2025-05-08 07:51:36] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783849705756",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:51:36] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783849705756",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:51:36] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8497-0575-6",
-  "found": true,
-  "title": "Starke Signale",
-  "author": "Michel Reimon"
-}
-
-[2025-05-08 07:51:36] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Starke Signale",
-    "author": "Michel Reimon",
-    "isbn": "978-3-8497-0575-6"
-  }
-}
-
-[2025-05-08 07:55:03] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-10-397704-2",
-    "cleanedISBN": "9783103977042"
-  }
-}
-
-[2025-05-08 07:55:03] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783103977042",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:55:03] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783103977042",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:55:03] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-10-397704-2",
-  "found": true,
-  "title": "Die Welt nach Gaza",
-  "author": "Pankaj Mishra"
-}
-
-[2025-05-08 07:55:03] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-10-397704-2, Title: Die Welt nach Gaza, Author: Pankaj Mishra",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 07:55:19] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Die Welt nach Gaza"
-}
-
-[2025-05-08 07:56:10] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-10-397704-2",
-    "cleanedISBN": "9783103977042"
-  }
-}
-
-[2025-05-08 07:56:10] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783103977042",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 07:56:10] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783103977042",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 07:56:10] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-10-397704-2",
-  "found": true,
-  "title": "Die Welt nach Gaza",
-  "author": "Pankaj Mishra"
-}
-
-[2025-05-08 07:56:10] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Die Welt nach Gaza",
-    "author": "Pankaj Mishra",
-    "isbn": "978-3-10-397704-2"
-  }
-}
-
-[2025-05-08 08:48:28] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
+  "operation": "getCompleteBookByISBN",
   "params": {
     "isbn": "978-3-95916-132-9",
     "cleanedISBN": "9783959161329"
   }
 }
 
-[2025-05-08 08:48:28] REQUEST TO Google Books API
+[2025-05-09 06:51:11] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
@@ -767,7 +107,7 @@
   }
 }
 
-[2025-05-08 08:48:28] RESPONSE FROM Google Books API
+[2025-05-09 06:51:11] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161329",
@@ -776,467 +116,57 @@
   "itemCount": 1
 }
 
-[2025-05-08 08:48:28] RESPONSE FROM Google Books API
+[2025-05-09 06:51:11] RESPONSE FROM Google Books API
 {
-  "operation": "getBookByISBN",
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg",
   "isbn": "978-3-95916-132-9",
-  "found": true,
+  "lookupId": "googlebooks_isbn_1746773471175_dmxzv"
+}
+
+[2025-05-09 06:51:11] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783959161329",
   "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
   "author": "Marion Sorg"
 }
 
-[2025-05-08 08:48:28] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-95916-132-9, Title: Abenteuer in Norwegen, Author: Marion Sorg",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 08:48:44] RESPONSE FROM OpenAI API
+[2025-05-09 06:51:17] RESPONSE FROM OpenAI API
 {
   "operation": "processBookAnalysis",
   "status": "success",
-  "bookTitle": "Abenteuer in Norwegen"
-}
-
-[2025-05-08 08:51:01] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-95916-132-9",
-    "cleanedISBN": "9783959161329"
-  }
-}
-
-[2025-05-08 08:51:01] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783959161329",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 08:51:01] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783959161329",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 08:51:01] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-95916-132-9",
-  "found": true,
-  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "author": "Marion Sorg"
-}
-
-[2025-05-08 08:51:01] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Abenteuer in Norwegen",
-    "author": "Marion Sorg",
-    "isbn": "978-3-95916-132-9"
+  "usage": {
+    "prompt_tokens": 602,
+    "completion_tokens": 311,
+    "total_tokens": 913,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "summary",
+    "4": "genres",
+    "5": "themes",
+    "6": "readingLevel",
+    "7": "binding",
+    "8": "isbn",
+    "9": "publishedYear",
+    "10": "language"
   }
-}
-
-[2025-05-08 08:51:12] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-498-03567-9",
-    "cleanedISBN": "9783498035679"
-  }
-}
-
-[2025-05-08 08:51:12] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783498035679&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783498035679",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 08:51:12] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783498035679",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 08:51:12] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-498-03567-9",
-  "found": true,
-  "title": "Tyll",
-  "author": "Daniel Kehlmann"
-}
-
-[2025-05-08 08:51:12] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-498-03567-9, Title: Tyll, Author: Daniel Kehlmann",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 08:51:27] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Tyll"
-}
-
-[2025-05-08 08:52:17] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-498-03567-9",
-    "cleanedISBN": "9783498035679"
-  }
-}
-
-[2025-05-08 08:52:17] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783498035679&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783498035679",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 08:52:17] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783498035679",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 08:52:17] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-498-03567-9",
-  "found": true,
-  "title": "Tyll",
-  "author": "Daniel Kehlmann"
-}
-
-[2025-05-08 08:52:17] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Tyll",
-    "author": "Daniel Kehlmann",
-    "isbn": "978-3-498-03567-9"
-  }
-}
-
-[2025-05-08 08:52:32] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8321-7077-6",
-    "cleanedISBN": "9783832170776"
-  }
-}
-
-[2025-05-08 08:52:32] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783832170776&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783832170776",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 08:52:32] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783832170776",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 08:52:32] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8321-7077-6",
-  "found": true,
-  "title": "Der große Sommer",
-  "author": "Ewald Arenz"
-}
-
-[2025-05-08 08:52:32] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-8321-7077-6, Title: Der große Sommer, Author: Ewald Arenz",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 08:52:49] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Der große Sommer"
-}
-
-[2025-05-08 08:52:52] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-8321-7077-6",
-    "cleanedISBN": "9783832170776"
-  }
-}
-
-[2025-05-08 08:52:52] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783832170776&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783832170776",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 08:52:53] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783832170776",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 08:52:53] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-8321-7077-6",
-  "found": true,
-  "title": "Der große Sommer",
-  "author": "Ewald Arenz"
-}
-
-[2025-05-08 08:52:53] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Der große Sommer",
-    "author": "Ewald Arenz",
-    "isbn": "978-3-8321-7077-6"
-  }
-}
-
-[2025-05-08 08:52:55] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadataWithOpenAI",
-  "status": "success",
-  "bookTitle": "Der große Sommer"
-}
-
-[2025-05-08 09:37:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "9783406830303",
-    "cleanedISBN": "9783406830303"
-  }
-}
-
-[2025-05-08 09:37:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783406830303&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783406830303",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 09:37:47] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783406830303",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 09:37:47] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "9783406830303",
-  "found": true,
-  "title": "Der vergessene Widerstand",
-  "author": "Stephan Lehnstaedt"
-}
-
-[2025-05-08 09:37:47] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 9783406830303, Title: Der vergessene Widerstand, Author: Stephan Lehnstaedt",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 09:38:02] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Der vergessene Widerstand"
-}
-
-[2025-05-08 09:45:12] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-96129-473-2",
-    "cleanedISBN": "9783961294732"
-  }
-}
-
-[2025-05-08 09:45:12] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783961294732",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 09:45:12] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783961294732",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 09:45:12] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-96129-473-2",
-  "found": true,
-  "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
-  "author": "Sven Nordqvist"
-}
-
-[2025-05-08 09:45:12] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-96129-473-2, Title: Pettersson und Findus: Das große Bastelbuch für kreative Entdecker, Author: Sven Nordqvist",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 09:45:35] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker"
-}
-
-[2025-05-08 10:20:29] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getBookByISBN",
-  "params": {
-    "isbn": "978-3-98702-122-0",
-    "cleanedISBN": "9783987021220"
-  }
-}
-
-[2025-05-08 10:20:29] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783987021220",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-08 10:20:29] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783987021220",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-08 10:20:29] RESPONSE FROM Google Books API
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-98702-122-0",
-  "found": true,
-  "title": "Das neue Universum",
-  "author": "Christoph Thomas Link"
-}
-
-[2025-05-08 10:20:29] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-98702-122-0, Title: Das neue Universum, Author: Christoph Thomas Link",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 10:20:46] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Das neue Universum"
 }

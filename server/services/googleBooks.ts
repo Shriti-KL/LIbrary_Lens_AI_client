@@ -139,7 +139,15 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
   }
 }
 
-export async function getBookByISBN(isbn: string): Promise<any | null> {
+/**
+ * Get complete book information from Google Books API by ISBN
+ * This function formats the response to match the Book schema
+ */
+export async function getCompleteBookByISBN(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
+  // Create a unique ID for this lookup for logging
+  const lookupId = `googlebooks_isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using Google Books API`);
+  
   try {
     // Store the original ISBN format
     const originalISBN = isbn;
@@ -151,63 +159,300 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     apiLogger.logRequest("Google Books API", {
       endpoint: "volumes",
       method: "GET",
-      operation: "getBookByISBN",
+      operation: "getCompleteBookByISBN",
       params: {
         isbn: originalISBN,
         cleanedISBN
       }
     });
     
-    // Search using the cleaned ISBN
+    // Search using the cleaned ISBN - directly call searchBooks with the ISBN
     const books = await searchBooks({ query: `isbn:${cleanedISBN}` });
     
-    if (books.length > 0) {
-      // Use the original ISBN format in the result
-      const result = books[0];
-      if (result.volumeInfo && result.volumeInfo.industryIdentifiers) {
-        const isbn13 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13");
-        const isbn10 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10");
-        
-        if (isbn13 || isbn10) {
-          // Check which ISBN type matches our input (regardless of format)
-          if (cleanedISBN.length === 13 && isbn13) {
-            // Use the original format instead of the API's format
-            isbn13.originalFormat = originalISBN;
-          } else if (cleanedISBN.length === 10 && isbn10) {
-            // Use the original format instead of the API's format
-            isbn10.originalFormat = originalISBN;
-          }
-        }
-      }
-      
-      // Log the result
+    // Return null if no books were found
+    if (!books || books.length === 0) {
+      console.log(`[${lookupId}] No book found for ISBN: ${isbn}`);
       apiLogger.logResponse("Google Books API", {
-        operation: "getBookByISBN",
+        operation: "getCompleteBookByISBN",
         isbn: originalISBN,
-        found: true,
-        title: result.volumeInfo?.title,
-        author: result.volumeInfo?.authors?.[0]
+        found: false
       });
-      
-      return result;
+      return null;
     }
     
-    // Log that no book was found
+    const bookData = books[0];
+    
+    // Return null if no book was found or it has no volumeInfo
+    if (!bookData || !bookData.volumeInfo) {
+      console.log(`[${lookupId}] No valid book data found for ISBN: ${isbn}`);
+      return null;
+    }
+    
+    const volumeInfo = bookData.volumeInfo;
+    
+    // Verify that we have the essential data (title and author)
+    if (!volumeInfo.title || !volumeInfo.authors || volumeInfo.authors.length === 0) {
+      console.log(`[${lookupId}] Google Books returned incomplete data (missing title or author) for ISBN: ${isbn}`);
+      apiLogger.logError("Google Books API", {
+        error: "Missing essential fields in Google Books response",
+        isbn,
+        lookupId,
+      });
+      return null;
+    }
+    
+    // Extract ISBN identifiers
+    let extractedISBN: string | null = isbn;
+    if (volumeInfo.industryIdentifiers && volumeInfo.industryIdentifiers.length > 0) {
+      // Prefer ISBN-13 if available
+      const isbn13 = volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13");
+      const isbn10 = volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10");
+      
+      if (isbn13) {
+        extractedISBN = isbn13.identifier;
+      } else if (isbn10) {
+        extractedISBN = isbn10.identifier;
+      }
+    }
+    
+    // Extract the publication year from the publishedDate
+    let publishedYear: number | null = null;
+    if (volumeInfo.publishedDate) {
+      const dateMatch = volumeInfo.publishedDate.match(/^(\d{4})/);
+      if (dateMatch && dateMatch[1]) {
+        publishedYear = parseInt(dateMatch[1], 10);
+      }
+    }
+    
+    // Extract categories/genres
+    let genres: string[] = [];
+    if (volumeInfo.categories && volumeInfo.categories.length > 0) {
+      // Some categories might contain multiple genres separated by /
+      genres = volumeInfo.categories
+        .flatMap((category: string) => category.split(/\s*\/\s*/))
+        .filter((genre: string) => genre.trim().length > 0)
+        .slice(0, 5); // Limit to 5 genres
+    }
+    
+    // Extract binding type from printType and maturityRating
+    let binding = volumeInfo.printType || null;
+    if (binding === "BOOK") {
+      binding = "Buch"; // Default binding if we only know it's a book
+    }
+    
+    // Extract dimensions (only height in cm if available)
+    let dimensions = null;
+    if (volumeInfo.dimensions) {
+      if (volumeInfo.dimensions.height) {
+        dimensions = `${volumeInfo.dimensions.height} cm`;
+      }
+    }
+    
+    // Format ISBN with hyphens based on standard format
+    let formattedISBN = extractedISBN;
+    if (extractedISBN && extractedISBN.length > 9) {
+      // Apply hyphenation for ISBN-13
+      if (extractedISBN.length === 13) {
+        // Format for ISBN-13: 978-3-95916-132-9 (standard German format)
+        formattedISBN = extractedISBN.replace(/^(\d{3})(\d{1})(\d{5})(\d{3})(\d{1})$/, '$1-$2-$3-$4-$5');
+      }
+      // Apply hyphenation for ISBN-10
+      else if (extractedISBN.length === 10) {
+        // Format for ISBN-10: 3-95916-132-5 (standard German format)
+        formattedISBN = extractedISBN.replace(/^(\d{1})(\d{5})(\d{3})(\w{1})$/, '$1-$2-$3-$4');
+      }
+    }
+    
+    // Extract price information from saleInfo if available
+    let price = null;
+    if (bookData.saleInfo && bookData.saleInfo.listPrice) {
+      const listPrice = bookData.saleInfo.listPrice;
+      if (listPrice.amount && listPrice.currencyCode) {
+        price = `${listPrice.amount} ${listPrice.currencyCode}`;
+      }
+    }
+    
+    // Extract statement of responsibility (authors, illustrators, etc.)
+    let statementOfResponsibility = null;
+    let illustrator = null;
+    let translator = null;
+    
+    // Try to identify other contributors from author list patterns or description
+    if (volumeInfo.authors && volumeInfo.authors.length > 1) {
+      // The first author is usually the main author
+      const mainAuthor = volumeInfo.authors[0];
+      
+      // Other contributors might be among remaining authors
+      const otherContributors = volumeInfo.authors.slice(1);
+      
+      // Look for patterns indicating roles in contributor names
+      otherContributors.forEach(contributor => {
+        if (/illustr/i.test(contributor) || /bilder/i.test(contributor)) {
+          illustrator = contributor.replace(/\(.*?\)/g, '').trim(); // Remove role description if present
+        } else if (/übersetz/i.test(contributor) || /transl/i.test(contributor)) {
+          translator = contributor.replace(/\(.*?\)/g, '').trim(); // Remove role description if present
+        }
+      });
+      
+      // Create statement of responsibility
+      statementOfResponsibility = volumeInfo.authors.join("; ");
+    }
+    
+    // Extract edition information if available
+    let edition = null;
+    if (volumeInfo.contentVersion) {
+      const editionMatch = volumeInfo.contentVersion.match(/(\d+)\.(\d+)\.(\d+)/);
+      if (editionMatch) {
+        edition = `${editionMatch[1]}. Auflage`;
+      }
+    }
+    
+    // Extract location (place of publication) from publisher if available
+    let location = null;
+    if (volumeInfo.publisher) {
+      // Some publishers include location: "Location: Publisher"
+      const publisherParts = volumeInfo.publisher.split(":");
+      if (publisherParts.length > 1) {
+        location = publisherParts[0].trim();
+      }
+    }
+    
+    // Format the book data to match our schema with enhanced metadata
+    const formattedBook: Partial<Book> = {
+      // Main author and title
+      title: volumeInfo.title,
+      subtitle: volumeInfo.subtitle || null,
+      author: volumeInfo.authors[0] || volumeInfo.authors.join(", "),
+      
+      // Statement of responsibility (author, illustrator, etc.)
+      statementOfResponsibility: statementOfResponsibility,
+      illustrator: illustrator,
+      translator: translator,
+      
+      // Edition statement
+      edition: edition,
+      
+      // Place of publication, publisher, year
+      location: location,
+      publisher: volumeInfo.publisher || null,
+      publishedYear: publishedYear,
+      
+      // Physical description
+      pageCount: volumeInfo.pageCount || null,
+      dimensions: dimensions,
+      
+      // ISBN (with hyphenated format)
+      isbn: formattedISBN,
+      
+      // Binding and price information
+      binding: binding,
+      price: price,
+      
+      // Other metadata
+      language: volumeInfo.language || language,
+      summary: volumeInfo.description || null,
+      genres: genres.length > 0 ? genres : null,
+      coverImageUrl: volumeInfo.imageLinks?.thumbnail || volumeInfo.imageLinks?.smallThumbnail || null,
+      
+      // Set default values for other fields not available from Google Books API
+      themes: null,
+      readingLevel: null,
+      catalogNumber: null,
+      secondaryClassification: null,
+      interestCategory: null,
+      idBNumber: null,
+      
+      // Store raw metadata for debugging
+      metadata: {
+        rawGoogleBooksData: {
+          industryIdentifiers: volumeInfo.industryIdentifiers,
+          contentVersion: volumeInfo.contentVersion,
+          dimensions: volumeInfo.dimensions,
+          printType: volumeInfo.printType,
+          maturityRating: volumeInfo.maturityRating,
+          authors: volumeInfo.authors
+        }
+      }
+    };
+    
+    // Log successful result
+    console.log(`[${lookupId}] Successfully retrieved book data from Google Books: "${formattedBook.title}" by ${formattedBook.author}`);
     apiLogger.logResponse("Google Books API", {
-      operation: "getBookByISBN",
-      isbn: originalISBN,
-      found: false
+      operation: "getCompleteBookByISBN",
+      status: "success",
+      title: formattedBook.title,
+      author: formattedBook.author,
+      isbn,
+      lookupId,
     });
     
-    return null;
+    // Log the enhanced bibliographic data for debugging
+    console.log(`[${lookupId}] BIBLIOGRAPHIC DATA CHECK from Google Books:`);
+    console.log(`- Title: "${formattedBook.title}"`);
+    console.log(`- Subtitle: "${formattedBook.subtitle || 'N/A'}"`);
+    console.log(`- Main Author: "${formattedBook.author}"`);
+    console.log(`- Statement of Responsibility: ${formattedBook.statementOfResponsibility || 'N/A'}`);
+    console.log(`- Illustrator: ${formattedBook.illustrator || 'N/A'}`);
+    console.log(`- Translator: ${formattedBook.translator || 'N/A'}`);
+    console.log(`- Edition: ${formattedBook.edition || 'N/A'}`);
+    console.log(`- Location: ${formattedBook.location || 'N/A'}`);
+    console.log(`- Publisher: ${formattedBook.publisher || 'N/A'}`);
+    console.log(`- Published Year: ${formattedBook.publishedYear || 'N/A'}`);
+    console.log(`- Page Count: ${formattedBook.pageCount || 'N/A'}`);
+    console.log(`- Dimensions: ${formattedBook.dimensions || 'N/A'}`);
+    console.log(`- ISBN: ${formattedBook.isbn || 'N/A'}`);
+    console.log(`- Binding: ${formattedBook.binding || 'N/A'}`);
+    console.log(`- Price: ${formattedBook.price || 'N/A'}`);
+    console.log(`- Language: ${formattedBook.language || 'N/A'}`);
+    console.log(`- Genres: ${formattedBook.genres && Array.isArray(formattedBook.genres) ? formattedBook.genres.join(", ") : "None"}`);
+    
+    return formattedBook;
   } catch (error: any) {
-    console.error("Error fetching book by ISBN:", error);
+    // Handle API request errors
+    console.log(`[${lookupId}] Google Books API request failed for ISBN: ${isbn}`);
     apiLogger.logError("Google Books API", {
-      operation: "getBookByISBN",
-      isbn,
-      error: error.message || String(error)
+      error: "Google Books API request failed",
+      message: error?.message || String(error),
+      lookupId,
     });
-    throw new Error(`Failed to fetch book by ISBN: ${error.message || String(error)}`);
+    return null;
+  }
+}
+
+// Keeping a compatibility function that forwards to getCompleteBookByISBN
+// This allows for a smooth transition in case any code still references this function
+export async function getBookByISBN(isbn: string): Promise<any | null> {
+  console.log(`Deprecated getBookByISBN called, use getCompleteBookByISBN instead for ISBN: ${isbn}`);
+  
+  try {
+    const result = await getCompleteBookByISBN(isbn);
+    // Return null if not found
+    if (!result) return null;
+    
+    // Format as a raw Google Books API response for backward compatibility
+    return {
+      kind: "books#volume",
+      volumeInfo: {
+        title: result.title,
+        subtitle: result.subtitle,
+        authors: result.author ? [result.author] : [],
+        publisher: result.publisher,
+        publishedDate: result.publishedYear ? result.publishedYear.toString() : "",
+        description: result.summary,
+        industryIdentifiers: [
+          { type: "ISBN_13", identifier: result.isbn }
+        ],
+        pageCount: result.pageCount,
+        categories: result.genres,
+        language: result.language,
+        imageLinks: result.coverImageUrl ? {
+          thumbnail: result.coverImageUrl
+        } : undefined
+      }
+    };
+  } catch (error) {
+    console.error("Error in compatibility function getBookByISBN:", error);
+    return null;
   }
 }
 
