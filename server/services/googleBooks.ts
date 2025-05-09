@@ -13,13 +13,18 @@ export interface GoogleBookSearchParams {
   maxResults?: number;
 }
 
-export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]> {
+export async function searchBooks(params: GoogleBookSearchParams, preferredLanguage: string = "de"): Promise<any[]> {
   try {
     // Build query string
     let query = params.query;
     if (params.title) query += `+intitle:${encodeURIComponent(params.title)}`;
     if (params.author) query += `+inauthor:${encodeURIComponent(params.author)}`;
     if (params.isbn) query += `+isbn:${encodeURIComponent(params.isbn)}`;
+    
+    // Add language preference when not searching by ISBN (since ISBN is unique)
+    if (!params.isbn && !query.includes("isbn:")) {
+      query += `+langRestrict:${preferredLanguage}`;
+    }
 
     // Request specific fields to fetch all required data in one call
     // Full list: https://developers.google.com/books/docs/v1/reference/volumes#resource
@@ -58,6 +63,12 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
     url.searchParams.append("key", API_KEY);
     url.searchParams.append("fields", `items(${fields}),totalItems,kind`);
     if (params.maxResults) url.searchParams.append("maxResults", params.maxResults.toString());
+    
+    // Add language restriction parameter when not searching by ISBN
+    // This ensures we get original language editions when possible
+    if (!params.isbn && !query.includes("isbn:")) {
+      url.searchParams.append("langRestrict", preferredLanguage);
+    }
 
     // Log the request
     apiLogger.logRequest("Google Books API", {
@@ -166,8 +177,8 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       }
     });
     
-    // Search using the cleaned ISBN - directly call searchBooks with the ISBN
-    const books = await searchBooks({ query: `isbn:${cleanedISBN}` });
+    // Search using the cleaned ISBN - directly call searchBooks with the ISBN and language preference
+    const books = await searchBooks({ query: `isbn:${cleanedISBN}` }, language);
     
     // Return null if no books were found
     if (!books || books.length === 0) {
@@ -561,7 +572,7 @@ function stringSimilarity(str1: string, str2: string): number {
 }
 
 // Function to try various search strategies
-async function tryMultipleSearchStrategies(bookInfo: Partial<Book>): Promise<any[]> {
+async function tryMultipleSearchStrategies(bookInfo: Partial<Book>, preferredLanguage: string = "de"): Promise<any[]> {
   let allResults: any[] = [];
   
   // Strategy 1: If ISBN is available, use it for precise matching
@@ -573,11 +584,11 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>): Promise<any
       // Store the original format to preserve it
       const originalISBN = bookInfo.isbn;
       
-      // Search using the cleaned ISBN
-      const isbnResults = await searchBooks({ query: `isbn:${cleanedISBN}` });
+      // Search using the cleaned ISBN, passing the preferred language
+      const isbnResults = await searchBooks({ query: `isbn:${cleanedISBN}` }, preferredLanguage);
       
       if (isbnResults.length > 0) {
-        console.log("Found results using ISBN search strategy");
+        console.log(`Found results using ISBN search strategy for language: ${preferredLanguage}`);
         
         // Add the original ISBN format to the results for later use
         isbnResults.forEach(result => {
