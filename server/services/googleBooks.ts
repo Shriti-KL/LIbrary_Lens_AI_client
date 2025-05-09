@@ -332,7 +332,7 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
     console.log(`- Binding: ${formattedBook.binding}`);
     console.log(`- Publisher: ${formattedBook.publisher}`);
     console.log(`- Published Year: ${formattedBook.publishedYear}`);
-    console.log(`- Genres: ${formattedBook.genres ? formattedBook.genres.join(", ") : "None"}`);
+    console.log(`- Genres: ${formattedBook.genres && Array.isArray(formattedBook.genres) ? formattedBook.genres.join(", ") : "None"}`);
     
     return formattedBook;
   } catch (error: any) {

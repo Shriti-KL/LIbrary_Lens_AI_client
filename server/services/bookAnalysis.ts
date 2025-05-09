@@ -102,7 +102,7 @@ export async function processBookAnalysis(
   } 
   // Handle non-ISBN cases (title/author)
   else if (analysisRequest.title || analysisRequest.author) {
-    console.log(`[${analysisId}] No ISBN provided, using title/author lookup with Perplexity`);
+    console.log(`[${analysisId}] No ISBN provided, using title/author lookup with OpenAI`);
     
     try {
       // Try OpenAI for non-ISBN cases
@@ -286,7 +286,7 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
  */
 export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
   // Import on demand to prevent circular dependencies
-  const { findSimilarBooks } = await import("./perplexity");
+  const { searchSimilarBooks: getSimilarBooksFromGoogleBooks } = await import("./googleBooks");
   
   if (!book.title || !book.author) {
     console.log(`Cannot find similar books without title and author`);
@@ -295,15 +295,36 @@ export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
   
   try {
     console.log(`Finding similar books for "${book.title}" by ${book.author}`);
-    const similarBooks = await findSimilarBooks(book, book.language || "de");
+    const similarBooks = await getSimilarBooksFromGoogleBooks(book);
     
     if (similarBooks && similarBooks.length > 0) {
-      console.log(`Found ${similarBooks.length} similar books`);
-      return similarBooks;
+      console.log(`Found ${similarBooks.length} similar books from Google Books API`);
+      
+      // Transform the Google Books API results to match our expected format
+      const formattedBooks = similarBooks.map(book => {
+        const volumeInfo = book.volumeInfo || {};
+        
+        return {
+          title: volumeInfo.title || "Unknown Title",
+          subtitle: volumeInfo.subtitle || null,
+          author: volumeInfo.authors?.join(", ") || "Unknown Author",
+          publisher: volumeInfo.publisher || null,
+          publishedYear: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate.substring(0, 4)) : null,
+          isbn: volumeInfo.industryIdentifiers?.find((id: any) => id.type === "ISBN_13")?.identifier || 
+                volumeInfo.industryIdentifiers?.find((id: any) => id.type === "ISBN_10")?.identifier || null,
+          summary: volumeInfo.description || null,
+          genres: volumeInfo.categories || null,
+          similarityReason: `Similar to "${book.title}" based on ${book.author}'s works and genre recommendations`,
+          language: volumeInfo.language || "de",
+          coverImageUrl: volumeInfo.imageLinks?.thumbnail || null
+        };
+      });
+      
+      return formattedBooks;
     }
     
     // Fall back to OpenAI
-    console.log(`No similar books found with Perplexity, falling back to OpenAI`);
+    console.log(`No similar books found with Google Books API, falling back to OpenAI`);
     const { searchSimilarBooks } = await import("./openai");
     return await searchSimilarBooks(book);
   } catch (error: any) {
