@@ -124,21 +124,7 @@ export function cleanISBNForSearch(isbn: string | null): string {
   return isbn.replace(/[^\dX]/gi, '');
 }
 
-// Generate a PDF export for a book
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Book } from '@shared/schema';
-
-// Define an interface for the book metadata for better type safety
-interface BookMetadata {
-  categories?: string[];
-  averageRating?: number;
-  ratingsCount?: number;
-  printType?: string;
-  maturityRating?: string;
-  readingLevelScore?: number;
-  [key: string]: any; // Allow for other dynamic properties
-}
 
 // Format a single book for PDF export - returns the ending Y position
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
