@@ -4,8 +4,14 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { processBookAnalysis, analyzeBookCover } from "./services/openai";
-import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
+import { 
+  processBookAnalysis, 
+  analyzeBookCover,
+  searchBooks,
+  getBookByISBN,
+  searchSimilarBooks,
+  enrichBookMetadata
+} from "./services/openai";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -130,11 +136,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Always enrich book metadata from Google Books API to get proper spelling and capitalization
-      console.log(`[${requestId}] Enriching book metadata with Google Books API`);
+      // Always enrich book metadata with OpenAI to get proper spelling and capitalization
+      console.log(`[${requestId}] Enriching book metadata with OpenAI`);
       let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
-      // Log what got corrected from Google Books data
+      // Log what got corrected from OpenAI data
       if (enrichedBookInfo.title !== validatedData.title) {
         console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
       }
@@ -143,12 +149,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
       }
       
-      // For manual entries without a cover image, fetch from Google Books if we found a match
+      // For manual entries without a cover image, fetch from OpenAI-provided URL if we found a match
       if (!req.file && enrichedBookInfo.coverImageUrl) {
-        console.log(`[${requestId}] Using cover image from Google Books: ${enrichedBookInfo.coverImageUrl}`);
+        console.log(`[${requestId}] Using cover image from provided URL: ${enrichedBookInfo.coverImageUrl}`);
         
         try {
-          // Fetch the cover image from Google Books API
+          // Fetch the cover image from the URL provided by OpenAI
           const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
           
           if (imageResponse.ok) {
@@ -162,10 +168,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Add the image to the book info
             enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
-            console.log(`[${requestId}] Successfully fetched cover image from Google Books`);
+            console.log(`[${requestId}] Successfully fetched cover image from URL`);
           }
         } catch (error) {
-          console.error(`[${requestId}] Error fetching cover image from Google Books:`, error);
+          console.error(`[${requestId}] Error fetching cover image:`, error);
         }
       }
       
@@ -253,13 +259,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the raw book data from the request
       const bookData: InsertBook = req.body;
       
-      // Always enrich with Google Books API to ensure proper spelling and capitalization
+      // Always enrich with OpenAI to ensure proper spelling and capitalization
       let enrichedData = bookData;
       
       // Only attempt to enrich if we have at least a title or ISBN
       if (bookData.title || bookData.isbn) {
         try {
-          // Mark as a user entry to prioritize Google Books data
+          // Mark as a user entry to prioritize OpenAI data
           const tempData = { ...bookData, isUserEntry: true };
           enrichedData = await enrichBookMetadata(tempData);
           
@@ -292,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const bookData: Partial<InsertBook> = req.body;
       
-      // If title or author is being updated, try to enrich with Google Books API
+      // If title or author is being updated, try to enrich with OpenAI
       if (bookData.title || bookData.author || bookData.isbn) {
         try {
           // Get current book data first to merge with updates
@@ -303,10 +309,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const fullBookData = {
               ...currentBook,
               ...bookData,
-              isUserEntry: true // Mark as user entry to prioritize Google data
+              isUserEntry: true // Mark as user entry to prioritize OpenAI data
             };
             
-            // Enrich with Google Books API
+            // Enrich with OpenAI
             const enrichedData = await enrichBookMetadata(fullBookData);
             
             // Log what was corrected
@@ -451,18 +457,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Enrich with Google Books data
-            console.log("Step 2: Enriching with Google Books data...");
+            // Step 2: Enrich with OpenAI metadata
+            console.log("Step 2: Enriching with OpenAI metadata...");
             const enrichedData = await enrichBookMetadata({
               ...coverAnalysis, 
-              // Ensure title and author are available for Google Books search
+              // Ensure title and author are available for OpenAI enrichment
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
               // This is from cover analysis, not user input
               isUserEntry: true
             });
             
-            // Log what got corrected from Google Books data
+            // Log what got corrected from OpenAI enrichment
             if (enrichedData.title !== coverAnalysis.title) {
               console.log(`Title was corrected: "${coverAnalysis.title}" → "${enrichedData.title}"`);
             }
@@ -543,10 +549,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google Books API integration endpoints
+  // Book information lookup endpoints (powered by OpenAI)
   
-  // GET /api/googlebooks/search - Search books via Google Books API
-  app.get("/api/googlebooks/search", async (req: Request, res: Response) => {
+  // GET /api/books/lookup - Search books via OpenAI
+  app.get("/api/books/lookup", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
       const title = req.query.title as string;
@@ -569,12 +575,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = await searchBooks(searchParams);
       res.status(200).json(results);
     } catch (error) {
-      res.status(500).json({ message: `Error searching Google Books: ${error.message}` });
+      res.status(500).json({ message: `Error searching books: ${error.message}` });
     }
   });
   
-  // GET /api/googlebooks/isbn/:isbn - Get book by ISBN
-  app.get("/api/googlebooks/isbn/:isbn", async (req: Request, res: Response) => {
+  // GET /api/books/isbn/:isbn - Get book by ISBN via OpenAI
+  app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
       
@@ -594,8 +600,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // POST /api/googlebooks/similar - Get similar books
-  app.post("/api/googlebooks/similar", async (req: Request, res: Response) => {
+  // POST /api/books/similar - Get similar books via OpenAI
+  app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {
       const bookInfo = req.body;
       
@@ -608,6 +614,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: `Error finding similar books: ${error.message}` });
     }
+  });
+  
+  // Legacy endpoints for backward compatibility - redirect to new API endpoints
+  app.get("/api/googlebooks/search", (req, res) => {
+    const url = `/api/books/lookup${req.url.substring(req.url.indexOf('?'))}`;
+    res.redirect(url);
+  });
+  
+  app.get("/api/googlebooks/isbn/:isbn", (req, res) => {
+    res.redirect(`/api/books/isbn/${req.params.isbn}`);
+  });
+  
+  app.post("/api/googlebooks/similar", (req, res) => {
+    res.redirect(307, "/api/books/similar");
   });
 
   return httpServer;
