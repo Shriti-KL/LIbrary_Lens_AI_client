@@ -479,10 +479,10 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
   }
 }
 
-export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
+export async function searchSimilarBooks(book: Partial<Book>, preferredLanguage: string = "de"): Promise<any[]> {
   try {
-    // Use the book's language or fall back to German
-    const language = book.language || "de";
+    // Use the provided language parameter, then book's language, or fall back to German
+    const language = preferredLanguage || book.language || "de";
     
     // Start with author search if available
     if (book.author) {
