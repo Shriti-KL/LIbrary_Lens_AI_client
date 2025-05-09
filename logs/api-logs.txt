@@ -550,3 +550,377 @@
     "20": "deweyDecimal"
   }
 }
+
+[2025-05-09 09:38:58] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getCompleteBookByISBN",
+  "params": {
+    "isbn": "978-3-96251-218-7",
+    "cleanedISBN": "9783962512187"
+  }
+}
+
+[2025-05-09 09:38:58] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783962512187&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783962512187",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 09:38:59] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783962512187",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 09:38:59] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Marken. Recht. Einfach",
+  "author": "Rolf Claessen",
+  "isbn": "978-3-96251-218-7",
+  "lookupId": "googlebooks_isbn_1746783538707_wjhe3"
+}
+
+[2025-05-09 09:38:59] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-96251-218-7",
+  "title": "Marken. Recht. Einfach",
+  "author": "Rolf Claessen"
+}
+
+[2025-05-09 09:39:04] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 773,
+    "completion_tokens": 385,
+    "total_tokens": 1158,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "catalogNumber",
+    "5": "statementOfResponsibility",
+    "6": "publisher",
+    "7": "publishedYear",
+    "8": "pageCount",
+    "9": "language",
+    "10": "edition",
+    "11": "location",
+    "12": "summary",
+    "13": "genres",
+    "14": "themes",
+    "15": "interestCategory",
+    "16": "readingLevel",
+    "17": "binding",
+    "18": "dimensions",
+    "19": "price",
+    "20": "deweyDecimal"
+  }
+}
+
+[2025-05-09 09:41:26] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getCompleteBookByISBN",
+  "params": {
+    "isbn": "978-3-430-21125-3",
+    "cleanedISBN": "9783430211253"
+  }
+}
+
+[2025-05-09 09:41:26] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783430211253&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783430211253",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 09:41:26] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783430211253",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 09:41:26] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Erben für Anfängerinnen",
+  "author": "Irene Genzmer",
+  "isbn": "978-3-430-21125-3",
+  "lookupId": "googlebooks_isbn_1746783686471_agyb2"
+}
+
+[2025-05-09 09:41:26] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-43021-125-3",
+  "title": "Erben für Anfängerinnen",
+  "author": "Irene Genzmer"
+}
+
+[2025-05-09 09:41:32] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 794,
+    "completion_tokens": 420,
+    "total_tokens": 1214,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "language",
+    "8": "location",
+    "9": "summary",
+    "10": "genres",
+    "11": "themes",
+    "12": "interestCategory",
+    "13": "readingLevel",
+    "14": "binding"
+  }
+}
+
+[2025-05-09 09:43:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getCompleteBookByISBN",
+  "params": {
+    "isbn": " 978-3-7365-0578-0",
+    "cleanedISBN": "9783736505780"
+  }
+}
+
+[2025-05-09 09:43:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783736505780&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783736505780",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 09:43:59] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783736505780",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 09:43:59] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Bleibt Menschen!",
+  "author": "Burkhard Hose",
+  "isbn": " 978-3-7365-0578-0",
+  "lookupId": "googlebooks_isbn_1746783839406_mrplf"
+}
+
+[2025-05-09 09:43:59] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-73650-578-0",
+  "title": "Bleibt Menschen!",
+  "author": "Burkhard Hose"
+}
+
+[2025-05-09 09:44:08] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 772,
+    "completion_tokens": 432,
+    "total_tokens": 1204,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "summary",
+    "12": "genres",
+    "13": "themes",
+    "14": "interestCategory",
+    "15": "readingLevel",
+    "16": "binding",
+    "17": "dimensions",
+    "18": "price"
+  }
+}
+
+[2025-05-09 09:44:34] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getCompleteBookByISBN",
+  "params": {
+    "isbn": " 978-3-7365-0578-0",
+    "cleanedISBN": "9783736505780"
+  }
+}
+
+[2025-05-09 09:44:34] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783736505780&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783736505780",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 09:44:34] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783736505780",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 09:44:34] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Bleibt Menschen!",
+  "author": "Burkhard Hose",
+  "isbn": " 978-3-7365-0578-0",
+  "lookupId": "googlebooks_isbn_1746783874371_l8g1j"
+}
+
+[2025-05-09 09:44:34] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-73650-578-0",
+  "title": "Bleibt Menschen!",
+  "author": "Burkhard Hose"
+}
+
+[2025-05-09 09:44:40] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 772,
+    "completion_tokens": 417,
+    "total_tokens": 1189,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "summary",
+    "12": "genres",
+    "13": "themes",
+    "14": "interestCategory",
+    "15": "readingLevel",
+    "16": "binding",
+    "17": "dimensions",
+    "18": "price"
+  }
+}
