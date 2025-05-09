@@ -217,30 +217,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the raw book data from the request
       let bookData: InsertBook = req.body;
       
-      // Remove any fields that aren't in the Book schema
-      const cleanedData = Object.fromEntries(
-        Object.entries(bookData).filter(([key]) => 
-          key !== 'analyzed' && 
-          key !== 'hasOwnProperty'
-        )
-      ) as InsertBook;
-      
       // Validate required fields, as the database has NOT NULL constraints
-      if (!cleanedData.title || !cleanedData.author) {
+      if (!bookData.title || !bookData.author) {
         return res.status(400).json({ 
           message: "Title and author are required fields",
           missingFields: {
-            title: !cleanedData.title,
-            author: !cleanedData.author
+            title: !bookData.title,
+            author: !bookData.author
           }
         });
       }
       
-      // Initialize enrichedData with cleaned book data
-      let enrichedData = cleanedData;
+      // Initialize enrichedData with bookData
+      let enrichedData = bookData;
       
       // Check if this is coming from the analysis page
-      const isFromAnalysis = 'analyzed' in req.body && req.body.analyzed === true;
+      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && bookData.analyzed === true;
       
       // Only enrich if it's NOT from the analysis page or hasn't been analyzed already
       if ((!isFromAnalysis) && (bookData.title || bookData.isbn)) {
