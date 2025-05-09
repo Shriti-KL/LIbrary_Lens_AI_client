@@ -228,12 +228,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Always enrich with Perplexity/OpenAI to ensure proper spelling and capitalization
+      // Initialize enrichedData with bookData
       let enrichedData = bookData;
       
-      // Only attempt to enrich if we have at least a title or ISBN
-      if (bookData.title || bookData.isbn) {
+      // Check if this is coming from the analysis page
+      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && bookData.analyzed === true;
+      
+      // Only enrich if it's NOT from the analysis page or hasn't been analyzed already
+      if ((!isFromAnalysis) && (bookData.title || bookData.isbn)) {
         try {
+          console.log(`Book not from analysis page, enriching metadata`);
+          
           // Import the enrichBookMetadata function from bookAnalysis
           const { enrichBookMetadata } = await import("./services/bookAnalysis");
           
@@ -253,6 +258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error enriching book data before creation:", enrichError);
           // Continue with original data if enrichment fails
         }
+      } else if (isFromAnalysis) {
+        console.log(`Book already analyzed, skipping redundant enrichment`);
       }
       
       // Ensure required fields are still present after enrichment

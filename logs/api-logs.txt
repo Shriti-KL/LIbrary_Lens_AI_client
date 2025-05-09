@@ -1,106 +1,200 @@
 
-[2025-05-08 19:19:05] REQUEST TO Perplexity
+[2025-05-09 05:41:03] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783959161329",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-09 05:41:03] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 05:41:04] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 05:41:04] RESPONSE FROM Google Books API
 {
   "operation": "getBookByISBN",
-  "isbn": "978-3-98702-122-0",
-  "language": "de",
-  "lookupId": "perplexity_isbn_1746731945672_tpf66"
+  "isbn": "9783959161329",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
 }
 
-[2025-05-08 19:19:05] REQUEST TO Perplexity
+[2025-05-09 05:41:04] RESPONSE FROM Google Books API
 {
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-98702-122-0..."
-}
-
-[2025-05-08 19:19:07] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "921b8ca1-856c-44fe-8bfc-e879f53af4ee",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 647,
-    "completion_tokens": 31,
-    "total_tokens": 678,
-    "search_context_size": "low"
-  },
-  "citationCount": 1
-}
-
-[2025-05-08 19:19:07] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "isbn": "978-3-98702-122-0",
-  "lookupId": "perplexity_isbn_1746731945672_tpf66"
-}
-
-[2025-05-08 19:19:07] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-98702-122-0",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 19:19:22] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
+  "operation": "getCompleteBookByISBN",
   "status": "success",
-  "bookTitle": "Das Geheimnis der verlorenen Stadt"
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg",
+  "isbn": "9783959161329",
+  "lookupId": "googlebooks_isbn_1746769263988_chyyl"
 }
 
-[2025-05-09 04:16:03] REQUEST TO Perplexity
+[2025-05-09 05:41:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-10-397704-2",
+    "cleanedISBN": "9783103977042"
+  }
+}
+
+[2025-05-09 05:41:28] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 05:41:28] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783103977042",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 05:41:28] RESPONSE FROM Google Books API
 {
   "operation": "getBookByISBN",
-  "isbn": "978-3-406-83030-3",
-  "language": "de",
-  "lookupId": "perplexity_isbn_1746764163510_xz4u4"
+  "isbn": "978-3-10-397704-2",
+  "found": true,
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra"
 }
 
-[2025-05-09 04:16:03] REQUEST TO Perplexity
+[2025-05-09 05:41:28] RESPONSE FROM Google Books API
 {
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-406-83030-3..."
-}
-
-[2025-05-09 04:16:04] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "22e4cc88-b347-4c7d-b3cb-a971027cdbc9",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 647,
-    "completion_tokens": 31,
-    "total_tokens": 678,
-    "search_context_size": "low"
-  },
-  "citationCount": 4
-}
-
-[2025-05-09 04:16:04] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "isbn": "978-3-406-83030-3",
-  "lookupId": "perplexity_isbn_1746764163510_xz4u4"
-}
-
-[2025-05-09 04:16:04] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-406-83030-3",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-09 04:16:17] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
+  "operation": "getCompleteBookByISBN",
   "status": "success",
-  "bookTitle": "Die Gesellschaft der Singularitäten: Zum Strukturwandel der Moderne"
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra",
+  "isbn": "978-3-10-397704-2",
+  "lookupId": "googlebooks_isbn_1746769288690_g3orb"
+}
+
+[2025-05-09 05:41:46] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783103977042",
+    "cleanedISBN": "9783103977042"
+  }
+}
+
+[2025-05-09 05:41:46] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 05:41:46] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783103977042",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 05:41:46] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783103977042",
+  "found": true,
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra"
+}
+
+[2025-05-09 05:41:46] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra",
+  "isbn": "9783103977042",
+  "lookupId": "googlebooks_isbn_1746769306318_rn81a"
+}
+
+[2025-05-09 05:44:32] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-09 05:44:32] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 05:44:32] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 05:44:32] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-09 05:44:32] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg",
+  "isbn": "978-3-95916-132-9",
+  "lookupId": "googlebooks_isbn_1746769472000_w30xp"
 }

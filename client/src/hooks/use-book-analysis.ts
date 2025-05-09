@@ -189,7 +189,13 @@ export function useBookAnalysis() {
   // Save book mutation
   const saveBookMutation = useMutation({
     mutationFn: async (book: Partial<Book>) => {
-      const response = await apiRequest("POST", "/api/books", book);
+      // Add a flag to indicate that this book has already been analyzed
+      // This prevents redundant Google Books API calls during archiving
+      const bookWithFlag = {
+        ...book,
+        analyzed: true // Flag to indicate this has already been analyzed
+      };
+      const response = await apiRequest("POST", "/api/books", bookWithFlag);
       return await response.json();
     },
     onSuccess: () => {
