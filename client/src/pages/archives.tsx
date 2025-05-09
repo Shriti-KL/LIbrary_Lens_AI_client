@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN } from '@/lib/utils';
+import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -81,6 +81,7 @@ import {
   Tag, 
   FileText,
   BookCopy, 
+  FileOutput,
   CheckSquare,
   Square
 } from 'lucide-react';
@@ -253,15 +254,36 @@ export default function Archives() {
     }
   };
   
-  // Export selected books (functionality removed)
+  // Export selected books to PDF
   const exportSelectedBooks = () => {
-    console.log('PDF export functionality has been removed');
+    if (selectedBooks.size === 0) {
+      toast({
+        title: t('noSelection'),
+        description: t('selectBooksExport'),
+        variant: 'destructive',
+      });
+      return;
+    }
     
-    toast({
-      title: t('notAvailable'),
-      description: t('pdfExportRemoved'),
-      variant: 'destructive',
-    });
+    // Find the selected books
+    const booksToExport = books.filter(book => selectedBooks.has(book.id));
+    
+    // Export to PDF
+    try {
+      exportMultipleBooksToSinglePDF(booksToExport);
+      
+      toast({
+        title: t('exportSuccess'),
+        description: t('pdfDownloadStarted'),
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: t('exportFailed'),
+        description: String(error),
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
+import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
   CardContent, 
@@ -10,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Save } from 'lucide-react';
+import { Download, Save } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
@@ -496,13 +497,23 @@ export default function BookResult({
       </CardContent>
       
       <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
-        <Button 
-          onClick={() => onSave(book)}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
-        >
-          <Save className="h-4 w-4" />
-          {t('saveToArchive')}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => exportBookToPDF(book as Book)}
+            variant="outline"
+            className="flex items-center gap-2 px-4"
+          >
+            <Download className="h-4 w-4" />
+            {t('exportToPDF')}
+          </Button>
+          <Button 
+            onClick={() => onSave(book)}
+            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
+          >
+            <Save className="h-4 w-4" />
+            {t('saveToArchive')}
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
