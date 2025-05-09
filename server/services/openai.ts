@@ -124,6 +124,7 @@ export async function processBookAnalysis(
       pageCount: analysisRequest.pageCount || null,
       language: language,
       edition: analysisRequest.edition || null,
+      location: analysisRequest.location || null, // Place of publication
       
       // Content-related information
       originalDescription: analysisRequest.summary || null,
@@ -138,13 +139,17 @@ export async function processBookAnalysis(
       // Additional metadata
       translator: analysisRequest.translator || null,
       illustrator: analysisRequest.illustrator || null,
+      statementOfResponsibility: analysisRequest.statementOfResponsibility || null,
       price: analysisRequest.price || null,
       
       // German-specific library fields
       deweyDecimal: analysisRequest.deweyDecimal || null,
       catalogNumber: analysisRequest.catalogNumber || null,
       secondaryClassification: analysisRequest.secondaryClassification || null,
-      interestCategory: analysisRequest.interestCategory || null
+      interestCategory: analysisRequest.interestCategory || null,
+      
+      // Raw metadata from Google Books if available
+      metadata: analysisRequest.metadata || null
     };
     
     // Send request to OpenAI with structured JSON context and request structured JSON response
@@ -153,46 +158,64 @@ export async function processBookAnalysis(
       messages: [
         {
           role: "system",
-          content: `You are a book metadata expert specializing in library cataloging according to German library standards. Generate missing metadata for books and enhance existing data. Always respond in ${languageName} with a properly structured JSON object.`,
+          content: `You are a book metadata expert specializing in library cataloging according to German library standards. You will ONLY provide missing metadata fields, never overwrite existing data. Always respond in ${languageName} with a properly structured JSON object.`,
         },
         {
           role: "user",
-          content: `I need to enrich the metadata for the following book and prepare it for a German library catalog system.
+          content: `I need you to analyze this book metadata and ONLY return the missing or incomplete fields from the list below, following German library standards. 
 
-BOOK METADATA:
+COMPLETE BOOK METADATA FROM GOOGLE BOOKS:
 ${JSON.stringify(bookContext, null, 2)}
 
-Please analyze this information and generate the following fields:
+IMPORTANT: ONLY return the following fields if they are MISSING or INCOMPLETE from the Google Books data. DO NOT overwrite any values already present:
 
-1. summary: A concise summary of approximately 150 words (1000 characters) that describes the book's content.
-2. genres: An array of 3-5 relevant genres for the book (as strings).
-3. themes: An array of 2-4 major themes explored in the book (as strings).
-4. readingLevel: Reading level assessment (Kinder, Jugendliche, Erwachsene, or Akademisch).
-5. binding: The binding type if not already provided (Hardcover, Taschenbuch, etc.).
+1. ASB (Sachgruppenkennzeichen / Subject Category Code)
+2. Main Author
+3. Title and Subtitle (only if missing)
+4. Statement of Responsibility (author, illustrator, etc.)
+5. Edition Statement
+6. Place of Publication
+7. Publisher
+8. Year of Publication
+9. Physical Description (page numbers, dimension – only height in cm)
+10. ISBN (hyphenated format)
+11. Binding and Price Information
+12. Descriptive Summary (approximately 150 words / 1000 characters)
+13. Interest Category (IK – genre/topic and recommended age group)
 
-Return ONLY a JSON object with this exact structure:
+Return ONLY a JSON object with this exact structure, including ONLY the fields that need to be added or completed:
 {
-  "title": "The exact book title",
-  "subtitle": "The subtitle if any",
-  "author": "Complete author name",
-  "summary": "Your generated summary...",
-  "genres": ["Genre 1", "Genre 2", "Genre 3"],
-  "themes": ["Theme 1", "Theme 2"],
-  "readingLevel": "Reading level assessment",
-  "binding": "Book binding type",
-  "isbn": "...",  // Use existing or normalize if necessary
-  "publisher": "...",  // Use existing or add if missing
-  "publishedYear": xxxx,  // Year as number
-  "pageCount": xxx,  // Number of pages as number
-  "language": "...",  // Language code (e.g., "de" for German)
-  "readingLevel": "..."  // Reading level assessment
+  "catalogNumber": "ASB code if missing", // 1. ASB Subject Category Code
+  "author": "Main author if missing", // 2. Main Author
+  "title": "Title if missing",  // 3. Title
+  "subtitle": "Subtitle if missing", // 3. Subtitle
+  "statementOfResponsibility": "Full responsibility statement if missing", // 4. Statement of Responsibility
+  "edition": "Edition information if missing", // 5. Edition Statement
+  "location": "Place of publication if missing", // 6. Place of Publication
+  "publisher": "Publisher if missing", // 7. Publisher
+  "publishedYear": null, // 8. Year as number if missing
+  "pageCount": null, // 9. Number of pages as number if missing
+  "dimensions": "Book dimensions (height in cm) if missing", // 9. Physical Description - dimensions
+  "isbn": "Hyphenated ISBN if not already formatted correctly", // 10. ISBN in hyphenated format
+  "binding": "Binding type if missing", // 11. Binding information
+  "price": "Price information if missing", // 11. Price information
+  "summary": "Descriptive summary if missing", // 12. Book summary
+  "interestCategory": "Interest category with recommended age if missing", // 13. Interest Category (IK)
+  "genres": [], // Array of genres if missing
+  "themes": [], // Array of themes if missing
+  "readingLevel": null // Reading level if missing
 }
 
-IMPORTANT: For any fields where you don't have information and cannot reasonably determine it from context, use null. DO NOT invent data.`,
+IMPORTANT RULES:
+1. ONLY include fields in your response that are missing or incomplete in the original data
+2. If a field already has a valid value, DO NOT include it in your response
+3. For any fields where you don't have information and cannot reasonably determine it from context, omit them entirely from your response
+4. Use null for numeric fields when the value is unknown
+5. DO NOT invent or make up data - only provide information that can be reasonably inferred from the provided context`,
         },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.5,
+      temperature: 0.3,
     });
     
     // Process response

@@ -82,7 +82,9 @@ export async function processBookAnalysis(
       title: baseBookData.title || "",
       author: baseBookData.author || "",
       language: baseBookData.language || "de",
-      coverImageData: analysisRequest.coverImageData
+      coverImageData: analysisRequest.coverImageData,
+      // Include the complete raw Google Books metadata for OpenAI to analyze
+      metadata: baseBookData.metadata || null
     };
     
     // Then add all the available fields from Google Books data for more context
@@ -95,6 +97,13 @@ export async function processBookAnalysis(
     if (baseBookData.coverImageUrl) openAiRequest.coverImageUrl = baseBookData.coverImageUrl;
     if (baseBookData.summary) openAiRequest.summary = baseBookData.summary;
     if (baseBookData.genres && Array.isArray(baseBookData.genres)) openAiRequest.genres = baseBookData.genres;
+    if (baseBookData.dimensions) openAiRequest.dimensions = baseBookData.dimensions;
+    if (baseBookData.edition) openAiRequest.edition = baseBookData.edition;
+    if (baseBookData.location) openAiRequest.location = baseBookData.location;
+    if (baseBookData.translator) openAiRequest.translator = baseBookData.translator;
+    if (baseBookData.illustrator) openAiRequest.illustrator = baseBookData.illustrator;
+    if (baseBookData.statementOfResponsibility) openAiRequest.statementOfResponsibility = baseBookData.statementOfResponsibility;
+    if (baseBookData.price) openAiRequest.price = baseBookData.price;
     
     // Log the fields being sent to OpenAI
     console.log(`[${analysisId}] Sending following fields to OpenAI:`, 
@@ -185,7 +194,9 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       isbn: baseBookData.isbn || null,
       title: baseBookData.title || "",
       author: baseBookData.author || "",
-      language: baseBookData.language || language
+      language: baseBookData.language || language,
+      // Include the complete raw Google Books metadata for OpenAI to analyze
+      metadata: baseBookData.metadata || null
     };
     
     // Then add all the available fields from Google Books data for more context
@@ -198,6 +209,13 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
     if (baseBookData.coverImageUrl) request.coverImageUrl = baseBookData.coverImageUrl;
     if (baseBookData.summary) request.summary = baseBookData.summary;
     if (baseBookData.genres && Array.isArray(baseBookData.genres)) request.genres = baseBookData.genres;
+    if (baseBookData.dimensions) request.dimensions = baseBookData.dimensions;
+    if (baseBookData.edition) request.edition = baseBookData.edition;
+    if (baseBookData.location) request.location = baseBookData.location;
+    if (baseBookData.translator) request.translator = baseBookData.translator;
+    if (baseBookData.illustrator) request.illustrator = baseBookData.illustrator;
+    if (baseBookData.statementOfResponsibility) request.statementOfResponsibility = baseBookData.statementOfResponsibility;
+    if (baseBookData.price) request.price = baseBookData.price;
     
     // Log the fields being sent to OpenAI
     console.log(`[${lookupId}] Sending following fields to OpenAI:`, 
@@ -294,7 +312,9 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
         title: bookData.title,
         author: bookData.author,
         isbn: null,
-        language: bookData.language || "de"
+        language: bookData.language || "de",
+        // Include the complete raw metadata for OpenAI to analyze
+        metadata: bookData.metadata || null
       };
       
       // Then add any other available fields for better context
@@ -306,6 +326,13 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
       if (bookData.coverImageUrl) request.coverImageUrl = bookData.coverImageUrl;
       if (bookData.summary) request.summary = bookData.summary;
       if (bookData.genres && Array.isArray(bookData.genres)) request.genres = bookData.genres;
+      if (bookData.dimensions) request.dimensions = bookData.dimensions;
+      if (bookData.edition) request.edition = bookData.edition;
+      if (bookData.location) request.location = bookData.location;
+      if (bookData.translator) request.translator = bookData.translator;
+      if (bookData.illustrator) request.illustrator = bookData.illustrator;
+      if (bookData.statementOfResponsibility) request.statementOfResponsibility = bookData.statementOfResponsibility;
+      if (bookData.price) request.price = bookData.price;
       
       console.log(`Sending following fields to OpenAI for title/author enrichment:`, 
         Object.keys(request).filter(key => 
