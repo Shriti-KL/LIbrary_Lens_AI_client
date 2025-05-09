@@ -110,6 +110,13 @@ export async function processBookAnalysis(
       author: analysisRequest.author,
     });
 
+    // Log the existing fields that were passed to identify what needs to be filled
+    const existingFields = Object.keys(analysisRequest).filter(key => 
+      analysisRequest[key as keyof BookAnalysisRequest] !== undefined && 
+      analysisRequest[key as keyof BookAnalysisRequest] !== null
+    );
+    console.log(`[${analysisId}] Sending following fields to OpenAI:`, existingFields);
+    
     // Prepare context with all available information as a comprehensive JSON object
     // Include ALL fields from the incoming request directly
     const bookContext = {
@@ -222,6 +229,34 @@ IMPORTANT RULES:
       
       // Log success
       console.log(`[${analysisId}] Successfully processed book: "${result.title}" by ${result.author}`);
+      
+      // Log detailed bibliographic data for debugging
+      console.log(`[${analysisId}] BIBLIOGRAPHIC DATA CHECK from OpenAI:`);
+      console.log(`- Title: "${result.title || 'N/A'}"`);
+      console.log(`- Subtitle: "${result.subtitle || 'N/A'}"`);
+      console.log(`- Main Author: "${result.author || 'N/A'}"`);
+      console.log(`- Statement of Responsibility: ${result.statementOfResponsibility || 'N/A'}`);
+      console.log(`- Illustrator: ${result.illustrator || 'N/A'}`);
+      console.log(`- Translator: ${result.translator || 'N/A'}`);
+      console.log(`- Edition: ${result.edition || 'N/A'}`);
+      console.log(`- Location: ${result.location || 'N/A'}`);
+      console.log(`- Publisher: ${result.publisher || 'N/A'}`);
+      console.log(`- Published Year: ${result.publishedYear || 'N/A'}`);
+      console.log(`- Page Count: ${result.pageCount || 'N/A'}`);
+      console.log(`- Dimensions: ${result.dimensions || 'N/A'}`);
+      console.log(`- ISBN: ${result.isbn || 'N/A'}`);
+      console.log(`- Binding: ${result.binding || 'N/A'}`);
+      console.log(`- Price: ${result.price || 'N/A'}`);
+      console.log(`- Language: ${result.language || 'N/A'}`);
+      console.log(`- Genres: ${result.genres ? JSON.stringify(result.genres) : 'None'}`);
+      console.log(`- Themes: ${result.themes ? JSON.stringify(result.themes) : 'None'}`);
+      console.log(`- Catalog Number: ${result.catalogNumber || 'N/A'}`);
+      console.log(`- Interest Category: ${result.interestCategory || 'N/A'}`);
+      console.log(`- Reading Level: ${result.readingLevel || 'N/A'}`);
+      
+      // Log the full result object
+      console.log(`[${analysisId}] FULL OPENAI RESULT OBJECT:`, JSON.stringify(result, null, 2));
+      
       apiLogger.logResponse("OpenAI API", {
         operation: "processBookAnalysis",
         status: "success",
