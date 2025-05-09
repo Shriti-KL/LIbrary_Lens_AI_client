@@ -4,10 +4,10 @@ import { apiLogger } from "../utils/logger";
 import { processBookAnalysis as processBookAnalysisWithOpenAI } from "./openai";
 
 /**
- * Process a book analysis request with clean logic:
- * 1. If ISBN is provided, use only Perplexity with the ISBN
- * 2. Only fall back to OpenAI if Perplexity fails
- * 3. Return null/empty fields if both APIs fail
+ * Process a book analysis request with enhanced logic:
+ * 1. If ISBN is provided, first get metadata from Google Books API
+ * 2. Always use OpenAI to generate summary, identify genres/themes, and enhance metadata
+ * 3. Return error fields if both APIs fail
  */
 export async function processBookAnalysis(
   analysisRequest: BookAnalysisRequest
@@ -23,125 +23,111 @@ export async function processBookAnalysis(
     language: analysisRequest.language
   });
 
-  // If ISBN is provided, use that specifically and ignore any other fields
+  // Base book data to be enriched - start with an empty object
+  let baseBookData: Partial<Book> = {};
+  
+  // If ISBN is provided, use that specifically to get metadata from Google Books
   if (analysisRequest.isbn) {
     const isbn = analysisRequest.isbn;
     console.log(`[${analysisId}] ISBN found: ${isbn} - Using clean ISBN-only lookup`);
     
     try {
-      // First attempt: use Google Books API with the ISBN
-      console.log(`[${analysisId}] Attempting to process book with Google Books API using ISBN only`);
+      // First step: get metadata from Google Books API with the ISBN
+      console.log(`[${analysisId}] Retrieving book metadata from Google Books API using ISBN`);
       const googleBooksResult = await getCompleteBookByISBN(isbn, analysisRequest.language || "de");
       
-      // If Google Books API returned valid data, use it
+      // If Google Books API returned valid data, use it as base data
       if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
-        console.log(`[${analysisId}] Successfully processed book with Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
-        return googleBooksResult;
+        console.log(`[${analysisId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+        baseBookData = googleBooksResult;
+      } else {
+        console.log(`[${analysisId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+        // Still include the ISBN in base data
+        baseBookData = {
+          isbn,
+          language: analysisRequest.language || "de"
+        };
       }
-      
-      // If Google Books API failed or returned incomplete data, fall back to OpenAI
-      console.log(`[${analysisId}] Google Books didn't return valid data, falling back to OpenAI with ISBN only`);
-      
-      // Create a clean request for OpenAI with only the ISBN
-      const openAiRequest: BookAnalysisRequest = {
+    } catch (error: any) {
+      console.log(`[${analysisId}] Error retrieving data from Google Books:`, error?.message || String(error));
+      // Continue with just the ISBN
+      baseBookData = {
         isbn,
-        title: "",
-        author: "",
         language: analysisRequest.language || "de"
       };
-      
-      const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
-      
-      // Validate the OpenAI result
-      if (openAIResult && openAIResult.title && openAIResult.author) {
-        // Ensure the ISBN matches
-        if (openAIResult.isbn) {
-          const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
-          const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
-          
-          if (normalizedRequestISBN !== normalizedResultISBN) {
-            console.log(`[${analysisId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${isbn}, Received: ${openAIResult.isbn}`);
-            
-            // Return minimal data
-            return {
-              isbn,
-              title: null as unknown as string,
-              author: null as unknown as string
-            } as Partial<Book>;
-          }
-        }
-        
-        console.log(`[${analysisId}] Successfully processed book with OpenAI fallback: "${openAIResult.title}" by ${openAIResult.author}`);
-        return openAIResult;
-      }
-      
-      // If both Google Books and OpenAI failed, return minimal data with just the ISBN
-      console.log(`[${analysisId}] Both Google Books and OpenAI failed to return valid data for ISBN: ${isbn}`);
-      return {
-        isbn,
-        title: null as unknown as string,
-        author: null as unknown as string
-      } as Partial<Book>;
-      
-    } catch (error: any) {
-      console.log(`[${analysisId}] Error during book analysis:`, error?.message || String(error));
-      apiLogger.logError("BookAnalysis", {
-        error: "Book analysis failed",
-        message: error?.message || "Unknown error",
-        isbn,
-        analysisId
-      });
-      
-      // Return minimal data with just the ISBN
-      return {
-        isbn,
-        title: null as unknown as string,
-        author: null as unknown as string
-      } as Partial<Book>;
     }
   } 
   // Handle non-ISBN cases (title/author)
   else if (analysisRequest.title || analysisRequest.author) {
-    console.log(`[${analysisId}] No ISBN provided, using title/author lookup with OpenAI`);
-    
-    try {
-      // Try OpenAI for non-ISBN cases
-      console.log(`[${analysisId}] Processing book with OpenAI using title/author`);
-      const openAIResult = await processBookAnalysisWithOpenAI(analysisRequest);
-      
-      if (openAIResult && openAIResult.title) {
-        console.log(`[${analysisId}] Successfully processed book with OpenAI: "${openAIResult.title}" by ${openAIResult.author}`);
-        return openAIResult;
-      }
-      
-      // If OpenAI failed, return minimal data with just title/author
-      console.log(`[${analysisId}] OpenAI failed to return valid data for title/author`);
-      return {
-        title: analysisRequest.title || null as unknown as string,
-        author: analysisRequest.author || null as unknown as string
-      } as Partial<Book>;
-      
-    } catch (error: any) {
-      console.log(`[${analysisId}] Error during book analysis:`, error?.message || String(error));
-      apiLogger.logError("BookAnalysis", {
-        error: "Book analysis failed",
-        message: error?.message || "Unknown error",
-        title: analysisRequest.title,
-        author: analysisRequest.author,
-        analysisId
-      });
-      
-      // Return minimal data with just title/author
-      return {
-        title: analysisRequest.title || null as unknown as string,
-        author: analysisRequest.author || null as unknown as string
-      } as Partial<Book>;
-    }
+    console.log(`[${analysisId}] No ISBN provided, using title/author as base data`);
+    baseBookData = {
+      title: analysisRequest.title || undefined,
+      author: analysisRequest.author || undefined,
+      language: analysisRequest.language || "de"
+    };
+  } else {
+    // Not enough information provided
+    console.log(`[${analysisId}] Insufficient information for book analysis`);
+    return {} as Partial<Book>;
   }
   
-  // Not enough information provided
-  console.log(`[${analysisId}] Insufficient information for book analysis`);
-  return {} as Partial<Book>;
+  // Second step: Always use OpenAI to generate summary, identify genres/themes, and enhance metadata
+  console.log(`[${analysisId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
+  
+  try {
+    // Prepare OpenAI request with the base book data - only include fields that are part of BookAnalysisRequest
+    const openAiRequest: BookAnalysisRequest = {
+      isbn: baseBookData.isbn || null,
+      title: baseBookData.title || "",
+      author: baseBookData.author || "",
+      language: baseBookData.language || "de",
+      coverImageData: analysisRequest.coverImageData
+    };
+    
+    // Call OpenAI to enhance the metadata and generate summary, genres, themes
+    const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
+    
+    // Merge the results, prioritizing reliable data
+    const mergedResult = {
+      ...openAIResult,
+      // Preserve these fields from Google Books (if they exist) as they're more reliable
+      isbn: baseBookData.isbn || openAIResult.isbn,
+      title: baseBookData.title || openAIResult.title,
+      author: baseBookData.author || openAIResult.author,
+      publisher: baseBookData.publisher || openAIResult.publisher,
+      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
+      pageCount: baseBookData.pageCount || openAIResult.pageCount,
+      language: baseBookData.language || openAIResult.language || "de"
+    };
+    
+    // Validate the result
+    if (mergedResult.title && mergedResult.author) {
+      console.log(`[${analysisId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
+      
+      // If we have an ISBN from both sources, verify they match
+      if (baseBookData.isbn && openAIResult.isbn && baseBookData.isbn !== openAIResult.isbn) {
+        console.log(`[${analysisId}] WARNING: ISBN mismatch between Google Books (${baseBookData.isbn}) and OpenAI (${openAIResult.isbn}). Using Google Books ISBN.`);
+      }
+      
+      return mergedResult;
+    }
+    
+    // If we don't have a complete result, return what we have
+    console.log(`[${analysisId}] Partial book data processed, returning available information`);
+    return mergedResult;
+    
+  } catch (error: any) {
+    console.log(`[${analysisId}] Error during OpenAI analysis:`, error?.message || String(error));
+    apiLogger.logError("BookAnalysis", {
+      error: "OpenAI book analysis failed",
+      message: error?.message || "Unknown error",
+      analysisId
+    });
+    
+    // Return whatever base data we have from Google Books
+    console.log(`[${analysisId}] Returning base book data from Google Books due to OpenAI error`);
+    return baseBookData;
+  }
 }
 
 /**
@@ -151,70 +137,84 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
   const lookupId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
   
+  // Base book data to be enriched - start with just the ISBN
+  let baseBookData: Partial<Book> = {
+    isbn,
+    language
+  };
+  
   try {
-    // First attempt: use Google Books API with the ISBN
-    console.log(`[${lookupId}] Attempting to get book with Google Books API using ISBN`);
+    // First step: get metadata from Google Books API
+    console.log(`[${lookupId}] Retrieving book metadata from Google Books API using ISBN`);
     const googleBooksResult = await getCompleteBookByISBN(isbn, language);
     
-    // If Google Books API returned valid data, use it
+    // If Google Books API returned valid data, use it as base data
     if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
-      console.log(`[${lookupId}] Successfully retrieved book with Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
-      return googleBooksResult;
+      console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+      baseBookData = googleBooksResult;
+    } else {
+      console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
     }
     
-    // If Google Books API failed or returned incomplete data, fall back to OpenAI
-    console.log(`[${lookupId}] Google Books didn't return valid data, falling back to OpenAI with ISBN only`);
+    // Second step: Always use OpenAI to enhance the data
+    console.log(`[${lookupId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
     
-    // Create a clean request for OpenAI with only the ISBN
+    // Create a request for OpenAI with the base data - only include fields that are part of BookAnalysisRequest
     const request: BookAnalysisRequest = {
-      isbn,
-      title: "",
-      author: "",
-      language
+      isbn: baseBookData.isbn || null,
+      title: baseBookData.title || "",
+      author: baseBookData.author || "",
+      language: baseBookData.language || language
     };
     
     const openAIResult = await processBookAnalysisWithOpenAI(request);
     
-    // Validate the OpenAI result
-    if (openAIResult && openAIResult.title && openAIResult.author) {
-      // Ensure the ISBN matches
-      if (openAIResult.isbn) {
-        const normalizedRequestISBN = isbn.replace(/[-\s]/g, '');
-        const normalizedResultISBN = openAIResult.isbn.replace(/[-\s]/g, '');
-        
-        if (normalizedRequestISBN !== normalizedResultISBN) {
-          console.log(`[${lookupId}] ERROR: OpenAI returned a book with a different ISBN. Requested: ${isbn}, Received: ${openAIResult.isbn}`);
-          
-          // Return minimal data
-          return {
-            isbn,
-            title: null as unknown as string,
-            author: null as unknown as string
-          } as Partial<Book>;
-        }
+    // Merge the results, prioritizing reliable data
+    const mergedResult = {
+      ...openAIResult,
+      // Preserve these fields from Google Books (if they exist) as they're more reliable
+      isbn: baseBookData.isbn || openAIResult.isbn,
+      title: baseBookData.title || openAIResult.title,
+      author: baseBookData.author || openAIResult.author,
+      publisher: baseBookData.publisher || openAIResult.publisher,
+      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
+      pageCount: baseBookData.pageCount || openAIResult.pageCount,
+      language: baseBookData.language || openAIResult.language || language
+    };
+    
+    // Validate the result
+    if (mergedResult.title && mergedResult.author) {
+      console.log(`[${lookupId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
+      
+      // If we have an ISBN from both sources, verify they match
+      if (openAIResult.isbn && openAIResult.isbn !== isbn) {
+        console.log(`[${lookupId}] WARNING: ISBN mismatch between request (${isbn}) and OpenAI (${openAIResult.isbn}). Using requested ISBN.`);
       }
       
-      console.log(`[${lookupId}] Successfully retrieved book with OpenAI fallback: "${openAIResult.title}" by ${openAIResult.author}`);
-      return openAIResult;
+      return mergedResult;
     }
     
-    // If both Google Books and OpenAI failed, return minimal data with just the ISBN
+    // If we don't have a complete result but have something, return what we have
+    if (baseBookData.title || openAIResult.title) {
+      console.log(`[${lookupId}] Partial book data processed, returning available information`);
+      return mergedResult;
+    }
+    
+    // If both services failed, return minimal data with just the ISBN
     console.log(`[${lookupId}] Both Google Books and OpenAI failed to return valid data for ISBN: ${isbn}`);
-    return {
-      isbn,
-      title: null as unknown as string,
-      author: null as unknown as string
-    } as Partial<Book>;
+    return baseBookData;
     
   } catch (error: any) {
     console.log(`[${lookupId}] Error during book lookup:`, error?.message || String(error));
+    apiLogger.logError("BookLookup", {
+      error: "Book lookup failed",
+      message: error?.message || "Unknown error",
+      isbn,
+      lookupId
+    });
     
     // Return minimal data with just the ISBN
-    return {
-      isbn,
-      title: null as unknown as string,
-      author: null as unknown as string
-    } as Partial<Book>;
+    return baseBookData;
   }
 }
 
