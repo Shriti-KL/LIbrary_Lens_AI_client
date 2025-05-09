@@ -37,7 +37,18 @@ export async function analyzeBookCover(image: string): Promise<any> {
       temperature: 0.1, // Lower temperature for more accurate extraction
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content returned from book cover analysis");
+    }
+    
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Error parsing book cover JSON:", parseError);
+      throw new Error("Failed to parse book cover analysis results");
+    }
     
     // Ensure we have at least a title and author
     if (!result.title && !result.author) {
@@ -45,15 +56,29 @@ export async function analyzeBookCover(image: string): Promise<any> {
     }
     
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing book cover:", error);
-    throw new Error(`Failed to analyze book cover: ${error.message}`);
+    throw new Error(`Failed to analyze book cover: ${error.message || String(error)}`);
   }
 }
 
 // Generate a summary for a book
 export async function generateBookSummary(bookInfo: Partial<Book>): Promise<string> {
   try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
     const context = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
@@ -65,11 +90,11 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: "You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in German language."
+          content: `You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Create a concise, informative summary in German for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
+          content: `Create a concise, informative summary in ${languageName} for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
         }
       ],
     });
@@ -78,104 +103,359 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
     return content ? content.trim() : "No summary available";
   } catch (error: any) {
     console.error("Error generating book summary:", error);
-    throw new Error(`Failed to generate book summary: ${error.message}`);
+    throw new Error(`Failed to generate book summary: ${error.message || String(error)}`);
   }
 }
 
 // Extract genres for a book
 export async function extractBookGenres(bookInfo: Partial<Book>): Promise<string[]> {
   try {
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Add more context data to improve genre extraction
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Published Year: ${bookInfo.publishedYear}` : ''}`;
+
+    // Include metadata from Google Books if available
+    if (bookInfo.metadata && typeof bookInfo.metadata === 'object') {
+      const metadata = bookInfo.metadata as Record<string, any>;
+      if (metadata.categories && Array.isArray(metadata.categories)) {
+        contextText += `\nGoogle Books Categories: ${metadata.categories.join(', ')}`;
+      }
+    }
+
+    console.log(`Extracting genres for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in German language."
+          content: `You are a library cataloging expert who specializes in classifying books by genre. Identify the primary and secondary genres for this book. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON array of strings with only the genre names in German.\n\n${context}`
+          content: `Based on the following book information, identify 3-5 genres that best categorize this book. Return your response as a JSON object with a "genres" property that contains an array of strings with only the genre names in ${languageName}.\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    return Array.isArray(result.genres) ? result.genres : [];
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for genres");
+      return [];
+    }
+    
+    console.log(`OpenAI genre response: ${content}`);
+    
+    try {
+      const result = JSON.parse(content);
+      
+      if (Array.isArray(result.genres)) {
+        return result.genres;
+      } else if (result.genres && typeof result.genres === 'string') {
+        // Handle case where it might return a comma-separated string instead of array
+        return result.genres.split(',').map((genre: string) => genre.trim());
+      } else {
+        // Handle case where the genres might be in the root of the JSON
+        const potentialGenres = Object.values(result).find(value => Array.isArray(value));
+        if (potentialGenres && Array.isArray(potentialGenres)) {
+          return potentialGenres;
+        }
+        
+        console.log("No genres array found in the response");
+        return [];
+      }
+    } catch (parseError) {
+      console.error("Error parsing genres JSON:", parseError);
+      // Try to extract genres from raw text if JSON parsing fails
+      try {
+        // Look for patterns that might indicate genres in the text
+        const genreMatches = content.match(/["'\[\]\{]([^"'\[\]\{\}]+)["'\[\]\}]/g);
+        if (genreMatches && genreMatches.length > 0) {
+          return genreMatches
+            .map(match => match.replace(/["'\[\]\{\}]/g, '').trim())
+            .filter(Boolean);
+        }
+      } catch (e) {
+        console.error("Error in fallback genre extraction:", e);
+      }
+      return [];
+    }
+  } catch (error: any) {
     console.error("Error extracting book genres:", error);
-    throw new Error(`Failed to extract book genres: ${error.message}`);
+    return []; // Return empty array instead of throwing to avoid breaking the whole analysis
   }
 }
 
 // Extract themes for a book
 export async function extractBookThemes(bookInfo: Partial<Book>): Promise<any[]> {
   try {
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Create context with more information
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
-${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    console.log(`Extracting themes for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are a literary analysis expert specializing in identifying themes and motifs in books. Always respond in German language."
+          content: `You are a literary analysis expert specializing in identifying themes and motifs in books. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in German. Return as a JSON array with objects containing 'theme' and 'description' properties.\n\n${context}`
+          content: `Identify 3 major themes or motifs for the following book. For each theme, provide a short description in ${languageName}. Return as a JSON object containing a "themes" array with objects containing 'theme' and 'description' properties.\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    return Array.isArray(result.themes) ? result.themes : [];
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for themes");
+      return [];
+    }
+    
+    console.log(`OpenAI themes response: ${content}`);
+    
+    try {
+      const result = JSON.parse(content);
+      
+      if (Array.isArray(result.themes)) {
+        return result.themes;
+      } else if (Array.isArray(result)) {
+        // Handle case where it might return a direct array
+        return result;
+      } else {
+        // Check if we have objects in the response with theme/description keys
+        const potentialThemesArray = Object.values(result).find(value => 
+          Array.isArray(value) && 
+          value.length > 0 && 
+          typeof value[0] === 'object' && 
+          'theme' in value[0]
+        );
+        
+        if (potentialThemesArray && Array.isArray(potentialThemesArray)) {
+          return potentialThemesArray;
+        }
+        
+        console.log("No valid themes array found in the response");
+        return [];
+      }
+    } catch (parseError) {
+      console.error("Error parsing themes JSON:", parseError);
+      return [];
+    }
+  } catch (error: any) {
     console.error("Error extracting book themes:", error);
-    throw new Error(`Failed to extract book themes: ${error.message}`);
+    return []; // Return empty array instead of throwing to avoid breaking the analysis
   }
 }
 
 // Determine reading level for a book
 export async function assessReadingLevel(bookInfo: Partial<Book>): Promise<any> {
   try {
-    const context = `Book Title: ${bookInfo.title || 'Unknown'}
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Create context with more information
+    let contextText = `Book Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
-${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    console.log(`Assessing reading level for "${bookInfo.title}" by "${bookInfo.author}"`);
 
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are an education specialist who assesses reading levels for books. Always respond in German language."
+          content: `You are an education specialist who assesses reading levels for books. Always respond in ${languageName}.`
         },
         {
           role: "user",
-          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in German like 'Klasse 4-5' or 'Alter 12-14'), and 'score' (a number from 1-10 representing complexity).\n\n${context}`
+          content: `Assess the appropriate reading level for this book. Return a JSON object with 'level' (a string in ${languageName} like 'Klasse 4-5' or 'Alter 12-14' for German), and 'score' (a number from 1-10 representing complexity).\n\n${contextText}`
         }
       ],
       response_format: { type: "json_object" },
     });
 
-    return JSON.parse(response.choices[0].message.content);
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for reading level");
+      return { level: "Unbekannt", score: 5 };
+    }
+    
+    console.log(`OpenAI reading level response: ${content}`);
+    
+    try {
+      const result = JSON.parse(content);
+      
+      // Check if we have the expected fields
+      if (result && 'level' in result && 'score' in result) {
+        return {
+          level: result.level,
+          score: Number(result.score) || 5
+        };
+      }
+      
+      // Look for alternative structure
+      if (result && typeof result === 'object') {
+        // Try to extract level and score from any fields that might contain them
+        const level = result.level || result.readingLevel || result.reading_level || "Unbekannt";
+        let score = result.score || result.complexity || result.readingScore || 5;
+        
+        // Make sure score is a number between 1-10
+        score = Number(score);
+        if (isNaN(score) || score < 1 || score > 10) {
+          score = 5;
+        }
+        
+        return { level, score };
+      }
+      
+      console.log("Could not find valid reading level information in the response");
+      return { level: "Unbekannt", score: 5 };
+    } catch (parseError) {
+      console.error("Error parsing reading level JSON:", parseError);
+      return { level: "Unbekannt", score: 5 };
+    }
+  } catch (error: any) {
     console.error("Error assessing reading level:", error);
-    throw new Error(`Failed to assess reading level: ${error.message}`);
+    return { level: "Unbekannt", score: 5 }; // Return default values instead of throwing
   }
 }
 
 // Generate a library catalog entry
 export async function generateCatalogEntry(bookInfo: Partial<Book>): Promise<string> {
   try {
-    const context = `Title: ${bookInfo.title || 'Unknown'}
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Collect all available bibliographic information
+    let contextText = `Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
+${bookInfo.dimensions ? `Dimensions: ${bookInfo.dimensions}` : ''}
+${bookInfo.edition ? `Edition: ${bookInfo.edition}` : ''}
+${bookInfo.binding ? `Binding: ${bookInfo.binding}` : ''}
+${bookInfo.series ? `Series: ${bookInfo.series}` : ''}
+${bookInfo.contributors && Array.isArray(bookInfo.contributors) && bookInfo.contributors.length > 0 
+  ? `Contributors: ${bookInfo.contributors.map((c: any) => `${c.name} (${c.role})`).join(', ')}` 
+  : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
+
+    console.log(`Generating catalog entry for "${bookInfo.title}" by "${bookInfo.author}"`);
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in ${languageName}.`
+        },
+        {
+          role: "user",
+          content: `Create a formal library catalog entry in ${languageName} for this book following standard cataloging conventions for ${languageName}. Include a Dewey Decimal classification if possible.\n\n${contextText}`
+        }
+      ],
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for catalog entry");
+      return "Keine Kataloginformationen verfügbar";
+    }
+    
+    console.log(`Generated catalog entry with length: ${content.length} characters`);
+    return content.trim();
+  } catch (error: any) {
+    console.error("Error generating catalog entry:", error);
+    return "Keine Kataloginformationen verfügbar"; // Return default instead of throwing
+  }
+}
+
+// Generate German library catalog specific classifications and data
+export async function generateGermanLibraryCatalogData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+  try {
+    // Determine language for content generation (default to German)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Compile book information for context
+    let contextText = `Title: ${bookInfo.title || 'Unknown'}
 Author: ${bookInfo.author || 'Unknown'}
 ${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
 ${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
@@ -184,24 +464,161 @@ ${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
 ${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}
 ${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}`;
 
+    console.log(`Generating German library catalog data for "${bookInfo.title}" by "${bookInfo.author}"`);
+
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: "You are a professional librarian who creates standardized catalog entries following library catalog conventions. Always respond in German language."
+          content: `You are a German library cataloging expert who creates ASB (Allgemeine Systematik für Bibliotheken) classifications and catalog entries. Generate data that exactly matches the German library catalog format.`
         },
         {
           role: "user",
-          content: `Create a formal library catalog entry in German for this book following standard German cataloging conventions. Include a Dewey Decimal classification if possible.\n\n${context}`
+          content: `Generate German library catalog specific fields for this book. 
+Return a JSON object with the following fields:
+- catalogNumber: an ASB classification number (like "103.485.0")
+- categories: an array of applicable ASB categories
+- secondaryClassification: a secondary classification like "4.3/Y" or "6.1/Aax"
+- reviewerName: a German reviewer name in the format "Firstname Lastname"
+- interestCategory: an interest category in the format "IK: Category; ab X" where X is an age
+- idBNumber: an ID-B number in the format "ID-B YY/ZZ" where YY is the year and ZZ is a sequence number
+
+The response should be valid JSON.
+
+Book information:
+${contextText}`
         }
       ],
+      response_format: { type: "json_object" },
     });
 
-    return response.choices[0].message.content.trim();
-  } catch (error) {
-    console.error("Error generating catalog entry:", error);
-    throw new Error(`Failed to generate catalog entry: ${error.message}`);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from OpenAI for German library catalog data");
+      return {};
+    }
+    
+    console.log(`Generated German library catalog data response: ${content}`);
+    
+    try {
+      const result = JSON.parse(content);
+      return {
+        catalogNumber: result.catalogNumber,
+        categories: result.categories,
+        secondaryClassification: result.secondaryClassification,
+        reviewerName: result.reviewerName,
+        interestCategory: result.interestCategory,
+        idBNumber: result.idBNumber
+      };
+    } catch (parseError) {
+      console.error("Error parsing German library catalog data JSON:", parseError);
+      return {};
+    }
+  } catch (error: any) {
+    console.error("Error generating German library catalog data:", error);
+    return {}; // Return empty object instead of throwing to avoid breaking the analysis
+  }
+}
+
+// Extract missing bibliographic fields from AI
+export async function extractMissingBibliographicData(bookInfo: Partial<Book>): Promise<Partial<Book>> {
+  try {
+    // Determine language for content generation (default to German if not specified)
+    const language = bookInfo.language || "de";
+    
+    // Map language codes to full language names for prompt clarity
+    const languageNames: Record<string, string> = {
+      en: "English",
+      de: "German (Deutsch)",
+      fr: "French (Français)",
+      es: "Spanish (Español)",
+      zh: "Chinese (中文)"
+    };
+    
+    const languageName = languageNames[language] || languageNames.de;
+    
+    // Collect all available bibliographic information
+    const context = `Title: ${bookInfo.title || 'Unknown'}
+Author: ${bookInfo.author || 'Unknown'}
+${bookInfo.publisher ? `Publisher: ${bookInfo.publisher}` : ''}
+${bookInfo.publishedYear ? `Year: ${bookInfo.publishedYear}` : ''}
+${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}
+${bookInfo.isbn ? `ISBN: ${bookInfo.isbn}` : ''}
+${bookInfo.summary ? `Summary: ${bookInfo.summary}` : ''}
+${bookInfo.genres ? `Genres: ${Array.isArray(bookInfo.genres) ? bookInfo.genres.join(', ') : bookInfo.genres}` : ''}`;
+
+    // Identify missing fields
+    const missingFields = [];
+    if (!bookInfo.pageCount) missingFields.push('pageCount');
+    if (!bookInfo.binding) missingFields.push('binding');
+    if (!bookInfo.dimensions) missingFields.push('dimensions');
+    if (!bookInfo.edition) missingFields.push('edition');
+    if (!bookInfo.location) missingFields.push('location');
+    if (!bookInfo.publisher) missingFields.push('publisher');
+
+    // Skip if we have all the fields
+    if (missingFields.length === 0) {
+      console.log("All bibliographic fields are present, skipping AI extraction");
+      return bookInfo;
+    }
+
+    console.log(`Attempting to extract missing bibliographic fields: ${missingFields.join(', ')}`);
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional librarian specialized in bibliographic data. Always respond in ${languageName} and provide JSON format.`
+        },
+        {
+          role: "user",
+          content: `Based on the available information, provide educated estimates for the missing bibliographic data for this book. Return a JSON object with: 
+          - pageCount (number of pages, just the number)
+          - binding (e.g., "Hardcover", "Taschenbuch", etc.)
+          - dimensions (e.g., "15 x 21 cm")
+          - edition (e.g., "1. Auflage", "Erste Ausgabe", etc.)
+          - location (publisher's location, e.g., "Berlin", "Frankfurt", etc.)
+          - publisher (if missing)
+          
+          Only include fields that can be reasonably estimated based on the information provided. If you can't estimate a field with reasonable confidence, leave it as null.
+          
+          Available information:
+          ${context}`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.log("No content returned from AI for bibliographic data extraction");
+      return bookInfo;
+    }
+    
+    let extractedData;
+    try {
+      extractedData = JSON.parse(content);
+      console.log("AI extracted bibliographic data:", extractedData);
+    } catch (parseError) {
+      console.error("Error parsing bibliographic data JSON:", parseError);
+      return bookInfo;
+    }
+
+    // Merge the extracted data with the book info, only using AI data where we lack actual data
+    return {
+      ...bookInfo,
+      pageCount: bookInfo.pageCount || extractedData.pageCount || null,
+      binding: bookInfo.binding || extractedData.binding || null,
+      dimensions: bookInfo.dimensions || extractedData.dimensions || null,
+      edition: bookInfo.edition || extractedData.edition || null,
+      location: bookInfo.location || extractedData.location || null,
+      publisher: bookInfo.publisher || extractedData.publisher || null,
+    };
+  } catch (error: any) {
+    console.error("Error extracting missing bibliographic data:", error);
+    return bookInfo; // Return original book info on error
   }
 }
 
@@ -220,7 +637,7 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
     });
     
     // Start fresh with a new book object, ignoring any existing analysis fields
-    const bookInfo: Partial<Book> = {
+    let bookInfo: Partial<Book> = {
       title: analysisRequest.title || "",
       author: analysisRequest.author || "",
       isbn: analysisRequest.isbn || null,
@@ -229,6 +646,9 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       publishedYear: analysisRequest.publishedYear || null,
       // Handle the cover image data if provided
       ...(analysisRequest.coverImage && { coverImageUrl: analysisRequest.coverImage }),
+      
+      // Include the language parameter
+      language: analysisRequest.language || "de",
       
       // Reset all analysis fields
       summary: null,
@@ -280,11 +700,96 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
       if (deweyMatch && deweyMatch[1]) {
         bookInfo.deweyDecimal = deweyMatch[1];
       }
+      
+      // Extract other bibliographic details from catalog entry if not already present
+      if (!bookInfo.dimensions) {
+        const dimensionsMatch = bookInfo.catalogEntry.match(/(\d+\s*[xX]\s*\d+\s*(?:cm|mm))/);
+        if (dimensionsMatch && dimensionsMatch[1]) {
+          bookInfo.dimensions = dimensionsMatch[1];
+        }
+      }
+      
+      if (!bookInfo.edition) {
+        const editionMatch = bookInfo.catalogEntry.match(/((?:\d+(?:st|nd|rd|th)|Erste[rnms]?|Zweite[rnms]?|Dritte[rnms]?|Vierte[rnms]?)[\s\-.](?:Aufl(?:age)?|Ausg(?:abe)?|Ed(?:ition)?))/i);
+        if (editionMatch && editionMatch[1]) {
+          bookInfo.edition = editionMatch[1];
+        }
+      }
+      
+      if (!bookInfo.publisher && !bookInfo.location) {
+        const publisherMatch = bookInfo.catalogEntry.match(/([A-Z][a-zA-Z\s]+)\s*:\s*([A-Z][a-zA-Z\s]+)/);
+        if (publisherMatch) {
+          bookInfo.location = publisherMatch[1].trim();
+          bookInfo.publisher = publisherMatch[2].trim();
+        }
+      }
+      
+      if (!bookInfo.binding) {
+        const bindingMatch = bookInfo.catalogEntry.match(/(Hardcover|Gebunden|Broschiert|Taschenbuch|Paperback|Festeinband)/i);
+        if (bindingMatch && bindingMatch[1]) {
+          bookInfo.binding = bindingMatch[1];
+        }
+      }
+      
+      // Generate German library catalog specific data
+      const germanLibraryCatalogData = await generateGermanLibraryCatalogData(bookInfo);
+      
+      // Merge the German library catalog data with the book info
+      bookInfo = {
+        ...bookInfo,
+        catalogNumber: germanLibraryCatalogData.catalogNumber || null,
+        categories: germanLibraryCatalogData.categories || [],
+        secondaryClassification: germanLibraryCatalogData.secondaryClassification || null,
+        reviewerName: germanLibraryCatalogData.reviewerName || null,
+        interestCategory: germanLibraryCatalogData.interestCategory || null,
+        idBNumber: germanLibraryCatalogData.idBNumber || null,
+      };
+      
+      // Check for illustrator information
+      const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
+      if (illustratorMatch && illustratorMatch[1]) {
+        // Add illustrator to contributors if not already present
+        const illustratorName = illustratorMatch[1].trim();
+        
+        // Initialize contributors array if it doesn't exist or isn't an array
+        // Use type assertion to handle the unknown type
+        const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
+          ? [...(bookInfo.contributors as {role: string, name: string}[])] 
+          : [];
+        
+        // Check if this illustrator is already in contributors
+        const hasIllustrator = contributors.some((c: any) => 
+          c.role === 'illustrator' && c.name === illustratorName
+        );
+        
+        if (!hasIllustrator) {
+          contributors.push({
+            role: 'illustrator',
+            name: illustratorName
+          });
+          
+          // Update the book info with the new contributors array
+          bookInfo = {
+            ...bookInfo,
+            contributors
+          };
+        }
+      }
+    }
+    
+    // Check if we have all required bibliographic data, if not use AI to fill missing fields
+    const fieldsToCheck = ['pageCount', 'binding', 'dimensions', 'edition', 'location', 'publisher'] as const;
+    const missingFields = fieldsToCheck.filter(field => 
+      !bookInfo[field as keyof typeof bookInfo]);
+    
+    if (missingFields.length > 0) {
+      console.log(`Missing bibliographic fields detected: ${missingFields.join(', ')}. Attempting to extract using AI.`);
+      bookInfo = await extractMissingBibliographicData(bookInfo);
     }
 
     return bookInfo;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error processing book analysis:", error);
-    throw new Error(`Failed to process book analysis: ${error.message}`);
+    throw new Error(`Failed to process book analysis: ${error.message || String(error)}`);
   }
 }

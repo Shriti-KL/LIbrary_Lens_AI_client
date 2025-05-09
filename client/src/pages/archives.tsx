@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN, exportBookToPDF } from '@/lib/utils';
+import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -66,7 +66,25 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, ChevronsUpDown, Filter, Search, Eye, Edit, Trash2, BookX, X, Tag, FileText } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { 
+  Check, 
+  ChevronsUpDown, 
+  Filter, 
+  Search, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  BookX, 
+  X, 
+  Tag, 
+  FileText,
+  BookCopy, 
+  FileOutput, 
+  CheckSquare,
+  Square
+} from 'lucide-react';
 
 export default function Archives() {
   const { t } = useLanguage();
@@ -75,6 +93,9 @@ export default function Archives() {
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
   const [viewBookId, setViewBookId] = useState<number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  
+  // Book selection for PDF export
+  const [selectedBooks, setSelectedBooks] = useState<Set<number>>(new Set());
   
   // Filter states
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -206,6 +227,59 @@ export default function Archives() {
   const confirmDelete = () => {
     if (bookToDelete) {
       deleteMutation.mutate(bookToDelete.id);
+    }
+  };
+  
+  // Handle toggle book selection
+  const toggleBookSelection = (bookId: number) => {
+    setSelectedBooks(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(bookId)) {
+        newSelection.delete(bookId);
+      } else {
+        newSelection.add(bookId);
+      }
+      return newSelection;
+    });
+  };
+  
+  // Select or deselect all filtered books
+  const toggleSelectAllBooks = () => {
+    if (selectedBooks.size === filteredBooks.length) {
+      // If all are selected, deselect all
+      setSelectedBooks(new Set());
+    } else {
+      // Otherwise, select all filtered books
+      setSelectedBooks(new Set(filteredBooks.map(book => book.id)));
+    }
+  };
+  
+  // Export selected books
+  const exportSelectedBooks = () => {
+    const booksToExport = filteredBooks.filter(book => selectedBooks.has(book.id));
+    
+    if (booksToExport.length === 0) {
+      toast({
+        title: t('noBookSelected'),
+        description: t('pleaseSelectBooks'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      exportMultipleBooksToSinglePDF(booksToExport);
+      toast({
+        title: t('exportSuccess'),
+        description: t('booksExportedToPDF'),
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: t('exportFailed'),
+        description: t('errorGeneratingPDF'),
+        variant: 'destructive',
+      });
     }
   };
 
@@ -485,20 +559,76 @@ export default function Archives() {
             </div>
           ) : filteredBooks.length > 0 ? (
             <div className="border rounded-md overflow-x-auto">
+              {/* Action Bar for Export */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={toggleSelectAllBooks}
+                  >
+                    {selectedBooks.size === filteredBooks.length ? (
+                      <>
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        {t('deselectAll')}
+                      </>
+                    ) : (
+                      <>
+                        <Square className="h-4 w-4 mr-2" />
+                        {t('selectAll')}
+                      </>
+                    )}
+                  </Button>
+                
+                  <span className="text-sm text-muted-foreground">
+                    {selectedBooks.size} {t('booksSelected')}
+                  </span>
+                </div>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-8"
+                        onClick={exportSelectedBooks}
+                        disabled={selectedBooks.size === 0}
+                      >
+                        <FileOutput className="h-4 w-4 mr-2" />
+                        {t('exportSelected')}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('exportSelectedTooltip')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead style={{ width: '40px' }}>{/* Selection */}</TableHead>
                     <TableHead style={{ width: '60px' }}>{/* Cover */}</TableHead>
                     <TableHead>{t('title')}</TableHead>
                     <TableHead>{t('author')}</TableHead>
                     <TableHead>{t('isbn')}</TableHead>
                     <TableHead>{t('genres')}</TableHead>
-                    <TableHead style={{ width: '120px' }}>{/* Actions */}</TableHead>
+                    <TableHead style={{ width: '90px' }}>{/* Actions */}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredBooks.map((book: Book) => (
                     <TableRow key={book.id}>
+                      <TableCell className="pr-0">
+                        <Checkbox
+                          checked={selectedBooks.has(book.id)}
+                          onCheckedChange={() => toggleBookSelection(book.id)}
+                          aria-label={`Select ${book.title}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="h-12 w-9 bg-neutral-100 rounded overflow-hidden">
                           {book.coverImageUrl ? (
@@ -534,14 +664,6 @@ export default function Archives() {
                             onClick={() => window.location.href = `/archives?view=${book.id}`}
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            title={t('export')}
-                            onClick={() => exportBookToPDF(book)}
-                          >
-                            <FileText className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -682,17 +804,7 @@ export default function Archives() {
                           </div>
                         </div>
                         
-                        <div className="mt-6">
-                          <Button
-                            onClick={() => exportBookToPDF(book)}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
-                          >
-                            <FileText className="h-4 w-4" />
-                            {t('exportToPDF')}
-                          </Button>
-                        </div>
+
                         
                         <div className="mt-4">
                           <h4 className="text-sm font-medium text-neutral-500">{t('genres')}</h4>

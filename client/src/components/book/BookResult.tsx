@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
+import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
   CardContent, 
@@ -37,19 +38,7 @@ export default function BookResult({
 }: BookResultProps) {
   const { t } = useLanguage();
 
-  // Handle export results
-  const handleExport = () => {
-    const bookData = JSON.stringify(book, null, 2);
-    const blob = new Blob([bookData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${book.title || 'book'}-analysis.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  // Export functionality moved to multi-book export in archives page
 
   // If still loading, show loading state
   if (isLoading && loadingSteps) {
@@ -219,9 +208,9 @@ export default function BookResult({
                   alt={`${book.title} cover`} 
                   className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
                 />
-              ) : book.coverImageData ? (
+              ) : (book as any).coverImageData ? (
                 <img 
-                  src={book.coverImageData as string} 
+                  src={(book as any).coverImageData} 
                   alt={`${book.title} cover`} 
                   className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
                 />
@@ -239,55 +228,107 @@ export default function BookResult({
               <h3 className="text-xl font-serif font-semibold text-primary-dark">{book.title}</h3>
               <p className="text-lg text-neutral-700 mt-1 font-medium">{book.author}</p>
               
-              <div className="mt-5 grid grid-cols-2 gap-5">
-                <div>
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('isbn')}</h4>
-                  <p className="mt-1 text-sm text-neutral-700">{book.isbn ? formatISBN(book.isbn) : 'N/A'}</p>
+              {/* Book Details Section */}
+              <div className="mt-5">
+                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('bookDetails')}</h4>
+                <div className="grid grid-cols-2 gap-5 bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
+                  {/* Basic Information */}
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('isbn')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.isbn ? formatISBN(book.isbn) : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('pages')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.pageCount || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Publication Information */}
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('published')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.publishedYear || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('publisher')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.publisher || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Edition and Location */}
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('edition')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.edition || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('location')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.location || 'N/A'}</p>
+                  </div>
+                  
+                  {/* Physical Characteristics */}
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('dimensions')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.dimensions || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
+                    <p className="mt-1 text-sm text-neutral-700">{book.binding || 'N/A'}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('published')}</h4>
-                  <p className="mt-1 text-sm text-neutral-700">{book.publishedYear || 'N/A'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('publisher')}</h4>
-                  <p className="mt-1 text-sm text-neutral-700">{book.publisher || 'N/A'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('pages')}</h4>
-                  <p className="mt-1 text-sm text-neutral-700">{book.pageCount || 'N/A'}</p>
+              </div>
+              
+              {/* Contributors section (illustrators, editors, etc.) */}
+              <div className="mt-5">
+                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('contributors')}</h4>
+                <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
+                  {book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {book.contributors.map((contributor: any, index: number) => (
+                        <div key={index} className="flex items-center">
+                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full mr-2">
+                            {contributor.role}
+                          </span>
+                          <span className="text-sm text-neutral-700">{contributor.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-neutral-600 italic">No contributor information available</p>
+                  )}
                 </div>
               </div>
               
               <div className="mt-5">
-                <h4 className="text-sm font-medium text-primary-dark/70">{t('genres')}</h4>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {Array.isArray(book.genres) && book.genres.length > 0 ? (
-                    book.genres.map((genre, index) => (
-                      <Badge key={index} variant="secondary" className="bg-secondary-light text-white px-3 py-1">
-                        {genre}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-neutral-600 italic">No genres identified</p>
-                  )}
+                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('genres')}</h4>
+                <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
+                  <div className="flex flex-wrap gap-2">
+                    {Array.isArray(book.genres) && book.genres.length > 0 ? (
+                      book.genres.map((genre, index) => (
+                        <Badge key={index} variant="outline" className="bg-primary-light/20 text-primary-dark border-primary/30 px-3 py-1 font-medium">
+                          {genre}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-neutral-600 italic">No genres identified</p>
+                    )}
+                  </div>
                 </div>
               </div>
               
               {book.readingLevel && (
                 <div className="mt-5">
-                  <h4 className="text-sm font-medium text-primary-dark/70">{t('readingLevel')}</h4>
-                  <div className="mt-2 flex items-center">
-                    <div className="w-full bg-primary/10 rounded-full h-2.5">
-                      <div 
-                        className="bg-secondary-light h-2.5 rounded-full" 
-                        style={{ 
-                          width: book.metadata && typeof book.metadata === 'object' && 'readingLevelScore' in book.metadata 
-                            ? `${(book.metadata.readingLevelScore as number) * 10}%` 
-                            : '50%'
-                        }}
-                      ></div>
+                  <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('readingLevel')}</h4>
+                  <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
+                    <div className="flex items-center">
+                      <div className="w-full bg-primary/10 rounded-full h-2.5">
+                        <div 
+                          className="bg-secondary-light h-2.5 rounded-full" 
+                          style={{ 
+                            width: book.metadata && typeof book.metadata === 'object' && 'readingLevelScore' in book.metadata 
+                              ? `${(book.metadata.readingLevelScore as number) * 10}%` 
+                              : '50%'
+                          }}
+                        ></div>
+                      </div>
+                      <span className="ml-3 text-sm font-medium text-neutral-700">{book.readingLevel}</span>
                     </div>
-                    <span className="ml-3 text-sm font-medium text-neutral-700">{book.readingLevel}</span>
                   </div>
                 </div>
               )}
@@ -351,15 +392,7 @@ export default function BookResult({
         </div>
       </CardContent>
       
-      <CardFooter className="bg-primary/5 justify-between border-t border-primary/10 py-4 px-6">
-        <Button 
-          variant="outline" 
-          onClick={handleExport}
-          className="flex items-center gap-2 border-primary/30 text-primary-dark hover:bg-primary/10"
-        >
-          <Download className="h-4 w-4" />
-          {t('exportResults')}
-        </Button>
+      <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
         <Button 
           onClick={() => onSave(book)}
           className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
