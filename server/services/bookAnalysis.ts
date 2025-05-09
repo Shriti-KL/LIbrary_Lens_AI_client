@@ -114,17 +114,62 @@ export async function processBookAnalysis(
     // Call OpenAI to enhance the metadata and generate summary, genres, themes
     const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
     
-    // Merge the results, prioritizing reliable data
+    // Validate and sanitize data before merging
+    // Create a cleaned copy of the raw data that's been validated
+    const validatedBaseData = { ...baseBookData };
+    const validatedOpenAIData = { ...openAIResult };
+    
+    // Check for future publication dates (which are likely incorrect)
+    const currentYear = new Date().getFullYear();
+    if (validatedBaseData.publishedYear && validatedBaseData.publishedYear > currentYear) {
+      console.log(`[${analysisId}] Warning: Future publication year detected from Google Books: ${validatedBaseData.publishedYear}. Setting to null.`);
+      validatedBaseData.publishedYear = null;
+    }
+    if (validatedOpenAIData.publishedYear && validatedOpenAIData.publishedYear > currentYear) {
+      console.log(`[${analysisId}] Warning: Future publication year detected from OpenAI: ${validatedOpenAIData.publishedYear}. Setting to null.`);
+      validatedOpenAIData.publishedYear = null;
+    }
+    
+    // Check for unreasonably large page counts
+    if (validatedBaseData.pageCount && validatedBaseData.pageCount > 2000) {
+      console.log(`[${analysisId}] Warning: Unusually high page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
+      validatedBaseData.pageCount = null;
+    }
+    if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount > 2000) {
+      console.log(`[${analysisId}] Warning: Unusually high page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
+      validatedOpenAIData.pageCount = null;
+    }
+    
+    // Mark suspicious data values for debugging - flag fields where Google Books and OpenAI disagree significantly
+    const suspiciousFields: string[] = [];
+    
+    // Check for publisher mismatch
+    if (validatedBaseData.publisher && validatedOpenAIData.publisher && 
+        validatedBaseData.publisher !== validatedOpenAIData.publisher) {
+      console.log(`[${analysisId}] Publisher mismatch detected: GB="${validatedBaseData.publisher}" vs OpenAI="${validatedOpenAIData.publisher}"`);
+      suspiciousFields.push('publisher');
+    }
+    
+    // Check for page count mismatch (only if both sources provide data)
+    if (validatedBaseData.pageCount && validatedOpenAIData.pageCount && 
+        Math.abs(validatedBaseData.pageCount - validatedOpenAIData.pageCount) > 50) {
+      console.log(`[${analysisId}] Page count mismatch detected: GB=${validatedBaseData.pageCount} vs OpenAI=${validatedOpenAIData.pageCount}`);
+      suspiciousFields.push('pageCount');
+    }
+    
+    // Merge the results, prioritizing reliable data and handling null/undefined values properly
     const mergedResult = {
-      ...openAIResult,
+      ...validatedOpenAIData,
       // Preserve these fields from Google Books (if they exist) as they're more reliable
-      isbn: baseBookData.isbn || openAIResult.isbn,
-      title: baseBookData.title || openAIResult.title,
-      author: baseBookData.author || openAIResult.author,
-      publisher: baseBookData.publisher || openAIResult.publisher,
-      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
-      pageCount: baseBookData.pageCount || openAIResult.pageCount,
-      language: baseBookData.language || openAIResult.language || "de"
+      isbn: validatedBaseData.isbn || validatedOpenAIData.isbn,
+      title: validatedBaseData.title || validatedOpenAIData.title,
+      author: validatedBaseData.author || validatedOpenAIData.author,
+      language: validatedBaseData.language || validatedOpenAIData.language || "de",
+      
+      // For potentially suspect fields, prefer Google Books when available but mark suspicious data
+      publisher: suspiciousFields.includes('publisher') ? null : (validatedBaseData.publisher || validatedOpenAIData.publisher),
+      publishedYear: suspiciousFields.includes('publishedYear') ? null : (validatedBaseData.publishedYear || validatedOpenAIData.publishedYear),
+      pageCount: suspiciousFields.includes('pageCount') ? null : (validatedBaseData.pageCount || validatedOpenAIData.pageCount),
     };
     
     // Validate the result
@@ -253,17 +298,62 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
     
     const openAIResult = await processBookAnalysisWithOpenAI(request);
     
-    // Merge the results, prioritizing reliable data
+    // Validate and sanitize data before merging
+    // Create a cleaned copy of the raw data that's been validated
+    const validatedBaseData = { ...baseBookData };
+    const validatedOpenAIData = { ...openAIResult };
+    
+    // Check for future publication dates (which are likely incorrect)
+    const currentYear = new Date().getFullYear();
+    if (validatedBaseData.publishedYear && validatedBaseData.publishedYear > currentYear) {
+      console.log(`[${lookupId}] Warning: Future publication year detected from Google Books: ${validatedBaseData.publishedYear}. Setting to null.`);
+      validatedBaseData.publishedYear = null;
+    }
+    if (validatedOpenAIData.publishedYear && validatedOpenAIData.publishedYear > currentYear) {
+      console.log(`[${lookupId}] Warning: Future publication year detected from OpenAI: ${validatedOpenAIData.publishedYear}. Setting to null.`);
+      validatedOpenAIData.publishedYear = null;
+    }
+    
+    // Check for unreasonably large page counts
+    if (validatedBaseData.pageCount && validatedBaseData.pageCount > 2000) {
+      console.log(`[${lookupId}] Warning: Unusually high page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
+      validatedBaseData.pageCount = null;
+    }
+    if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount > 2000) {
+      console.log(`[${lookupId}] Warning: Unusually high page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
+      validatedOpenAIData.pageCount = null;
+    }
+    
+    // Mark suspicious data values for debugging - flag fields where Google Books and OpenAI disagree significantly
+    const suspiciousFields: string[] = [];
+    
+    // Check for publisher mismatch
+    if (validatedBaseData.publisher && validatedOpenAIData.publisher && 
+        validatedBaseData.publisher !== validatedOpenAIData.publisher) {
+      console.log(`[${lookupId}] Publisher mismatch detected: GB="${validatedBaseData.publisher}" vs OpenAI="${validatedOpenAIData.publisher}"`);
+      suspiciousFields.push('publisher');
+    }
+    
+    // Check for page count mismatch (only if both sources provide data)
+    if (validatedBaseData.pageCount && validatedOpenAIData.pageCount && 
+        Math.abs(validatedBaseData.pageCount - validatedOpenAIData.pageCount) > 50) {
+      console.log(`[${lookupId}] Page count mismatch detected: GB=${validatedBaseData.pageCount} vs OpenAI=${validatedOpenAIData.pageCount}`);
+      suspiciousFields.push('pageCount');
+    }
+    
+    // Merge the results, prioritizing reliable data and handling null/undefined values properly
     const mergedResult = {
-      ...openAIResult,
+      ...validatedOpenAIData,
       // Preserve these fields from Google Books (if they exist) as they're more reliable
-      isbn: baseBookData.isbn || openAIResult.isbn,
-      title: baseBookData.title || openAIResult.title,
-      author: baseBookData.author || openAIResult.author,
-      publisher: baseBookData.publisher || openAIResult.publisher,
-      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
-      pageCount: baseBookData.pageCount || openAIResult.pageCount,
-      language: baseBookData.language || openAIResult.language || language
+      isbn: validatedBaseData.isbn || validatedOpenAIData.isbn,
+      title: validatedBaseData.title || validatedOpenAIData.title,
+      author: validatedBaseData.author || validatedOpenAIData.author,
+      language: validatedBaseData.language || validatedOpenAIData.language || language,
+      
+      // For potentially suspect fields, prefer Google Books when available but mark suspicious data
+      publisher: suspiciousFields.includes('publisher') ? null : (validatedBaseData.publisher || validatedOpenAIData.publisher),
+      publishedYear: suspiciousFields.includes('publishedYear') ? null : (validatedBaseData.publishedYear || validatedOpenAIData.publishedYear),
+      pageCount: suspiciousFields.includes('pageCount') ? null : (validatedBaseData.pageCount || validatedOpenAIData.pageCount),
     };
     
     // Validate the result
