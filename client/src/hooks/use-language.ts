@@ -401,18 +401,44 @@ const translations: Translations = {
   }
 };
 
+// Event dispatcher for language changes
+const languageChangeEvent = new CustomEvent('app:languageChanged');
+
 export function useLanguage() {
   const [language, setLanguage] = useState<Language>("de");
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
+    if (lang === language) return; // No change necessary
+    
+    // Update state and localStorage
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
+    
+    // Dispatch a custom event that components can listen for
+    window.dispatchEvent(languageChangeEvent);
+    
+    // Trigger a reload of any active analysis content
+    // This is needed to regenerate AI content in the new language
+    const analysisData = localStorage.getItem("currentAnalysisData");
+    if (analysisData) {
+      try {
+        const data = JSON.parse(analysisData);
+        // Add language to force regeneration in the new language
+        localStorage.setItem("currentAnalysisData", JSON.stringify({
+          ...data,
+          language: lang,
+          needsRegeneration: true
+        }));
+      } catch (e) {
+        console.error("Error parsing analysis data for language switch:", e);
+      }
+    }
   };
   
   // Translation function
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return translations[language][key] || translations["de"][key] || key;
   };
   
   // Load saved language preference on mount

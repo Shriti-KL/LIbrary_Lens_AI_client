@@ -6,8 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
 
 // Storage keys
-const STORAGE_KEY_RESULT = 'book_analysis_result';
+const STORAGE_KEY_RESULT = 'currentAnalysisData';
 const STORAGE_KEY_TIMESTAMP = 'book_analysis_timestamp';
+const STORAGE_KEY_LANGUAGE = 'book_analysis_language';
 
 export function useBookAnalysis() {
   const { toast } = useToast();
@@ -26,8 +27,14 @@ export function useBookAnalysis() {
   const saveAnalysisToStorage = (data: any) => {
     try {
       if (data) {
-        localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(data));
+        // Save with current language to track which language the analysis was performed in
+        const dataWithLanguage = {
+          ...data,
+          analyzerLanguage: language
+        };
+        localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(dataWithLanguage));
         localStorage.setItem(STORAGE_KEY_TIMESTAMP, Date.now().toString());
+        localStorage.setItem(STORAGE_KEY_LANGUAGE, language);
       }
     } catch (err) {
       console.error('Error saving analysis to localStorage:', err);
@@ -37,7 +44,24 @@ export function useBookAnalysis() {
   const getAnalysisFromStorage = () => {
     try {
       const savedAnalysis = localStorage.getItem(STORAGE_KEY_RESULT);
-      return savedAnalysis ? JSON.parse(savedAnalysis) : null;
+      const savedLanguage = localStorage.getItem(STORAGE_KEY_LANGUAGE);
+      
+      if (savedAnalysis) {
+        const data = JSON.parse(savedAnalysis);
+        
+        // If analysis was done in a different language than current UI language,
+        // mark it for regeneration
+        if (savedLanguage && savedLanguage !== language) {
+          console.log(`Language changed from ${savedLanguage} to ${language}, queuing retranslation of content`);
+          return {
+            ...data,
+            needsRegeneration: true
+          };
+        }
+        
+        return data;
+      }
+      return null;
     } catch (err) {
       console.error('Error retrieving analysis from localStorage:', err);
       return null;
@@ -48,6 +72,7 @@ export function useBookAnalysis() {
     try {
       localStorage.removeItem(STORAGE_KEY_RESULT);
       localStorage.removeItem(STORAGE_KEY_TIMESTAMP);
+      localStorage.removeItem(STORAGE_KEY_LANGUAGE);
     } catch (err) {
       console.error('Error clearing analysis from localStorage:', err);
     }

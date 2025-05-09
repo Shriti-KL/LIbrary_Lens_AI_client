@@ -90,17 +90,51 @@ ${bookInfo.pageCount ? `Pages: ${bookInfo.pageCount}` : ''}`;
       messages: [
         {
           role: "system",
-          content: `You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in ${languageName}.`
+          content: `You are a literary expert who creates concise, informative book summaries for library catalogs. Focus on plot, main themes, and significance. Always respond in ${languageName}. Your summaries must be EXACTLY 150 words (approximately 1000 characters) and contain NO metadata or bibliographic information.`
         },
         {
           role: "user",
-          content: `Create a concise, informative summary in ${languageName} for the following book that would be appropriate for a library catalog. Keep it under 250 words.\n\n${context}`
+          content: `Create a concise, informative summary in ${languageName} for the following book that would be appropriate for a library catalog. 
+
+IMPORTANT REQUIREMENTS:
+1. The summary MUST be EXACTLY 150 words (approximately 1000 characters).
+2. Do NOT include any metadata like title, author, publisher, etc. in the summary itself.
+3. Focus only on the content/plot of the book.
+4. Start directly with the content without phrases like "This book is about..."
+5. Use proper paragraphs with good structure.
+
+Book information:
+${context}`
         }
       ],
     });
 
     const content = response.choices[0].message.content;
-    return content ? content.trim() : "No summary available";
+    let summary = content ? content.trim() : "No summary available";
+    
+    // Clean up any metadata that might still be in the summary
+    const metadataPatterns = [
+      /\*\*Titel:\*\*.*\n?/i,
+      /\*\*Autor(?:in)?:\*\*.*\n?/i,
+      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
+      /\*\*ISBN:\*\*.*\n?/i,
+      /\*\*Verlag:\*\*.*\n?/i,
+      /Titel:.*\n?/i,
+      /Autor(?:in)?:.*\n?/i,
+      /Erscheinungsjahr:.*\n?/i,
+      /ISBN:.*\n?/i,
+      /Verlag:.*\n?/i
+    ];
+    
+    // Apply all patterns to clean up the summary
+    metadataPatterns.forEach(pattern => {
+      summary = summary.replace(pattern, '');
+    });
+    
+    // Remove any extra whitespace and multiple newlines
+    summary = summary.replace(/\n\s*\n/g, '\n').trim();
+    
+    return summary;
   } catch (error: any) {
     console.error("Error generating book summary:", error);
     throw new Error(`Failed to generate book summary: ${error.message || String(error)}`);
@@ -745,34 +779,36 @@ export async function processBookAnalysis(analysisRequest: BookAnalysisRequest):
         idBNumber: germanLibraryCatalogData.idBNumber || null,
       };
       
-      // Check for illustrator information
-      const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
-      if (illustratorMatch && illustratorMatch[1]) {
-        // Add illustrator to contributors if not already present
-        const illustratorName = illustratorMatch[1].trim();
-        
-        // Initialize contributors array if it doesn't exist or isn't an array
-        // Use type assertion to handle the unknown type
-        const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
-          ? [...(bookInfo.contributors as {role: string, name: string}[])] 
-          : [];
-        
-        // Check if this illustrator is already in contributors
-        const hasIllustrator = contributors.some((c: any) => 
-          c.role === 'illustrator' && c.name === illustratorName
-        );
-        
-        if (!hasIllustrator) {
-          contributors.push({
-            role: 'illustrator',
-            name: illustratorName
-          });
+      // Check for illustrator information in catalog entry
+      if (bookInfo.catalogEntry) {
+        const illustratorMatch = bookInfo.catalogEntry.match(/Illustr(?:ation(?:en)?|\.)\s+(?:von|by)\s+([^.,;]+)/i);
+        if (illustratorMatch && illustratorMatch[1]) {
+          // Add illustrator to contributors if not already present
+          const illustratorName = illustratorMatch[1].trim();
           
-          // Update the book info with the new contributors array
-          bookInfo = {
-            ...bookInfo,
-            contributors
-          };
+          // Initialize contributors array if it doesn't exist or isn't an array
+          // Use type assertion to handle the unknown type
+          const contributors: {role: string, name: string}[] = Array.isArray(bookInfo.contributors) 
+            ? [...(bookInfo.contributors as {role: string, name: string}[])] 
+            : [];
+          
+          // Check if this illustrator is already in contributors
+          const hasIllustrator = contributors.some((c: any) => 
+            c.role === 'illustrator' && c.name === illustratorName
+          );
+          
+          if (!hasIllustrator) {
+            contributors.push({
+              role: 'illustrator',
+              name: illustratorName
+            });
+            
+            // Update the book info with the new contributors array
+            bookInfo = {
+              ...bookInfo,
+              contributors
+            };
+          }
         }
       }
     }
