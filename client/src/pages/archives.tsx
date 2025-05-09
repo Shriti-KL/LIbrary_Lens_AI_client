@@ -589,7 +589,18 @@ export default function Archives() {
                   </span>
                 </div>
                 
-                {/* PDF Export button has been removed */}
+                {/* PDF Export button */}
+                {selectedBooks.size > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportSelectedBooks}
+                    className="text-xs"
+                  >
+                    <FileOutput className="h-4 w-4 mr-2" />
+                    {t('exportToPDF')}
+                  </Button>
+                )}
               </div>
               
               <Table>
@@ -896,12 +907,22 @@ export default function Archives() {
           )}
           
           <DialogFooter>
-            <Button 
-              variant="secondary" 
-              onClick={() => setDetailDialogOpen(false)}
-            >
-              {t('close')}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => exportBookToPDF(book)}
+                className="flex items-center gap-2"
+              >
+                <FileOutput className="h-4 w-4" />
+                {t('exportToPDF')}
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => setDetailDialogOpen(false)}
+              >
+                {t('close')}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
