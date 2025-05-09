@@ -1,372 +1,106 @@
 
-[2025-05-08 12:11:33] REQUEST TO Perplexity
-{
-  "operation": "processBookAnalysis",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "bookIdentifiers": "ISBN: 978-3-959161-35-0",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:11:33] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-959161-35-0. \nProvide real, factual ..."
-}
-
-[2025-05-08 12:11:35] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "fca54555-e886-41d4-a526-75ef99b361e7",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 567,
-    "completion_tokens": 145,
-    "total_tokens": 712,
-    "search_context_size": "low"
-  },
-  "citationCount": 0
-}
-
-[2025-05-08 12:11:35] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
-}
-
-[2025-05-08 12:11:35] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-959161-35-0",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:11:52] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Das Café am Rande der Welt: Eine Erzählung über den Sinn des Lebens"
-}
-
-[2025-05-08 12:13:07] REQUEST TO Perplexity
-{
-  "operation": "processBookAnalysis",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "bookIdentifiers": "ISBN: 978-3-959161-35-0",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:13:07] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-959161-35-0. \nProvide real, factual ..."
-}
-
-[2025-05-08 12:13:09] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "d7b014f8-e8ec-43a3-8422-6fb113e766e8",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 567,
-    "completion_tokens": 145,
-    "total_tokens": 712,
-    "search_context_size": "low"
-  },
-  "citationCount": 0
-}
-
-[2025-05-08 12:13:10] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
-}
-
-[2025-05-08 12:13:10] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-959161-35-0, Title: Das Café am Rande der Welt: Eine Erzählung über den Sinn des Lebens, Author: John Strelecky",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:13:24] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Das Café am Rande der Welt: Eine Erzählung über den Sinn des Lebens"
-}
-
-[2025-05-08 12:38:01] REQUEST TO Perplexity
-{
-  "operation": "processBookAnalysis",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "bookIdentifiers": "ISBN: 978-3-947857-27-2",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:38:01] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-947857-27-2. \nProvide real, factual ..."
-}
-
-[2025-05-08 12:38:02] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "f28fca49-7c30-40ae-96cc-ad9aaa41d610",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 567,
-    "completion_tokens": 145,
-    "total_tokens": 712,
-    "search_context_size": "low"
-  },
-  "citationCount": 0
-}
-
-[2025-05-08 12:38:02] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
-}
-
-[2025-05-08 12:38:02] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-947857-27-2",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:38:27] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Die Verlorenen Spuren"
-}
-
-[2025-05-08 12:40:41] REQUEST TO Perplexity
-{
-  "operation": "processBookAnalysis",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:40:41] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find detailed information about the following book: ISBN: 978-3-95916-132-9. \nProvide real, factual ..."
-}
-
-[2025-05-08 12:40:43] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "82ca704b-3dde-4c74-9590-abb64082feaf",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 567,
-    "completion_tokens": 145,
-    "total_tokens": 712,
-    "search_context_size": "low"
-  },
-  "citationCount": 0
-}
-
-[2025-05-08 12:40:43] ERROR FROM Perplexity
-{
-  "error": "Missing essential fields in Perplexity response",
-  "content": "{\n  \"title\": null,\n  \"subtitle\": null,\n  \"author\": null,\n  \"publisher\": null,\n  \"publishedYear\": nul..."
-}
-
-[2025-05-08 12:40:43] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "bookIdentifiers": "ISBN: 978-3-95916-132-9",
-  "queryLanguage": "English",
-  "responseLanguage": "de"
-}
-
-[2025-05-08 12:41:09] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "bookTitle": "Die Geschichte der Bienen"
-}
-
-[2025-05-08 12:58:43] REQUEST TO Perplexity
+[2025-05-08 19:19:05] REQUEST TO Perplexity
 {
   "operation": "getBookByISBN",
-  "isbn": "978-3-95916-132-9",
+  "isbn": "978-3-98702-122-0",
   "language": "de",
-  "lookupId": "perplexity_isbn_1746709123934_ud0eq"
+  "lookupId": "perplexity_isbn_1746731945672_tpf66"
 }
 
-[2025-05-08 12:58:43] REQUEST TO Perplexity
+[2025-05-08 19:19:05] REQUEST TO Perplexity
 {
   "operation": "chat/completions",
   "model": "llama-3.1-sonar-small-128k-online",
   "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-132-9..."
+  "promptPreview": "Find complete information for book with ISBN: 978-3-98702-122-0..."
 }
 
-[2025-05-08 12:58:47] RESPONSE FROM Perplexity
+[2025-05-08 19:19:07] RESPONSE FROM Perplexity
 {
   "status": 200,
-  "id": "dc542bba-3357-4220-8b14-8a2081484978",
+  "id": "921b8ca1-856c-44fe-8bfc-e879f53af4ee",
   "model": "llama-3.1-sonar-small-128k-online",
   "usage": {
-    "prompt_tokens": 511,
-    "completion_tokens": 327,
-    "total_tokens": 838,
+    "prompt_tokens": 647,
+    "completion_tokens": 31,
+    "total_tokens": 678,
     "search_context_size": "low"
   },
-  "citationCount": 5
+  "citationCount": 1
 }
 
-[2025-05-08 12:58:47] RESPONSE FROM Perplexity
+[2025-05-08 19:19:07] ERROR FROM Perplexity
 {
-  "operation": "getBookByISBN",
+  "error": "Missing essential fields in Perplexity response",
+  "isbn": "978-3-98702-122-0",
+  "lookupId": "perplexity_isbn_1746731945672_tpf66"
+}
+
+[2025-05-08 19:19:07] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-98702-122-0",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 19:19:22] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
   "status": "success",
-  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "author": "Sorg, Marion",
-  "isbn": "978-3-95916-132-9",
-  "lookupId": "perplexity_isbn_1746709123934_ud0eq"
+  "bookTitle": "Das Geheimnis der verlorenen Stadt"
 }
 
-[2025-05-08 13:01:56] REQUEST TO Perplexity
+[2025-05-09 04:16:03] REQUEST TO Perplexity
 {
   "operation": "getBookByISBN",
-  "isbn": "978-3-95916-132-9",
-  "language": "German",
-  "lookupId": "perplexity_isbn_1746709316052_3sxbs"
-}
-
-[2025-05-08 13:01:56] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-132-9..."
-}
-
-[2025-05-08 13:01:59] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "3321c365-1bf8-4c70-a85c-887e97d0a3c9",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 511,
-    "completion_tokens": 308,
-    "total_tokens": 819,
-    "search_context_size": "low"
-  },
-  "citationCount": 5
-}
-
-[2025-05-08 13:01:59] RESPONSE FROM Perplexity
-{
-  "operation": "getBookByISBN",
-  "status": "success",
-  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "author": "Marion Sorg",
-  "isbn": "978-3-95916-132-9",
-  "lookupId": "perplexity_isbn_1746709316052_3sxbs"
-}
-
-[2025-05-08 13:02:01] REQUEST TO Perplexity
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-95916-135-0",
+  "isbn": "978-3-406-83030-3",
   "language": "de",
-  "lookupId": "perplexity_isbn_1746709321361_ntog0"
+  "lookupId": "perplexity_isbn_1746764163510_xz4u4"
 }
 
-[2025-05-08 13:02:01] REQUEST TO Perplexity
+[2025-05-09 04:16:03] REQUEST TO Perplexity
 {
   "operation": "chat/completions",
   "model": "llama-3.1-sonar-small-128k-online",
   "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-135-0..."
+  "promptPreview": "Find complete information for book with ISBN: 978-3-406-83030-3..."
 }
 
-[2025-05-08 13:02:03] RESPONSE FROM Perplexity
+[2025-05-09 04:16:04] RESPONSE FROM Perplexity
 {
   "status": 200,
-  "id": "537778b2-6ac1-4ae2-99dd-721025c5bc10",
+  "id": "22e4cc88-b347-4c7d-b3cb-a971027cdbc9",
   "model": "llama-3.1-sonar-small-128k-online",
   "usage": {
-    "prompt_tokens": 511,
-    "completion_tokens": 330,
-    "total_tokens": 841,
+    "prompt_tokens": 647,
+    "completion_tokens": 31,
+    "total_tokens": 678,
     "search_context_size": "low"
   },
-  "citationCount": 5
+  "citationCount": 4
 }
 
-[2025-05-08 13:02:03] RESPONSE FROM Perplexity
+[2025-05-09 04:16:04] ERROR FROM Perplexity
 {
-  "operation": "getBookByISBN",
+  "error": "Missing essential fields in Perplexity response",
+  "isbn": "978-3-406-83030-3",
+  "lookupId": "perplexity_isbn_1746764163510_xz4u4"
+}
+
+[2025-05-09 04:16:04] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-406-83030-3",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-09 04:16:17] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
   "status": "success",
-  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "author": "Birgit Hedemann",
-  "isbn": "978-3-95916-135-0",
-  "lookupId": "perplexity_isbn_1746709321361_ntog0"
-}
-
-[2025-05-08 13:03:19] REQUEST TO Perplexity
-{
-  "operation": "getBookByISBN",
-  "isbn": "978-3-95916-135-0",
-  "language": "German",
-  "lookupId": "perplexity_isbn_1746709399097_0aect"
-}
-
-[2025-05-08 13:03:19] REQUEST TO Perplexity
-{
-  "operation": "chat/completions",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "messageCount": 2,
-  "promptPreview": "Find complete information for book with ISBN: 978-3-95916-135-0..."
-}
-
-[2025-05-08 13:03:21] RESPONSE FROM Perplexity
-{
-  "status": 200,
-  "id": "d0b97a8b-77a1-48bf-9b50-6df5e8b51be5",
-  "model": "llama-3.1-sonar-small-128k-online",
-  "usage": {
-    "prompt_tokens": 511,
-    "completion_tokens": 340,
-    "total_tokens": 851,
-    "search_context_size": "low"
-  },
-  "citationCount": 5
-}
-
-[2025-05-08 13:03:21] RESPONSE FROM Perplexity
-{
-  "operation": "getBookByISBN",
-  "status": "success",
-  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "author": "Birgit Hedemann",
-  "isbn": "978-3-95916-135-0",
-  "lookupId": "perplexity_isbn_1746709399097_0aect"
+  "bookTitle": "Die Gesellschaft der Singularitäten: Zum Strukturwandel der Moderne"
 }

@@ -1,5 +1,5 @@
 import { Book, BookAnalysisRequest } from "@shared/schema";
-import { getBookByISBN } from "./perplexity";
+import { getCompleteBookByISBN } from "./googleBooks";
 import { apiLogger } from "../utils/logger";
 import { processBookAnalysis as processBookAnalysisWithOpenAI } from "./openai";
 
@@ -29,18 +29,18 @@ export async function processBookAnalysis(
     console.log(`[${analysisId}] ISBN found: ${isbn} - Using clean ISBN-only lookup`);
     
     try {
-      // First attempt: use Perplexity with the ISBN only
-      console.log(`[${analysisId}] Attempting to process book with Perplexity using ISBN only`);
-      const perplexityResult = await getBookByISBN(isbn, analysisRequest.language || "de");
+      // First attempt: use Google Books API with the ISBN
+      console.log(`[${analysisId}] Attempting to process book with Google Books API using ISBN only`);
+      const googleBooksResult = await getCompleteBookByISBN(isbn, analysisRequest.language || "de");
       
-      // If Perplexity returned valid data, use it
-      if (perplexityResult && perplexityResult.title && perplexityResult.author) {
-        console.log(`[${analysisId}] Successfully processed book with Perplexity: "${perplexityResult.title}" by ${perplexityResult.author}`);
-        return perplexityResult;
+      // If Google Books API returned valid data, use it
+      if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+        console.log(`[${analysisId}] Successfully processed book with Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+        return googleBooksResult;
       }
       
-      // If Perplexity failed or returned incomplete data, fall back to OpenAI
-      console.log(`[${analysisId}] Perplexity didn't return valid data, falling back to OpenAI with ISBN only`);
+      // If Google Books API failed or returned incomplete data, fall back to OpenAI
+      console.log(`[${analysisId}] Google Books didn't return valid data, falling back to OpenAI with ISBN only`);
       
       // Create a clean request for OpenAI with only the ISBN
       const openAiRequest: BookAnalysisRequest = {
@@ -75,8 +75,8 @@ export async function processBookAnalysis(
         return openAIResult;
       }
       
-      // If both Perplexity and OpenAI failed, return minimal data with just the ISBN
-      console.log(`[${analysisId}] Both Perplexity and OpenAI failed to return valid data for ISBN: ${isbn}`);
+      // If both Google Books and OpenAI failed, return minimal data with just the ISBN
+      console.log(`[${analysisId}] Both Google Books and OpenAI failed to return valid data for ISBN: ${isbn}`);
       return {
         isbn,
         title: null as unknown as string,
@@ -152,18 +152,18 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
   console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
   
   try {
-    // First attempt: use Perplexity with the ISBN only
-    console.log(`[${lookupId}] Attempting to get book with Perplexity using ISBN only`);
-    const perplexityResult = await getBookByISBN(isbn, language);
+    // First attempt: use Google Books API with the ISBN
+    console.log(`[${lookupId}] Attempting to get book with Google Books API using ISBN`);
+    const googleBooksResult = await getCompleteBookByISBN(isbn, language);
     
-    // If Perplexity returned valid data, use it
-    if (perplexityResult && perplexityResult.title && perplexityResult.author) {
-      console.log(`[${lookupId}] Successfully retrieved book with Perplexity: "${perplexityResult.title}" by ${perplexityResult.author}`);
-      return perplexityResult;
+    // If Google Books API returned valid data, use it
+    if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+      console.log(`[${lookupId}] Successfully retrieved book with Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+      return googleBooksResult;
     }
     
-    // If Perplexity failed or returned incomplete data, fall back to OpenAI
-    console.log(`[${lookupId}] Perplexity didn't return valid data, falling back to OpenAI with ISBN only`);
+    // If Google Books API failed or returned incomplete data, fall back to OpenAI
+    console.log(`[${lookupId}] Google Books didn't return valid data, falling back to OpenAI with ISBN only`);
     
     // Create a clean request for OpenAI with only the ISBN
     const request: BookAnalysisRequest = {
@@ -198,8 +198,8 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       return openAIResult;
     }
     
-    // If both Perplexity and OpenAI failed, return minimal data with just the ISBN
-    console.log(`[${lookupId}] Both Perplexity and OpenAI failed to return valid data for ISBN: ${isbn}`);
+    // If both Google Books and OpenAI failed, return minimal data with just the ISBN
+    console.log(`[${lookupId}] Both Google Books and OpenAI failed to return valid data for ISBN: ${isbn}`);
     return {
       isbn,
       title: null as unknown as string,
