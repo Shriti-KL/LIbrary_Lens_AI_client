@@ -139,7 +139,15 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
   }
 }
 
-export async function getBookByISBN(isbn: string): Promise<any | null> {
+/**
+ * Get complete book information from Google Books API by ISBN
+ * This function formats the response to match the Book schema
+ */
+export async function getCompleteBookByISBN(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
+  // Create a unique ID for this lookup for logging
+  const lookupId = `googlebooks_isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using Google Books API`);
+  
   try {
     // Store the original ISBN format
     const originalISBN = isbn;
@@ -151,82 +159,32 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
     apiLogger.logRequest("Google Books API", {
       endpoint: "volumes",
       method: "GET",
-      operation: "getBookByISBN",
+      operation: "getCompleteBookByISBN",
       params: {
         isbn: originalISBN,
         cleanedISBN
       }
     });
     
-    // Search using the cleaned ISBN
+    // Search using the cleaned ISBN - directly call searchBooks with the ISBN
     const books = await searchBooks({ query: `isbn:${cleanedISBN}` });
     
-    if (books.length > 0) {
-      // Use the original ISBN format in the result
-      const result = books[0];
-      if (result.volumeInfo && result.volumeInfo.industryIdentifiers) {
-        const isbn13 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_13");
-        const isbn10 = result.volumeInfo.industryIdentifiers.find((id: any) => id.type === "ISBN_10");
-        
-        if (isbn13 || isbn10) {
-          // Check which ISBN type matches our input (regardless of format)
-          if (cleanedISBN.length === 13 && isbn13) {
-            // Use the original format instead of the API's format
-            isbn13.originalFormat = originalISBN;
-          } else if (cleanedISBN.length === 10 && isbn10) {
-            // Use the original format instead of the API's format
-            isbn10.originalFormat = originalISBN;
-          }
-        }
-      }
-      
-      // Log the result
+    // Return null if no books were found
+    if (!books || books.length === 0) {
+      console.log(`[${lookupId}] No book found for ISBN: ${isbn}`);
       apiLogger.logResponse("Google Books API", {
-        operation: "getBookByISBN",
+        operation: "getCompleteBookByISBN",
         isbn: originalISBN,
-        found: true,
-        title: result.volumeInfo?.title,
-        author: result.volumeInfo?.authors?.[0]
+        found: false
       });
-      
-      return result;
+      return null;
     }
     
-    // Log that no book was found
-    apiLogger.logResponse("Google Books API", {
-      operation: "getBookByISBN",
-      isbn: originalISBN,
-      found: false
-    });
+    const bookData = books[0];
     
-    return null;
-  } catch (error: any) {
-    console.error("Error fetching book by ISBN:", error);
-    apiLogger.logError("Google Books API", {
-      operation: "getBookByISBN",
-      isbn,
-      error: error.message || String(error)
-    });
-    throw new Error(`Failed to fetch book by ISBN: ${error.message || String(error)}`);
-  }
-}
-
-/**
- * Get complete book information from Google Books API by ISBN
- * This function formats the response to match the Book schema
- */
-export async function getCompleteBookByISBN(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
-  // Create a unique ID for this lookup for logging
-  const lookupId = `googlebooks_isbn_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using Google Books API`);
-  
-  try {
-    // Get the raw book data from Google Books
-    const bookData = await getBookByISBN(isbn);
-    
-    // Return null if no book was found
+    // Return null if no book was found or it has no volumeInfo
     if (!bookData || !bookData.volumeInfo) {
-      console.log(`[${lookupId}] No book found for ISBN: ${isbn}`);
+      console.log(`[${lookupId}] No valid book data found for ISBN: ${isbn}`);
       return null;
     }
     
@@ -343,6 +301,43 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       message: error?.message || String(error),
       lookupId,
     });
+    return null;
+  }
+}
+
+// Keeping a compatibility function that forwards to getCompleteBookByISBN
+// This allows for a smooth transition in case any code still references this function
+export async function getBookByISBN(isbn: string): Promise<any | null> {
+  console.log(`Deprecated getBookByISBN called, use getCompleteBookByISBN instead for ISBN: ${isbn}`);
+  
+  try {
+    const result = await getCompleteBookByISBN(isbn);
+    // Return null if not found
+    if (!result) return null;
+    
+    // Format as a raw Google Books API response for backward compatibility
+    return {
+      kind: "books#volume",
+      volumeInfo: {
+        title: result.title,
+        subtitle: result.subtitle,
+        authors: result.author ? [result.author] : [],
+        publisher: result.publisher,
+        publishedDate: result.publishedYear ? result.publishedYear.toString() : "",
+        description: result.summary,
+        industryIdentifiers: [
+          { type: "ISBN_13", identifier: result.isbn }
+        ],
+        pageCount: result.pageCount,
+        categories: result.genres,
+        language: result.language,
+        imageLinks: result.coverImageUrl ? {
+          thumbnail: result.coverImageUrl
+        } : undefined
+      }
+    };
+  } catch (error) {
+    console.error("Error in compatibility function getBookByISBN:", error);
     return null;
   }
 }
