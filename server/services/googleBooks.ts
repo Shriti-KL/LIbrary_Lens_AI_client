@@ -481,13 +481,16 @@ export async function getBookByISBN(isbn: string): Promise<any | null> {
 
 export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
   try {
+    // Use the book's language or fall back to German
+    const language = book.language || "de";
+    
     // Start with author search if available
     if (book.author) {
       const authorBooks = await searchBooks({
         query: `inauthor:${book.author}`,
         author: book.author,
         maxResults: 4
-      });
+      }, language);
       
       // If we have enough books by the same author, return them
       if (authorBooks.length >= 3) {
@@ -503,7 +506,7 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
       const genreBooks = await searchBooks({
         query: genreQuery,
         maxResults: 4
-      });
+      }, language);
       
       return genreBooks.slice(0, 4);
     }
@@ -513,7 +516,7 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
       const titleBooks = await searchBooks({
         query: book.title,
         maxResults: 4
-      });
+      }, language);
       
       return titleBooks
         .filter(b => b.volumeInfo?.title !== book.title) // Filter out the original book
@@ -608,7 +611,7 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>, preferredLan
   if (bookInfo.title && bookInfo.author) {
     try {
       const exactQuery = `"${bookInfo.title}" "author:${bookInfo.author}"`;
-      const exactResults = await searchBooks({ query: exactQuery });
+      const exactResults = await searchBooks({ query: exactQuery }, preferredLanguage);
       if (exactResults.length > 0) {
         console.log("Found results using exact title and author search strategy");
         allResults = [...allResults, ...exactResults];
@@ -625,7 +628,7 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>, preferredLan
   if (bookInfo.title && bookInfo.author) {
     try {
       const standardQuery = `intitle:${bookInfo.title} inauthor:${bookInfo.author}`;
-      const standardResults = await searchBooks({ query: standardQuery });
+      const standardResults = await searchBooks({ query: standardQuery }, preferredLanguage);
       if (standardResults.length > 0) {
         console.log("Found results using standard title and author search strategy");
         allResults = [...allResults, ...standardResults];
@@ -642,7 +645,7 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>, preferredLan
   if (bookInfo.title) {
     try {
       const titleQuery = `intitle:${bookInfo.title}`;
-      const titleResults = await searchBooks({ query: titleQuery, maxResults: 5 });
+      const titleResults = await searchBooks({ query: titleQuery, maxResults: 5 }, preferredLanguage);
       if (titleResults.length > 0) {
         console.log("Found results using title-only search strategy");
         allResults = [...allResults, ...titleResults];
@@ -656,7 +659,7 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>, preferredLan
   if (bookInfo.author && allResults.length < 2) {
     try {
       const authorQuery = `inauthor:${bookInfo.author}`;
-      const authorResults = await searchBooks({ query: authorQuery, maxResults: 3 });
+      const authorResults = await searchBooks({ query: authorQuery, maxResults: 3 }, preferredLanguage);
       if (authorResults.length > 0) {
         console.log("Found results using author-only search strategy");
         allResults = [...allResults, ...authorResults];
@@ -693,7 +696,8 @@ export async function enrichBookMetadata(bookInfo: Partial<Book>): Promise<Parti
     });
     
     // Search using multiple strategies
-    const searchResults = await tryMultipleSearchStrategies(bookInfo);
+    const language = bookInfo.language || "de";
+    const searchResults = await tryMultipleSearchStrategies(bookInfo, language);
     
     if (searchResults.length === 0) {
       console.log(`No Google Books results found for book: "${bookInfo.title}" by "${bookInfo.author}"`);
