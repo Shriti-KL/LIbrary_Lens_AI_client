@@ -3,16 +3,13 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Book } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/hooks/use-language";
 
 // Storage keys
-const STORAGE_KEY_RESULT = 'currentAnalysisData';
+const STORAGE_KEY_RESULT = 'book_analysis_result';
 const STORAGE_KEY_TIMESTAMP = 'book_analysis_timestamp';
-const STORAGE_KEY_LANGUAGE = 'book_analysis_language';
 
 export function useBookAnalysis() {
   const { toast } = useToast();
-  const { language } = useLanguage();
 
   // Initialize state for analysis steps
   const [analysisSteps, setAnalysisSteps] = useState({
@@ -27,14 +24,8 @@ export function useBookAnalysis() {
   const saveAnalysisToStorage = (data: any) => {
     try {
       if (data) {
-        // Save with current language to track which language the analysis was performed in
-        const dataWithLanguage = {
-          ...data,
-          analyzerLanguage: language
-        };
-        localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(dataWithLanguage));
+        localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(data));
         localStorage.setItem(STORAGE_KEY_TIMESTAMP, Date.now().toString());
-        localStorage.setItem(STORAGE_KEY_LANGUAGE, language);
       }
     } catch (err) {
       console.error('Error saving analysis to localStorage:', err);
@@ -44,24 +35,7 @@ export function useBookAnalysis() {
   const getAnalysisFromStorage = () => {
     try {
       const savedAnalysis = localStorage.getItem(STORAGE_KEY_RESULT);
-      const savedLanguage = localStorage.getItem(STORAGE_KEY_LANGUAGE);
-      
-      if (savedAnalysis) {
-        const data = JSON.parse(savedAnalysis);
-        
-        // If analysis was done in a different language than current UI language,
-        // mark it for regeneration
-        if (savedLanguage && savedLanguage !== language) {
-          console.log(`Language changed from ${savedLanguage} to ${language}, queuing retranslation of content`);
-          return {
-            ...data,
-            needsRegeneration: true
-          };
-        }
-        
-        return data;
-      }
-      return null;
+      return savedAnalysis ? JSON.parse(savedAnalysis) : null;
     } catch (err) {
       console.error('Error retrieving analysis from localStorage:', err);
       return null;
@@ -72,7 +46,6 @@ export function useBookAnalysis() {
     try {
       localStorage.removeItem(STORAGE_KEY_RESULT);
       localStorage.removeItem(STORAGE_KEY_TIMESTAMP);
-      localStorage.removeItem(STORAGE_KEY_LANGUAGE);
     } catch (err) {
       console.error('Error clearing analysis from localStorage:', err);
     }
@@ -102,17 +75,13 @@ export function useBookAnalysis() {
       // Add options to form data
       data.formData.append("options", JSON.stringify(data.options));
       
-      // Add language to form data for localized AI generation
-      data.formData.append("language", language);
-      
       // Check if we have a title and author as a debugging log
       const hasTitle = data.formData.get('title');
       const hasAuthor = data.formData.get('author');
       console.log("Analyzing book with data:", {
         hasTitle: !!hasTitle,
         hasAuthor: !!hasAuthor,
-        hasCoverImage: data.formData.has('coverImage'),
-        language: language
+        hasCoverImage: data.formData.has('coverImage')
       });
       
       // Start request - first update metadata progress
@@ -189,13 +158,7 @@ export function useBookAnalysis() {
   // Save book mutation
   const saveBookMutation = useMutation({
     mutationFn: async (book: Partial<Book>) => {
-      // Add a flag to indicate that this book has already been analyzed
-      // This prevents redundant Google Books API calls during archiving
-      const bookWithFlag = {
-        ...book,
-        analyzed: true // Flag to indicate this has already been analyzed
-      };
-      const response = await apiRequest("POST", "/api/books", bookWithFlag);
+      const response = await apiRequest("POST", "/api/books", book);
       return await response.json();
     },
     onSuccess: () => {

@@ -45,12 +45,6 @@ const translations: Translations = {
     publisher: "Publisher",
     published: "Published",
     pages: "Pages",
-    edition: "Edition",
-    dimensions: "Dimensions",
-    binding: "Binding",
-    location: "Publication Location",
-    contributors: "Contributors",
-    illustrator: "Illustrator",
     genres: "Genres",
     themes: "Themes",
     readingLevel: "Reading Level",
@@ -98,17 +92,6 @@ const translations: Translations = {
     lexileMeasure: "Lexile Measure",
     bookNotFound: "Book not found",
     areYouSure: "Are you sure?",
-    selectAll: "Select All",
-    deselectAll: "Deselect All",
-    booksSelected: "books selected",
-    exportSelected: "Export Selected",
-    exportSelectedTooltip: "Export selected books to a single PDF catalog",
-    noBookSelected: "No books selected",
-    pleaseSelectBooks: "Please select at least one book to export",
-    exportSuccess: "Export successful",
-    booksExportedToPDF: "Selected books have been exported to PDF",
-    exportFailed: "Export failed",
-    errorGeneratingPDF: "An error occurred while generating the PDF",
     deleteAllBooksWarning: "This action will permanently delete ALL books from your library. This cannot be undone.",
     // Authentication related translations
     login: "Login",
@@ -268,12 +251,6 @@ const translations: Translations = {
     publisher: "Verlag",
     published: "Veröffentlicht",
     pages: "Seiten",
-    edition: "Ausgabe",
-    dimensions: "Abmessungen",
-    binding: "Einband",
-    location: "Erscheinungsort",
-    contributors: "Mitwirkende",
-    illustrator: "Illustrator",
     genres: "Genres",
     readingLevel: "Leseniveau",
     aiSummary: "KI-generierte Zusammenfassung",
@@ -319,17 +296,6 @@ const translations: Translations = {
     lexileMeasure: "Lexile-Maß",
     bookNotFound: "Buch nicht gefunden",
     areYouSure: "Sind Sie sicher?",
-    selectAll: "Alle auswählen",
-    deselectAll: "Alle abwählen",
-    booksSelected: "Bücher ausgewählt",
-    exportSelected: "Ausgewählte exportieren",
-    exportSelectedTooltip: "Ausgewählte Bücher in einem einzigen PDF-Katalog exportieren",
-    noBookSelected: "Keine Bücher ausgewählt",
-    pleaseSelectBooks: "Bitte wählen Sie mindestens ein Buch zum Exportieren aus",
-    exportSuccess: "Export erfolgreich",
-    booksExportedToPDF: "Ausgewählte Bücher wurden als PDF exportiert",
-    exportFailed: "Export fehlgeschlagen",
-    errorGeneratingPDF: "Beim Generieren des PDFs ist ein Fehler aufgetreten",
     deleteAllBooksWarning: "Diese Aktion löscht ALLE Bücher dauerhaft aus Ihrer Bibliothek. Dies kann nicht rückgängig gemacht werden.",
     generalSettingsDescription: "Verwalten Sie Ihre Anwendungseinstellungen und Darstellung",
     apiSettingsDescription: "API-Schlüssel und externe Dienstverbindungen konfigurieren",
@@ -401,44 +367,18 @@ const translations: Translations = {
   }
 };
 
-// Event dispatcher for language changes
-const languageChangeEvent = new CustomEvent('app:languageChanged');
-
 export function useLanguage() {
   const [language, setLanguage] = useState<Language>("de");
   
   // Function to change the current language
   const changeLanguage = (lang: Language) => {
-    if (lang === language) return; // No change necessary
-    
-    // Update state and localStorage
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
-    
-    // Dispatch a custom event that components can listen for
-    window.dispatchEvent(languageChangeEvent);
-    
-    // Trigger a reload of any active analysis content
-    // This is needed to regenerate AI content in the new language
-    const analysisData = localStorage.getItem("currentAnalysisData");
-    if (analysisData) {
-      try {
-        const data = JSON.parse(analysisData);
-        // Add language to force regeneration in the new language
-        localStorage.setItem("currentAnalysisData", JSON.stringify({
-          ...data,
-          language: lang,
-          needsRegeneration: true
-        }));
-      } catch (e) {
-        console.error("Error parsing analysis data for language switch:", e);
-      }
-    }
   };
   
   // Translation function
   const t = (key: string): string => {
-    return translations[language][key] || translations["de"][key] || key;
+    return translations[language][key] || key;
   };
   
   // Load saved language preference on mount

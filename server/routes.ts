@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-// Import only the types, all service functions will be dynamically imported
+import { processBookAnalysis, analyzeBookCover } from "./services/openai";
+import { enrichBookMetadata, searchBooks, getBookByISBN, searchSimilarBooks } from "./services/googleBooks";
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -55,17 +56,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isUserEntry = true; // Treat as manual entry to ensure new analysis
         }
         
-        // Get language from body (default to German)
-        // Handle case where language might come as an array from form data
-        let language = bodyData.language || "de";
-        if (Array.isArray(language)) {
-          language = language[0]; // Take first element if it's an array
-        }
-        console.log(`[${requestId}] Analysis requested in language: ${language}`);
-        
         bookInfo = {
           ...bodyData,
-          language: language, // Ensure language is a string
           options: typeof bodyData.options === "string" ? JSON.parse(bodyData.options) : bodyData.options
         };
       }
@@ -86,8 +78,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
-          // Import the analyzeBookCover function from OpenAI service
-          const { analyzeBookCover } = await import("./services/openai");
           const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
           // Use the analysis results for fields that weren't provided
@@ -131,29 +121,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Process book analysis with OpenAI
-      console.log(`[${requestId}] Processing book analysis with OpenAI`);
-      // Import the processBookAnalysis function from bookAnalysis service
-      const { processBookAnalysis } = await import("./services/bookAnalysis");
-      const analysisResult = await processBookAnalysis(validatedData);
+      // Always enrich book metadata from Google Books API to get proper spelling and capitalization
+      console.log(`[${requestId}] Enriching book metadata with Google Books API`);
+      let enrichedBookInfo = await enrichBookMetadata(validatedData);
       
-      // Log bibliographic data in detail before sending response
-      console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
-      console.log(`- Title: "${analysisResult.title}"`);
-      console.log(`- Author: "${analysisResult.author}"`);
-      console.log(`- Page Count: ${analysisResult.pageCount} (type: ${typeof analysisResult.pageCount})`);
-      console.log(`- Dimensions: ${analysisResult.dimensions}`);
-      console.log(`- Binding: ${analysisResult.binding}`);
-      console.log(`- Edition: ${analysisResult.edition}`);
-      console.log(`- Location: ${analysisResult.location}`);
-      console.log(`- Publisher: ${analysisResult.publisher}`);
+      // Log what got corrected from Google Books data
+      if (enrichedBookInfo.title !== validatedData.title) {
+        console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
+      }
+      
+      if (enrichedBookInfo.author !== validatedData.author) {
+        console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
+      }
+      
+      // For manual entries without a cover image, fetch from Google Books if we found a match
+      if (!req.file && enrichedBookInfo.coverImageUrl) {
+        console.log(`[${requestId}] Using cover image from Google Books: ${enrichedBookInfo.coverImageUrl}`);
+        
+        try {
+          // Fetch the cover image from Google Books API
+          const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
+          
+          if (imageResponse.ok) {
+            const imageBuffer = await imageResponse.arrayBuffer();
+            const base64Image = Buffer.from(imageBuffer).toString('base64');
+            
+            // Determine image type from URL
+            const imageType = enrichedBookInfo.coverImageUrl.endsWith('.jpg') || 
+                             enrichedBookInfo.coverImageUrl.endsWith('.jpeg') 
+                             ? 'image/jpeg' : 'image/png';
+            
+            // Add the image to the book info
+            enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
+            console.log(`[${requestId}] Successfully fetched cover image from Google Books`);
+          }
+        } catch (error) {
+          console.error(`[${requestId}] Error fetching cover image from Google Books:`, error);
+        }
+      }
+      
+      // Process book analysis with OpenAI
+      console.log(`[${requestId}] Processing full book analysis with OpenAI`);
+      const analysisResult = await processBookAnalysis(enrichedBookInfo);
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Book analysis error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error analyzing book: ${errorMessage}` });
+      res.status(500).json({ message: `Error analyzing book: ${error.message}` });
     }
   });
 
@@ -165,9 +180,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
       const books = await storage.getBooks(userId);
       res.status(200).json(books);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error fetching books: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching books: ${error.message}` });
     }
   });
   
@@ -177,9 +191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const books = await storage.getRecentBooks(limit);
       res.status(200).json(books);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error fetching recent books: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching recent books: ${error.message}` });
     }
   });
   
@@ -193,9 +206,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const books = await storage.searchBooks(query);
       res.status(200).json(books);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error searching books: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error searching books: ${error.message}` });
     }
   });
   
@@ -210,9 +222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(200).json(book);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error fetching book: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching book: ${error.message}` });
     }
   });
   
@@ -220,87 +231,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/books", async (req: Request, res: Response) => {
     try {
       // Get the raw book data from the request
-      let bookData: InsertBook = req.body;
+      const bookData: InsertBook = req.body;
       
-      // Validate required fields, as the database has NOT NULL constraints
-      if (!bookData.title || !bookData.author) {
-        return res.status(400).json({ 
-          message: "Title and author are required fields",
-          missingFields: {
-            title: !bookData.title,
-            author: !bookData.author
-          }
-        });
-      }
-      
-      // Initialize enrichedData with bookData
+      // Always enrich with Google Books API to ensure proper spelling and capitalization
       let enrichedData = bookData;
       
-      // Check if this is coming from the analysis page using safer property access
-      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && (bookData as any).analyzed === true;
-      
-      // Only enrich if it's NOT from the analysis page or hasn't been analyzed already
-      if ((!isFromAnalysis) && (bookData.title || bookData.isbn)) {
+      // Only attempt to enrich if we have at least a title or ISBN
+      if (bookData.title || bookData.isbn) {
         try {
-          console.log(`Book not from analysis page, enriching metadata`);
-          
-          // Import the enrichBookMetadata function from bookAnalysis
-          const { enrichBookMetadata } = await import("./services/bookAnalysis");
-          
-          // Mark as a user entry to prioritize user-entered data
+          // Mark as a user entry to prioritize Google Books data
           const tempData = { ...bookData, isUserEntry: true };
           enrichedData = await enrichBookMetadata(tempData);
           
           // Log what was corrected
-          if (enrichedData.title && bookData.title && enrichedData.title !== bookData.title) {
+          if (enrichedData.title !== bookData.title) {
             console.log(`Book creation: Title corrected from "${bookData.title}" to "${enrichedData.title}"`);
           }
           
-          if (enrichedData.author && bookData.author && enrichedData.author !== bookData.author) {
+          if (enrichedData.author !== bookData.author) {
             console.log(`Book creation: Author corrected from "${bookData.author}" to "${enrichedData.author}"`);
           }
         } catch (enrichError) {
           console.error("Error enriching book data before creation:", enrichError);
           // Continue with original data if enrichment fails
         }
-      } else if (isFromAnalysis) {
-        console.log(`Book already analyzed, skipping redundant enrichment`);
-      }
-      
-      // Ensure required fields are still present after enrichment
-      if (!enrichedData.title) {
-        enrichedData.title = bookData.title;
-      }
-      
-      if (!enrichedData.author) {
-        enrichedData.author = bookData.author;
-      }
-      
-      // Handle arrays that might be null
-      if (!enrichedData.genres) {
-        enrichedData.genres = [];
-      }
-      
-      if (!enrichedData.themes) {
-        enrichedData.themes = [];
-      }
-      
-      if (!enrichedData.similarBooks) {
-        enrichedData.similarBooks = [];
-      }
-      
-      // Handle metadata that might be null
-      if (!enrichedData.metadata) {
-        enrichedData.metadata = {};
       }
       
       // Create book with enriched data
       const newBook = await storage.createBook(enrichedData);
       
       res.status(201).json(newBook);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error creating book: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error creating book: ${error.message}` });
     }
   });
   
@@ -310,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const bookData: Partial<InsertBook> = req.body;
       
-      // If title or author is being updated, try to enrich with OpenAI
+      // If title or author is being updated, try to enrich with Google Books API
       if (bookData.title || bookData.author || bookData.isbn) {
         try {
           // Get current book data first to merge with updates
@@ -321,13 +283,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const fullBookData = {
               ...currentBook,
               ...bookData,
-              isUserEntry: true // Mark as user entry to prioritize OpenAI data
+              isUserEntry: true // Mark as user entry to prioritize Google data
             };
             
-            // Import the enrichBookMetadata function from bookAnalysis
-            const { enrichBookMetadata } = await import("./services/bookAnalysis");
-            
-            // Enrich with OpenAI
+            // Enrich with Google Books API
             const enrichedData = await enrichBookMetadata(fullBookData);
             
             // Log what was corrected
@@ -376,9 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(200).json(updatedBook);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error updating book: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error updating book: ${error.message}` });
     }
   });
   
@@ -393,9 +351,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(204).send();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error deleting book: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error deleting book: ${error.message}` });
     }
   });
   
@@ -427,19 +384,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Successfully deleted all books`,
         count: deletedCount
       });
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error when clearing books:", error);
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
       res.setHeader('Content-Type', 'application/json');
       return res.status(500).json({ 
         success: false, 
-        message: `Error clearing books: ${errorMessage}` 
+        message: `Error clearing books: ${error.message}` 
       });
     }
   });
 
-  // Batch processing endpoint - maintain all the original code but fix error handling
+  // Batch processing endpoint
   app.post("/api/books/batch", upload.array("coverImages", 10), async (req: Request, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -472,26 +428,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Step 1: Analyze cover using OpenAI Vision
             console.log("Step 1: Analyzing book cover with OpenAI Vision...");
-            
-            // Import the analyzeBookCover function from OpenAI service
-            const { analyzeBookCover } = await import("./services/openai");
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Process full analysis with OpenAI
-            console.log("Step 2: Processing complete book analysis...");
-            // Import the processBookAnalysis function from bookAnalysis service
-            const { processBookAnalysis } = await import("./services/bookAnalysis");
-            const analysisResult = await processBookAnalysis({
-              ...coverAnalysis,
-              // Ensure title and author are available
+            // Step 2: Enrich with Google Books data
+            console.log("Step 2: Enriching with Google Books data...");
+            const enrichedData = await enrichBookMetadata({
+              ...coverAnalysis, 
+              // Ensure title and author are available for Google Books search
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
+              // This is from cover analysis, not user input
+              isUserEntry: true
+            });
+            
+            // Log what got corrected from Google Books data
+            if (enrichedData.title !== coverAnalysis.title) {
+              console.log(`Title was corrected: "${coverAnalysis.title}" → "${enrichedData.title}"`);
+            }
+            
+            if (enrichedData.author !== coverAnalysis.author) {
+              console.log(`Author was corrected: "${coverAnalysis.author}" → "${enrichedData.author}"`);
+            }
+            
+            console.log("Data enrichment successful");
+            
+            // Step 3: Process full analysis
+            console.log("Step 3: Processing complete book analysis...");
+            const analysisResult = await processBookAnalysis({
+              ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
-              // This is from cover analysis, not user input
-              isUserEntry: true,
               options: {
                 summary: true,
                 genres: true,
@@ -509,9 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Ensure required fields are not undefined
               title: analysisResult.title || file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension if no title found
               author: analysisResult.author || "Unknown",
-              userId: req.user?.id || null,
-              // Ensure metadata field is not null
-              metadata: analysisResult.metadata || {}
+              userId: req.user?.id || null
             };
             
             const savedBook = await storage.createBook(bookData);
@@ -523,118 +489,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
               book: savedBook
             });
             processed.success++;
-          } catch (analysisError: unknown) {
+          } catch (analysisError) {
             console.error("Error in analysis process:", analysisError);
-            const errorMessage = analysisError instanceof Error ? analysisError.message : String(analysisError);
             results.push({
               filename: file.originalname,
               status: "error",
-              error: errorMessage
+              error: analysisError.message
             });
             processed.failed++;
           }
-        } catch (fileError: unknown) {
+        } catch (fileError) {
           console.error("Error processing file:", fileError);
-          const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
           results.push({
             filename: file.originalname || "unknown",
             status: "error",
-            error: errorMessage
+            error: fileError.message
           });
           processed.failed++;
         }
       }
       
       res.status(200).json({
+        message: `Processed ${processed.success} books successfully, ${processed.failed} failed`,
         processed,
         results
       });
-    } catch (error: unknown) {
-      console.error("Batch processing error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    } catch (error) {
+      console.error("Fatal error in batch processing:", error);
       res.status(500).json({ 
-        message: `Error processing batch: ${errorMessage}`,
-        error: errorMessage
+        message: `Error processing batch: ${error.message}`,
+        error: error.stack
       });
     }
   });
 
-  // Google Books API Lookup
-  app.get("/api/books/lookup", async (req: Request, res: Response) => {
+  // Google Books API integration endpoints
+  
+  // GET /api/googlebooks/search - Search books via Google Books API
+  app.get("/api/googlebooks/search", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
-      if (!query) {
-        return res.status(400).json({ message: "Search query is required" });
+      const title = req.query.title as string;
+      const author = req.query.author as string;
+      const isbn = req.query.isbn as string;
+      const maxResults = req.query.maxResults ? parseInt(req.query.maxResults as string) : 10;
+      
+      if (!query && !title && !author && !isbn) {
+        return res.status(400).json({ message: "At least one search parameter is required" });
       }
       
-      console.log(`Performing Google Books search: "${query}"`);
+      const searchParams = {
+        query: query || "",
+        title,
+        author,
+        isbn,
+        maxResults
+      };
       
-      // Import the searchBooks function from googleBooks service
-      const { searchBooks } = await import("./services/googleBooks");
-      const searchResults = await searchBooks({
-        query,
-        maxResults: 10
-      });
-      
-      res.status(200).json(searchResults);
-    } catch (error: unknown) {
-      console.error("Google Books search error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error searching Google Books: ${errorMessage}` });
+      const results = await searchBooks(searchParams);
+      res.status(200).json(results);
+    } catch (error) {
+      res.status(500).json({ message: `Error searching Google Books: ${error.message}` });
     }
   });
   
-  // Get book by ISBN from Google Books API
-  app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
+  // GET /api/googlebooks/isbn/:isbn - Get book by ISBN
+  app.get("/api/googlebooks/isbn/:isbn", async (req: Request, res: Response) => {
     try {
-      const isbn = req.params.isbn.replace(/-/g, ""); // Remove hyphens
+      const isbn = req.params.isbn;
+      
       if (!isbn) {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
-      // Get the language from the query parameter (default to German)
-      const language = req.query.language as string || "de";
+      const book = await getBookByISBN(isbn);
       
-      console.log(`Looking up book with ISBN: ${isbn} in language: ${language}`);
-      
-      // Import the getCompleteBookByISBN function from googleBooks service
-      const { getCompleteBookByISBN } = await import("./services/googleBooks");
-      const bookInfo = await getCompleteBookByISBN(isbn, language);
-      
-      if (!bookInfo) {
-        return res.status(404).json({ message: "Book not found for ISBN" });
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
       }
       
-      console.log(`Book found for ISBN ${isbn}: "${bookInfo.title}"`);
-      res.status(200).json(bookInfo);
-    } catch (error: unknown) {
-      console.error("ISBN lookup error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error looking up ISBN: ${errorMessage}` });
+      res.status(200).json(book);
+    } catch (error) {
+      res.status(500).json({ message: `Error fetching book by ISBN: ${error.message}` });
     }
   });
   
-  // Get similar books based on a book's metadata
-  app.post("/api/books/similar", async (req: Request, res: Response) => {
+  // POST /api/googlebooks/similar - Get similar books
+  app.post("/api/googlebooks/similar", async (req: Request, res: Response) => {
     try {
-      const bookData: Partial<Book> = req.body;
-      if (!bookData || (!bookData.title && !bookData.author && !bookData.genres)) {
-        return res.status(400).json({ 
-          message: "Insufficient book data provided. Need at least title, author, or genres."
-        });
+      const bookInfo = req.body;
+      
+      if (!bookInfo || (!bookInfo.title && !bookInfo.author && !bookInfo.genres)) {
+        return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
-      console.log(`Finding similar books for: "${bookData.title}" by ${bookData.author}`);
-      
-      // Import the getSimilarBooks function from bookAnalysis service
-      const { getSimilarBooks } = await import("./services/bookAnalysis");
-      const similarBooks = await getSimilarBooks(bookData);
-      
+      const similarBooks = await searchSimilarBooks(bookInfo);
       res.status(200).json(similarBooks);
-    } catch (error: unknown) {
-      console.error("Error finding similar books:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      res.status(500).json({ message: `Error finding similar books: ${errorMessage}` });
+    } catch (error) {
+      res.status(500).json({ message: `Error finding similar books: ${error.message}` });
     }
   });
 
