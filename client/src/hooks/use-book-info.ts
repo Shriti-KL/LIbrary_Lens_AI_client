@@ -9,6 +9,7 @@ export interface BookSearchParams {
   author?: string;
   isbn?: string;
   maxResults?: number;
+  language?: string;
 }
 
 export function useBookInfo() {
@@ -24,6 +25,7 @@ export function useBookInfo() {
       if (params.author) queryParams.append("author", params.author);
       if (params.isbn) queryParams.append("isbn", params.isbn);
       if (params.maxResults) queryParams.append("maxResults", params.maxResults.toString());
+      if (params.language) queryParams.append("language", params.language);
 
       // Make API request
       const response = await apiRequest(

@@ -191,6 +191,21 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       return null;
     }
     
+    // Even with ISBN searches, we might get multiple editions - prioritize the preferred language
+    if (books.length > 1) {
+      // First try to find an exact match for the preferred language
+      const preferredLanguageBooks = books.filter(book => 
+        book.volumeInfo && book.volumeInfo.language === language
+      );
+      
+      if (preferredLanguageBooks.length > 0) {
+        console.log(`[${lookupId}] Found ${preferredLanguageBooks.length} books in preferred language (${language})`);
+        books = preferredLanguageBooks;
+      } else {
+        console.log(`[${lookupId}] No books found in preferred language (${language}), using best available match`);
+      }
+    }
+    
     const bookData = books[0];
     
     // Return null if no book was found or it has no volumeInfo
