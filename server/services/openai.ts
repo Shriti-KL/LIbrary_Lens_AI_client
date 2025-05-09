@@ -111,6 +111,7 @@ export async function processBookAnalysis(
     });
 
     // Prepare context with all available information as a comprehensive JSON object
+    // Include ALL fields from the incoming request directly
     const bookContext = {
       // Basic book metadata
       isbn: analysisRequest.isbn || null,
@@ -118,81 +119,95 @@ export async function processBookAnalysis(
       subtitle: analysisRequest.subtitle || null,
       author: analysisRequest.author || null,
       
+      // Catalog specific metadata
+      catalogNumber: analysisRequest.catalogNumber || null, // ASB code
+      statementOfResponsibility: analysisRequest.statementOfResponsibility || null,
+      
       // Publishing information
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
       pageCount: analysisRequest.pageCount || null,
       language: language,
       edition: analysisRequest.edition || null,
+      location: analysisRequest.location || null, // Place of publication
       
       // Content-related information
-      originalDescription: analysisRequest.summary || null,
-      existingGenres: analysisRequest.genres || null,
-      existingThemes: analysisRequest.themes || null,
+      summary: analysisRequest.summary || null,
+      genres: analysisRequest.genres || null,
+      themes: analysisRequest.themes || null,
+      interestCategory: analysisRequest.interestCategory || null,
+      readingLevel: analysisRequest.readingLevel || null,
       
       // Physical attributes
       binding: analysisRequest.binding || null,
       dimensions: analysisRequest.dimensions || null,
+      price: analysisRequest.price || null,
       coverImageUrl: analysisRequest.coverImageUrl || null,
       
-      // Additional metadata
+      // Contributors
       translator: analysisRequest.translator || null,
       illustrator: analysisRequest.illustrator || null,
-      price: analysisRequest.price || null,
       
       // German-specific library fields
       deweyDecimal: analysisRequest.deweyDecimal || null,
-      catalogNumber: analysisRequest.catalogNumber || null,
       secondaryClassification: analysisRequest.secondaryClassification || null,
-      interestCategory: analysisRequest.interestCategory || null
+      reviewerName: analysisRequest.reviewerName || null,
+      idBNumber: analysisRequest.idBNumber || null,
+      
+      // If there's additional metadata from Google Books, include it
+      metadata: analysisRequest.metadata || null
     };
     
     // Send request to OpenAI with structured JSON context and request structured JSON response
+    // Explicitly instruct NOT to overwrite existing values
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: "system",
-          content: `You are a book metadata expert specializing in library cataloging according to German library standards. Generate missing metadata for books and enhance existing data. Always respond in ${languageName} with a properly structured JSON object.`,
+          content: `You are a book metadata expert specializing in library cataloging according to German library standards. You ONLY generate missing metadata fields for books, never overwriting existing data. Always respond in ${languageName} with a properly structured JSON object.`,
         },
         {
           role: "user",
-          content: `I need to enrich the metadata for the following book and prepare it for a German library catalog system.
+          content: `I need to COMPLETE the missing metadata for the following book and prepare it for a German library catalog system.
 
-BOOK METADATA:
+BOOK METADATA (from Google Books and other sources):
 ${JSON.stringify(bookContext, null, 2)}
 
-Please analyze this information and generate the following fields:
+IMPORTANT INSTRUCTIONS:
+1. Review the provided metadata carefully.
+2. ONLY fill in MISSING fields from the list below. DO NOT overwrite or modify any existing values.
+3. Return your response as a complete JSON object that includes both the existing data AND any new fields you've added.
 
-1. summary: A concise summary of approximately 150 words (1000 characters) that describes the book's content.
-2. genres: An array of 3-5 relevant genres for the book (as strings).
-3. themes: An array of 2-4 major themes explored in the book (as strings).
-4. readingLevel: Reading level assessment (Kinder, Jugendliche, Erwachsene, or Akademisch).
-5. binding: The binding type if not already provided (Hardcover, Taschenbuch, etc.).
+Required fields (only fill in those that are MISSING):
+- ASB (catalogNumber): Subject Category Code (e.g., "5.1/Nah")
+- Main Author (author): Main author name
+- Title and Subtitle (title, subtitle)
+- Statement of Responsibility (statementOfResponsibility): Who created the work (author, illustrator, etc.)
+- Edition Statement (edition): e.g., "First Edition", "Revised Edition", etc.
+- Place of Publication (location): e.g., "Berlin", "Frankfurt", etc.
+- Publisher (publisher): Name of the publishing company
+- Year of Publication (publishedYear): Year as a number
+- Physical Description (pageCount, dimensions): Page numbers and height in cm
+- ISBN (isbn): In hyphenated format (e.g., "978-3-86885-901-9")
+- Binding and Price Information (binding, price): e.g., "Hardcover", "19,90 EUR"
+- Descriptive Summary (summary): Approximately 150 words (1000 characters)
+- Interest Category (interestCategory): Genre/topic and recommended age group (e.g., "IK: Abenteuer; ab 10")
+- Genres (genres): 3-5 relevant book genres
+- Themes (themes): 2-4 major themes explored in the book
+- Reading Level (readingLevel): "Kinder", "Jugendliche", "Erwachsene", or "Akademisch"
 
-Return ONLY a JSON object with this exact structure:
-{
-  "title": "The exact book title",
-  "subtitle": "The subtitle if any",
-  "author": "Complete author name",
-  "summary": "Your generated summary...",
-  "genres": ["Genre 1", "Genre 2", "Genre 3"],
-  "themes": ["Theme 1", "Theme 2"],
-  "readingLevel": "Reading level assessment",
-  "binding": "Book binding type",
-  "isbn": "...",  // Use existing or normalize if necessary
-  "publisher": "...",  // Use existing or add if missing
-  "publishedYear": xxxx,  // Year as number
-  "pageCount": xxx,  // Number of pages as number
-  "language": "...",  // Language code (e.g., "de" for German)
-  "readingLevel": "..."  // Reading level assessment
-}
-
-IMPORTANT: For any fields where you don't have information and cannot reasonably determine it from context, use null. DO NOT invent data.`,
+IMPORTANT RULES:
+1. NEVER include "TBD", "Unknown", or similar placeholders. Use null instead.
+2. DO NOT invent or fabricate data. Only provide information you can reasonably determine.
+3. For fields already populated in the input, PRESERVE the existing values exactly.
+4. If you can't determine a value for a required field, set it to null.
+5. Format the summary to be approximately 150 words (1000 characters).
+6. For the ISBN, if provided, use the hyphenated format for German standards.`,
         },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.5,
+      temperature: 0.3, // Lower temperature for factual accuracy
     });
     
     // Process response

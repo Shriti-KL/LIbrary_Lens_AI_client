@@ -284,6 +284,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enrichedData.similarBooks = [];
       }
       
+      // Handle metadata that might be null
+      if (!enrichedData.metadata) {
+        enrichedData.metadata = {};
+      }
+      
       // Create book with enriched data
       const newBook = await storage.createBook(enrichedData);
       
@@ -496,7 +501,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Ensure required fields are not undefined
               title: analysisResult.title || file.originalname.replace(/\.[^/.]+$/, ""), // Remove extension if no title found
               author: analysisResult.author || "Unknown",
-              userId: req.user?.id || null
+              userId: req.user?.id || null,
+              // Ensure metadata field is not null
+              metadata: analysisResult.metadata || {}
             };
             
             const savedBook = await storage.createBook(bookData);
