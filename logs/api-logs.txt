@@ -1,61 +1,64 @@
 
-[2025-05-09 08:03:20] REQUEST TO Google Books API
+[2025-05-09 06:40:04] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
   "method": "GET",
   "operation": "getCompleteBookByISBN",
   "params": {
-    "isbn": "9783959161329",
-    "cleanedISBN": "9783959161329"
+    "isbn": "978-3-959161-35-0",
+    "cleanedISBN": "9783959161350"
   }
 }
 
-[2025-05-09 08:03:20] REQUEST TO Google Books API
+[2025-05-09 06:40:04] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "isbn:9783959161329",
+    "query": "isbn:9783959161350",
     "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-09 08:03:20] RESPONSE FROM Google Books API
+[2025-05-09 06:40:04] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
-  "query": "isbn:9783959161329",
+  "query": "isbn:9783959161350",
   "status": 200,
   "totalItems": 1,
   "itemCount": 1
 }
 
-[2025-05-09 08:03:20] ERROR FROM Google Books API
+[2025-05-09 06:40:04] RESPONSE FROM Google Books API
 {
-  "error": "Google Books API request failed",
-  "message": "book is not defined",
-  "lookupId": "googlebooks_isbn_1746777800573_jip17"
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann",
+  "isbn": "978-3-959161-35-0",
+  "lookupId": "googlebooks_isbn_1746772804232_k2ghe"
 }
 
-[2025-05-09 08:03:20] REQUEST TO OpenAI API
+[2025-05-09 06:40:04] REQUEST TO OpenAI API
 {
   "operation": "processBookAnalysis",
   "model": "gpt-4o",
   "language": "de",
-  "isbn": "9783959161329",
-  "title": "",
-  "author": ""
+  "isbn": "9783959161350",
+  "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
+  "author": "Birgit Hedemann"
 }
 
-[2025-05-09 08:03:22] RESPONSE FROM OpenAI API
+[2025-05-09 06:40:11] RESPONSE FROM OpenAI API
 {
   "operation": "processBookAnalysis",
   "status": "success",
   "model": "gpt-4o",
   "usage": {
-    "prompt_tokens": 884,
-    "completion_tokens": 133,
-    "total_tokens": 1017,
+    "prompt_tokens": 623,
+    "completion_tokens": 337,
+    "total_tokens": 960,
     "prompt_tokens_details": {
       "cached_tokens": 0,
       "audio_tokens": 0
@@ -68,95 +71,102 @@
     }
   },
   "fieldsProvided": {
-    "0": "isbn",
-    "1": "genres",
-    "2": "themes"
-  }
-}
-
-[2025-05-09 08:03:38] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "method": "GET",
-  "operation": "getCompleteBookByISBN",
-  "params": {
-    "isbn": "9783959161329",
-    "cleanedISBN": "9783959161329"
-  }
-}
-
-[2025-05-09 08:03:38] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783959161329",
-    "fields": "items(...),totalItems,kind"
-  }
-}
-
-[2025-05-09 08:03:38] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783959161329",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-09 08:03:38] ERROR FROM Google Books API
-{
-  "error": "Google Books API request failed",
-  "message": "book is not defined",
-  "lookupId": "googlebooks_isbn_1746777818171_mar55"
-}
-
-[2025-05-09 08:03:38] REQUEST TO OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "model": "gpt-4o",
-  "language": "de",
-  "isbn": "9783959161329",
-  "title": "",
-  "author": ""
-}
-
-[2025-05-09 08:03:42] RESPONSE FROM OpenAI API
-{
-  "operation": "processBookAnalysis",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 884,
-    "completion_tokens": 190,
-    "total_tokens": 1074,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "fieldsProvided": {
-    "0": "author",
-    "1": "title",
-    "2": "subtitle",
-    "3": "statementOfResponsibility",
-    "4": "edition",
-    "5": "location",
-    "6": "publisher",
-    "7": "dimensions",
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "summary",
+    "4": "genres",
+    "5": "themes",
+    "6": "readingLevel",
+    "7": "binding",
     "8": "isbn",
-    "9": "binding",
-    "10": "price",
-    "11": "summary",
-    "12": "interestCategory",
-    "13": "genres",
-    "14": "themes"
+    "9": "publishedYear",
+    "10": "language"
+  }
+}
+
+[2025-05-09 06:51:11] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getCompleteBookByISBN",
+  "params": {
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
+  }
+}
+
+[2025-05-09 06:51:11] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-09 06:51:11] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783959161329",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-09 06:51:11] RESPONSE FROM Google Books API
+{
+  "operation": "getCompleteBookByISBN",
+  "status": "success",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg",
+  "isbn": "978-3-95916-132-9",
+  "lookupId": "googlebooks_isbn_1746773471175_dmxzv"
+}
+
+[2025-05-09 06:51:11] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783959161329",
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-09 06:51:17] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 602,
+    "completion_tokens": 311,
+    "total_tokens": 913,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "summary",
+    "4": "genres",
+    "5": "themes",
+    "6": "readingLevel",
+    "7": "binding",
+    "8": "isbn",
+    "9": "publishedYear",
+    "10": "language"
   }
 }

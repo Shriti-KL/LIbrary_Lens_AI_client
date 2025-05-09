@@ -362,10 +362,16 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       interestCategory: null,
       idBNumber: null,
       
-      // Store complete raw metadata for OpenAI analysis
+      // Store raw metadata for debugging
       metadata: {
-        rawGoogleBooksData: volumeInfo,
-        fullRawResponse: book
+        rawGoogleBooksData: {
+          industryIdentifiers: volumeInfo.industryIdentifiers,
+          contentVersion: volumeInfo.contentVersion,
+          dimensions: volumeInfo.dimensions,
+          printType: volumeInfo.printType,
+          maturityRating: volumeInfo.maturityRating,
+          authors: volumeInfo.authors
+        }
       }
     };
     
