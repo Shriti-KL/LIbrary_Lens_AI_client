@@ -175,8 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const books = await storage.getRecentBooks(limit);
       res.status(200).json(books);
-    } catch (error) {
-      res.status(500).json({ message: `Error fetching recent books: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error fetching recent books: ${errorMessage}` });
     }
   });
   
@@ -231,8 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Initialize enrichedData with bookData
       let enrichedData = bookData;
       
-      // Check if this is coming from the analysis page
-      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && bookData.analyzed === true;
+      // Check if this is coming from the analysis page using safer property access
+      const isFromAnalysis = bookData.hasOwnProperty('analyzed') && (bookData as any).analyzed === true;
       
       // Only enrich if it's NOT from the analysis page or hasn't been analyzed already
       if ((!isFromAnalysis) && (bookData.title || bookData.isbn)) {

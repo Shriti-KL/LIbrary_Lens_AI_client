@@ -319,7 +319,6 @@ export default function BookResult({
                             <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
                               {JSON.stringify({
                                 id: book.id,
-                                googleBooksId: book.googleBooksId,
                                 title: book.title,
                                 subtitle: book.subtitle,
                                 author: book.author,
@@ -330,9 +329,8 @@ export default function BookResult({
                                 categories: book.categories,
                                 language: book.language,
                                 imageLinks: book.coverImageUrl,
-                                industryIdentifiers: book.industryIdentifiers,
-                                printType: book.printType,
-                                maturityRating: book.maturityRating
+                                // Get Google Books specific metadata from metadata field if available
+                                ...(book.metadata ? (book.metadata as any)?.rawGoogleBooksData || {} : {})
                               }, null, 2)}
                             </pre>
                           </div>
