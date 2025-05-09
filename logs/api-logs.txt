@@ -1,26 +1,666 @@
 
-[2025-05-07 05:50:56] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": " 978-3-10-397704-2",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 05:50:56] REQUEST TO Google Books API
+[2025-05-08 07:23:08] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
   "method": "GET",
+  "operation": "getBookByISBN",
   "params": {
-    "query": "isbn:9783103977042"
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
   }
 }
 
-[2025-05-07 05:50:56] RESPONSE FROM Google Books API
+[2025-05-08 07:23:08] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:23:09] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:23:09] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:23:09] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:23:10] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:23:10] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:23:10] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:23:10] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:23:32] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:23:32] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:23:33] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:23:33] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:23:33] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Starke Signale",
+    "author": "Michel Reimon",
+    "isbn": "978-3-8497-0575-6"
+  }
+}
+
+[2025-05-08 07:32:51] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": " 9780060584757",
+    "cleanedISBN": "9780060584757"
+  }
+}
+
+[2025-05-08 07:32:51] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9780060584757",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:32:51] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9780060584757",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:32:51] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": " 9780060584757",
+  "found": true,
+  "title": "Mystic River",
+  "author": "Dennis Lehane"
+}
+
+[2025-05-08 07:32:51] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN:  9780060584757, Title: Mystic River, Author: Dennis Lehane",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:33:06] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Mystic River"
+}
+
+[2025-05-08 07:33:18] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9780060584757",
+    "cleanedISBN": "9780060584757"
+  }
+}
+
+[2025-05-08 07:33:18] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9780060584757",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:18] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9780060584757",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:18] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9780060584757",
+  "found": true,
+  "title": "Mystic River",
+  "author": "Dennis Lehane"
+}
+
+[2025-05-08 07:33:18] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Mystic River",
+    "author": "Dennis Lehane",
+    "isbn": "9780060584757"
+  }
+}
+
+[2025-05-08 07:33:57] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:33:57] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:57] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:57] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:33:57] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:33:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:33:59] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:33:59] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:33:59] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:34:20] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:34:20] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:34:20] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:34:20] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:34:20] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Starke Signale",
+    "author": "Michel Reimon",
+    "isbn": "978-3-8497-0575-6"
+  }
+}
+
+[2025-05-08 07:41:39] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": " 9780060584757",
+    "cleanedISBN": "9780060584757"
+  }
+}
+
+[2025-05-08 07:41:39] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780060584757&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9780060584757",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:41:39] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9780060584757",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:41:39] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": " 9780060584757",
+  "found": true,
+  "title": "Mystic River",
+  "author": "Dennis Lehane"
+}
+
+[2025-05-08 07:41:39] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN:  9780060584757, Title: Mystic River, Author: Dennis Lehane",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:41:55] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Mystic River"
+}
+
+[2025-05-08 07:42:25] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:42:25] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:42:25] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:42:25] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:42:25] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:42:26] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:42:26] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:42:27] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:42:27] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:50:08] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:50:08] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:50:09] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:50:09] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:50:09] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8497-0575-6, Title: Starke Signale, Author: Michel Reimon",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:50:21] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Starke Signale"
+}
+
+[2025-05-08 07:51:36] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8497-0575-6",
+    "cleanedISBN": "9783849705756"
+  }
+}
+
+[2025-05-08 07:51:36] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783849705756&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783849705756",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:51:36] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783849705756",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 07:51:36] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8497-0575-6",
+  "found": true,
+  "title": "Starke Signale",
+  "author": "Michel Reimon"
+}
+
+[2025-05-08 07:51:36] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
+  "model": "gpt-4o",
+  "bookInfo": {
+    "title": "Starke Signale",
+    "author": "Michel Reimon",
+    "isbn": "978-3-8497-0575-6"
+  }
+}
+
+[2025-05-08 07:55:03] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-10-397704-2",
+    "cleanedISBN": "9783103977042"
+  }
+}
+
+[2025-05-08 07:55:03] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:55:03] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783103977042",
@@ -29,480 +669,105 @@
   "itemCount": 1
 }
 
-[2025-05-07 05:50:56] REQUEST TO Google Books API
+[2025-05-08 07:55:03] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-10-397704-2",
+  "found": true,
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra"
+}
+
+[2025-05-08 07:55:03] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-10-397704-2, Title: Die Welt nach Gaza, Author: Pankaj Mishra",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 07:55:19] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Die Welt nach Gaza"
+}
+
+[2025-05-08 07:56:10] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
   "method": "GET",
+  "operation": "getBookByISBN",
   "params": {
-    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-    "maxResults": 4
+    "isbn": "978-3-10-397704-2",
+    "cleanedISBN": "9783103977042"
   }
 }
 
-[2025-05-07 05:50:56] RESPONSE FROM Google Books API
+[2025-05-08 07:56:10] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783103977042",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 07:56:10] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783103977042",
   "status": 200,
   "totalItems": 1,
   "itemCount": 1
 }
 
-[2025-05-07 05:50:56] REQUEST TO Google Books API
+[2025-05-08 07:56:10] RESPONSE FROM Google Books API
 {
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Die+Welt+nach+Gaza&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Die Welt nach Gaza",
-    "maxResults": 4
-  }
+  "operation": "getBookByISBN",
+  "isbn": "978-3-10-397704-2",
+  "found": true,
+  "title": "Die Welt nach Gaza",
+  "author": "Pankaj Mishra"
 }
 
-[2025-05-07 05:50:57] RESPONSE FROM Google Books API
+[2025-05-08 07:56:10] REQUEST TO OpenAI API
 {
-  "endpoint": "volumes",
-  "query": "Die Welt nach Gaza",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 05:50:57] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
+  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die Welt nach Gaza",
-  "bookAuthor": "Pankaj Mishra"
-}
-
-[2025-05-07 05:51:01] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 200,
-    "completion_tokens": 228,
-    "total_tokens": 428,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die Welt nach Gaza"
-}
-
-[2025-05-07 05:51:01] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1052,
-  "wordCount": 136,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 05:51:01] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die Welt nach Gaza",
-  "bookAuthor": "Pankaj Mishra",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 05:51:02] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 343,
-    "completion_tokens": 36,
-    "total_tokens": 379,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die Welt nach Gaza"
-}
-
-[2025-05-07 05:51:02] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Die Welt nach Gaza",
-  "genreCount": 4,
-  "genres": {
-    "0": "Historischer Roman",
-    "1": "Politischer Roman",
-    "2": "Gesellschaftsroman",
-    "3": "Kriegsroman"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 05:51:46] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
   "bookInfo": {
     "title": "Die Welt nach Gaza",
     "author": "Pankaj Mishra",
-    "isbn": " 978-3-10-397704-2",
-    "isUserSubmission": true
+    "isbn": "978-3-10-397704-2"
   }
 }
 
-[2025-05-07 05:51:46] REQUEST TO Google Books API
+[2025-05-08 08:48:28] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783103977042&key=[REDACTED]",
   "method": "GET",
+  "operation": "getBookByISBN",
   "params": {
-    "query": "isbn:9783103977042"
-  }
-}
-
-[2025-05-07 05:51:47] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783103977042",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:51:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3APankaj+Mishra%2Binauthor%3APankaj%2520Mishra&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:51:47] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "inauthor:Pankaj Mishra+inauthor:Pankaj%20Mishra",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 05:51:47] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Historischer+Roman+Politischer+Roman&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Historischer Roman Politischer Roman",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 05:51:48] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Historischer Roman Politischer Roman",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 06:23:59] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-95916-135-0",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 06:23:59] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783959161350"
-  }
-}
-
-[2025-05-07 06:23:59] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783959161350",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 06:23:59] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 06:24:00] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-  "status": 200,
-  "totalItems": 0,
-  "itemCount": 0
-}
-
-[2025-05-07 06:24:00] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+auf+R%C3%B6m%C3%B6+-+Lilly%2C+Nikolas+und+der+Bunkerschatz&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 06:24:00] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 06:24:00] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann"
-}
-
-[2025-05-07 06:24:04] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 211,
-    "completion_tokens": 217,
-    "total_tokens": 428,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
-}
-
-[2025-05-07 06:24:04] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 994,
-  "wordCount": 138,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 06:24:04] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 06:24:05] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 40,
-    "total_tokens": 382,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
-}
-
-[2025-05-07 06:24:05] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "genreCount": 5,
-  "genres": {
-    "0": "Abenteuer",
-    "1": "Kinderliteratur",
-    "2": "Historischer Roman",
-    "3": "Detektivroman",
-    "4": "Jugendliteratur"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 06:24:10] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann"
-}
-
-[2025-05-07 06:24:12] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "entryLength": 1272
-}
-
-[2025-05-07 06:24:53] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-    "author": "Birgit Hedemann",
-    "isbn": "978-3-95916-135-0",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 06:24:53] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783959161350"
-  }
-}
-
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783959161350",
-  "status": 200,
-  "totalItems": 1,
-  "itemCount": 1
-}
-
-[2025-05-07 06:24:53] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-  "status": 200,
-  "totalItems": 0,
-  "itemCount": 0
-}
-
-[2025-05-07 06:24:53] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+Kinderliteratur&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Abenteuer Kinderliteratur",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 06:24:53] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Abenteuer Kinderliteratur",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 06:25:06] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "",
-    "author": "",
     "isbn": "978-3-95916-132-9",
-    "isUserSubmission": true
+    "cleanedISBN": "9783959161329"
   }
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-08 08:48:28] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "isbn:9783959161329"
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-08 08:48:28] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
   "query": "isbn:9783959161329",
@@ -511,1587 +776,467 @@
   "itemCount": 1
 }
 
-[2025-05-07 06:25:06] REQUEST TO Google Books API
+[2025-05-08 08:48:28] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-08 08:48:28] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-95916-132-9, Title: Abenteuer in Norwegen, Author: Marion Sorg",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 08:48:44] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Abenteuer in Norwegen"
+}
+
+[2025-05-08 08:51:01] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AMarion+Sorg%2Binauthor%3AMarion%2520Sorg&key=[REDACTED]&maxResults=4",
   "method": "GET",
+  "operation": "getBookByISBN",
   "params": {
-    "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
-    "maxResults": 4
+    "isbn": "978-3-95916-132-9",
+    "cleanedISBN": "9783959161329"
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-08 08:51:01] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
-  "status": 200,
-  "totalItems": 0,
-  "itemCount": 0
-}
-
-[2025-05-07 06:25:06] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+in+Norwegen+-+Lilly%2C+Nikolas+und+das+Geheimnis+der+Schmuckschatulle&key=[REDACTED]&maxResults=4",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-    "maxResults": 4
+    "query": "isbn:9783959161329",
+    "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-07 06:25:06] RESPONSE FROM Google Books API
+[2025-05-08 08:51:01] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
-  "query": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "query": "isbn:9783959161329",
   "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
+  "totalItems": 1,
+  "itemCount": 1
 }
 
-[2025-05-07 06:25:06] REQUEST TO OpenAI API
+[2025-05-08 08:51:01] RESPONSE FROM Google Books API
 {
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95916-132-9",
+  "found": true,
+  "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+  "author": "Marion Sorg"
+}
+
+[2025-05-08 08:51:01] REQUEST TO OpenAI API
+{
+  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "bookAuthor": "Marion Sorg"
-}
-
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 212,
-    "completion_tokens": 229,
-    "total_tokens": 441,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle"
-}
-
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1051,
-  "wordCount": 148,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 06:25:11] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "bookAuthor": "Marion Sorg",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 355,
-    "completion_tokens": 40,
-    "total_tokens": 395,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle"
-}
-
-[2025-05-07 06:25:11] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "genreCount": 5,
-  "genres": {
-    "0": "Abenteuer",
-    "1": "Jugendliteratur",
-    "2": "Fantasy",
-    "3": "Mystery",
-    "4": "Kulturelle Erkundung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 06:25:15] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "bookAuthor": "Marion Sorg"
-}
-
-[2025-05-07 06:25:17] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
-  "entryLength": 1346
-}
-
-[2025-05-07 06:27:35] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
   "bookInfo": {
-    "title": "Abenteuer in Norwegen - Lilly, Nikolas und das Geheimnis der Schmuckschatulle",
+    "title": "Abenteuer in Norwegen",
     "author": "Marion Sorg",
-    "isbn": "978-3-95916-132-9",
-    "isUserSubmission": true
+    "isbn": "978-3-95916-132-9"
   }
 }
 
-[2025-05-07 06:27:35] REQUEST TO Google Books API
+[2025-05-08 08:51:12] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161329&key=[REDACTED]",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-498-03567-9",
+    "cleanedISBN": "9783498035679"
+  }
+}
+
+[2025-05-08 08:51:12] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783498035679&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "isbn:9783959161329"
+    "query": "isbn:9783498035679",
+    "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-07 06:27:35] RESPONSE FROM Google Books API
+[2025-05-08 08:51:12] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
-  "query": "isbn:9783959161329",
+  "query": "isbn:9783498035679",
   "status": 200,
   "totalItems": 1,
   "itemCount": 1
 }
 
-[2025-05-07 06:27:35] REQUEST TO Google Books API
+[2025-05-08 08:51:12] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-498-03567-9",
+  "found": true,
+  "title": "Tyll",
+  "author": "Daniel Kehlmann"
+}
+
+[2025-05-08 08:51:12] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-498-03567-9, Title: Tyll, Author: Daniel Kehlmann",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 08:51:27] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "bookTitle": "Tyll"
+}
+
+[2025-05-08 08:52:17] REQUEST TO Google Books API
 {
   "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3AMarion+Sorg%2Binauthor%3AMarion%2520Sorg&key=[REDACTED]&maxResults=4",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-498-03567-9",
+    "cleanedISBN": "9783498035679"
+  }
+}
+
+[2025-05-08 08:52:17] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783498035679&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
   "method": "GET",
   "params": {
-    "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
-    "maxResults": 4
+    "query": "isbn:9783498035679",
+    "fields": "items(...),totalItems,kind"
   }
 }
 
-[2025-05-07 06:27:36] RESPONSE FROM Google Books API
+[2025-05-08 08:52:17] RESPONSE FROM Google Books API
 {
   "endpoint": "volumes",
-  "query": "inauthor:Marion Sorg+inauthor:Marion%20Sorg",
-  "status": 200,
-  "totalItems": 0,
-  "itemCount": 0
-}
-
-[2025-05-07 06:27:36] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+Jugendliteratur&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Abenteuer Jugendliteratur",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 06:27:36] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Abenteuer Jugendliteratur",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 06:51:20] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-959161-35-0"
-  }
-}
-
-[2025-05-07 06:51:26] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:51:26] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
-}
-
-[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 198,
-    "completion_tokens": 223,
-    "total_tokens": 421,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:51:31] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1056,
-  "wordCount": 140,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 06:51:31] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 336,
-    "completion_tokens": 25,
-    "total_tokens": 361,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:51:32] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Unknown",
-  "genreCount": 5,
-  "genres": {
-    "0": "Science-Fiction",
-    "1": "Dystopie",
-    "2": "Spannung",
-    "3": "Abenteuer",
-    "4": "Liebesroman"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 06:51:37] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
-}
-
-[2025-05-07 06:51:39] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Unknown",
-  "entryLength": 1286
-}
-
-[2025-05-07 06:52:24] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Unknown",
-    "author": "Unknown",
-    "isbn": "978-3-959161-35-0"
-  }
-}
-
-[2025-05-07 06:52:28] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:33] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": " 978-3-959161-32-9 "
-  }
-}
-
-[2025-05-07 06:52:39] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:39] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
-}
-
-[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 200,
-    "completion_tokens": 238,
-    "total_tokens": 438,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:44] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1093,
-  "wordCount": 145,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 06:52:44] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 353,
-    "completion_tokens": 27,
-    "total_tokens": 380,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 06:52:45] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Unknown",
-  "genreCount": 5,
-  "genres": {
-    "0": "Roman",
-    "1": "Drama",
-    "2": "Mystery",
-    "3": "Historischer Roman",
-    "4": "Psychologische Fiktion"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 06:52:49] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Unknown",
-  "bookAuthor": "Unknown"
-}
-
-[2025-05-07 06:52:51] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Unknown",
-  "entryLength": 1329
-}
-
-[2025-05-07 06:53:26] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Unknown",
-    "author": "Unknown",
-    "isbn": " 978-3-959161-32-9 "
-  }
-}
-
-[2025-05-07 06:53:31] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Unknown"
-}
-
-[2025-05-07 08:24:04] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-96251-218-7"
-  }
-}
-
-[2025-05-07 08:24:05] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:05] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 187,
-    "completion_tokens": 218,
-    "total_tokens": 405,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:09] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1040,
-  "wordCount": 138,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:24:09] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": "",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 320,
-    "completion_tokens": 40,
-    "total_tokens": 360,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:24:12] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "",
-  "genreCount": 5,
-  "genres": {
-    "0": "Dystopie",
-    "1": "Science-Fiction",
-    "2": "Thriller",
-    "3": "Abenteuer",
-    "4": "Politische Fiktion"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:24:18] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:20] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "",
-  "entryLength": 1283
-}
-
-[2025-05-07 08:24:38] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "Life of Pi",
-    "author": "",
-    "isbn": ""
-  }
-}
-
-[2025-05-07 08:24:38] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": "Life of Pi"
-}
-
-[2025-05-07 08:24:38] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 189,
-    "completion_tokens": 214,
-    "total_tokens": 403,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Life of Pi"
-}
-
-[2025-05-07 08:24:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 999,
-  "wordCount": 145,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:24:43] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": "",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 318,
-    "completion_tokens": 25,
-    "total_tokens": 343,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Life of Pi"
-}
-
-[2025-05-07 08:24:44] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Life of Pi",
-  "genreCount": 5,
-  "genres": {
-    "0": "Abenteuer",
-    "1": "Drama",
-    "2": "Philosophie",
-    "3": "Überleben",
-    "4": "Spirituell"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:24:51] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Life of Pi",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:24:54] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Life of Pi",
-  "entryLength": 1224
-}
-
-[2025-05-07 08:25:28] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "9783406830303"
-  }
-}
-
-[2025-05-07 08:25:28] ERROR FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "error": "400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:28] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 187,
-    "completion_tokens": 240,
-    "total_tokens": 427,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:34] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1083,
-  "wordCount": 143,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:25:34] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "",
-  "bookAuthor": "",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 37,
-    "total_tokens": 379,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": ""
-}
-
-[2025-05-07 08:25:35] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "",
-  "genreCount": 5,
-  "genres": {
-    "0": "Krimi",
-    "1": "Drama",
-    "2": "Thriller",
-    "3": "Psychologischer Roman",
-    "4": "Mystery"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:25:41] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "",
-  "bookAuthor": ""
-}
-
-[2025-05-07 08:25:43] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "",
-  "entryLength": 1330
-}
-
-[2025-05-07 08:31:24] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "9783406830303"
-  }
-}
-
-[2025-05-07 08:31:28] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:28] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis"
-}
-
-[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 207,
-    "completion_tokens": 219,
-    "total_tokens": 426,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:33] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 995,
-  "wordCount": 150,
-  "paragraphCount": 2,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:31:33] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 341,
-    "completion_tokens": 39,
-    "total_tokens": 380,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Die drei ??? – Panik im Park"
-}
-
-[2025-05-07 08:31:34] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "genreCount": 5,
-  "genres": {
-    "0": "Krimi",
-    "1": "Abenteuer",
-    "2": "Jugendliteratur",
-    "3": "Detektivgeschichte",
-    "4": "Spannung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:31:43] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "bookAuthor": "Ben Nevis"
-}
-
-[2025-05-07 08:31:44] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Die drei ??? – Panik im Park",
-  "entryLength": 1232
-}
-
-[2025-05-07 08:32:59] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "model": "gpt-4o",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-96251-218-7"
-  }
-}
-
-[2025-05-07 08:33:02] RESPONSE FROM OpenAI API
-{
-  "operation": "enrichBookMetadata",
-  "status": "success",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:02] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg"
-}
-
-[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 217,
-    "completion_tokens": 210,
-    "total_tokens": 427,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:07] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1028,
-  "wordCount": 130,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 08:33:07] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 342,
-    "completion_tokens": 34,
-    "total_tokens": 376,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business"
-}
-
-[2025-05-07 08:33:08] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "genreCount": 4,
-  "genres": {
-    "0": "Sachbuch",
-    "1": "Psychologie",
-    "2": "Wirtschaft",
-    "3": "Persönlichkeitsentwicklung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 08:33:13] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "bookAuthor": "Charles Duhigg"
-}
-
-[2025-05-07 08:33:15] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "The Power of Habit: Why We Do What We Do in Life and Business",
-  "entryLength": 1366
-}
-
-[2025-05-07 12:23:09] REQUEST TO Google Books API
-{
-  "operation": "enrichBookMetadata",
-  "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-95916-135-0",
-    "isUserSubmission": true
-  }
-}
-
-[2025-05-07 12:23:09] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783959161350&key=[REDACTED]",
-  "method": "GET",
-  "params": {
-    "query": "isbn:9783959161350"
-  }
-}
-
-[2025-05-07 12:23:09] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "isbn:9783959161350",
+  "query": "isbn:9783498035679",
   "status": 200,
   "totalItems": 1,
   "itemCount": 1
 }
 
-[2025-05-07 12:23:09] REQUEST TO Google Books API
+[2025-05-08 08:52:17] RESPONSE FROM Google Books API
 {
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=inauthor%3ABirgit+Hedemann%2Binauthor%3ABirgit%2520Hedemann&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-    "maxResults": 4
-  }
+  "operation": "getBookByISBN",
+  "isbn": "978-3-498-03567-9",
+  "found": true,
+  "title": "Tyll",
+  "author": "Daniel Kehlmann"
 }
 
-[2025-05-07 12:23:09] RESPONSE FROM Google Books API
+[2025-05-08 08:52:17] REQUEST TO OpenAI API
 {
-  "endpoint": "volumes",
-  "query": "inauthor:Birgit Hedemann+inauthor:Birgit%20Hedemann",
-  "status": 200,
-  "totalItems": 0,
-  "itemCount": 0
-}
-
-[2025-05-07 12:23:09] REQUEST TO Google Books API
-{
-  "endpoint": "volumes",
-  "url": "https://www.googleapis.com/books/v1/volumes?q=Abenteuer+auf+R%C3%B6m%C3%B6+-+Lilly%2C+Nikolas+und+der+Bunkerschatz&key=[REDACTED]&maxResults=4",
-  "method": "GET",
-  "params": {
-    "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-    "maxResults": 4
-  }
-}
-
-[2025-05-07 12:23:09] RESPONSE FROM Google Books API
-{
-  "endpoint": "volumes",
-  "query": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "status": 200,
-  "totalItems": 1000000,
-  "itemCount": 4
-}
-
-[2025-05-07 12:23:09] REQUEST TO OpenAI API
-{
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann"
-}
-
-[2025-05-07 12:23:15] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 211,
-    "completion_tokens": 225,
-    "total_tokens": 436,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
-}
-
-[2025-05-07 12:23:15] RESPONSE FROM OpenAI API
-{
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1041,
-  "wordCount": 147,
-  "paragraphCount": 1,
-  "cleanupApplied": true
-}
-
-[2025-05-07 12:23:15] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 12:23:16] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 350,
-    "completion_tokens": 32,
-    "total_tokens": 382,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz"
-}
-
-[2025-05-07 12:23:16] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "genreCount": 4,
-  "genres": {
-    "0": "Abenteuer",
-    "1": "Historischer Roman",
-    "2": "Kinderbuch",
-    "3": "Spannung"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 12:23:22] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "bookAuthor": "Birgit Hedemann"
-}
-
-[2025-05-07 12:23:23] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "Abenteuer auf Römö - Lilly, Nikolas und der Bunkerschatz",
-  "entryLength": 1320
-}
-
-[2025-05-07 12:34:10] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
+  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
   "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-95916-135-0"
+    "title": "Tyll",
+    "author": "Daniel Kehlmann",
+    "isbn": "978-3-498-03567-9"
   }
 }
 
-[2025-05-07 12:34:12] RESPONSE FROM OpenAI API
+[2025-05-08 08:52:32] REQUEST TO Google Books API
 {
-  "operation": "enrichBookMetadata",
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8321-7077-6",
+    "cleanedISBN": "9783832170776"
+  }
+}
+
+[2025-05-08 08:52:32] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783832170776&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783832170776",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 08:52:32] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783832170776",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 08:52:32] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8321-7077-6",
+  "found": true,
+  "title": "Der große Sommer",
+  "author": "Ewald Arenz"
+}
+
+[2025-05-08 08:52:32] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "bookIdentifiers": "ISBN: 978-3-8321-7077-6, Title: Der große Sommer, Author: Ewald Arenz",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
+}
+
+[2025-05-08 08:52:49] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
   "status": "success",
-  "bookTitle": "The German Language: A Cultural History"
+  "bookTitle": "Der große Sommer"
 }
 
-[2025-05-07 12:34:12] REQUEST TO OpenAI API
+[2025-05-08 08:52:52] REQUEST TO Google Books API
 {
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The German Language: A Cultural History",
-  "bookAuthor": "Peter von Polenz"
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-8321-7077-6",
+    "cleanedISBN": "9783832170776"
+  }
 }
 
-[2025-05-07 12:34:19] RESPONSE FROM OpenAI API
+[2025-05-08 08:52:52] REQUEST TO Google Books API
 {
-  "operation": "generateBookSummary",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 209,
-    "completion_tokens": 198,
-    "total_tokens": 407,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The German Language: A Cultural History"
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783832170776&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783832170776",
+    "fields": "items(...),totalItems,kind"
+  }
 }
 
-[2025-05-07 12:34:19] RESPONSE FROM OpenAI API
+[2025-05-08 08:52:53] RESPONSE FROM Google Books API
 {
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1060,
-  "wordCount": 138,
-  "paragraphCount": 1,
-  "cleanupApplied": true
+  "endpoint": "volumes",
+  "query": "isbn:9783832170776",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
 }
 
-[2025-05-07 12:34:19] REQUEST TO OpenAI API
+[2025-05-08 08:52:53] RESPONSE FROM Google Books API
 {
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "The German Language: A Cultural History",
-  "bookAuthor": "Peter von Polenz",
-  "hasGoogleCategories": false
+  "operation": "getBookByISBN",
+  "isbn": "978-3-8321-7077-6",
+  "found": true,
+  "title": "Der große Sommer",
+  "author": "Ewald Arenz"
 }
 
-[2025-05-07 12:34:20] RESPONSE FROM OpenAI API
+[2025-05-08 08:52:53] REQUEST TO OpenAI API
 {
-  "operation": "extractBookGenres",
-  "status": "success",
-  "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 322,
-    "completion_tokens": 35,
-    "total_tokens": 357,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "The German Language: A Cultural History"
-}
-
-[2025-05-07 12:34:20] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres:results",
-  "bookTitle": "The German Language: A Cultural History",
-  "genreCount": 4,
-  "genres": {
-    "0": "Kulturgeschichte",
-    "1": "Sprachwissenschaft",
-    "2": "Soziolinguistik",
-    "3": "Geschichte"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 12:34:26] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "The German Language: A Cultural History",
-  "bookAuthor": "Peter von Polenz"
-}
-
-[2025-05-07 12:34:30] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "status": "success",
-  "bookTitle": "The German Language: A Cultural History",
-  "entryLength": 1343
-}
-
-[2025-05-07 12:45:45] REQUEST TO OpenAI API
-{
-  "operation": "enrichBookMetadata",
+  "operation": "enrichBookMetadataWithOpenAI",
   "model": "gpt-4o",
   "bookInfo": {
-    "title": "",
-    "author": "",
-    "isbn": "978-3-959161-35-0"
+    "title": "Der große Sommer",
+    "author": "Ewald Arenz",
+    "isbn": "978-3-8321-7077-6"
   }
 }
 
-[2025-05-07 12:45:50] RESPONSE FROM OpenAI API
+[2025-05-08 08:52:55] RESPONSE FROM OpenAI API
 {
-  "operation": "enrichBookMetadata",
+  "operation": "enrichBookMetadataWithOpenAI",
   "status": "success",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+  "bookTitle": "Der große Sommer"
 }
 
-[2025-05-07 12:45:50] REQUEST TO OpenAI API
+[2025-05-08 09:37:47] REQUEST TO Google Books API
 {
-  "operation": "generateBookSummary",
-  "endpoint": "chat.completions.create",
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "9783406830303",
+    "cleanedISBN": "9783406830303"
+  }
+}
+
+[2025-05-08 09:37:47] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783406830303&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783406830303",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 09:37:47] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783406830303",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 09:37:47] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "9783406830303",
+  "found": true,
+  "title": "Der vergessene Widerstand",
+  "author": "Stephan Lehnstaedt"
+}
+
+[2025-05-08 09:37:47] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
   "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
-  "bookAuthor": "Johannes Hillje"
+  "bookIdentifiers": "ISBN: 9783406830303, Title: Der vergessene Widerstand, Author: Stephan Lehnstaedt",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
 }
 
-[2025-05-07 12:45:54] RESPONSE FROM OpenAI API
+[2025-05-08 09:38:02] RESPONSE FROM OpenAI API
 {
-  "operation": "generateBookSummary",
+  "operation": "processBookAnalysis",
   "status": "success",
+  "bookTitle": "Der vergessene Widerstand"
+}
+
+[2025-05-08 09:45:12] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-96129-473-2",
+    "cleanedISBN": "9783961294732"
+  }
+}
+
+[2025-05-08 09:45:12] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783961294732&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783961294732",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 09:45:12] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783961294732",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 09:45:12] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-96129-473-2",
+  "found": true,
+  "title": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker",
+  "author": "Sven Nordqvist"
+}
+
+[2025-05-08 09:45:12] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
   "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 210,
-    "completion_tokens": 216,
-    "total_tokens": 426,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+  "bookIdentifiers": "ISBN: 978-3-96129-473-2, Title: Pettersson und Findus: Das große Bastelbuch für kreative Entdecker, Author: Sven Nordqvist",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
 }
 
-[2025-05-07 12:45:54] RESPONSE FROM OpenAI API
+[2025-05-08 09:45:35] RESPONSE FROM OpenAI API
 {
-  "operation": "generateBookSummary:results",
-  "summaryLength": 1144,
-  "wordCount": 144,
-  "paragraphCount": 3,
-  "cleanupApplied": true
-}
-
-[2025-05-07 12:45:54] REQUEST TO OpenAI API
-{
-  "operation": "extractBookGenres",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "language": "de",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
-  "bookAuthor": "Johannes Hillje",
-  "hasGoogleCategories": false
-}
-
-[2025-05-07 12:45:55] RESPONSE FROM OpenAI API
-{
-  "operation": "extractBookGenres",
+  "operation": "processBookAnalysis",
   "status": "success",
+  "bookTitle": "Pettersson und Findus: Das große Bastelbuch für kreative Entdecker"
+}
+
+[2025-05-08 10:20:29] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "method": "GET",
+  "operation": "getBookByISBN",
+  "params": {
+    "isbn": "978-3-98702-122-0",
+    "cleanedISBN": "9783987021220"
+  }
+}
+
+[2025-05-08 10:20:29] REQUEST TO Google Books API
+{
+  "endpoint": "volumes",
+  "url": "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9783987021220&key=[REDACTED]&fields=items%28kind%2Cid%2Cetag%2CselfLink%2CvolumeInfo%2Ftitle%2CvolumeInfo%2Fsubtitle%2CvolumeInfo%2Fauthors%2CvolumeInfo%2Fpublisher%2CvolumeInfo%2FpublishedDate%2CvolumeInfo%2Fdescription%2CvolumeInfo%2FindustryIdentifiers%2CvolumeInfo%2FpageCount%2CvolumeInfo%2Fdimensions%2CvolumeInfo%2FprintType%2CvolumeInfo%2FmainCategory%2CvolumeInfo%2Fcategories%2CvolumeInfo%2FaverageRating%2CvolumeInfo%2FratingsCount%2CvolumeInfo%2FcontentVersion%2CvolumeInfo%2FimageLinks%2CvolumeInfo%2Flanguage%2CvolumeInfo%2FpreviewLink%2CvolumeInfo%2FinfoLink%2CvolumeInfo%2FcanonicalVolumeLink%2CsaleInfo%2FlistPrice%2CsaleInfo%2FretailPrice%29%2CtotalItems%2Ckind",
+  "method": "GET",
+  "params": {
+    "query": "isbn:9783987021220",
+    "fields": "items(...),totalItems,kind"
+  }
+}
+
+[2025-05-08 10:20:29] RESPONSE FROM Google Books API
+{
+  "endpoint": "volumes",
+  "query": "isbn:9783987021220",
+  "status": 200,
+  "totalItems": 1,
+  "itemCount": 1
+}
+
+[2025-05-08 10:20:29] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-98702-122-0",
+  "found": true,
+  "title": "Das neue Universum",
+  "author": "Christoph Thomas Link"
+}
+
+[2025-05-08 10:20:29] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
   "model": "gpt-4o",
-  "usage": {
-    "prompt_tokens": 340,
-    "completion_tokens": 38,
-    "total_tokens": 378,
-    "prompt_tokens_details": {
-      "cached_tokens": 0,
-      "audio_tokens": 0
-    },
-    "completion_tokens_details": {
-      "reasoning_tokens": 0,
-      "audio_tokens": 0,
-      "accepted_prediction_tokens": 0,
-      "rejected_prediction_tokens": 0
-    }
-  },
-  "finishReason": "stop",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft"
+  "bookIdentifiers": "ISBN: 978-3-98702-122-0, Title: Das neue Universum, Author: Christoph Thomas Link",
+  "queryLanguage": "English",
+  "responseLanguage": "de"
 }
 
-[2025-05-07 12:45:55] RESPONSE FROM OpenAI API
+[2025-05-08 10:20:46] RESPONSE FROM OpenAI API
 {
-  "operation": "extractBookGenres:results",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
-  "genreCount": 5,
-  "genres": {
-    "0": "Politik",
-    "1": "Gesellschaft",
-    "2": "Sozialwissenschaft",
-    "3": "Zeitgeschehen",
-    "4": "Sachbuch"
-  },
-  "parseMethod": "standard"
-}
-
-[2025-05-07 12:46:03] REQUEST TO OpenAI API
-{
-  "operation": "generateCatalogEntry",
-  "endpoint": "chat.completions.create",
-  "model": "gpt-4o",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
-  "bookAuthor": "Johannes Hillje"
-}
-
-[2025-05-07 12:46:05] RESPONSE FROM OpenAI API
-{
-  "operation": "generateCatalogEntry",
+  "operation": "processBookAnalysis",
   "status": "success",
-  "bookTitle": "Wir sind die Mehrheit: Für eine offene Gesellschaft",
-  "entryLength": 1453
+  "bookTitle": "Das neue Universum"
 }

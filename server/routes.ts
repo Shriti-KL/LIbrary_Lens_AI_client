@@ -4,14 +4,7 @@ import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
 import { bookAnalysisSchema, Book, InsertBook } from "@shared/schema";
-import { 
-  processBookAnalysis, 
-  analyzeBookCover,
-  searchBooks,
-  getBookByISBN,
-  searchSimilarBooks,
-  enrichBookMetadata
-} from "./services/openai";
+// Import only the types, all service functions will be dynamically imported
 
 // Set up multer for in-memory file storage
 const upload = multer({
@@ -93,6 +86,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
+          // Import the analyzeBookCover function from OpenAI service
+          const { analyzeBookCover } = await import("./services/openai");
           const coverAnalysisResult = await analyzeBookCover(imageBase64);
           
           // Use the analysis results for fields that weren't provided
@@ -136,48 +131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Mark this as a user entry for the enrichment process
       validatedData.isUserEntry = isUserEntry;
       
-      // Always enrich book metadata with OpenAI to get proper spelling and capitalization
-      console.log(`[${requestId}] Enriching book metadata with OpenAI`);
-      let enrichedBookInfo = await enrichBookMetadata(validatedData);
-      
-      // Log what got corrected from OpenAI data
-      if (enrichedBookInfo.title !== validatedData.title) {
-        console.log(`[${requestId}] Title was corrected: "${validatedData.title}" → "${enrichedBookInfo.title}"`);
-      }
-      
-      if (enrichedBookInfo.author !== validatedData.author) {
-        console.log(`[${requestId}] Author was corrected: "${validatedData.author}" → "${enrichedBookInfo.author}"`);
-      }
-      
-      // For manual entries without a cover image, fetch from OpenAI-provided URL if we found a match
-      if (!req.file && enrichedBookInfo.coverImageUrl) {
-        console.log(`[${requestId}] Using cover image from provided URL: ${enrichedBookInfo.coverImageUrl}`);
-        
-        try {
-          // Fetch the cover image from the URL provided by OpenAI
-          const imageResponse = await fetch(enrichedBookInfo.coverImageUrl);
-          
-          if (imageResponse.ok) {
-            const imageBuffer = await imageResponse.arrayBuffer();
-            const base64Image = Buffer.from(imageBuffer).toString('base64');
-            
-            // Determine image type from URL
-            const imageType = enrichedBookInfo.coverImageUrl.endsWith('.jpg') || 
-                             enrichedBookInfo.coverImageUrl.endsWith('.jpeg') 
-                             ? 'image/jpeg' : 'image/png';
-            
-            // Add the image to the book info
-            enrichedBookInfo.coverImageData = `data:${imageType};base64,${base64Image}`;
-            console.log(`[${requestId}] Successfully fetched cover image from URL`);
-          }
-        } catch (error) {
-          console.error(`[${requestId}] Error fetching cover image:`, error);
-        }
-      }
-      
-      // Process book analysis with OpenAI
-      console.log(`[${requestId}] Processing full book analysis with OpenAI`);
-      const analysisResult = await processBookAnalysis(enrichedBookInfo);
+      // Process book analysis directly with Perplexity (fallback to OpenAI if needed)
+      console.log(`[${requestId}] Processing book analysis with Perplexity/OpenAI`);
+      // Import the processBookAnalysis function from bookAnalysis service
+      const { processBookAnalysis } = await import("./services/bookAnalysis");
+      const analysisResult = await processBookAnalysis(validatedData);
       
       // Log bibliographic data in detail before sending response
       console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK:`);
@@ -257,24 +215,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/books", async (req: Request, res: Response) => {
     try {
       // Get the raw book data from the request
-      const bookData: InsertBook = req.body;
+      let bookData: InsertBook = req.body;
       
-      // Always enrich with OpenAI to ensure proper spelling and capitalization
+      // Validate required fields, as the database has NOT NULL constraints
+      if (!bookData.title || !bookData.author) {
+        return res.status(400).json({ 
+          message: "Title and author are required fields",
+          missingFields: {
+            title: !bookData.title,
+            author: !bookData.author
+          }
+        });
+      }
+      
+      // Always enrich with Perplexity/OpenAI to ensure proper spelling and capitalization
       let enrichedData = bookData;
       
       // Only attempt to enrich if we have at least a title or ISBN
       if (bookData.title || bookData.isbn) {
         try {
-          // Mark as a user entry to prioritize OpenAI data
+          // Import the enrichBookMetadata function from bookAnalysis
+          const { enrichBookMetadata } = await import("./services/bookAnalysis");
+          
+          // Mark as a user entry to prioritize user-entered data
           const tempData = { ...bookData, isUserEntry: true };
           enrichedData = await enrichBookMetadata(tempData);
           
           // Log what was corrected
-          if (enrichedData.title !== bookData.title) {
+          if (enrichedData.title && bookData.title && enrichedData.title !== bookData.title) {
             console.log(`Book creation: Title corrected from "${bookData.title}" to "${enrichedData.title}"`);
           }
           
-          if (enrichedData.author !== bookData.author) {
+          if (enrichedData.author && bookData.author && enrichedData.author !== bookData.author) {
             console.log(`Book creation: Author corrected from "${bookData.author}" to "${enrichedData.author}"`);
           }
         } catch (enrichError) {
@@ -283,12 +255,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Ensure required fields are still present after enrichment
+      if (!enrichedData.title) {
+        enrichedData.title = bookData.title;
+      }
+      
+      if (!enrichedData.author) {
+        enrichedData.author = bookData.author;
+      }
+      
+      // Handle arrays that might be null
+      if (!enrichedData.genres) {
+        enrichedData.genres = [];
+      }
+      
+      if (!enrichedData.themes) {
+        enrichedData.themes = [];
+      }
+      
+      if (!enrichedData.similarBooks) {
+        enrichedData.similarBooks = [];
+      }
+      
       // Create book with enriched data
       const newBook = await storage.createBook(enrichedData);
       
       res.status(201).json(newBook);
-    } catch (error) {
-      res.status(500).json({ message: `Error creating book: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error creating book: ${errorMessage}` });
     }
   });
   
@@ -312,7 +307,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isUserEntry: true // Mark as user entry to prioritize OpenAI data
             };
             
-            // Enrich with OpenAI
+            // Import the enrichBookMetadata function from bookAnalysis
+            const { enrichBookMetadata } = await import("./services/bookAnalysis");
+            
+            // Enrich with Perplexity/OpenAI
             const enrichedData = await enrichBookMetadata(fullBookData);
             
             // Log what was corrected
@@ -454,38 +452,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Step 1: Analyze cover using OpenAI Vision
             console.log("Step 1: Analyzing book cover with OpenAI Vision...");
+            
+            // Import the analyzeBookCover function from OpenAI service
+            const { analyzeBookCover } = await import("./services/openai");
             const coverAnalysis = await analyzeBookCover(imageBase64);
             console.log("Cover analysis successful:", JSON.stringify(coverAnalysis).substring(0, 200) + "...");
             
-            // Step 2: Enrich with OpenAI metadata
-            console.log("Step 2: Enriching with OpenAI metadata...");
-            const enrichedData = await enrichBookMetadata({
-              ...coverAnalysis, 
-              // Ensure title and author are available for OpenAI enrichment
+            // Step 2: Process full analysis with Perplexity/OpenAI
+            console.log("Step 2: Processing complete book analysis...");
+            // Import the processBookAnalysis function from bookAnalysis service
+            const { processBookAnalysis } = await import("./services/bookAnalysis");
+            const analysisResult = await processBookAnalysis({
+              ...coverAnalysis,
+              // Ensure title and author are available
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
-              // This is from cover analysis, not user input
-              isUserEntry: true
-            });
-            
-            // Log what got corrected from OpenAI enrichment
-            if (enrichedData.title !== coverAnalysis.title) {
-              console.log(`Title was corrected: "${coverAnalysis.title}" → "${enrichedData.title}"`);
-            }
-            
-            if (enrichedData.author !== coverAnalysis.author) {
-              console.log(`Author was corrected: "${coverAnalysis.author}" → "${enrichedData.author}"`);
-            }
-            
-            console.log("Data enrichment successful");
-            
-            // Step 3: Process full analysis
-            console.log("Step 3: Processing complete book analysis...");
-            const analysisResult = await processBookAnalysis({
-              ...enrichedData,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
+              // This is from cover analysis, not user input
+              isUserEntry: true,
               options: {
                 summary: true,
                 genres: true,
@@ -551,7 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Book information lookup endpoints (powered by OpenAI)
   
-  // GET /api/books/lookup - Search books via OpenAI
+  // GET /api/books/lookup - Search books via Perplexity/OpenAI
   app.get("/api/books/lookup", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
@@ -572,14 +558,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxResults
       };
       
+      // Import the searchBooks function from bookAnalysis service
+      const { searchBooks } = await import("./services/bookAnalysis");
       const results = await searchBooks(searchParams);
+      
       res.status(200).json(results);
     } catch (error) {
       res.status(500).json({ message: `Error searching books: ${error.message}` });
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via OpenAI
+  // GET /api/books/isbn/:isbn - Get book by ISBN via Perplexity/OpenAI
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
@@ -588,6 +577,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
+      // Import the getBookByISBN function from bookAnalysis service
+      const { getBookByISBN } = await import("./services/bookAnalysis");
       const book = await getBookByISBN(isbn);
       
       if (!book) {
@@ -600,7 +591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // POST /api/books/similar - Get similar books via OpenAI
+  // POST /api/books/similar - Get similar books via Perplexity/OpenAI
   app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {
       const bookInfo = req.body;
@@ -609,7 +600,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
+      // Import the searchSimilarBooks function from bookAnalysis service
+      const { searchSimilarBooks } = await import("./services/bookAnalysis");
       const similarBooks = await searchSimilarBooks(bookInfo);
+      
       res.status(200).json(similarBooks);
     } catch (error) {
       res.status(500).json({ message: `Error finding similar books: ${error.message}` });

@@ -21,10 +21,42 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
     if (params.author) query += `+inauthor:${encodeURIComponent(params.author)}`;
     if (params.isbn) query += `+isbn:${encodeURIComponent(params.isbn)}`;
 
+    // Request specific fields to fetch all required data in one call
+    // Full list: https://developers.google.com/books/docs/v1/reference/volumes#resource
+    const fields = [
+      "kind",
+      "id",
+      "etag",
+      "selfLink",
+      "volumeInfo/title",
+      "volumeInfo/subtitle",
+      "volumeInfo/authors",
+      "volumeInfo/publisher",
+      "volumeInfo/publishedDate",
+      "volumeInfo/description",
+      "volumeInfo/industryIdentifiers",
+      "volumeInfo/pageCount",
+      "volumeInfo/dimensions",
+      "volumeInfo/printType",
+      "volumeInfo/mainCategory",
+      "volumeInfo/categories",
+      "volumeInfo/averageRating",
+      "volumeInfo/ratingsCount",
+      "volumeInfo/contentVersion",
+      "volumeInfo/imageLinks",
+      "volumeInfo/language",
+      "volumeInfo/previewLink",
+      "volumeInfo/infoLink",
+      "volumeInfo/canonicalVolumeLink",
+      "saleInfo/listPrice",
+      "saleInfo/retailPrice"
+    ].join(",");
+
     // Build API URL
     const url = new URL(GOOGLE_BOOKS_API_URL);
     url.searchParams.append("q", query);
     url.searchParams.append("key", API_KEY);
+    url.searchParams.append("fields", `items(${fields}),totalItems,kind`);
     if (params.maxResults) url.searchParams.append("maxResults", params.maxResults.toString());
 
     // Log the request
@@ -34,7 +66,8 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
       method: "GET",
       params: {
         query,
-        maxResults: params.maxResults
+        maxResults: params.maxResults,
+        fields: 'items(...),totalItems,kind'  // Simplified for logging
       }
     });
 
@@ -57,6 +90,46 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
       totalItems: data.totalItems,
       itemCount: data.items?.length || 0
     });
+    
+    // Log the first item's details if available (for debugging)
+    if (data.items && data.items.length > 0) {
+      const firstItem = data.items[0];
+      const volumeInfo = firstItem.volumeInfo || {};
+      
+      console.log("Google Books API response details:", {
+        id: firstItem.id,
+        title: volumeInfo.title,
+        subtitle: volumeInfo.subtitle,
+        authors: volumeInfo.authors,
+        publisher: volumeInfo.publisher,
+        publishedDate: volumeInfo.publishedDate,
+        language: volumeInfo.language,
+        printType: volumeInfo.printType,
+        pageCount: volumeInfo.pageCount,
+        categories: volumeInfo.categories,
+        imageLinks: volumeInfo.imageLinks,
+        contentVersion: volumeInfo.contentVersion,
+        industryIdentifiers: volumeInfo.industryIdentifiers,
+        dimensions: volumeInfo.dimensions,
+        // Other relevant fields
+        saleInfo: firstItem.saleInfo
+      });
+      
+      // Missing fields for requirements
+      const missingFields = [];
+      if (!volumeInfo.subtitle) missingFields.push("subtitle");
+      if (!volumeInfo.authors || volumeInfo.authors.length === 0) missingFields.push("authors");
+      if (!volumeInfo.publisher) missingFields.push("publisher");
+      if (!volumeInfo.publishedDate) missingFields.push("publishedDate");
+      if (!volumeInfo.pageCount) missingFields.push("pageCount");
+      if (!volumeInfo.dimensions) missingFields.push("dimensions");
+      if (!volumeInfo.printType) missingFields.push("printType/binding");
+      if (!firstItem.saleInfo || !firstItem.saleInfo.listPrice) missingFields.push("price");
+      
+      if (missingFields.length > 0) {
+        console.log("Google Books API missing fields:", missingFields.join(", "));
+      }
+    }
     
     return data.items || [];
   } catch (error: any) {
