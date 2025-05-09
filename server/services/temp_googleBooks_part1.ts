@@ -663,10 +663,3 @@ async function tryMultipleSearchStrategies(bookInfo: Partial<Book>): Promise<any
   return uniqueResults;
 }
 
-/**
- * Note: The redundant enrichBookMetadata function has been removed.
- * All book metadata enrichment is now centralized in the bookAnalysis.ts service.
- * This prevents duplicate data processing logic and reduces confusion about
- * which implementation is authoritative.
- */
-
