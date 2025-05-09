@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { formatISBN, exportBookToPDF, exportMultipleBooksToSinglePDF } from '@/lib/utils';
+import { formatISBN } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -81,7 +81,6 @@ import {
   Tag, 
   FileText,
   BookCopy, 
-  FileOutput, 
   CheckSquare,
   Square
 } from 'lucide-react';
@@ -254,33 +253,15 @@ export default function Archives() {
     }
   };
   
-  // Export selected books
+  // Export selected books (functionality removed)
   const exportSelectedBooks = () => {
-    const booksToExport = filteredBooks.filter(book => selectedBooks.has(book.id));
+    console.log('PDF export functionality has been removed');
     
-    if (booksToExport.length === 0) {
-      toast({
-        title: t('noBookSelected'),
-        description: t('pleaseSelectBooks'),
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      exportMultipleBooksToSinglePDF(booksToExport);
-      toast({
-        title: t('exportSuccess'),
-        description: t('booksExportedToPDF'),
-      });
-    } catch (error) {
-      console.error('PDF export error:', error);
-      toast({
-        title: t('exportFailed'),
-        description: t('errorGeneratingPDF'),
-        variant: 'destructive',
-      });
-    }
+    toast({
+      title: t('notAvailable'),
+      description: t('pdfExportRemoved'),
+      variant: 'destructive',
+    });
   };
 
   return (
@@ -586,25 +567,7 @@ export default function Archives() {
                   </span>
                 </div>
                 
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="h-8"
-                        onClick={exportSelectedBooks}
-                        disabled={selectedBooks.size === 0}
-                      >
-                        <FileOutput className="h-4 w-4 mr-2" />
-                        {t('exportSelected')}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{t('exportSelectedTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {/* PDF Export button has been removed */}
               </div>
               
               <Table>
