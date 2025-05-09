@@ -406,18 +406,6 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
     console.log(`- Language: ${formattedBook.language || 'N/A'}`);
     console.log(`- Genres: ${formattedBook.genres && Array.isArray(formattedBook.genres) ? formattedBook.genres.join(", ") : "None"}`);
     
-    // Additional fields from volumeInfo for debugging
-    console.log(`- Raw Print Type: ${volumeInfo.printType || 'N/A'}`);
-    console.log(`- Raw Maturity Rating: ${volumeInfo.maturityRating || 'N/A'}`);
-    console.log(`- Raw Content Version: ${volumeInfo.contentVersion || 'N/A'}`);
-    console.log(`- Raw Industry Identifiers: ${JSON.stringify(volumeInfo.industryIdentifiers || 'None')}`);
-    console.log(`- Raw Dimensions: ${JSON.stringify(volumeInfo.dimensions || 'None')}`);
-    console.log(`- Series Info: ${formattedBook.series || 'N/A'}`);
-    console.log(`- Contributors: ${formattedBook.contributors ? JSON.stringify(formattedBook.contributors) : 'None'}`);
-    
-    // Log full formatted book object (useful for debugging)
-    console.log(`[${lookupId}] FULL FORMATTED BOOK OBJECT:`, JSON.stringify(formattedBook, null, 2));
-    
     return formattedBook;
   } catch (error: any) {
     // Handle API request errors
