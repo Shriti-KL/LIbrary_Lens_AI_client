@@ -202,22 +202,31 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     titleText = `${titleFull} : ${subtitle}`;
   }
   
-  // Add contributors like editors, translators
-  let hasEditors = false;
-  if (book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0) {
-    // Find editors/publishers
-    const editors = book.contributors.filter((c: any) => 
-      c.role.toLowerCase() === 'herausgeber' || c.role.toLowerCase() === 'editor');
-    
-    if (editors.length > 0) {
-      titleText += ` / ${editors.map((e: any) => e.name).join(", ")} (Herausgeber)`;
-      hasEditors = true;
+  // Use statement of responsibility if available, otherwise construct from available data
+  if (book.statementOfResponsibility) {
+    titleText += ` / ${book.statementOfResponsibility}`;
+  } else {
+    let hasEditors = false;
+    if (book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0) {
+      // Find editors/publishers
+      const editors = book.contributors.filter((c: any) => 
+        c.role?.toLowerCase() === 'herausgeber' || c.role?.toLowerCase() === 'editor');
+      
+      if (editors.length > 0) {
+        titleText += ` / ${editors.map((e: any) => e.name).join(", ")} (Herausgeber)`;
+        hasEditors = true;
+      }
     }
-  }
-  
-  // If no editors found, add the author in the correct format
-  if (!hasEditors) {
-    titleText += ` / ${book.author}`;
+    
+    // If no editors found, add the author in the correct format
+    if (!hasEditors) {
+      // If we have illustrator information, include it with the author
+      if (book.illustrator) {
+        titleText += ` / ${book.author} ; Illustrationen von ${book.illustrator}`;
+      } else {
+        titleText += ` / ${book.author}`;
+      }
+    }
   }
   
   // Split the title text for proper wrapping
@@ -250,34 +259,32 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   publicationInfo += `. - ${book.pageCount || ''} Seiten`;
   
   // Add illustration information if appropriate - using format from sample image
-  if (book.contributors && Array.isArray(book.contributors)) {
-    const illustrators = book.contributors.filter((c: any) => 
-      c.role.toLowerCase() === 'illustrator' || c.role.toLowerCase().includes('illust'));
-    
-    if (illustrators.length > 0) {
+  if (book.illustrator || (book.contributors && Array.isArray(book.contributors))) {
+    // Check direct illustrator field first
+    if (book.illustrator) {
       publicationInfo += ` : Illustrationen`;
-      // Add color info if available
+      // Default to color illustrations
       publicationInfo += `, farbig`;
-    }
-  } else if (Math.random() > 0.5) {
-    // Sometimes add illustrations info to match sample format
-    publicationInfo += ` : Illustrationen`;
-    if (Math.random() > 0.5) {
-      publicationInfo += `, farbig`;
-    } else {
-      publicationInfo += `, schwarz-weiß`;
+    } 
+    // Then check contributors array
+    else if (book.contributors && Array.isArray(book.contributors)) {
+      const illustrators = book.contributors.filter((c: any) => 
+        c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+      
+      if (illustrators.length > 0) {
+        publicationInfo += ` : Illustrationen`;
+        // Default to color illustrations
+        publicationInfo += `, farbig`;
+      }
     }
   }
   
   // Add dimensions if available
   publicationInfo += book.dimensions ? ` ; ${book.dimensions}` : ``;
   
-  // Add series information, publisher info, or other parenthetical information if available
+  // Add series information or publisher info if available
   if (book.series) {
     publicationInfo += ` (${book.series})`;
-  } else if (Math.random() > 0.7) {
-    // Sometimes add publisher info in parentheses to match sample format
-    publicationInfo += ` (${Math.random() > 0.5 ? 'P.M. Schneller schlau' : 'ekz-Informationsdienst'})`;
   }
   
   // Split the publication info text for proper wrapping - match exact width from sample
