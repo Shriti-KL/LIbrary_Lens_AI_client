@@ -432,9 +432,12 @@ export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
     return [];
   }
   
+  // Get language preference or use default German
+  const language = book.language || "de";
+  
   try {
-    console.log(`Finding similar books for "${book.title}" by ${book.author}`);
-    const similarBooks = await getSimilarBooksFromGoogleBooks(book);
+    console.log(`Finding similar books for "${book.title}" by ${book.author} (language: ${language})`);
+    const similarBooks = await getSimilarBooksFromGoogleBooks(book, language);
     
     if (similarBooks && similarBooks.length > 0) {
       console.log(`Found ${similarBooks.length} similar books from Google Books API`);
