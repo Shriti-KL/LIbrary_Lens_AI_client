@@ -130,6 +130,17 @@ export async function processBookAnalysis(
       validatedOpenAIData.publishedYear = null;
     }
     
+    // Check for very old publication dates (could be incorrect)
+    const oldestReasonableYear = 1800; // Books before this year are rare and more likely errors
+    if (validatedBaseData.publishedYear && validatedBaseData.publishedYear < oldestReasonableYear) {
+      console.log(`[${analysisId}] Warning: Very old publication year detected from Google Books: ${validatedBaseData.publishedYear}. Setting to null.`);
+      validatedBaseData.publishedYear = null;
+    }
+    if (validatedOpenAIData.publishedYear && validatedOpenAIData.publishedYear < oldestReasonableYear) {
+      console.log(`[${analysisId}] Warning: Very old publication year detected from OpenAI: ${validatedOpenAIData.publishedYear}. Setting to null.`);
+      validatedOpenAIData.publishedYear = null;
+    }
+    
     // Check for unreasonably large page counts
     if (validatedBaseData.pageCount && validatedBaseData.pageCount > 2000) {
       console.log(`[${analysisId}] Warning: Unusually high page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
@@ -138,6 +149,32 @@ export async function processBookAnalysis(
     if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount > 2000) {
       console.log(`[${analysisId}] Warning: Unusually high page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
       validatedOpenAIData.pageCount = null;
+    }
+    
+    // Check for unusually low page counts
+    if (validatedBaseData.pageCount && validatedBaseData.pageCount < 10) {
+      console.log(`[${analysisId}] Warning: Unusually low page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
+      validatedBaseData.pageCount = null;
+    }
+    if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount < 10) {
+      console.log(`[${analysisId}] Warning: Unusually low page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
+      validatedOpenAIData.pageCount = null;
+    }
+    
+    // Check for suspiciously high prices (likely incorrect)
+    if (validatedBaseData.price) {
+      const priceMatch = validatedBaseData.price.match(/(\d+(\.\d+)?)/);
+      if (priceMatch && parseFloat(priceMatch[1]) > 300) {
+        console.log(`[${analysisId}] Warning: Unreasonably high price from Google Books: ${validatedBaseData.price}. Setting to null.`);
+        validatedBaseData.price = null;
+      }
+    }
+    if (validatedOpenAIData.price) {
+      const priceMatch = validatedOpenAIData.price.match(/(\d+(\.\d+)?)/);
+      if (priceMatch && parseFloat(priceMatch[1]) > 300) {
+        console.log(`[${analysisId}] Warning: Unreasonably high price from OpenAI: ${validatedOpenAIData.price}. Setting to null.`);
+        validatedOpenAIData.price = null;
+      }
     }
     
     // Mark suspicious data values for debugging - flag fields where Google Books and OpenAI disagree significantly
@@ -155,6 +192,38 @@ export async function processBookAnalysis(
         Math.abs(validatedBaseData.pageCount - validatedOpenAIData.pageCount) > 50) {
       console.log(`[${analysisId}] Page count mismatch detected: GB=${validatedBaseData.pageCount} vs OpenAI=${validatedOpenAIData.pageCount}`);
       suspiciousFields.push('pageCount');
+    }
+    
+    // Check for year of publication mismatch
+    if (validatedBaseData.publishedYear && validatedOpenAIData.publishedYear && 
+        Math.abs(validatedBaseData.publishedYear - validatedOpenAIData.publishedYear) > 2) {
+      console.log(`[${analysisId}] Publication year mismatch detected: GB=${validatedBaseData.publishedYear} vs OpenAI=${validatedOpenAIData.publishedYear}`);
+      suspiciousFields.push('publishedYear');
+    }
+    
+    // Check if publisher name might be incorrect (contains suspicious data)
+    const suspiciousPublisherTerms = ['author', 'written by', 'www', 'http', '.com', '.org', '.net', '(author)', 'ISBN'];
+    
+    // Check Google Books publisher
+    if (validatedBaseData.publisher) {
+      for (const term of suspiciousPublisherTerms) {
+        if (validatedBaseData.publisher.toLowerCase().includes(term.toLowerCase())) {
+          console.log(`[${analysisId}] Warning: Suspicious publisher name from Google Books: "${validatedBaseData.publisher}". Setting to null.`);
+          validatedBaseData.publisher = null;
+          break;
+        }
+      }
+    }
+    
+    // Check OpenAI publisher
+    if (validatedOpenAIData.publisher) {
+      for (const term of suspiciousPublisherTerms) {
+        if (validatedOpenAIData.publisher.toLowerCase().includes(term.toLowerCase())) {
+          console.log(`[${analysisId}] Warning: Suspicious publisher name from OpenAI: "${validatedOpenAIData.publisher}". Setting to null.`);
+          validatedOpenAIData.publisher = null;
+          break;
+        }
+      }
     }
     
     // Merge the results, prioritizing reliable data and handling null/undefined values properly
@@ -314,6 +383,17 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       validatedOpenAIData.publishedYear = null;
     }
     
+    // Check for very old publication dates (could be incorrect)
+    const oldestReasonableYear = 1800; // Books before this year are rare and more likely errors
+    if (validatedBaseData.publishedYear && validatedBaseData.publishedYear < oldestReasonableYear) {
+      console.log(`[${lookupId}] Warning: Very old publication year detected from Google Books: ${validatedBaseData.publishedYear}. Setting to null.`);
+      validatedBaseData.publishedYear = null;
+    }
+    if (validatedOpenAIData.publishedYear && validatedOpenAIData.publishedYear < oldestReasonableYear) {
+      console.log(`[${lookupId}] Warning: Very old publication year detected from OpenAI: ${validatedOpenAIData.publishedYear}. Setting to null.`);
+      validatedOpenAIData.publishedYear = null;
+    }
+    
     // Check for unreasonably large page counts
     if (validatedBaseData.pageCount && validatedBaseData.pageCount > 2000) {
       console.log(`[${lookupId}] Warning: Unusually high page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
@@ -322,6 +402,32 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
     if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount > 2000) {
       console.log(`[${lookupId}] Warning: Unusually high page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
       validatedOpenAIData.pageCount = null;
+    }
+    
+    // Check for unusually low page counts
+    if (validatedBaseData.pageCount && validatedBaseData.pageCount < 10) {
+      console.log(`[${lookupId}] Warning: Unusually low page count from Google Books: ${validatedBaseData.pageCount}. Setting to null.`);
+      validatedBaseData.pageCount = null;
+    }
+    if (validatedOpenAIData.pageCount && validatedOpenAIData.pageCount < 10) {
+      console.log(`[${lookupId}] Warning: Unusually low page count from OpenAI: ${validatedOpenAIData.pageCount}. Setting to null.`);
+      validatedOpenAIData.pageCount = null;
+    }
+    
+    // Check for suspiciously high prices (likely incorrect)
+    if (validatedBaseData.price) {
+      const priceMatch = validatedBaseData.price.match(/(\d+(\.\d+)?)/);
+      if (priceMatch && parseFloat(priceMatch[1]) > 300) {
+        console.log(`[${lookupId}] Warning: Unreasonably high price from Google Books: ${validatedBaseData.price}. Setting to null.`);
+        validatedBaseData.price = null;
+      }
+    }
+    if (validatedOpenAIData.price) {
+      const priceMatch = validatedOpenAIData.price.match(/(\d+(\.\d+)?)/);
+      if (priceMatch && parseFloat(priceMatch[1]) > 300) {
+        console.log(`[${lookupId}] Warning: Unreasonably high price from OpenAI: ${validatedOpenAIData.price}. Setting to null.`);
+        validatedOpenAIData.price = null;
+      }
     }
     
     // Mark suspicious data values for debugging - flag fields where Google Books and OpenAI disagree significantly
@@ -339,6 +445,38 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
         Math.abs(validatedBaseData.pageCount - validatedOpenAIData.pageCount) > 50) {
       console.log(`[${lookupId}] Page count mismatch detected: GB=${validatedBaseData.pageCount} vs OpenAI=${validatedOpenAIData.pageCount}`);
       suspiciousFields.push('pageCount');
+    }
+    
+    // Check for year of publication mismatch
+    if (validatedBaseData.publishedYear && validatedOpenAIData.publishedYear && 
+        Math.abs(validatedBaseData.publishedYear - validatedOpenAIData.publishedYear) > 2) {
+      console.log(`[${lookupId}] Publication year mismatch detected: GB=${validatedBaseData.publishedYear} vs OpenAI=${validatedOpenAIData.publishedYear}`);
+      suspiciousFields.push('publishedYear');
+    }
+    
+    // Check if publisher name might be incorrect (contains suspicious data)
+    const suspiciousPublisherTerms = ['author', 'written by', 'www', 'http', '.com', '.org', '.net', '(author)', 'ISBN'];
+    
+    // Check Google Books publisher
+    if (validatedBaseData.publisher) {
+      for (const term of suspiciousPublisherTerms) {
+        if (validatedBaseData.publisher.toLowerCase().includes(term.toLowerCase())) {
+          console.log(`[${lookupId}] Warning: Suspicious publisher name from Google Books: "${validatedBaseData.publisher}". Setting to null.`);
+          validatedBaseData.publisher = null;
+          break;
+        }
+      }
+    }
+    
+    // Check OpenAI publisher
+    if (validatedOpenAIData.publisher) {
+      for (const term of suspiciousPublisherTerms) {
+        if (validatedOpenAIData.publisher.toLowerCase().includes(term.toLowerCase())) {
+          console.log(`[${lookupId}] Warning: Suspicious publisher name from OpenAI: "${validatedOpenAIData.publisher}". Setting to null.`);
+          validatedOpenAIData.publisher = null;
+          break;
+        }
+      }
     }
     
     // Merge the results, prioritizing reliable data and handling null/undefined values properly
