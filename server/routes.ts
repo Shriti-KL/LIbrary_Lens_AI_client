@@ -242,8 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Import the enrichBookMetadata function from bookAnalysis
           const { enrichBookMetadata } = await import("./services/bookAnalysis");
           
+          // Get language preference from the book data or default to German
+          const language = bookData.language || "de";
+          
           // Mark as a user entry to prioritize user-entered data
-          const tempData = { ...bookData, isUserEntry: true };
+          const tempData = { ...bookData, isUserEntry: true, language };
           enrichedData = await enrichBookMetadata(tempData);
           
           // Log what was corrected
@@ -312,10 +315,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentBook = await storage.getBook(id);
           
           if (currentBook) {
+            // Get language preference from book data or current book or default to German
+            const language = bookData.language || currentBook.language || "de";
+            
             // Prepare full book data with updated fields
             const fullBookData = {
               ...currentBook,
               ...bookData,
+              language, // Ensure language is set correctly
               isUserEntry: true // Mark as user entry to prioritize OpenAI data
             };
             
@@ -472,6 +479,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Step 2: Process full analysis with Perplexity/OpenAI
             console.log("Step 2: Processing complete book analysis...");
+            // Get language from query parameter, extracted from cover, or default to German
+            const language = req.query.language as string || coverAnalysis.language || "de";
+            
             // Import the processBookAnalysis function from bookAnalysis service
             const { processBookAnalysis } = await import("./services/bookAnalysis");
             const analysisResult = await processBookAnalysis({
@@ -479,6 +489,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Ensure title and author are available
               title: coverAnalysis.title || "Unknown title",
               author: coverAnalysis.author || "Unknown author",
+              // Make sure language is set
+              language,
               // Use coverImage field as per the schema
               coverImage: `data:${file.mimetype};base64,${imageBase64}`,
               coverImageUrl: null, // We'll store the image data directly
@@ -572,9 +584,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxResults
       };
       
+      // Get preferred language from query params or use default (German)
+      const language = req.query.language as string || "de";
+      
       // Import the searchBooks function from googleBooks service
       const { searchBooks } = await import("./services/googleBooks");
-      const results = await searchBooks(searchParams);
+      const results = await searchBooks(searchParams, language);
       
       res.status(200).json(results);
     } catch (error) {
@@ -614,9 +629,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
       }
       
-      // Import the getSimilarBooks function from bookAnalysis service
+      // Get language preference from request or use book's language or default to German
+      const language = req.query.language as string || bookInfo.language || "de";
+      
+      // Import the getSimilarBooks function from bookAnalysis service  
       const { getSimilarBooks } = await import("./services/bookAnalysis");
-      const similarBooks = await getSimilarBooks(bookInfo);
+      const similarBooks = await getSimilarBooks({...bookInfo, language});
       
       res.status(200).json(similarBooks);
     } catch (error) {
