@@ -75,7 +75,8 @@ export async function processBookAnalysis(
   console.log(`[${analysisId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
   
   try {
-    // Prepare OpenAI request with the base book data - only include fields that are part of BookAnalysisRequest
+    // Prepare OpenAI request with all available fields from Google Books
+    // First, create a base request with required fields to satisfy the type system
     const openAiRequest: BookAnalysisRequest = {
       isbn: baseBookData.isbn || null,
       title: baseBookData.title || "",
@@ -83,6 +84,25 @@ export async function processBookAnalysis(
       language: baseBookData.language || "de",
       coverImageData: analysisRequest.coverImageData
     };
+    
+    // Then add all the available fields from Google Books data for more context
+    // Include as much metadata as possible for OpenAI to use
+    if (baseBookData.subtitle) openAiRequest.subtitle = baseBookData.subtitle;
+    if (baseBookData.publisher) openAiRequest.publisher = baseBookData.publisher;
+    if (baseBookData.publishedYear) openAiRequest.publishedYear = baseBookData.publishedYear;
+    if (baseBookData.pageCount) openAiRequest.pageCount = baseBookData.pageCount;
+    if (baseBookData.binding) openAiRequest.binding = baseBookData.binding;
+    if (baseBookData.coverImageUrl) openAiRequest.coverImageUrl = baseBookData.coverImageUrl;
+    if (baseBookData.summary) openAiRequest.summary = baseBookData.summary;
+    if (baseBookData.genres && Array.isArray(baseBookData.genres)) openAiRequest.genres = baseBookData.genres;
+    
+    // Log the fields being sent to OpenAI
+    console.log(`[${analysisId}] Sending following fields to OpenAI:`, 
+      Object.keys(openAiRequest).filter(key => 
+        openAiRequest[key as keyof BookAnalysisRequest] !== undefined && 
+        openAiRequest[key as keyof BookAnalysisRequest] !== null
+      )
+    );
     
     // Call OpenAI to enhance the metadata and generate summary, genres, themes
     const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
@@ -159,13 +179,33 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
     // Second step: Always use OpenAI to enhance the data
     console.log(`[${lookupId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
     
-    // Create a request for OpenAI with the base data - only include fields that are part of BookAnalysisRequest
+    // Create a request for OpenAI with all available fields from Google Books
+    // First, create a base request with required fields to satisfy the type system
     const request: BookAnalysisRequest = {
       isbn: baseBookData.isbn || null,
       title: baseBookData.title || "",
       author: baseBookData.author || "",
       language: baseBookData.language || language
     };
+    
+    // Then add all the available fields from Google Books data for more context
+    // Include as much metadata as possible for OpenAI to use
+    if (baseBookData.subtitle) request.subtitle = baseBookData.subtitle;
+    if (baseBookData.publisher) request.publisher = baseBookData.publisher;
+    if (baseBookData.publishedYear) request.publishedYear = baseBookData.publishedYear;
+    if (baseBookData.pageCount) request.pageCount = baseBookData.pageCount;
+    if (baseBookData.binding) request.binding = baseBookData.binding;
+    if (baseBookData.coverImageUrl) request.coverImageUrl = baseBookData.coverImageUrl;
+    if (baseBookData.summary) request.summary = baseBookData.summary;
+    if (baseBookData.genres && Array.isArray(baseBookData.genres)) request.genres = baseBookData.genres;
+    
+    // Log the fields being sent to OpenAI
+    console.log(`[${lookupId}] Sending following fields to OpenAI:`, 
+      Object.keys(request).filter(key => 
+        request[key as keyof BookAnalysisRequest] !== undefined && 
+        request[key as keyof BookAnalysisRequest] !== null
+      )
+    );
     
     const openAIResult = await processBookAnalysisWithOpenAI(request);
     
@@ -248,13 +288,31 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
     console.log(`Enriching book metadata using title/author: "${bookData.title}" by ${bookData.author}`);
     
     try {
-      // Create a request for analysis
+      // Create a request for analysis with all available fields
+      // First, create a base request with required fields
       const request: BookAnalysisRequest = {
         title: bookData.title,
         author: bookData.author,
         isbn: null,
         language: bookData.language || "de"
       };
+      
+      // Then add any other available fields for better context
+      if (bookData.subtitle) request.subtitle = bookData.subtitle;
+      if (bookData.publisher) request.publisher = bookData.publisher;
+      if (bookData.publishedYear) request.publishedYear = bookData.publishedYear;
+      if (bookData.pageCount) request.pageCount = bookData.pageCount;
+      if (bookData.binding) request.binding = bookData.binding;
+      if (bookData.coverImageUrl) request.coverImageUrl = bookData.coverImageUrl;
+      if (bookData.summary) request.summary = bookData.summary;
+      if (bookData.genres && Array.isArray(bookData.genres)) request.genres = bookData.genres;
+      
+      console.log(`Sending following fields to OpenAI for title/author enrichment:`, 
+        Object.keys(request).filter(key => 
+          request[key as keyof BookAnalysisRequest] !== undefined && 
+          request[key as keyof BookAnalysisRequest] !== null
+        )
+      );
       
       // Use OpenAI for enrichment with title/author
       const enrichedData = await processBookAnalysisWithOpenAI(request);
