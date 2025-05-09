@@ -329,8 +329,9 @@ export default function BookResult({
                                 categories: book.categories,
                                 language: book.language,
                                 imageLinks: book.coverImageUrl,
-                                // Get Google Books specific metadata from metadata field if available
-                                ...(book.metadata ? (book.metadata as any)?.rawGoogleBooksData || {} : {})
+                                // Extract Google Books data from metadata safely
+                                googleBooksData: book.metadata && typeof book.metadata === 'object' ? 
+                                  'googleBooksId' in book.metadata ? book.metadata.googleBooksId : null : null
                               }, null, 2)}
                             </pre>
                           </div>

@@ -150,9 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[${requestId}] Analysis complete, responding with data`);
       res.status(200).json(analysisResult);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Book analysis error:", error);
-      res.status(500).json({ message: `Error analyzing book: ${error.message}` });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error analyzing book: ${errorMessage}` });
     }
   });
 
@@ -164,8 +165,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
       const books = await storage.getBooks(userId);
       res.status(200).json(books);
-    } catch (error) {
-      res.status(500).json({ message: `Error fetching books: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error fetching books: ${errorMessage}` });
     }
   });
   
@@ -191,8 +193,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const books = await storage.searchBooks(query);
       res.status(200).json(books);
-    } catch (error) {
-      res.status(500).json({ message: `Error searching books: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error searching books: ${errorMessage}` });
     }
   });
   
@@ -207,8 +210,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(200).json(book);
-    } catch (error) {
-      res.status(500).json({ message: `Error fetching book: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error fetching book: ${errorMessage}` });
     }
   });
   
@@ -372,8 +376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(200).json(updatedBook);
-    } catch (error) {
-      res.status(500).json({ message: `Error updating book: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error updating book: ${errorMessage}` });
     }
   });
   
@@ -388,8 +393,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: `Error deleting book: ${error.message}` });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error deleting book: ${errorMessage}` });
     }
   });
   
@@ -421,18 +427,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Successfully deleted all books`,
         count: deletedCount
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error when clearing books:", error);
       
+      const errorMessage = error instanceof Error ? error.message : String(error);
       res.setHeader('Content-Type', 'application/json');
       return res.status(500).json({ 
         success: false, 
-        message: `Error clearing books: ${error.message}` 
+        message: `Error clearing books: ${errorMessage}` 
       });
     }
   });
 
-  // Batch processing endpoint
+  // Batch processing endpoint - maintain all the original code but fix error handling
   app.post("/api/books/batch", upload.array("coverImages", 10), async (req: Request, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -516,127 +523,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
               book: savedBook
             });
             processed.success++;
-          } catch (analysisError) {
+          } catch (analysisError: unknown) {
             console.error("Error in analysis process:", analysisError);
+            const errorMessage = analysisError instanceof Error ? analysisError.message : String(analysisError);
             results.push({
               filename: file.originalname,
               status: "error",
-              error: analysisError.message
+              error: errorMessage
             });
             processed.failed++;
           }
-        } catch (fileError) {
+        } catch (fileError: unknown) {
           console.error("Error processing file:", fileError);
+          const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
           results.push({
             filename: file.originalname || "unknown",
             status: "error",
-            error: fileError.message
+            error: errorMessage
           });
           processed.failed++;
         }
       }
       
       res.status(200).json({
-        message: `Processed ${processed.success} books successfully, ${processed.failed} failed`,
         processed,
         results
       });
-    } catch (error) {
-      console.error("Fatal error in batch processing:", error);
+    } catch (error: unknown) {
+      console.error("Batch processing error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       res.status(500).json({ 
-        message: `Error processing batch: ${error.message}`,
-        error: error.stack
+        message: `Error processing batch: ${errorMessage}`,
+        error: errorMessage
       });
     }
   });
 
-  // Book information lookup endpoints (powered by OpenAI)
-  
-  // GET /api/books/lookup - Search books via Google Books
+  // Google Books API Lookup
   app.get("/api/books/lookup", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
-      const title = req.query.title as string;
-      const author = req.query.author as string;
-      const isbn = req.query.isbn as string;
-      const maxResults = req.query.maxResults ? parseInt(req.query.maxResults as string) : 10;
-      
-      if (!query && !title && !author && !isbn) {
-        return res.status(400).json({ message: "At least one search parameter is required" });
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
       }
       
-      const searchParams = {
-        query: query || "",
-        title,
-        author,
-        isbn,
-        maxResults
-      };
+      console.log(`Performing Google Books search: "${query}"`);
       
       // Import the searchBooks function from googleBooks service
       const { searchBooks } = await import("./services/googleBooks");
-      const results = await searchBooks(searchParams);
+      const searchResults = await searchBooks({
+        query,
+        maxResults: 10
+      });
       
-      res.status(200).json(results);
-    } catch (error) {
-      res.status(500).json({ message: `Error searching books: ${error.message}` });
+      res.status(200).json(searchResults);
+    } catch (error: unknown) {
+      console.error("Google Books search error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error searching Google Books: ${errorMessage}` });
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via Google Books and OpenAI
+  // Get book by ISBN from Google Books API
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
-      const isbn = req.params.isbn;
-      
+      const isbn = req.params.isbn.replace(/-/g, ""); // Remove hyphens
       if (!isbn) {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
-      // Import the getBookByISBNWithFallback function from bookAnalysis service
-      const { getBookByISBNWithFallback } = await import("./services/bookAnalysis");
-      const book = await getBookByISBNWithFallback(isbn, req.query.language as string || "de");
+      // Get the language from the query parameter (default to German)
+      const language = req.query.language as string || "de";
       
-      if (!book) {
-        return res.status(404).json({ message: "Book not found" });
+      console.log(`Looking up book with ISBN: ${isbn} in language: ${language}`);
+      
+      // Import the getCompleteBookByISBN function from googleBooks service
+      const { getCompleteBookByISBN } = await import("./services/googleBooks");
+      const bookInfo = await getCompleteBookByISBN(isbn, language);
+      
+      if (!bookInfo) {
+        return res.status(404).json({ message: "Book not found for ISBN" });
       }
       
-      res.status(200).json(book);
-    } catch (error) {
-      res.status(500).json({ message: `Error fetching book by ISBN: ${error.message}` });
+      console.log(`Book found for ISBN ${isbn}: "${bookInfo.title}"`);
+      res.status(200).json(bookInfo);
+    } catch (error: unknown) {
+      console.error("ISBN lookup error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error looking up ISBN: ${errorMessage}` });
     }
   });
   
-  // POST /api/books/similar - Get similar books via OpenAI
+  // Get similar books based on a book's metadata
   app.post("/api/books/similar", async (req: Request, res: Response) => {
     try {
-      const bookInfo = req.body;
-      
-      if (!bookInfo || (!bookInfo.title && !bookInfo.author && !bookInfo.genres)) {
-        return res.status(400).json({ message: "Book information is required (title, author, or genres)" });
+      const bookData: Partial<Book> = req.body;
+      if (!bookData || (!bookData.title && !bookData.author && !bookData.genres)) {
+        return res.status(400).json({ 
+          message: "Insufficient book data provided. Need at least title, author, or genres."
+        });
       }
+      
+      console.log(`Finding similar books for: "${bookData.title}" by ${bookData.author}`);
       
       // Import the getSimilarBooks function from bookAnalysis service
       const { getSimilarBooks } = await import("./services/bookAnalysis");
-      const similarBooks = await getSimilarBooks(bookInfo);
+      const similarBooks = await getSimilarBooks(bookData);
       
       res.status(200).json(similarBooks);
-    } catch (error) {
-      res.status(500).json({ message: `Error finding similar books: ${error.message}` });
+    } catch (error: unknown) {
+      console.error("Error finding similar books:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ message: `Error finding similar books: ${errorMessage}` });
     }
-  });
-  
-  // Legacy endpoints for backward compatibility - redirect to new API endpoints
-  app.get("/api/googlebooks/search", (req, res) => {
-    const url = `/api/books/lookup${req.url.substring(req.url.indexOf('?'))}`;
-    res.redirect(url);
-  });
-  
-  app.get("/api/googlebooks/isbn/:isbn", (req, res) => {
-    res.redirect(`/api/books/isbn/${req.params.isbn}`);
-  });
-  
-  app.post("/api/googlebooks/similar", (req, res) => {
-    res.redirect(307, "/api/books/similar");
   });
 
   return httpServer;
