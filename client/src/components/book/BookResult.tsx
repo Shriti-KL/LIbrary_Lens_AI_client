@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
-import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
   CardContent, 
@@ -11,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
