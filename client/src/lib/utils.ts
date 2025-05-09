@@ -132,258 +132,103 @@ import { Book } from '@shared/schema';
 export function exportBookToPDF(book: Book): void {
   const doc = new jsPDF();
   
-  // Define colors
-  const primaryColor = [0, 51, 102]; // Dark blue
-  const textColor = [0, 0, 0]; // Black
+  // Add title
+  const title = book.title || 'Book Details';
+  doc.setFontSize(20);
+  doc.setTextColor(0, 51, 102); // Primary color
+  doc.text(title, 14, 22);
   
-  // ---- Header section with library name ----
-  doc.setFontSize(12);
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setFont("helvetica", "bold");
-  doc.text("LibraryLens AI - Library Catalog", 14, 15);
+  // Add author
+  if (book.author) {
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`by ${book.author}`, 14, 32);
+  }
   
-  // Add a horizontal line
+  // Add horizontal line
   doc.setDrawColor(200, 200, 200);
-  doc.line(14, 18, 196, 18);
+  doc.line(14, 36, 196, 36);
   
-  // ---- Catalog Entry Format ----
-  // This is the primary section showing the catalog entry in library format
+  // Add metadata
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
   
-  let yPos = 25; // Start position for catalog
-  
-  // If catalog entry exists, use it as the primary content
-  if (book.catalogEntry) {
-    doc.setFontSize(12);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFont("helvetica", "bold");
-    doc.text("Catalog Entry", 14, yPos);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    
-    // Format the catalog entry text
-    const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
-    doc.text(catalogLines, 14, yPos + 8);
-    
-    // Update position
-    yPos = yPos + 8 + (catalogLines.length * 5) + 10;
-  } 
-  // If no catalog entry exists, create a formatted citation style header
-  else {
-    // Create bibliography-style citation format
-    // Format: Author: Title / Additional info. - Edition. - Location: Publisher, Year. Pages: Details; Size. (Series)
-    
-    // First line: Author: Title
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    
-    const authorTitleLine = `${book.author}: ${book.title}`;
-    doc.text(authorTitleLine, 14, yPos);
-    
-    // Second line: Publication details
-    let pubDetails = '';
-    if (book.publisher) {
-      pubDetails += book.publisher;
-      if (book.publishedYear) pubDetails += `, ${book.publishedYear}`;
-    } else if (book.publishedYear) {
-      pubDetails += book.publishedYear;
-    }
-    
-    // Add page details if available
-    if (book.pageCount) {
-      if (pubDetails) pubDetails += '. ';
-      pubDetails += `${book.pageCount} pages`;
-    }
-    
-    // Add details like illustrations if available (assuming from catalog entry)
-    if (book.catalogEntry && book.catalogEntry.includes('Illustrations')) {
-      const illustrationsMatch = book.catalogEntry.match(/illustrations[^.;]*/i);
-      if (illustrationsMatch) {
-        if (pubDetails) pubDetails += ': ';
-        pubDetails += illustrationsMatch[0].trim();
-      }
-    }
-    
-    // Format and display publication details
-    if (pubDetails) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(pubDetails, 30, yPos + 6);
-      yPos += 6;
-    }
-    
-    // Third line: ISBN
-    if (book.isbn) {
-      yPos += 6;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      const isbnLine = `ISBN ${formatISBN(book.isbn)}`;
-      
-      if (book.deweyDecimal) {
-        doc.text(`${isbnLine} - Dewey: ${book.deweyDecimal}`, 30, yPos);
-      } else {
-        doc.text(isbnLine, 30, yPos);
-      }
-    }
-    
-    yPos += 12;
-  }
-  
-  // ---- Summary Section ----
-  if (book.summary) {
-    // Check if we need a new page
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.text("Summary", 14, yPos);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    
-    const summaryLines = doc.splitTextToSize(book.summary, 180);
-    doc.text(summaryLines, 14, yPos + 5);
-    
-    yPos += (summaryLines.length * 5) + 15;
-  }
-  
-  // ---- Bibliographic Details Table ----
-  // Check if we need a new page
-  if (yPos > 200) {
-    doc.addPage();
-    yPos = 20;
-  }
-  
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text("Bibliographic Details", 14, yPos);
-  
-  // Create metadata array for table
   const metadata = [
-    ['Title', book.title],
-    ['Author', book.author],
     ['ISBN', book.isbn ? formatISBN(book.isbn) : 'N/A'],
     ['Publisher', book.publisher || 'N/A'],
-    ['Year', book.publishedYear?.toString() || 'N/A'],
-    ['Pages', book.pageCount?.toString() || 'N/A']
+    ['Published Year', book.publishedYear?.toString() || 'N/A'],
+    ['Page Count', book.pageCount?.toString() || 'N/A'],
+    ['Reading Level', book.readingLevel?.toString() || 'N/A'],
+    ['Dewey Decimal', book.deweyDecimal || 'N/A'],
   ];
   
-  // Add dewey decimal if available
-  if (book.deweyDecimal) {
-    metadata.push(['Dewey Decimal', book.deweyDecimal]);
-  }
-  
-  // Create a clean table for bibliographic data
   autoTable(doc, {
-    startY: yPos + 5,
-    head: [],
+    startY: 40,
+    head: [['Property', 'Value']],
     body: metadata,
-    theme: 'plain',
-    styles: {
-      fontSize: 9,
-      cellPadding: 3
-    },
-    columnStyles: {
-      0: {
-        fontStyle: 'bold',
-        cellWidth: 40
-      }
-    }
+    theme: 'grid',
+    headStyles: { fillColor: [0, 51, 102], textColor: 255 },
+    styles: { overflow: 'linebreak' },
+    columnStyles: { 0: { cellWidth: 40 } },
   });
   
-  // Get new Y position after the table
-  yPos = (doc as any).lastAutoTable.finalY + 10;
+  // Add summary if exists
+  if (book.summary) {
+    const currentY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 51, 102);
+    doc.text('Summary', 14, currentY);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    
+    const textLines = doc.splitTextToSize(book.summary, 180);
+    doc.text(textLines, 14, currentY + 8);
+  }
   
-  // ---- Genres Section ----
+  // Add genres if exist
   if (Array.isArray(book.genres) && book.genres.length > 0) {
-    // Check if we need a new page
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
-    }
+    let currentY = book.summary 
+      ? (doc as any).lastAutoTable.finalY + doc.splitTextToSize(book.summary, 180).length * 7 + 15
+      : (doc as any).lastAutoTable.finalY + 10;
     
-    // Create a table for genres
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Genres']],
-      body: book.genres.map(genre => [genre]),
-      theme: 'plain',
-      headStyles: {
-        fillColor: primaryColor,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      styles: {
-        fontSize: 9
-      }
-    });
+    doc.setFontSize(14);
+    doc.setTextColor(0, 51, 102);
+    doc.text('Genres', 14, currentY);
     
-    // Update Y position
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(book.genres.join(', '), 14, currentY + 8);
   }
   
-  // ---- Reading Level Section (if available) ----
-  if (book.readingLevel) {
-    // Check if we need a new page
-    if (yPos > 220) {
+  // Add catalog entry if exists
+  if (book.catalogEntry) {
+    // Check available space
+    const currentY = (doc as any).lastAutoTable.finalY;
+    const availableSpace = doc.internal.pageSize.getHeight() - currentY;
+    
+    if (availableSpace < 100) {
       doc.addPage();
-      yPos = 20;
-    }
-    
-    let readingLevelData = [];
-    
-    if (typeof book.readingLevel === 'object') {
-      const readingLevel = book.readingLevel as any;
-      if (readingLevel.ageRange) readingLevelData.push(['Age Range', readingLevel.ageRange]);
-      if (readingLevel.gradeLevel) readingLevelData.push(['Grade Level', readingLevel.gradeLevel]);
-      if (readingLevel.complexity) readingLevelData.push(['Complexity', readingLevel.complexity]);
-      if (readingLevel.lexileMeasure) readingLevelData.push(['Lexile Measure', readingLevel.lexileMeasure]);
+      doc.setFontSize(14);
+      doc.setTextColor(0, 51, 102);
+      doc.text('Catalog Entry', 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
+      doc.text(catalogLines, 14, 30);
     } else {
-      readingLevelData.push(['Reading Level', String(book.readingLevel)]);
-    }
-    
-    if (readingLevelData.length > 0) {
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Reading Level', '']],
-        body: readingLevelData,
-        theme: 'plain',
-        headStyles: {
-          fillColor: primaryColor,
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        styles: {
-          fontSize: 9
-        },
-        columnStyles: {
-          0: {
-            fontStyle: 'bold',
-            cellWidth: 40
-          }
-        }
-      });
+      doc.setFontSize(14);
+      doc.setTextColor(0, 51, 102);
+      doc.text('Catalog Entry', 14, currentY + 30);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      const catalogLines = doc.splitTextToSize(book.catalogEntry, 180);
+      doc.text(catalogLines, 14, currentY + 38);
     }
   }
   
-  // ---- Add Footer with Page Numbers ----
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Page ${i} of ${pageCount}`, 14, doc.internal.pageSize.height - 10);
-    doc.text('Generated by LibraryLens AI', 196 - 50, doc.internal.pageSize.height - 10, { align: 'right' });
-  }
-  
-  // Save the PDF with the book title as filename
+  // Save the PDF
   doc.save(`${book.title || 'book'}.pdf`);
 }
