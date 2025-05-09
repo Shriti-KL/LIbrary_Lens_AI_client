@@ -272,24 +272,107 @@ export default function BookResult({
                     <p className="mt-1 text-sm text-neutral-700">{book.binding || 'N/A'}</p>
                   </div>
                   
-                  {/* Debug section - This will be removed before deployment */}
+                  {/* Enhanced Debug section with all metadata */}
                   <div className="col-span-2 mt-3 pt-3 border-t border-neutral-200">
                     <details>
                       <summary className="flex items-center gap-2 cursor-pointer text-xs text-neutral-500 font-mono">
-                        <span className="text-red-500">[DEBUG]</span> Book Data
+                        <span className="text-red-500">[DEBUG]</span> Complete Book Metadata
                       </summary>
-                      <div className="mt-2 overflow-auto max-h-32 p-2 bg-neutral-100 rounded text-xs font-mono">
-                        <pre className="text-neutral-700">
-                          {JSON.stringify({
-                            title: book.title,
-                            author: book.author,
-                            pageCount: book.pageCount,
-                            dimensions: book.dimensions,
-                            binding: book.binding,
-                            edition: book.edition,
-                            publisher: book.publisher
-                          }, null, 2)}
-                        </pre>
+                      <div className="mt-2 overflow-auto max-h-[500px] p-2 bg-neutral-100 rounded text-xs font-mono">
+                        <div className="mb-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+                            <h5 className="font-bold">Source Data Summary:</h5>
+                          </div>
+                          <div className="pl-5 text-xs">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                              <div><span className="font-semibold">Google Books:</span> {book.isbn ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">OpenAI:</span> {book.summary ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">ISBN:</span> {book.isbn || 'N/A'}</div>
+                              <div><span className="font-semibold">Publication Year:</span> {book.publishedYear || 'N/A'}</div>
+                              <div><span className="font-semibold">Genres:</span> {Array.isArray(book.genres) ? book.genres.length : 0} found</div>
+                              <div><span className="font-semibold">Themes:</span> {Array.isArray(book.themes) ? book.themes.length : 0} found</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="tabs mb-2">
+                          <div className="flex border-b border-neutral-300 mb-3">
+                            <div className="flex space-x-1">
+                              <div className="px-3 py-1 bg-primary-light/20 text-primary-dark rounded-t-lg border-t border-l border-r border-neutral-300 font-medium">
+                                Processed Book Data
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-6">
+                          {/* Google Books Data */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-blue-50 p-2 rounded border border-blue-200">
+                              <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
+                              <h5 className="font-bold">Google Books Data</h5>
+                            </div>
+                            <div className="pl-5 text-xs mb-2">
+                              <p>Basic metadata retrieved from Google Books API</p>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify({
+                                id: book.id,
+                                googleBooksId: book.googleBooksId,
+                                title: book.title,
+                                subtitle: book.subtitle,
+                                author: book.author,
+                                isbn: book.isbn,
+                                publisher: book.publisher,
+                                publishedYear: book.publishedYear,
+                                pageCount: book.pageCount,
+                                categories: book.categories,
+                                language: book.language,
+                                imageLinks: book.coverImageUrl,
+                                industryIdentifiers: book.industryIdentifiers,
+                                printType: book.printType,
+                                maturityRating: book.maturityRating
+                              }, null, 2)}
+                            </pre>
+                          </div>
+                          
+                          {/* OpenAI Enhanced Data */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-emerald-50 p-2 rounded border border-emerald-200">
+                              <div className="h-3 w-3 bg-emerald-500 rounded-full"></div>
+                              <h5 className="font-bold">OpenAI Enhanced Data</h5>
+                            </div>
+                            <div className="pl-5 text-xs mb-2">
+                              <p>AI-generated content and metadata enhancements</p>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify({
+                                summary: book.summary,
+                                genres: book.genres,
+                                themes: book.themes,
+                                readingLevel: book.readingLevel,
+                                catalogEntry: book.catalogEntry,
+                                metadata: book.metadata
+                              }, null, 2)}
+                            </pre>
+                          </div>
+                          
+                          {/* Complete Raw Data */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-neutral-100 p-2 rounded border border-neutral-300">
+                              <div className="h-3 w-3 bg-neutral-500 rounded-full"></div>
+                              <h5 className="font-bold">Complete Raw Book Data</h5>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify(book, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 text-xs text-neutral-500">
+                          <p>This debug view shows all available book metadata merged from Google Books API and OpenAI processing.</p>
+                        </div>
                       </div>
                     </details>
                   </div>
