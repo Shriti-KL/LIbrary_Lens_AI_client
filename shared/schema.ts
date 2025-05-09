@@ -95,6 +95,7 @@ export const bookAnalysisSchema = z.object({
   // Contributors
   translator: z.string().nullable().optional(),
   illustrator: z.string().nullable().optional(),
+  statementOfResponsibility: z.string().nullable().optional(),
   
   // Physical book properties 
   dimensions: z.string().nullable().optional(),
