@@ -282,12 +282,11 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
     
     console.log(`Searching for books similar to "${book.title}" by ${book.author}`);
     
-    // Prepare context
+    // Prepare context - using standardized fields
     const bookContext = {
       title: book.title,
       author: book.author,
       genres: book.genres || [],
-      themes: book.themes || [],
       summary: book.summary ? book.summary.substring(0, 300) + "..." : null,
       language: language,
     };

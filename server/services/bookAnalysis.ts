@@ -136,14 +136,12 @@ export async function processBookAnalysis(
         console.log(`[${analysisId}] WARNING: ISBN mismatch between Google Books (${baseBookData.isbn}) and OpenAI (${openAIResult.isbn}). Using Google Books ISBN.`);
       }
       
-      // Log the complete merged results for debugging
+      // Log the complete merged results for debugging - using standardized fields
       console.log(`[${analysisId}] BIBLIOGRAPHIC DATA CHECK from final merged result:`);
       console.log(`- Title: "${mergedResult.title || 'N/A'}"`);
       console.log(`- Subtitle: "${mergedResult.subtitle || 'N/A'}"`);
       console.log(`- Main Author: "${mergedResult.author || 'N/A'}"`);
       console.log(`- Statement of Responsibility: ${mergedResult.statementOfResponsibility || 'N/A'}`);
-      console.log(`- Illustrator: ${mergedResult.illustrator || 'N/A'}`);
-      console.log(`- Translator: ${mergedResult.translator || 'N/A'}`);
       console.log(`- Edition: ${mergedResult.edition || 'N/A'}`);
       console.log(`- Location: ${mergedResult.location || 'N/A'}`);
       console.log(`- Publisher: ${mergedResult.publisher || 'N/A'}`);
@@ -155,10 +153,7 @@ export async function processBookAnalysis(
       console.log(`- Price: ${mergedResult.price || 'N/A'}`);
       console.log(`- Language: ${mergedResult.language || 'N/A'}`);
       console.log(`- Genres: ${mergedResult.genres ? JSON.stringify(mergedResult.genres) : 'None'}`);
-      console.log(`- Themes: ${mergedResult.themes ? JSON.stringify(mergedResult.themes) : 'None'}`);
-      console.log(`- Catalog Number: ${mergedResult.catalogNumber || 'N/A'}`);
-      console.log(`- Interest Category: ${mergedResult.interestCategory || 'N/A'}`);
-      console.log(`- Reading Level: ${mergedResult.readingLevel || 'N/A'}`);
+      console.log(`- Summary: ${mergedResult.summary ? (mergedResult.summary.substring(0, 50) + '...') : 'N/A'}`);
       
       // Log the source of each field (Google Books, OpenAI, or both)
       const fieldSources: Record<string, string> = {};
@@ -314,14 +309,12 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
         console.log(`[${lookupId}] WARNING: ISBN mismatch between request (${isbn}) and OpenAI (${openAIResult.isbn}). Using requested ISBN.`);
       }
       
-      // Log the complete merged results for debugging
+      // Log the complete merged results for debugging - using standardized fields
       console.log(`[${lookupId}] BIBLIOGRAPHIC DATA CHECK from final ISBN lookup result:`);
       console.log(`- Title: "${mergedResult.title || 'N/A'}"`);
       console.log(`- Subtitle: "${mergedResult.subtitle || 'N/A'}"`);
       console.log(`- Main Author: "${mergedResult.author || 'N/A'}"`);
       console.log(`- Statement of Responsibility: ${mergedResult.statementOfResponsibility || 'N/A'}`);
-      console.log(`- Illustrator: ${mergedResult.illustrator || 'N/A'}`);
-      console.log(`- Translator: ${mergedResult.translator || 'N/A'}`);
       console.log(`- Edition: ${mergedResult.edition || 'N/A'}`);
       console.log(`- Location: ${mergedResult.location || 'N/A'}`);
       console.log(`- Publisher: ${mergedResult.publisher || 'N/A'}`);
@@ -333,10 +326,7 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       console.log(`- Price: ${mergedResult.price || 'N/A'}`);
       console.log(`- Language: ${mergedResult.language || 'N/A'}`);
       console.log(`- Genres: ${mergedResult.genres ? JSON.stringify(mergedResult.genres) : 'None'}`);
-      console.log(`- Themes: ${mergedResult.themes ? JSON.stringify(mergedResult.themes) : 'None'}`);
-      console.log(`- Catalog Number: ${mergedResult.catalogNumber || 'N/A'}`);
-      console.log(`- Interest Category: ${mergedResult.interestCategory || 'N/A'}`);
-      console.log(`- Reading Level: ${mergedResult.readingLevel || 'N/A'}`);
+      console.log(`- Summary: ${mergedResult.summary ? (mergedResult.summary.substring(0, 50) + '...') : 'N/A'}`);
       
       // Log the source of each field (Google Books, OpenAI, or both)
       const fieldSources: Record<string, string> = {};
