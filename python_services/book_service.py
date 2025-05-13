@@ -18,7 +18,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("python_services/book_service.log"),
+        logging.FileHandler("book_service.log"),
         logging.StreamHandler()
     ]
 )
@@ -239,6 +239,12 @@ def get_dnb_metadata(isbn: str) -> Dict:
                 year_match = re.search(r'\d{4}', year_text)
                 if year_match:
                     published_year = int(year_match.group(0))
+                    
+                    # Validate publication year immediately
+                    current_year = datetime.now().year
+                    if published_year > current_year:
+                        logger.warning(f"Future publication year detected in DNB: {published_year}")
+                        published_year = None
         
         # Process physical description (MARC field 300)
         physical_field = record.find('.//marc:datafield[@tag="300"]', ns)
@@ -359,12 +365,12 @@ def get_book_by_isbn(isbn: str) -> Dict:
     # Validate the merged result
     # Check for future dates (likely incorrect)
     current_year = datetime.now().year
-    if merged_result.get("publishedYear") and merged_result["publishedYear"] > current_year:
+    if merged_result.get("publishedYear") and isinstance(merged_result["publishedYear"], int) and merged_result["publishedYear"] > current_year:
         logger.warning(f"Future publication year detected: {merged_result['publishedYear']}")
         merged_result["publishedYear"] = None
     
     # Check for unreasonably large page counts
-    if merged_result.get("pageCount") and merged_result["pageCount"] > 2000:
+    if merged_result.get("pageCount") and isinstance(merged_result["pageCount"], int) and merged_result["pageCount"] > 2000:
         logger.warning(f"Unusually high page count detected: {merged_result['pageCount']}")
         merged_result["pageCount"] = None
     
