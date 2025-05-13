@@ -1109,3 +1109,49 @@
     "19": "ASB"
   }
 }
+
+[2025-05-13 12:46:18] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-1-59017-374-9"
+}
+
+[2025-05-13 12:46:23] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-1-59017-374-9",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-13 12:46:23] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "eng",
+  "isbn": "9781590173749",
+  "title": "Irretrievable",
+  "author": "Fontane, Theodor"
+}
+
+[2025-05-13 12:46:25] ERROR FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors."
+}
+
+[2025-05-13 12:46:25] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "eng",
+  "isbn": "9781590173749",
+  "title": "Irretrievable",
+  "author": "Fontane, Theodor"
+}
+
+[2025-05-13 12:46:27] ERROR FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors."
+}
