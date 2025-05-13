@@ -28,6 +28,9 @@ logger = logging.getLogger("book_service")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_BOOKS_API_KEY = os.environ.get("GOOGLE_BOOKS_API_KEY", "")
 
+# Fixed reference date (2023 as a stable reference year)
+REFERENCE_YEAR = 2023
+
 def get_google_books_by_isbn(isbn: str) -> Dict:
     """Fetch book data from Google Books API using ISBN"""
     try:
@@ -241,9 +244,8 @@ def get_dnb_metadata(isbn: str) -> Dict:
                     published_year = int(year_match.group(0))
                     
                     # Validate publication year immediately
-                    current_year = datetime.now().year
-                    if published_year > current_year:
-                        logger.warning(f"Future publication year detected in DNB: {published_year}")
+                    if published_year > REFERENCE_YEAR + 2:  # Allow up to 2 years in advance for upcoming releases
+                        logger.warning(f"VALIDATION: Future publication year detected in DNB: {published_year} > {REFERENCE_YEAR + 2}. Setting to null.")
                         published_year = None
         
         # Process physical description (MARC field 300)
@@ -364,9 +366,8 @@ def get_book_by_isbn(isbn: str) -> Dict:
     
     # Validate the merged result
     # Check for future dates (likely incorrect)
-    current_year = datetime.now().year
-    if merged_result.get("publishedYear") and isinstance(merged_result["publishedYear"], int) and merged_result["publishedYear"] > current_year:
-        logger.warning(f"Future publication year detected: {merged_result['publishedYear']}")
+    if merged_result.get("publishedYear") and isinstance(merged_result["publishedYear"], int) and merged_result["publishedYear"] > REFERENCE_YEAR + 2:
+        logger.warning(f"FINAL VALIDATION: Future publication year detected: {merged_result['publishedYear']} > {REFERENCE_YEAR + 2}. Setting to null.")
         merged_result["publishedYear"] = None
     
     # Check for unreasonably large page counts
