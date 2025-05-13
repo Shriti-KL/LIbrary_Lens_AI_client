@@ -549,3 +549,69 @@
     "19": "coverImageUrl"
   }
 }
+
+[2025-05-13 11:14:37] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-96251-218-7"
+}
+
+[2025-05-13 11:14:38] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-96251-218-7",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-13 11:14:38] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783962512187",
+  "title": "Marken Recht einfach",
+  "author": "Claessen, Rolf"
+}
+
+[2025-05-13 11:14:44] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 770,
+    "completion_tokens": 399,
+    "total_tokens": 1169,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "summary",
+    "12": "genres",
+    "13": "themes",
+    "14": "interestCategory",
+    "15": "readingLevel",
+    "16": "binding",
+    "17": "dimensions"
+  }
+}

@@ -26,22 +26,22 @@ export async function processBookAnalysis(
   // Base book data to be enriched - start with an empty object
   let baseBookData: Partial<Book> = {};
   
-  // If ISBN is provided, use that specifically to get metadata from Google Books
+  // If ISBN is provided, use our improved ISBN lookup service
   if (analysisRequest.isbn) {
     const isbn = analysisRequest.isbn;
-    console.log(`[${analysisId}] ISBN found: ${isbn} - Using clean ISBN-only lookup`);
+    console.log(`[${analysisId}] ISBN found: ${isbn} - Using enhanced ISBN lookup`);
     
     try {
-      // First step: get metadata from Google Books API with the ISBN
-      console.log(`[${analysisId}] Retrieving book metadata from Google Books API using ISBN`);
-      const googleBooksResult = await getCompleteBookByISBN(isbn, analysisRequest.language || "de");
+      // Use our improved ISBN lookup service that combines Python and Google Books API
+      console.log(`[${analysisId}] Retrieving book metadata using enhanced ISBN lookup`);
+      const bookData = await getBookByISBNWithFallback(isbn, analysisRequest.language || "de");
       
-      // If Google Books API returned valid data, use it as base data
-      if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
-        console.log(`[${analysisId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
-        baseBookData = googleBooksResult;
+      // If we got valid data, use it as base data
+      if (bookData && bookData.title && bookData.author) {
+        console.log(`[${analysisId}] Successfully retrieved book metadata: "${bookData.title}" by ${bookData.author}`);
+        baseBookData = bookData;
       } else {
-        console.log(`[${analysisId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+        console.log(`[${analysisId}] Enhanced lookup didn't return valid data for ISBN: ${isbn}`);
         // Still include the ISBN in base data
         baseBookData = {
           isbn,
@@ -49,7 +49,7 @@ export async function processBookAnalysis(
         };
       }
     } catch (error: any) {
-      console.log(`[${analysisId}] Error retrieving data from Google Books:`, error?.message || String(error));
+      console.log(`[${analysisId}] Error retrieving data from enhanced lookup:`, error?.message || String(error));
       // Continue with just the ISBN
       baseBookData = {
         isbn,
