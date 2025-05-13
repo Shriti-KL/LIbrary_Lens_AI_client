@@ -197,6 +197,8 @@ export async function processBookAnalysis(
 /**
  * Function to get book information by ISBN with clean fallback logic
  */
+import { lookupBookByIsbn, isPythonIsbnServiceAvailable } from "./pythonIsbnService";
+
 export async function getBookByISBNWithFallback(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
   const lookupId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
@@ -208,16 +210,53 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
   };
   
   try {
-    // First step: get metadata from Google Books API
-    console.log(`[${lookupId}] Retrieving book metadata from Google Books API using ISBN`);
-    const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+    // Check if Python ISBN service is available
+    const pythonAvailable = await isPythonIsbnServiceAvailable();
     
-    // If Google Books API returned valid data, use it as base data
-    if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
-      console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
-      baseBookData = googleBooksResult;
+    if (pythonAvailable) {
+      // If Python service is available, use it as the primary metadata source
+      console.log(`[${lookupId}] Using Python ISBN service for enhanced metadata lookup`);
+      try {
+        const pythonResult = await lookupBookByIsbn(isbn);
+        
+        if (pythonResult && pythonResult.title && pythonResult.author) {
+          console.log(`[${lookupId}] Successfully retrieved book metadata from Python service: "${pythonResult.title}" by ${pythonResult.author}`);
+          baseBookData = pythonResult;
+        } else {
+          console.log(`[${lookupId}] Python service didn't return valid data, falling back to Google Books API`);
+          // Fallback to Google Books API
+          const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+          
+          if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+            console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+            baseBookData = googleBooksResult;
+          } else {
+            console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+          }
+        }
+      } catch (error: any) {
+        console.log(`[${lookupId}] Error in Python ISBN service: ${error.message}, falling back to Google Books API`);
+        // Fallback to Google Books API
+        const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+        
+        if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+          console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+          baseBookData = googleBooksResult;
+        } else {
+          console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+        }
+      }
     } else {
-      console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+      // If Python service is not available, use Google Books API
+      console.log(`[${lookupId}] Python ISBN service not available, using Google Books API`);
+      const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+      
+      if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+        console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+        baseBookData = googleBooksResult;
+      } else {
+        console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+      }
     }
     
     // Second step: Always use OpenAI to enhance the data
