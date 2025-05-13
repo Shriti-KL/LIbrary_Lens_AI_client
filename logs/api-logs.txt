@@ -868,3 +868,244 @@
     "16": "binding"
   }
 }
+
+[2025-05-13 11:37:36] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95916-132-9"
+}
+
+[2025-05-13 11:37:38] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95916-132-9",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-13 11:37:38] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783959161329",
+  "title": "Abenteuer in Norwegen",
+  "author": "Sorg, Marion"
+}
+
+[2025-05-13 11:37:43] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 702,
+    "completion_tokens": 313,
+    "total_tokens": 1015,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "dimensions",
+    "12": "binding",
+    "13": "price",
+    "14": "summary",
+    "15": "genres",
+    "16": "interestCategory",
+    "17": "themes",
+    "18": "readingLevel"
+  }
+}
+
+[2025-05-13 11:37:43] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783959161329",
+  "title": "Abenteuer in Norwegen",
+  "author": "Sorg, Marion"
+}
+
+[2025-05-13 11:37:52] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 811,
+    "completion_tokens": 371,
+    "total_tokens": 1182,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "dimensions",
+    "11": "binding",
+    "12": "price",
+    "13": "summary",
+    "14": "genres",
+    "15": "ASB",
+    "16": "interestCategory",
+    "17": "themes",
+    "18": "readingLevel"
+  }
+}
+
+[2025-05-13 11:41:34] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95916-132-9"
+}
+
+[2025-05-13 11:41:36] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95916-132-9",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-13 11:41:36] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783959161329",
+  "title": "Abenteuer in Norwegen",
+  "author": "Sorg, Marion"
+}
+
+[2025-05-13 11:41:42] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 702,
+    "completion_tokens": 319,
+    "total_tokens": 1021,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "dimensions",
+    "11": "binding",
+    "12": "price",
+    "13": "summary",
+    "14": "genres",
+    "15": "ASB",
+    "16": "interestCategory",
+    "17": "themes",
+    "18": "readingLevel"
+  }
+}
+
+[2025-05-13 11:41:42] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783959161329",
+  "title": "Abenteuer in Norwegen",
+  "author": "Sorg, Marion"
+}
+
+[2025-05-13 11:41:47] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 810,
+    "completion_tokens": 366,
+    "total_tokens": 1176,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "dimensions",
+    "12": "binding",
+    "13": "price",
+    "14": "summary",
+    "15": "genres",
+    "16": "interestCategory",
+    "17": "themes",
+    "18": "readingLevel",
+    "19": "ASB"
+  }
+}
