@@ -118,51 +118,26 @@ export async function processBookAnalysis(
     console.log(`[${analysisId}] Sending following fields to OpenAI:`, existingFields);
     
     // Prepare context with all available information as a comprehensive JSON object
-    // Include ALL fields from the incoming request directly
+    // Using standardized fields matching the Python service
     const bookContext = {
-      // Basic book metadata
+      // Core bibliographic fields
       isbn: analysisRequest.isbn || null,
       title: analysisRequest.title || null,
       subtitle: analysisRequest.subtitle || null,
       author: analysisRequest.author || null,
-      
-      // Catalog specific metadata
-      catalogNumber: analysisRequest.catalogNumber || null, // ASB code
       statementOfResponsibility: analysisRequest.statementOfResponsibility || null,
-      
-      // Publishing information
       publisher: analysisRequest.publisher || null,
       publishedYear: analysisRequest.publishedYear || null,
       pageCount: analysisRequest.pageCount || null,
       language: language,
       edition: analysisRequest.edition || null,
-      location: analysisRequest.location || null, // Place of publication
-      
-      // Content-related information
+      location: analysisRequest.location || null,
+      dimensions: analysisRequest.dimensions || null,
+      binding: analysisRequest.binding || null,
+      price: analysisRequest.price || null,
       summary: analysisRequest.summary || null,
       genres: analysisRequest.genres || null,
-      themes: analysisRequest.themes || null,
-      interestCategory: analysisRequest.interestCategory || null,
-      readingLevel: analysisRequest.readingLevel || null,
-      
-      // Physical attributes
-      binding: analysisRequest.binding || null,
-      dimensions: analysisRequest.dimensions || null,
-      price: analysisRequest.price || null,
-      coverImageUrl: analysisRequest.coverImageUrl || null,
-      
-      // Contributors
-      translator: analysisRequest.translator || null,
-      illustrator: analysisRequest.illustrator || null,
-      
-      // German-specific library fields
-      deweyDecimal: analysisRequest.deweyDecimal || null,
-      secondaryClassification: analysisRequest.secondaryClassification || null,
-      reviewerName: analysisRequest.reviewerName || null,
-      idBNumber: analysisRequest.idBNumber || null,
-      
-      // If there's additional metadata from Google Books, include it
-      metadata: analysisRequest.metadata || null
+      coverImageUrl: analysisRequest.coverImageUrl || null
     };
     
     // Send request to OpenAI with structured JSON context and request structured JSON response
