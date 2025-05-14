@@ -8,7 +8,7 @@
 import { Book } from "@shared/schema";
 import { lookupBookByIsbn } from "./pythonIsbnService";
 import { getCompleteBookByISBN, searchBooks } from "./googleBooks";
-import { searchGoodreads } from "./googleCustomSearch";
+import { searchGoodreads, searchGoogleBooks } from "./googleCustomSearch";
 import { processBookAnalysis as processWithOpenAI } from "./openai";
 import { analyzeBookCover } from "./openai";
 import { apiLogger } from "../utils/logger";
@@ -280,7 +280,7 @@ export async function verifyBookData(params: {
   if (result.title || result.author || params.isbn) {
     console.log(`[${requestId}] Using OpenAI to enhance book metadata and fill missing fields`);
     try {
-      const openAiRequest = {
+      const openAiRequest: any = {
         isbn: result.isbn || params.isbn || null,
         title: result.title || params.title || "",
         author: result.author || params.author || "",
@@ -327,7 +327,7 @@ export async function verifyBookData(params: {
   }
 
   // If no verification status was set, set one based on available sources
-  if (result.verification?.status === "pending") {
+  if (result.verification && result.verification.status === "pending") {
     if (result.verification.sources.includes("DNB") && result.verification.sources.includes("Google Books")) {
       result.verification.status = "verified";
       result.verification.confidence = 0.8;
