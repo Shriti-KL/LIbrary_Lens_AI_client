@@ -32,13 +32,28 @@ export const books = pgTable("books", {
   publisher: text("publisher"), // Publisher name
   publicationYear: integer("publication_year"), // Year of publication
   pageCount: integer("page_count"), // Number of pages
+  illustrations: text("illustrations"), // Type of illustrations
   dimensions: text("dimensions"), // Height/dimensions
   binding: text("binding"), // Type of binding
   price: text("price"), // Book price
   
+  // Classification and categorization
+  interestCategory: text("interest_category"), // IK Category
+  ageRecommendation: text("age_recommendation"), // Age suitability
+  classificationNumber: text("classification_number"), // ASB classification number
+  additionalClassifications: text("additional_classifications"), // Any additional classification numbers
+  
+  // ID-Besprechung specific fields (ekz fields)
+  idbInitials: text("idb_initials"), // Initials in ID line (e.g., "AB")
+  idbSequenceNumber: text("idb_sequence_number"), // Sequence number of entry
+  idbYear: text("idb_year"), // Year of ID
+  
+  // Content fields
+  summary: text("summary"), // Objective description of content
+  review: text("review"), // Critical review with acquisition recommendation (starting with "•")
+  reviewerName: text("reviewer_name"), // Name of the reviewer
+  
   // Additional fields
-  summary: text("summary"),
-  review: text("review"), // Critical review with library acquisition recommendation
   genres: jsonb("genres").default([]).notNull(),
   language: text("language").default("de"),
   coverImageUrl: text("cover_image_url"),
@@ -66,13 +81,28 @@ export const bookAnalysisSchema = z.object({
   publisher: z.string().nullable().optional(), // Publisher name
   publicationYear: z.number().nullable().optional(), // Year of publication
   pageCount: z.number().nullable().optional(), // Number of pages
+  illustrations: z.string().nullable().optional(), // Type of illustrations
   dimensions: z.string().nullable().optional(), // Height/dimensions
   binding: z.string().nullable().optional(), // Type of binding
   price: z.string().nullable().optional(), // Book price
   
-  // Additional fields
-  summary: z.string().nullable().optional(),
+  // Classification and categorization
+  interestCategory: z.string().nullable().optional(), // IK Category
+  ageRecommendation: z.string().nullable().optional(), // Age suitability
+  classificationNumber: z.string().nullable().optional(), // ASB classification number
+  additionalClassifications: z.string().nullable().optional(), // Any additional classification numbers
+  
+  // ID-Besprechung specific fields (ekz fields)
+  idbInitials: z.string().nullable().optional(), // Initials in ID line (e.g., "AB")
+  idbSequenceNumber: z.string().nullable().optional(), // Sequence number of entry
+  idbYear: z.string().nullable().optional(), // Year of ID
+  
+  // Content fields
+  summary: z.string().nullable().optional(), // Objective description of content
   review: z.string().nullable().optional(), // Critical review with library acquisition recommendation
+  reviewerName: z.string().nullable().optional(), // Name of the reviewer
+  
+  // Additional fields
   genres: z.array(z.string()).nullable().optional(),
   language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional().default("de"),
   
@@ -100,9 +130,6 @@ export type Book = typeof books.$inferSelect & {
   // Additional virtual fields that are not stored in the database directly
   themes?: string[];
   readingLevel?: string;
-  interestCategory?: string;
-  ASB?: string;
-  review?: string; // Critical review with library acquisition recommendation
   error?: string;
   // Contributors for different roles (similar to Python implementation)
   contributors?: {[role: string]: string[]};
@@ -114,9 +141,16 @@ export type Book = typeof books.$inferSelect & {
     sources: string[];
     note?: string; // Additional information about the verification process
   };
-  // Fields for specialized library categorization
-  illustrations?: string; // Illustrations information
+  // Additional DNB fields that might not be in database schema
   dnbNumber?: string; // DNB-specific cataloging number
+  
+  // Note: The following fields are now part of the database schema:
+  // - interestCategory (as interest_category) - IK classification
+  // - classificationNumber (as classification_number) - ASB classification
+  // - illustrations - information about illustrations
+  // - ageRecommendation - age suitability info
+  // - reviewerName - name of reviewer who created the review
+  
   // Allow additional string indexer for dynamic OpenAI response fields
   [key: string]: any;
 };
@@ -126,18 +160,23 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   coverImageData?: string;
   themes?: string[];
   readingLevel?: string;
-  interestCategory?: string;
-  ASB?: string;
-  review?: string;                  // Critical review with library acquisition recommendation
   contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
   // New fields for improved OpenAI analysis
   description?: string;             // Authentic book description from reliable sources
-  genres?: string[];                // Genres from authentic sources
   sourcesInfo?: string;             // Information about where the data came from
-  // Fields for specialized library categorization
-  illustrations?: string;           // Illustrations information
+  
+  // Additional DNB fields that might not be in database schema
   dnbNumber?: string;               // DNB-specific cataloging number
+  
+  // Note: The following fields are now part of the schema object itself:
+  // - interestCategory - IK classification
+  // - classificationNumber (replaces ASB) - ASB classification
+  // - illustrations - information about illustrations 
+  // - reviewerName - name of reviewer
+  // - genres - array of genres
+  // - review - Critical review with library acquisition recommendation
+  
   // Allow dynamic properties for OpenAI analysis
   [key: string]: any;
 };
