@@ -2927,3 +2927,35 @@
   },
   "hallucinationDetected": false
 }
+
+[2025-05-14 07:34:16] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:34:17] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:34:17] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}

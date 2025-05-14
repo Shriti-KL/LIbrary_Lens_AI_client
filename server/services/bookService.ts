@@ -685,9 +685,18 @@ export async function getBookByIsbn(isbn: string): Promise<Partial<Book>> {
     console.log(`[${requestId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
     
     // Check if there's an ISBN mismatch (this can happen during format conversion)
-    if (mergedResult.isbn !== cleanIsbn) {
-      console.log(`[${requestId}] WARNING: ISBN mismatch between request (${isbn}) and final result (${mergedResult.isbn}). Using requested ISBN.`);
-      mergedResult.isbn = cleanIsbn;
+    if (mergedResult.isbn && mergedResult.isbn !== cleanIsbn) {
+      // Get the normalized versions for comparison (remove hyphens)
+      const normalizedRequestIsbn = cleanIsbn.replace(/-/g, '');
+      const normalizedResultIsbn = mergedResult.isbn.replace(/-/g, '');
+      
+      if (normalizedRequestIsbn === normalizedResultIsbn) {
+        console.log(`[${requestId}] INFO: ISBNs match after normalization. Using requested format: ${cleanIsbn}`);
+        mergedResult.isbn = cleanIsbn;
+      } else {
+        console.log(`[${requestId}] WARNING: ISBN mismatch between request (${isbn}) and final result (${mergedResult.isbn}). Using requested ISBN.`);
+        mergedResult.isbn = cleanIsbn;
+      }
     }
     
     // Generate field source report
