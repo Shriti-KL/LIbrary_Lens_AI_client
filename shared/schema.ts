@@ -100,6 +100,7 @@ export type Book = typeof books.$inferSelect & {
   readingLevel?: string;
   interestCategory?: string;
   ASB?: string;
+  review?: string; // Critical review with library acquisition recommendation
   error?: string;
   // Contributors for different roles (similar to Python implementation)
   contributors?: {[role: string]: string[]};
@@ -122,6 +123,7 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   readingLevel?: string;
   interestCategory?: string;
   ASB?: string;
+  review?: string;                  // Critical review with library acquisition recommendation
   contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
   // New fields for improved OpenAI analysis

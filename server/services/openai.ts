@@ -132,7 +132,7 @@ export async function processBookAnalysis(
       : "";
     const sources = analysisRequest.sources || "";
     
-    // Define prompt based on DNB/German RDA standards, including authentic description data
+    // Define prompt based on DNB/German RDA standards with improved cataloging instructions
     const prompt = `
     Book Information:
     ISBN: ${bookInfo.isbn}
@@ -155,23 +155,38 @@ export async function processBookAnalysis(
     ${existingThemes ? `Identified Themes: ${existingThemes}` : ''}
     ${sources ? `Data Sources: ${sources}` : ''}
     
-    Based on the authentic book information above, provide the following:
-    1. A concise summary (approximately 150 words)
-    2. 3-5 key themes
-    3. 2-4 genres
-    4. ASB (Allgemeine Systematik für Bibliotheken) classification (e.g. "Phy 400")
-    5. Reading level (e.g. "Children", "Young Adult", "Adult")
-    6. Interest category (e.g. "IK: Geschichte; ab 14")
+    Given the metadata and description above, create a professional library catalog entry with:
+
+    1. A neutral summary in 3–5 sentences describing the book's content objectively.
+       - For fiction, include characters and plot.
+       - For non-fiction, mention main themes and goals.
+       - End the summary without any judgment or evaluation.
+
+    2. A critical review, beginning with "• ".
+       - Include a professional assessment of quality, relevance, and target audience.
+       - End with a recommendation for library acquisition.
+
+    3. 3-5 key themes as keywords
+    
+    4. 2-4 genres that best categorize the book
+    
+    5. ASB (Allgemeine Systematik für Bibliotheken) classification (e.g. "Phy 400")
+    
+    6. Reading level (e.g. "Children", "Young Adult", "Adult")
+    
+    7. Interest category (e.g. "IK: Geschichte; ab 14")
     
     Please format your response as a JSON object with these fields only:
-    - summary: string
-    - themes: string[]
-    - genres: string[]
+    - summary: string (the neutral 3-5 sentence summary)
+    - review: string (the critical review starting with "• ")
+    - themes: string[] (3-5 themes as keywords)
+    - genres: string[] (2-4 genres)
     - ASB: string
     - readingLevel: string
     - interestCategory: string
     
     Use authentic data where available from the verified sources. Do not invent bibliographic details.
+    Your summary should be completely factual and based on the authentic description.
     `;
     
     // Make the OpenAI API call
@@ -180,13 +195,14 @@ export async function processBookAnalysis(
       messages: [
         {
           role: "system",
-          content: `You are a librarian following DNB/German RDA cataloguing standards who specializes in 
-          book classification, summarization, and content analysis. Provide accurate, concise information 
-          in ${bookInfo.language} language.
+          content: `You are a professional German library cataloguer following DNB/German RDA cataloguing standards who specializes in 
+          book classification, summarization, and content analysis. Provide accurate information in ${bookInfo.language} language.
           
-          IMPORTANT: Use the authentic description, genres, and themes provided to create an accurate summary. 
-          When authentic book descriptions are available, your summary should be based directly on that information.
-          Do not hallucinate or invent bibliographic details. Stay true to the authentic information.`
+          IMPORTANT: 
+          - Use the authentic description, genres, and themes provided to create an accurate summary.
+          - When authentic book descriptions are available, your summary must be based directly on that information.
+          - Do not hallucinate or invent bibliographic details. Stay true to the authentic information.
+          - Follow the exact output format instructions in the user's prompt.`
         },
         { role: "user", content: prompt }
       ],
@@ -218,10 +234,11 @@ export async function processBookAnalysis(
       hallucinationDetected: false
     })}`);
     
-    // Return OpenAI-generated fields (summary, themes, genres only)
+    // Return OpenAI-generated fields with the new review field
     return {
       ...bookInfo,  // Include original book info
       summary: result.summary || null,
+      review: result.review || null,  // New critical review field
       themes: result.themes || [],
       genres: result.genres || [],
       ASB: result.ASB || null,

@@ -291,6 +291,12 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
           console.log(`[verify_${requestId}] Added summary from OpenAI (based on authentic data)`);
         }
         
+        // Add critical review
+        if (additionalDetails.review) {
+          mergedData.review = additionalDetails.review;
+          console.log(`[verify_${requestId}] Added critical review from OpenAI`);
+        }
+        
         // Only use OpenAI's themes if we don't already have them
         if (additionalDetails.themes && (!mergedData.themes || !Array.isArray(mergedData.themes) || mergedData.themes.length === 0)) {
           mergedData.themes = additionalDetails.themes;
