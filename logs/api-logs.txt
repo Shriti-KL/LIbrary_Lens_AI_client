@@ -984,3 +984,173 @@
     "14": "readingLevel"
   }
 }
+
+[2025-05-14 05:45:40] REQUEST TO OpenAI API
+{
+  "operation": "analyzeBookCover",
+  "model": "gpt-4o",
+  "imageProvided": true,
+  "imageSize": "35 KB"
+}
+
+[2025-05-14 05:45:45] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": null,
+  "title": "Botany for Degree Students: Bryophyta",
+  "author": "B.R. Vashishta, Dr. A.K. Sinha, Dr. Adarsh Kumar"
+}
+
+[2025-05-14 05:45:48] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 697,
+    "completion_tokens": 233,
+    "total_tokens": 930,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "title",
+    "1": "author",
+    "2": "statementOfResponsibility",
+    "3": "language",
+    "4": "genres",
+    "5": "interestCategory",
+    "6": "themes",
+    "7": "readingLevel",
+    "8": "ASB"
+  }
+}
+
+[2025-05-14 05:57:03] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": " 978-3-7518-4023-1"
+}
+
+[2025-05-14 05:57:06] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": " 978-3-7518-4023-1",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 05:57:06] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783751840231",
+  "title": "Himmelsstriche",
+  "author": "Malkmus, Bernhard"
+}
+
+[2025-05-14 05:57:11] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 702,
+    "completion_tokens": 378,
+    "total_tokens": 1080,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "dimensions",
+    "11": "binding",
+    "12": "price",
+    "13": "summary",
+    "14": "genres",
+    "15": "themes",
+    "16": "readingLevel",
+    "17": "interestCategory",
+    "18": "ASB"
+  }
+}
+
+[2025-05-14 05:57:11] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783751840231",
+  "title": "Himmelsstriche",
+  "author": "Malkmus, Bernhard"
+}
+
+[2025-05-14 05:57:15] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 861,
+    "completion_tokens": 387,
+    "total_tokens": 1248,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "dimensions",
+    "11": "binding",
+    "12": "summary",
+    "13": "genres",
+    "14": "ASB",
+    "15": "interestCategory",
+    "16": "themes",
+    "17": "readingLevel"
+  }
+}

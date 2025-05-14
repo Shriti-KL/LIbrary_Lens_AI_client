@@ -9,7 +9,6 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-from datetime import datetime
 from urllib.parse import quote_plus
 from typing import Dict, List, Optional, Any, Union
 
@@ -28,10 +27,7 @@ logger = logging.getLogger("book_service")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GOOGLE_BOOKS_API_KEY = os.environ.get("GOOGLE_BOOKS_API_KEY", "")
 
-# Fixed reference date (2023 as a stable reference year)
-REFERENCE_YEAR = 2023
-# Maximum years into the future for publication dates (0 = current year only, 1 = next year allowed)
-MAX_FUTURE_YEARS = 0
+# No hardcoded validation for publication years
 
 def get_google_books_by_isbn(isbn: str) -> Dict:
     """Fetch book data from Google Books API using ISBN"""
@@ -64,18 +60,13 @@ def get_google_books_by_isbn(isbn: str) -> Dict:
             # Format for ISBN-10: 3-95916-132-5 (standard German format)
             formatted_isbn = re.sub(r'^(\d{1})(\d{5})(\d{3})(\w{1})$', r'\1-\2-\3-\4', formatted_isbn)
         
-        # Extract publication year
+        # Extract publication year without validation
         published_year = None
         if published_date := book_data.get("publishedDate"):
             # Extract year from publishedDate (could be YYYY, YYYY-MM, or YYYY-MM-DD)
             year_match = re.match(r'^(\d{4})', published_date)
             if year_match:
                 published_year = int(year_match.group(1))
-                # Validation: if year is in future, it's likely incorrect
-                current_year = datetime.now().year
-                if published_year > current_year:
-                    logger.warning(f"Future publication year {published_year} detected for ISBN {isbn}, likely incorrect")
-                    published_year = None
         
         # Extract price if available
         price = None
@@ -251,12 +242,6 @@ def get_dnb_metadata(isbn: str) -> Dict:
                 year_match = re.search(r'\d{4}', year_text)
                 if year_match:
                     published_year = int(year_match.group(0))
-                    
-                    # Validate publication year immediately
-                    logger.info(f"DNB YEAR CHECK: Year={published_year}, Reference={REFERENCE_YEAR + MAX_FUTURE_YEARS}")
-                    if published_year > REFERENCE_YEAR + MAX_FUTURE_YEARS:
-                        logger.warning(f"VALIDATION: Future publication year detected in DNB: {published_year} > {REFERENCE_YEAR + MAX_FUTURE_YEARS}. Setting to null.")
-                        published_year = None
         
         # Process physical description (MARC field 300)
         physical_field = record.find('.//marc:datafield[@tag="300"]', ns)
@@ -374,19 +359,8 @@ def get_book_by_isbn(isbn: str) -> Dict:
                 if key not in merged_result or merged_result[key] is None or merged_result[key] == "":
                     merged_result[key] = value
     
-    # Validate the merged result
-    # Check for future dates (likely incorrect)
-    published_year = merged_result.get('publishedYear')
-    logger.info(f"VALIDATION CHECK: Year={published_year}, Reference={REFERENCE_YEAR + MAX_FUTURE_YEARS}")
-    if published_year is not None and isinstance(published_year, int) and published_year > REFERENCE_YEAR + MAX_FUTURE_YEARS:
-        logger.warning(f"FINAL VALIDATION: Future publication year detected: {published_year} > {REFERENCE_YEAR + MAX_FUTURE_YEARS}. Setting to null.")
-        merged_result["publishedYear"] = None
-    
-    # Check for unreasonably large page counts
-    page_count = merged_result.get("pageCount")
-    if page_count is not None and isinstance(page_count, int) and page_count > 2000:
-        logger.warning(f"Unusually high page count detected: {page_count}")
-        merged_result["pageCount"] = None
+    # No hardcoded validation for year or page count
+    # Just keep the original data as provided by the sources
     
     # Log the result
     if merged_result.get("title"):
