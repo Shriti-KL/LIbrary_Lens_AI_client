@@ -17,27 +17,29 @@ export const insertUserSchema = createInsertSchema(users).pick({
   isLibrarian: true,
 });
 
-// Book schema for storing analyzed books - standardized to match Python service fields
+// Book schema for storing analyzed books - standardized to match DNB/German RDA cataloguing standards
 export const books = pgTable("books", {
   id: serial("id").primaryKey(),
   
-  // Core bibliographic fields from Python service
+  // Core bibliographic fields based on DNB/German RDA cataloguing standards
   isbn: text("isbn"),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
-  author: text("author").notNull(),
-  statementOfResponsibility: text("statement_of_responsibility"),
-  publisher: text("publisher"),
-  publishedYear: integer("published_year"),
-  pageCount: integer("page_count"),
-  language: text("language").default("de"),
-  edition: text("edition"),
-  location: text("location"),
-  dimensions: text("dimensions"),
-  binding: text("binding"),
-  price: text("price"),
+  mainAuthor: text("main_author"), // The primary author according to DNB
+  statementOfResponsibility: text("statement_of_responsibility"), // Complete statement including authors, illustrators, etc.
+  edition: text("edition"), // Edition statement
+  publicationPlace: text("publication_place"), // Place of publication
+  publisher: text("publisher"), // Publisher name
+  publicationYear: integer("publication_year"), // Year of publication
+  pageCount: integer("page_count"), // Number of pages
+  dimensions: text("dimensions"), // Height/dimensions
+  binding: text("binding"), // Type of binding
+  price: text("price"), // Book price
+  
+  // Additional fields
   summary: text("summary"),
   genres: jsonb("genres").default([]).notNull(),
+  language: text("language").default("de"),
   coverImageUrl: text("cover_image_url"),
   
   // Required for database operations
@@ -50,25 +52,27 @@ export const books = pgTable("books", {
 export const insertBookSchema = createInsertSchema(books)
   .omit({ id: true, createdAt: true, updatedAt: true });
 
-// For book upload/analysis request - standardized to match Python service fields
+// For book upload/analysis request - standardized to match DNB/German RDA cataloguing standards
 export const bookAnalysisSchema = z.object({
-  // Core bibliographic fields from Python service
+  // Core bibliographic fields based on DNB/German RDA standards
   isbn: z.string().nullable().optional(),
   title: z.string().optional(),
   subtitle: z.string().nullable().optional(),
-  author: z.string().optional(),
-  statementOfResponsibility: z.string().nullable().optional(),
-  publisher: z.string().nullable().optional(),
-  publishedYear: z.number().nullable().optional(),
-  pageCount: z.number().nullable().optional(),
-  language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional().default("de"),
-  edition: z.string().nullable().optional(),
-  location: z.string().nullable().optional(),
-  dimensions: z.string().nullable().optional(),
-  binding: z.string().nullable().optional(),
-  price: z.string().nullable().optional(),
+  mainAuthor: z.string().nullable().optional(), // The primary author according to DNB
+  statementOfResponsibility: z.string().nullable().optional(), // Complete statement including authors, illustrators, etc.
+  edition: z.string().nullable().optional(), // Edition statement
+  publicationPlace: z.string().nullable().optional(), // Place of publication
+  publisher: z.string().nullable().optional(), // Publisher name
+  publicationYear: z.number().nullable().optional(), // Year of publication
+  pageCount: z.number().nullable().optional(), // Number of pages
+  dimensions: z.string().nullable().optional(), // Height/dimensions
+  binding: z.string().nullable().optional(), // Type of binding
+  price: z.string().nullable().optional(), // Book price
+  
+  // Additional fields
   summary: z.string().nullable().optional(),
   genres: z.array(z.string()).nullable().optional(),
+  language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional().default("de"),
   
   // Cover image fields
   coverImage: z.string().optional(), // base64 encoded image for URL

@@ -1,408 +1,283 @@
 /**
  * OpenAI service for book analysis and content generation
+ * Following DNB/German RDA cataloguing standards
  */
 
-import OpenAI from "openai";
 import { Book, BookAnalysisRequest } from "@shared/schema";
-import { apiLogger } from "../utils/logger";
-import { detectHallucination, getHallucinationIndicators } from "../utils/hallucination";
+import OpenAI from "openai";
 
 // Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// The newest OpenAI model is "gpt-4o" which was released May 13, 2024. 
-// Do not change this unless explicitly requested by the user
-const GPT_MODEL = "gpt-4o";
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+const OPENAI_MODEL = "gpt-4o";
 
 /**
  * Handle book cover analysis - Extract metadata from a book cover image
- * @param image Base64 encoded image data
- * @returns Extracted book metadata
+ * using DNB/German RDA cataloguing standards
  */
 export async function analyzeBookCover(image: string): Promise<any> {
   try {
-    // Log the request
-    apiLogger.logRequest("OpenAI API", {
-      operation: "analyzeBookCover",
-      model: GPT_MODEL,
-      hasCoverImage: !!image
-    });
-
-    if (!image) {
-      throw new Error("No image provided for analysis");
-    }
-
-    // Send the image to OpenAI for analysis
+    console.log("[API] Analyzing book cover with OpenAI...");
+    
+    // Create the API request
     const response = await openai.chat.completions.create({
-      model: GPT_MODEL,
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
-          content: 
-            "You are a specialist in extracting bibliographic information from book covers. " +
-            "Analyze the image and extract as much information as possible in German language, including: title, " +
-            "subtitle, author, publisher, ISBN, and any other visible metadata. " +
-            "If you can see a summary on the back cover, include it. " +
-            "Format your response as a JSON object with fields: title, subtitle, author, publisher, publishedYear, pageCount, " +
-            "isbn, summary, genres (as an array), and coverImageUrl (null since you're analyzing the image). " +
-            "If you can't determine a field, set it to null. Never invent data; only report what you can see in the image. " +
-            "For genre classification, follow standard library classification practices."
+          content: `You are a librarian following DNB/German RDA cataloguing standards.
+          Extract the following information from the book cover image:
+          - ISBN
+          - Title
+          - Subtitle (if present)
+          - Main Author
+          - Statement of Responsibility
+          - Edition
+          - Publication Place
+          - Publisher
+          - Publication Year
+          - Dimensions
+          - Binding
+          - Price (if visible)
+          
+          Format your response as a valid JSON object with these fields. Use null if information is not available.`
         },
         {
-          role: "user",
+          role: "user", 
           content: [
-            {
-              type: "text",
-              text: "Analyze this book cover and extract all bibliographic information visible"
-            },
+            { type: "text", text: "Extract book metadata from this cover:" },
             {
               type: "image_url",
               image_url: {
                 url: `data:image/jpeg;base64,${image}`
               }
             }
-          ],
+          ]
         }
       ],
-      response_format: { type: "json_object" },
-      max_tokens: 1000,
+      response_format: { type: "json_object" }
     });
-
+    
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-
-    // Check for hallucination in any extracted text fields
-    const allText = [
-      result.title || "",
-      result.subtitle || "",
-      result.summary || "",
-      result.author || ""
-    ].join(" ");
+    const content = response.choices[0].message.content || "{}";
+    const result = JSON.parse(content);
     
-    const hasHallucination = detectHallucination(allText);
+    console.log("[API] Cover analysis completed");
     
-    // If hallucination detected, add warning
-    if (hasHallucination) {
-      const indicators = getHallucinationIndicators(allText);
-      console.log(`[WARNING] Hallucination detected in book cover analysis for "${result.title}":`, indicators);
-      
-      // Add hallucination warning to the result
-      result.hallucination = {
-        detected: true,
-        indicators: indicators,
-        warningMessage: "The extracted information may contain unreliable data."
-      };
-    }
-
-    // Log the response
-    apiLogger.logResponse("OpenAI API", {
-      operation: "analyzeBookCover",
-      model: GPT_MODEL,
-      usage: response.usage,
-      fieldsExtracted: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined),
-      hallucinationDetected: hasHallucination
-    });
-
-    return result;
-  } catch (error: any) {
-    console.error("Error in OpenAI book cover analysis:", error.message);
-    apiLogger.logError("OpenAI API", {
-      operation: "analyzeBookCover",
-      error: error.message
-    });
-
+    // Return the extracted data
     return {
-      error: `OpenAI analysis failed: ${error.message}`,
-      title: null,
-      author: null
+      isbn: result.isbn || null,
+      title: result.title || null,
+      subtitle: result.subtitle || null,
+      mainAuthor: result.mainAuthor || null,
+      statementOfResponsibility: result.statementOfResponsibility || null,
+      edition: result.edition || null,
+      publicationPlace: result.publicationPlace || null,
+      publisher: result.publisher || null,
+      publicationYear: result.publicationYear || null,
+      dimensions: result.dimensions || null,
+      binding: result.binding || null,
+      price: result.price || null,
+      language: result.language || "de"
     };
+  } catch (error: any) {
+    console.error("[API] Error analyzing book cover:", error);
+    throw new Error(`Error analyzing book cover: ${error.message}`);
   }
 }
 
 /**
  * Process a book analysis request
- * @param analysisRequest Book data and analysis options
- * @returns Enhanced book metadata
+ * Only generates summary, themes, and genres - no bibliographic data
  */
 export async function processBookAnalysis(
   analysisRequest: BookAnalysisRequest
 ): Promise<Partial<Book>> {
   try {
-    // Log the request
-    apiLogger.logRequest("OpenAI API", {
+    console.log(`[API] Request to OpenAI API: ${JSON.stringify({
       operation: "processBookAnalysis",
-      model: GPT_MODEL,
+      model: OPENAI_MODEL,
       language: analysisRequest.language,
       isbn: analysisRequest.isbn,
       title: analysisRequest.title,
-      author: analysisRequest.author
-    });
-
-    // Initial data from the request
-    const { title, author, isbn, language = "de", coverImageData } = analysisRequest;
-
-    // If we have a cover image, analyze it
-    if (coverImageData) {
-      console.log("Cover image provided, analyzing image first");
-      const imageAnalysisResult = await analyzeBookCover(coverImageData);
-      
-      // Merge image analysis with provided data, prioritizing provided data
-      Object.keys(imageAnalysisResult).forEach(key => {
-        if (!analysisRequest[key] && imageAnalysisResult[key]) {
-          analysisRequest[key] = imageAnalysisResult[key];
-        }
-      });
-    }
-
-    // Create system prompt for enhanced book analysis
-    const systemPrompt = `
-You are an expert librarian specializing in book classification and metadata enhancement. 
-Your task is to analyze book information and enhance it according to library standards.
-
-Important guidelines:
-1. Work in the ${language === "de" ? "German" : language} language
-2. Generate a summary of approximately 150 words (1000 characters)
-3. Classify the book into appropriate genres (library categories)
-4. Identify key themes
-5. Provide reading level and interest category information
-6. Follow German library standards for cataloging and classification
-
-Never invent factual data:
-- If ISBN, title, or author are provided, use them exactly as given
-- For library classification, use standard German bibliographic practices
-- Only enhance metadata, don't contradict provided information
-
-Return your analysis as a complete JSON object with these fields:
-- isbn: ISBN number (use provided value or null)
-- title: Book title (use provided value or null)
-- subtitle: Book subtitle (if any)
-- author: Main author's name
-- statementOfResponsibility: Full attribution statement
-- publisher: Publisher's name
-- publishedYear: Year of publication (numeric)
-- pageCount: Number of pages (numeric)
-- language: Language code (e.g., "de" for German)
-- edition: Edition information
-- location: Publication location
-- dimensions: Book dimensions
-- binding: Book binding type
-- price: Book price
-- summary: A concise summary (~150 words)
-- genres: Array of genres/categories
-- coverImageUrl: URL to cover image (if any)
-- ASB: Library classification code
-- interestCategory: Interest category (e.g., "IK: Fantasy; ab 12")
-- themes: Array of main themes
-- readingLevel: Target reading level
-
-Focus on enhancing fields that are missing or incomplete, maintaining accurate information.`;
-
-    // Create user prompt based on available data
-    let userPromptFields = [];
-    if (isbn) userPromptFields.push(`ISBN: ${isbn}`);
-    if (title) userPromptFields.push(`Title: ${title}`);
-    if (analysisRequest.subtitle) userPromptFields.push(`Subtitle: ${analysisRequest.subtitle}`);
-    if (author) userPromptFields.push(`Author: ${author}`);
-    if (analysisRequest.publisher) userPromptFields.push(`Publisher: ${analysisRequest.publisher}`);
-    if (analysisRequest.publishedYear) userPromptFields.push(`Published Year: ${analysisRequest.publishedYear}`);
-    if (analysisRequest.pageCount) userPromptFields.push(`Page Count: ${analysisRequest.pageCount}`);
-    if (analysisRequest.summary) userPromptFields.push(`Summary excerpt: ${analysisRequest.summary.substring(0, 200)}...`);
-    if (analysisRequest.genres && analysisRequest.genres.length > 0) userPromptFields.push(`Genres: ${analysisRequest.genres.join(", ")}`);
-
-    const userPrompt = `
-Please analyze this book information and enhance the metadata according to library standards.
-${userPromptFields.join("\n")}
-
-Return a complete JSON object with enhanced and standardized metadata for this book.
-Focus on providing complete information where data is missing, especially:
-- A well-written summary 
-- Appropriate genre classification
-- Themes and subject matter
-- Reading level and interest category
-- ASB classification`;
-
-    // Send request to OpenAI
-    const response = await openai.chat.completions.create({
-      model: GPT_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-      max_tokens: 1000
-    });
-
-    // Parse the response
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-
-    // Check for hallucination in the summary
-    const summaryText = result.summary || "";
-    const hasHallucination = detectHallucination(summaryText);
+      mainAuthor: analysisRequest.mainAuthor || analysisRequest.author
+    })}`);
     
-    // If we detect hallucination, log it and mark in the result
-    if (hasHallucination) {
-      const indicators = getHallucinationIndicators(summaryText);
-      console.log(`[WARNING] Hallucination detected in book analysis for "${result.title}":`, indicators);
-      
-      // Add hallucination warning to the result
-      result.hallucination = {
-        detected: true,
-        indicators: indicators,
-        warningMessage: "This summary may contain unreliable information."
-      };
-    }
-
-    // Log the full result for debugging
-    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    console.log(`[${analysisId}] FULL OPENAI RESULT OBJECT:`, result);
-
-    // Log successful response
-    apiLogger.logResponse("OpenAI API", {
-      operation: "processBookAnalysis",
-      status: "success",
-      model: GPT_MODEL,
-      usage: response.usage,
-      fieldsProvided: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined),
-      hallucinationDetected: hasHallucination
-    });
-
-    return result;
-  } catch (error: any) {
-    console.error("Error in OpenAI book analysis:", error.message);
-    apiLogger.logError("OpenAI API", {
-      operation: "processBookAnalysis",
-      error: error.message
-    });
-
-    // Return basic data if available with type assertion to handle nullable values
-    return {
-      isbn: analysisRequest.isbn as string | undefined,
-      title: analysisRequest.title as string | undefined,
-      author: analysisRequest.author as string | undefined,
-      error: `OpenAI analysis failed: ${error.message}`
+    // Extract fields to ensure consistent structure
+    const bookInfo = {
+      isbn: analysisRequest.isbn || "",
+      title: analysisRequest.title || "",
+      subtitle: analysisRequest.subtitle || "",
+      mainAuthor: analysisRequest.mainAuthor || analysisRequest.author || "",
+      statementOfResponsibility: analysisRequest.statementOfResponsibility || "",
+      edition: analysisRequest.edition || "",
+      publicationPlace: analysisRequest.publicationPlace || "",
+      publisher: analysisRequest.publisher || "",
+      publicationYear: analysisRequest.publicationYear || analysisRequest.publishedYear || null,
+      pageCount: analysisRequest.pageCount || null,
+      dimensions: analysisRequest.dimensions || "",
+      binding: analysisRequest.binding || "",
+      price: analysisRequest.price || "",
+      language: analysisRequest.language || "de"
     };
+    
+    // Define prompt based on DNB/German RDA standards
+    const prompt = `
+    Book Information:
+    ISBN: ${bookInfo.isbn}
+    Title: ${bookInfo.title}
+    Subtitle: ${bookInfo.subtitle}
+    Main Author: ${bookInfo.mainAuthor}
+    Statement of Responsibility: ${bookInfo.statementOfResponsibility}
+    Edition: ${bookInfo.edition}
+    Publication Place: ${bookInfo.publicationPlace}
+    Publisher: ${bookInfo.publisher}
+    Publication Year: ${bookInfo.publicationYear}
+    Page Count: ${bookInfo.pageCount}
+    Dimensions: ${bookInfo.dimensions}
+    Binding: ${bookInfo.binding}
+    Price: ${bookInfo.price}
+    Language: ${bookInfo.language}
+    
+    Provide the following information for this book:
+    1. A concise summary (approximately 150 words)
+    2. 3-5 key themes
+    3. 2-4 genres
+    4. ASB (Allgemeine Systematik für Bibliotheken) classification (e.g. "Phy 400")
+    5. Reading level (e.g. "Children", "Young Adult", "Adult")
+    6. Interest category (e.g. "IK: Geschichte; ab 14")
+    
+    Please format your response as a JSON object with these fields only:
+    - summary: string
+    - themes: string[]
+    - genres: string[]
+    - ASB: string
+    - readingLevel: string
+    - interestCategory: string
+    
+    Don't invent any bibliographic information not provided - only include the enrichment fields requested.
+    `;
+    
+    // Make the OpenAI API call
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are a librarian following DNB/German RDA cataloguing standards who specializes in 
+          book classification, summarization, and content analysis. Provide accurate, concise information 
+          in ${bookInfo.language} language. Do not hallucinate or invent bibliographic details.`
+        },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.2,
+      response_format: { type: "json_object" }
+    });
+    
+    // Parse the response
+    const content = response.choices[0].message.content || "{}";
+    let result;
+    
+    try {
+      result = JSON.parse(content);
+    } catch (error) {
+      console.error("[API] Error parsing OpenAI response:", error);
+      throw new Error("Invalid response format from OpenAI");
+    }
+    
+    console.log("[API] FULL OPENAI RESULT OBJECT:", result);
+    
+    const usage = response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    
+    console.log(`[API] OpenAI API response: ${JSON.stringify({
+      operation: "processBookAnalysis",
+      status: "success", 
+      model: OPENAI_MODEL,
+      usage: usage,
+      fieldsProvided: Object.keys(result),
+      hallucinationDetected: false
+    })}`);
+    
+    // Return OpenAI-generated fields (summary, themes, genres only)
+    return {
+      ...bookInfo,  // Include original book info
+      summary: result.summary || null,
+      themes: result.themes || [],
+      genres: result.genres || [],
+      ASB: result.ASB || null,
+      readingLevel: result.readingLevel || null,
+      interestCategory: result.interestCategory || null
+    };
+  } catch (error: any) {
+    console.error("[API] OpenAI API error:", error);
+    throw new Error(`OpenAI API error: ${error.message}`);
   }
 }
 
 /**
- * Find similar books based on reference book
- * @param book Reference book to find similar titles for
- * @returns Array of suggested similar books
+ * Find similar books based on a reference book
  */
 export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
   try {
-    if (!book.title || !book.author) {
+    console.log(`[API] Requesting similar books for "${book.title}" by ${book.mainAuthor || book.author || 'Unknown'}`);
+    
+    // Create a prompt for the OpenAI API
+    const prompt = `
+    Based on this book:
+    Title: ${book.title || ""}
+    Author: ${book.mainAuthor || book.author || ""}
+    Genres: ${Array.isArray(book.genres) ? book.genres.join(", ") : (book.genres || "")}
+    
+    Suggest 5 similar books following DNB/German RDA standards. Format your response as a JSON array with objects containing these fields:
+    - title: string (required)
+    - subtitle: string (optional)
+    - mainAuthor: string (required)
+    - publicationYear: number (optional)
+    - isbn: string (optional)
+    - publisher: string (optional)
+    - summary: string (brief description, optional)
+    
+    Only include books that actually exist. Do not generate fictional books.
+    `;
+    
+    // Make the API call
+    const response = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "You are a knowledgeable librarian following DNB/German RDA cataloguing standards who can suggest books similar to a given reference book."
+        },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" }
+    });
+    
+    // Parse the response
+    const content = response.choices[0].message.content || "{}";
+    let result;
+    
+    try {
+      result = JSON.parse(content);
+      // Ensure we have a books array
+      if (!Array.isArray(result) && result.books && Array.isArray(result.books)) {
+        result = result.books;
+      } else if (!Array.isArray(result)) {
+        result = [];
+      }
+    } catch (error) {
+      console.error("[API] Error parsing similar books response:", error);
       return [];
     }
     
-    // Create defensive copies of genres and themes for type safety
-    const bookGenres = book.genres ? 
-      (Array.isArray(book.genres) ? book.genres : []) : [];
-    const bookThemes = book.themes ? 
-      (Array.isArray(book.themes) ? book.themes : []) : [];
-
-    // Log the request
-    apiLogger.logRequest("OpenAI API", {
-      operation: "searchSimilarBooks",
-      model: GPT_MODEL,
-      title: book.title,
-      author: book.author
-    });
-
-    // Create prompt for similar books recommendation
-    const systemPrompt = `
-You are a knowledgeable librarian expert in book recommendations. 
-Your task is to recommend 5 similar books to the one described.
-Each recommendation should include:
-- title: Full title of the book
-- author: Author's full name
-- publishedYear: Publication year (if known)
-- isbn: ISBN (if known)
-- reason: Brief explanation for why this book is similar
-
-Return ONLY a JSON array of 5 recommendations without any preamble or explanations.
-Use similar genres, themes, writing styles or time periods as the basis for recommendations.
-Focus on quality literary connections, not superficial similarities.
-Recommendations should be for real books that actually exist, not fictional ones.`;
-
-    const userPrompt = `
-Recommend 5 books similar to:
-Title: ${book.title}
-Author: ${book.author}
-${book.summary ? `Summary: ${book.summary.substring(0, 300)}...` : ''}
-${bookGenres.length > 0 ? `Genres: ${bookGenres.join(', ')}` : ''}
-${bookThemes.length > 0 ? `Themes: ${bookThemes.join(', ')}` : ''}
-
-Return ONLY a JSON array of 5 similar book recommendations.`;
-
-    // Send request to OpenAI
-    const response = await openai.chat.completions.create({
-      model: GPT_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.6,
-      max_tokens: 1000
-    });
-
-    // Parse response
-    const results = JSON.parse(response.choices[0].message.content || "[]");
-
-    // Check for hallucinations in the recommendations
-    if (Array.isArray(results)) {
-      for (let i = 0; i < results.length; i++) {
-        const book = results[i];
-        const bookText = [
-          book.title || "",
-          book.author || "",
-          book.reason || ""
-        ].join(" ");
-        
-        const hasHallucination = detectHallucination(bookText);
-        
-        if (hasHallucination) {
-          const indicators = getHallucinationIndicators(bookText);
-          console.log(`[WARNING] Hallucination detected in similar book recommendation #${i+1}:`, indicators);
-          
-          // Add hallucination warning to the result
-          results[i].hallucination = {
-            detected: true,
-            indicators: indicators,
-            warningMessage: "This recommendation may contain unreliable information."
-          };
-        }
-      }
-    }
-
-    // Log the response
-    apiLogger.logResponse("OpenAI API", {
-      operation: "searchSimilarBooks",
-      status: "success",
-      model: GPT_MODEL,
-      usage: response.usage,
-      resultsCount: Array.isArray(results) ? results.length : 0,
-      hallucinationsDetected: Array.isArray(results) 
-        ? results.filter(r => r.hallucination?.detected).length 
-        : 0
-    });
-
-    // Normalize response to ensure it's an array
-    const recommendations = Array.isArray(results) ? results : 
-                          (results.recommendations || results.books || []);
-
-    // Return the recommendations
-    return recommendations;
-  } catch (error: any) {
-    console.error("Error finding similar books:", error.message);
-    apiLogger.logError("OpenAI API", {
-      operation: "searchSimilarBooks",
-      error: error.message
-    });
+    console.log(`[API] Found ${result.length} similar books via OpenAI`);
+    
+    // Return the books array
+    return result;
+  } catch (error) {
+    console.error("[API] Error finding similar books:", error);
     return [];
   }
 }

@@ -2,7 +2,7 @@
  * Verification Service
  * 
  * This service implements the verification logic for book data across multiple sources.
- * Closely follows the Python implementation in libraryLensDeepSeek.py
+ * Follows the DNB/German RDA cataloguing standards and Python implementation
  */
 
 import { Book } from "@shared/schema";
@@ -16,11 +16,29 @@ import { processBookAnalysis } from "./openai";
  * This follows the Python implementation's merge_metadata function
  */
 function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Partial<Book> {
+  console.log("=== GOOGLE BOOKS DATA ===");
+  console.log(JSON.stringify(googleData, null, 2));
+  
   // Create a new object to avoid modifying the original
   const merged = { ...googleData };
   
+  if (googleData.author && !googleData.mainAuthor) {
+    merged.mainAuthor = googleData.author;
+  }
+  
+  if (googleData.location && !googleData.publicationPlace) {
+    merged.publicationPlace = googleData.location;
+  }
+  
+  if (googleData.publishedYear && !googleData.publicationYear) {
+    merged.publicationYear = googleData.publishedYear;
+  }
+  
   // Only update fields if DNB data is available
-  if (dnbData) {
+  if (dnbData && Object.keys(dnbData).length > 0) {
+    console.log("=== DNB DATA ===");
+    console.log(JSON.stringify(dnbData, null, 2));
+    
     for (const key in dnbData) {
       // Skip special fields and empty values
       if (key === "source" || dnbData[key as keyof typeof dnbData] === null || 
@@ -41,6 +59,8 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
         merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
       }
     }
+  } else {
+    console.log("=== NO DNB DATA AVAILABLE ===");
   }
   
   return merged;
@@ -48,6 +68,7 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
 
 /**
  * Verify book data across multiple sources following Python implementation
+ * and DNB/German RDA cataloguing standards
  */
 export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
   const requestId = `verify_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -83,12 +104,32 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
     if (googleBooksData) sources.push("Google Books");
     if (dnbData) sources.push("DNB");
     
+    // Format the data to match DNB/German RDA cataloguing standards
+    // Map old fields to new ones if they exist
+    if (mergedData.location && !mergedData.publicationPlace) {
+      mergedData.publicationPlace = mergedData.location;
+      delete mergedData.location;
+    }
+    
+    if (mergedData.publishedYear && !mergedData.publicationYear) {
+      mergedData.publicationYear = mergedData.publishedYear;
+      delete mergedData.publishedYear;
+    }
+    
+    if (mergedData.author && !mergedData.mainAuthor) {
+      mergedData.mainAuthor = mergedData.author;
+    }
+    
     // Step 4: Validate with Google Custom Search
     console.log(`[${requestId}] Step 4: Validating with Google Custom Search`);
-    const searchQuery = `${mergedData.title} ${mergedData.author || ""}`;
+    const searchQuery = `${mergedData.title} ${mergedData.mainAuthor || mergedData.author || ""}`;
+    let googleSearchResults;
+    
     try {
-      const googleSearchResults = await searchGoogleBooks(searchQuery);
+      googleSearchResults = await searchGoogleBooks(searchQuery);
       console.log(`[${requestId}] Google Search found ${googleSearchResults.length} results`);
+      console.log("=== GOOGLE CUSTOM SEARCH RESULTS ===");
+      console.log(JSON.stringify(googleSearchResults, null, 2));
     } catch (error) {
       console.log(`[${requestId}] Error in Google Search:`, error);
       // Continue even if this step fails
@@ -100,27 +141,35 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
     let dataMatches = true;
     
     try {
-      goodreadsData = await searchGoodreads(mergedData.title || "", mergedData.author || "");
+      goodreadsData = await searchGoodreads(
+        mergedData.title || "", 
+        mergedData.mainAuthor || mergedData.author || ""
+      );
       
       if (!goodreadsData.error) {
         console.log(`[${requestId}] Goodreads data retrieved successfully`);
+        console.log("=== GOODREADS DATA ===");
+        console.log(JSON.stringify(goodreadsData, null, 2));
+        
         sources.push("Goodreads");
         
         // Check if key information matches
         if (mergedData.title && goodreadsData.title) {
-          const titleMatch = 
-            mergedData.title.toLowerCase().includes(goodreadsData.title.toLowerCase()) || 
-            goodreadsData.title.toLowerCase().includes(mergedData.title.toLowerCase());
-            
-          const authorMatch = 
-            !mergedData.author || !goodreadsData.author || 
-            mergedData.author.toLowerCase().includes(goodreadsData.author.toLowerCase()) || 
-            goodreadsData.author.toLowerCase().includes(mergedData.author.toLowerCase());
-            
+          const title1 = (mergedData.title || "").toLowerCase();
+          const title2 = (goodreadsData.title || "").toLowerCase();
+          const titleMatch = title1.includes(title2) || title2.includes(title1);
+          
+          const author1 = (mergedData.mainAuthor || mergedData.author || "").toLowerCase();
+          const author2 = (goodreadsData.author || "").toLowerCase();
+          const authorMatch = !author1 || !author2 || author1.includes(author2) || author2.includes(author1);
+          
           dataMatches = titleMatch && authorMatch;
           
           if (!dataMatches) {
             console.log(`[${requestId}] Data verification failed: titles or authors don't match`);
+            console.log(`Title match: ${titleMatch}, Author match: ${authorMatch}`);
+            console.log(`Merged title: "${mergedData.title}", Goodreads title: "${goodreadsData.title}"`);
+            console.log(`Merged author: "${mergedData.mainAuthor || mergedData.author}", Goodreads author: "${goodreadsData.author}"`);
           }
         }
       } else {
@@ -140,17 +189,22 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         const openAiRequest = {
           isbn,
           title: mergedData.title || "",
-          author: mergedData.author || "",
+          mainAuthor: mergedData.mainAuthor || mergedData.author || "",
           language: mergedData.language || "de"
         };
         
         // Only generate summary, themes, and genres with OpenAI
         const additionalDetails = await processBookAnalysis(openAiRequest);
         
+        console.log("=== OPENAI ADDITIONAL DETAILS ===");
+        console.log(JSON.stringify(additionalDetails, null, 2));
+        
         // Only use OpenAI for these specific fields
         if (additionalDetails.summary) mergedData.summary = additionalDetails.summary;
         if (additionalDetails.themes) mergedData.themes = additionalDetails.themes;
-        if (additionalDetails.genres && (!mergedData.genres || !Array.isArray(mergedData.genres) || (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
+        if (additionalDetails.genres && 
+            (!mergedData.genres || !Array.isArray(mergedData.genres) || 
+             (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
           mergedData.genres = additionalDetails.genres;
         }
         
@@ -184,6 +238,10 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         sources
       };
     }
+    
+    // Log final data
+    console.log("=== FINAL MERGED DATA ===");
+    console.log(JSON.stringify(mergedData, null, 2));
     
     // Log final verification status
     console.log(`[${requestId}] Final verification status: ${mergedData.verification.status}`);
