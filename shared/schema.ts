@@ -94,6 +94,11 @@ export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   // Additional runtime properties not in the database schema
   coverImageData?: string;
+  themes?: string[];
+  readingLevel?: string;
+  interestCategory?: string;
+  ASB?: string;
+  [key: string]: any; // Allow dynamic properties for OpenAI analysis
 };
 
 // Analysis options - simplified to match Python service
