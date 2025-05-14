@@ -109,23 +109,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBook(book: InsertBook): Promise<Book> {
-    // Map the new field names to the old field names in the database
+    // Map the fields to the database column names
     const dbBook: Record<string, any> = {
+      // Core bibliographic fields
       isbn: book.isbn,
       title: book.title,
       subtitle: book.subtitle,
-      author: book.mainAuthor, // Use mainAuthor as author in DB
+      main_author: book.mainAuthor, 
       statement_of_responsibility: book.statementOfResponsibility,
       edition: book.edition,
-      location: book.publicationPlace, // Map publicationPlace to location
+      publication_place: book.publicationPlace,
       publisher: book.publisher,
-      published_year: book.publicationYear, // Map publicationYear to published_year
+      publication_year: book.publicationYear,
       page_count: book.pageCount,
+      illustrations: book.illustrations,
       dimensions: book.dimensions,
       binding: book.binding,
       price: book.price,
+      
+      // Classification and categorization
+      interest_category: book.interestCategory, 
+      age_recommendation: book.ageRecommendation,
+      classification_number: book.classificationNumber, // ASB classification
+      additional_classifications: book.additionalClassifications,
+      
+      // ID-Besprechung specific fields (ekz fields)
+      idb_initials: book.idbInitials,
+      idb_sequence_number: book.idbSequenceNumber,
+      idb_year: book.idbYear,
+      
+      // Content fields
       summary: book.summary,
-      review: book.review, // Add the review field
+      review: book.review,
+      reviewer_name: book.reviewerName || (book.userId ? null : null), // Will get username from session if needed
+      
+      // Additional fields
       genres: book.genres,
       language: book.language,
       cover_image_url: book.coverImageUrl,
@@ -145,26 +163,38 @@ export class DatabaseStorage implements IStorage {
     // Insert the book with the mapped fields using string interpolation instead of parameters
     const query = `
       INSERT INTO books (
-        isbn, title, subtitle, author, statement_of_responsibility,
-        edition, location, publisher, published_year, page_count,
-        dimensions, binding, price, summary, review, genres, language,
+        isbn, title, subtitle, main_author, statement_of_responsibility,
+        edition, publication_place, publisher, publication_year, page_count,
+        illustrations, dimensions, binding, price, 
+        interest_category, age_recommendation, classification_number, additional_classifications,
+        idb_initials, idb_sequence_number, idb_year,
+        summary, review, reviewer_name, genres, language,
         cover_image_url, user_id, created_at, updated_at
       ) VALUES (
         ${formatValue(dbBook.isbn)}, 
         ${formatValue(dbBook.title)}, 
         ${formatValue(dbBook.subtitle)}, 
-        ${formatValue(dbBook.author)}, 
+        ${formatValue(dbBook.main_author)}, 
         ${formatValue(dbBook.statement_of_responsibility)},
         ${formatValue(dbBook.edition)}, 
-        ${formatValue(dbBook.location)}, 
+        ${formatValue(dbBook.publication_place)}, 
         ${formatValue(dbBook.publisher)}, 
-        ${formatValue(dbBook.published_year)}, 
+        ${formatValue(dbBook.publication_year)}, 
         ${formatValue(dbBook.page_count)},
+        ${formatValue(dbBook.illustrations)}, 
         ${formatValue(dbBook.dimensions)}, 
         ${formatValue(dbBook.binding)}, 
-        ${formatValue(dbBook.price)}, 
+        ${formatValue(dbBook.price)},
+        ${formatValue(dbBook.interest_category)},
+        ${formatValue(dbBook.age_recommendation)},
+        ${formatValue(dbBook.classification_number)},
+        ${formatValue(dbBook.additional_classifications)},
+        ${formatValue(dbBook.idb_initials)},
+        ${formatValue(dbBook.idb_sequence_number)},
+        ${formatValue(dbBook.idb_year)},
         ${formatValue(dbBook.summary)}, 
-        ${formatValue(dbBook.review)}, 
+        ${formatValue(dbBook.review)},
+        ${formatValue(dbBook.reviewer_name)},
         ${formatValue(dbBook.genres)}, 
         ${formatValue(dbBook.language)},
         ${formatValue(dbBook.cover_image_url)}, 
@@ -172,15 +202,24 @@ export class DatabaseStorage implements IStorage {
         '${now}', 
         '${now}'
       ) RETURNING 
-        id, isbn, title, subtitle, author, 
-        author as main_author,
-        statement_of_responsibility,
+        id, isbn, title, subtitle, main_author as "mainAuthor",
+        statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        location as publication_place,
+        publication_place as "publicationPlace",
         publisher, 
-        published_year as publication_year,
-        page_count, dimensions, binding, price, 
-        summary, review, genres, cover_image_url as "coverImageUrl",
+        publication_year as "publicationYear",
+        page_count as "pageCount", 
+        illustrations,
+        dimensions, binding, price, 
+        interest_category as "interestCategory",
+        age_recommendation as "ageRecommendation",
+        classification_number as "classificationNumber",
+        additional_classifications as "additionalClassifications",
+        idb_initials as "idbInitials",
+        idb_sequence_number as "idbSequenceNumber",
+        idb_year as "idbYear",
+        summary, review, reviewer_name as "reviewerName",
+        genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -198,23 +237,39 @@ export class DatabaseStorage implements IStorage {
     // Map new field names to database column names
     const dbUpdates: Record<string, any> = {};
     
-    // Copy simple fields that haven't changed names
+    // Copy simple fields that need no transformation
     ['isbn', 'title', 'subtitle', 'edition', 'publisher', 
      'dimensions', 'binding', 'price', 'summary', 'review', 'genres', 
-     'language', 'userId'].forEach(field => {
+     'language', 'illustrations'].forEach(field => {
       if (field in updates) {
-        const dbField = field === 'userId' ? 'user_id' : field;
-        dbUpdates[dbField] = updates[field as keyof typeof updates];
+        dbUpdates[field] = updates[field as keyof typeof updates];
       }
     });
     
-    // Map renamed fields
-    if ('mainAuthor' in updates) dbUpdates['author'] = updates.mainAuthor;
-    if ('publicationPlace' in updates) dbUpdates['location'] = updates.publicationPlace;
-    if ('publicationYear' in updates) dbUpdates['published_year'] = updates.publicationYear;
+    // User ID needs special handling
+    if ('userId' in updates) dbUpdates['user_id'] = updates.userId;
+    
+    // Map renamed fields with underscores in database
+    if ('mainAuthor' in updates) dbUpdates['main_author'] = updates.mainAuthor;
+    if ('publicationPlace' in updates) dbUpdates['publication_place'] = updates.publicationPlace;
+    if ('publicationYear' in updates) dbUpdates['publication_year'] = updates.publicationYear;
     if ('pageCount' in updates) dbUpdates['page_count'] = updates.pageCount;
     if ('statementOfResponsibility' in updates) dbUpdates['statement_of_responsibility'] = updates.statementOfResponsibility;
     if ('coverImageUrl' in updates) dbUpdates['cover_image_url'] = updates.coverImageUrl;
+    
+    // New classification fields
+    if ('interestCategory' in updates) dbUpdates['interest_category'] = updates.interestCategory;
+    if ('ageRecommendation' in updates) dbUpdates['age_recommendation'] = updates.ageRecommendation;
+    if ('classificationNumber' in updates) dbUpdates['classification_number'] = updates.classificationNumber;
+    if ('additionalClassifications' in updates) dbUpdates['additional_classifications'] = updates.additionalClassifications;
+    
+    // ID-Besprechung specific fields
+    if ('idbInitials' in updates) dbUpdates['idb_initials'] = updates.idbInitials;
+    if ('idbSequenceNumber' in updates) dbUpdates['idb_sequence_number'] = updates.idbSequenceNumber;
+    if ('idbYear' in updates) dbUpdates['idb_year'] = updates.idbYear;
+    
+    // Reviewer information
+    if ('reviewerName' in updates) dbUpdates['reviewer_name'] = updates.reviewerName;
     
     // Add updated timestamp
     dbUpdates['updated_at'] = new Date().toISOString();
@@ -238,15 +293,24 @@ export class DatabaseStorage implements IStorage {
     
     query += setClauses.join(', ');
     query += ` WHERE id = ${id} RETURNING 
-      id, isbn, title, subtitle, author, 
-      author as main_author,
-      statement_of_responsibility,
+      id, isbn, title, subtitle, main_author as "mainAuthor",
+      statement_of_responsibility as "statementOfResponsibility",
       edition, 
-      location as publication_place,
+      publication_place as "publicationPlace",
       publisher, 
-      published_year as publication_year,
-      page_count, dimensions, binding, price, 
-      summary, review, genres, cover_image_url as "coverImageUrl",
+      publication_year as "publicationYear",
+      page_count as "pageCount", 
+      illustrations,
+      dimensions, binding, price, 
+      interest_category as "interestCategory",
+      age_recommendation as "ageRecommendation",
+      classification_number as "classificationNumber",
+      additional_classifications as "additionalClassifications",
+      idb_initials as "idbInitials",
+      idb_sequence_number as "idbSequenceNumber",
+      idb_year as "idbYear",
+      summary, review, reviewer_name as "reviewerName",
+      genres, cover_image_url as "coverImageUrl",
       language, user_id as "userId",
       created_at as "createdAt",
       updated_at as "updatedAt"
@@ -284,15 +348,24 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings while searching
     const searchQuery = `
       SELECT 
-        id, isbn, title, subtitle, author, 
-        author as main_author,
-        statement_of_responsibility,
+        id, isbn, title, subtitle, main_author as "mainAuthor",
+        statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        location as publication_place,
+        publication_place as "publicationPlace",
         publisher, 
-        published_year as publication_year,
-        page_count, dimensions, binding, price, 
-        summary, review, genres, cover_image_url as "coverImageUrl",
+        publication_year as "publicationYear",
+        page_count as "pageCount", 
+        illustrations,
+        dimensions, binding, price, 
+        interest_category as "interestCategory",
+        age_recommendation as "ageRecommendation",
+        classification_number as "classificationNumber",
+        additional_classifications as "additionalClassifications",
+        idb_initials as "idbInitials",
+        idb_sequence_number as "idbSequenceNumber",
+        idb_year as "idbYear",
+        summary, review, reviewer_name as "reviewerName",
+        genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
