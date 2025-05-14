@@ -291,20 +291,20 @@ def get_dnb_metadata(isbn: str) -> Dict:
         
         # Format result according to our application's schema
         result = {
-            "title": title,
-            "subtitle": subtitle,
-            "author": main_author,
-            "statementOfResponsibility": statement_of_responsibility,
-            "publisher": publisher,
+            "title": title or "",
+            "subtitle": subtitle or "",
+            "author": main_author or "",
+            "statementOfResponsibility": statement_of_responsibility or "",
+            "publisher": publisher or "",
             "publishedYear": published_year,
             "pageCount": page_count,
-            "language": language,
+            "language": language or "",
             "edition": edition,
-            "location": location,
-            "dimensions": dimensions,
+            "location": location or "",
+            "dimensions": dimensions or "",
             "isbn": isbn,  # Use the input ISBN
-            "binding": binding,
-            "price": price,
+            "binding": binding or "",
+            "price": price or "",
             # DNB doesn't provide these fields directly:
             "summary": "",
             "genres": [],
@@ -376,14 +376,16 @@ def get_book_by_isbn(isbn: str) -> Dict:
     
     # Validate the merged result
     # Check for future dates (likely incorrect)
-    logger.info(f"VALIDATION CHECK: Year={merged_result.get('publishedYear')}, Reference={REFERENCE_YEAR + MAX_FUTURE_YEARS}")
-    if merged_result.get("publishedYear") and isinstance(merged_result["publishedYear"], int) and merged_result["publishedYear"] > REFERENCE_YEAR + MAX_FUTURE_YEARS:
-        logger.warning(f"FINAL VALIDATION: Future publication year detected: {merged_result['publishedYear']} > {REFERENCE_YEAR + MAX_FUTURE_YEARS}. Setting to null.")
+    published_year = merged_result.get('publishedYear')
+    logger.info(f"VALIDATION CHECK: Year={published_year}, Reference={REFERENCE_YEAR + MAX_FUTURE_YEARS}")
+    if published_year is not None and isinstance(published_year, int) and published_year > REFERENCE_YEAR + MAX_FUTURE_YEARS:
+        logger.warning(f"FINAL VALIDATION: Future publication year detected: {published_year} > {REFERENCE_YEAR + MAX_FUTURE_YEARS}. Setting to null.")
         merged_result["publishedYear"] = None
     
     # Check for unreasonably large page counts
-    if merged_result.get("pageCount") and isinstance(merged_result["pageCount"], int) and merged_result["pageCount"] > 2000:
-        logger.warning(f"Unusually high page count detected: {merged_result['pageCount']}")
+    page_count = merged_result.get("pageCount")
+    if page_count is not None and isinstance(page_count, int) and page_count > 2000:
+        logger.warning(f"Unusually high page count detected: {page_count}")
         merged_result["pageCount"] = None
     
     # Log the result
