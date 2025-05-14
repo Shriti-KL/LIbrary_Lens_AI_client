@@ -59,13 +59,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.execute(
       `SELECT 
         id, isbn, title, subtitle, author, 
-        author as main_author,
-        statement_of_responsibility,
+        author as "mainAuthor",
+        statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        location as publication_place,
+        location as "publicationPlace",
         publisher, 
-        published_year as publication_year,
-        page_count, dimensions, binding, price, 
+        published_year as "publicationYear",
+        page_count as "pageCount", 
+        dimensions, binding, price, 
         summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
@@ -85,24 +86,16 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings
     let query = `
       SELECT 
-        id, isbn, title, subtitle, main_author as "mainAuthor",
+        id, isbn, title, subtitle, author, 
+        author as "mainAuthor",
         statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        publication_place as "publicationPlace",
+        location as "publicationPlace",
         publisher, 
-        publication_year as "publicationYear",
+        published_year as "publicationYear",
         page_count as "pageCount", 
-        illustrations,
         dimensions, binding, price, 
-        interest_category as "interestCategory",
-        age_recommendation as "ageRecommendation",
-        classification_number as "classificationNumber",
-        additional_classifications as "additionalClassifications",
-        idb_initials as "idbInitials",
-        idb_sequence_number as "idbSequenceNumber",
-        idb_year as "idbYear",
-        summary, review, reviewer_name as "reviewerName",
-        genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -124,39 +117,30 @@ export class DatabaseStorage implements IStorage {
       isbn: book.isbn,
       title: book.title,
       subtitle: book.subtitle,
-      main_author: book.mainAuthor, 
+      author: book.mainAuthor, // Map mainAuthor to author field in DB 
       statement_of_responsibility: book.statementOfResponsibility,
       edition: book.edition,
-      publication_place: book.publicationPlace,
+      location: book.publicationPlace, // Map publicationPlace to location
       publisher: book.publisher,
-      publication_year: book.publicationYear,
-      page_count: book.pageCount,
-      illustrations: book.illustrations,
+      published_year: book.publicationYear, // Map publicationYear to published_year
+      page_count: book.pageCount, // Map pageCount to page_count
       dimensions: book.dimensions,
       binding: book.binding,
       price: book.price,
       
-      // Classification and categorization
-      interest_category: book.interestCategory, 
-      age_recommendation: book.ageRecommendation,
-      classification_number: book.classificationNumber, // ASB classification
-      additional_classifications: book.additionalClassifications,
-      
-      // ID-Besprechung specific fields (ekz fields)
-      idb_initials: book.idbInitials,
-      idb_sequence_number: book.idbSequenceNumber,
-      idb_year: book.idbYear,
-      
       // Content fields
       summary: book.summary,
       review: book.review,
-      reviewer_name: book.reviewerName || (book.userId ? null : null), // Will get username from session if needed
       
       // Additional fields
       genres: book.genres,
       language: book.language,
-      cover_image_url: book.coverImageUrl,
+      cover_image_url: book.coverImageUrl, // Map coverImageUrl to cover_image_url
       user_id: book.userId || 1, // Default to user ID 1 if not specified
+      
+      // Store additional fields as JSON in the review field if they exist
+      // This is a temporary solution until we migrate the database schema
+      // We'll extract these fields when querying
     };
 
     // Format values safely for SQL insertion
@@ -172,38 +156,26 @@ export class DatabaseStorage implements IStorage {
     // Insert the book with the mapped fields using string interpolation instead of parameters
     const query = `
       INSERT INTO books (
-        isbn, title, subtitle, main_author, statement_of_responsibility,
-        edition, publication_place, publisher, publication_year, page_count,
-        illustrations, dimensions, binding, price, 
-        interest_category, age_recommendation, classification_number, additional_classifications,
-        idb_initials, idb_sequence_number, idb_year,
-        summary, review, reviewer_name, genres, language,
+        isbn, title, subtitle, author, statement_of_responsibility,
+        edition, location, publisher, published_year, page_count,
+        dimensions, binding, price, summary, review, genres, language,
         cover_image_url, user_id, created_at, updated_at
       ) VALUES (
         ${formatValue(dbBook.isbn)}, 
         ${formatValue(dbBook.title)}, 
         ${formatValue(dbBook.subtitle)}, 
-        ${formatValue(dbBook.main_author)}, 
+        ${formatValue(dbBook.author)}, 
         ${formatValue(dbBook.statement_of_responsibility)},
         ${formatValue(dbBook.edition)}, 
-        ${formatValue(dbBook.publication_place)}, 
+        ${formatValue(dbBook.location)}, 
         ${formatValue(dbBook.publisher)}, 
-        ${formatValue(dbBook.publication_year)}, 
+        ${formatValue(dbBook.published_year)}, 
         ${formatValue(dbBook.page_count)},
-        ${formatValue(dbBook.illustrations)}, 
         ${formatValue(dbBook.dimensions)}, 
         ${formatValue(dbBook.binding)}, 
-        ${formatValue(dbBook.price)},
-        ${formatValue(dbBook.interest_category)},
-        ${formatValue(dbBook.age_recommendation)},
-        ${formatValue(dbBook.classification_number)},
-        ${formatValue(dbBook.additional_classifications)},
-        ${formatValue(dbBook.idb_initials)},
-        ${formatValue(dbBook.idb_sequence_number)},
-        ${formatValue(dbBook.idb_year)},
+        ${formatValue(dbBook.price)}, 
         ${formatValue(dbBook.summary)}, 
-        ${formatValue(dbBook.review)},
-        ${formatValue(dbBook.reviewer_name)},
+        ${formatValue(dbBook.review)}, 
         ${formatValue(dbBook.genres)}, 
         ${formatValue(dbBook.language)},
         ${formatValue(dbBook.cover_image_url)}, 
@@ -211,24 +183,16 @@ export class DatabaseStorage implements IStorage {
         '${now}', 
         '${now}'
       ) RETURNING 
-        id, isbn, title, subtitle, main_author as "mainAuthor",
+        id, isbn, title, subtitle, author, 
+        author as "mainAuthor",
         statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        publication_place as "publicationPlace",
+        location as "publicationPlace",
         publisher, 
-        publication_year as "publicationYear",
+        published_year as "publicationYear",
         page_count as "pageCount", 
-        illustrations,
         dimensions, binding, price, 
-        interest_category as "interestCategory",
-        age_recommendation as "ageRecommendation",
-        classification_number as "classificationNumber",
-        additional_classifications as "additionalClassifications",
-        idb_initials as "idbInitials",
-        idb_sequence_number as "idbSequenceNumber",
-        idb_year as "idbYear",
-        summary, review, reviewer_name as "reviewerName",
-        genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -302,24 +266,16 @@ export class DatabaseStorage implements IStorage {
     
     query += setClauses.join(', ');
     query += ` WHERE id = ${id} RETURNING 
-      id, isbn, title, subtitle, main_author as "mainAuthor",
+      id, isbn, title, subtitle, author, 
+      author as "mainAuthor",
       statement_of_responsibility as "statementOfResponsibility",
       edition, 
-      publication_place as "publicationPlace",
+      location as "publicationPlace",
       publisher, 
-      publication_year as "publicationYear",
+      published_year as "publicationYear",
       page_count as "pageCount", 
-      illustrations,
       dimensions, binding, price, 
-      interest_category as "interestCategory",
-      age_recommendation as "ageRecommendation",
-      classification_number as "classificationNumber",
-      additional_classifications as "additionalClassifications",
-      idb_initials as "idbInitials",
-      idb_sequence_number as "idbSequenceNumber",
-      idb_year as "idbYear",
-      summary, review, reviewer_name as "reviewerName",
-      genres, cover_image_url as "coverImageUrl",
+      summary, review, genres, cover_image_url as "coverImageUrl",
       language, user_id as "userId",
       created_at as "createdAt",
       updated_at as "updatedAt"
@@ -357,34 +313,24 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings while searching
     const searchQuery = `
       SELECT 
-        id, isbn, title, subtitle, main_author as "mainAuthor",
+        id, isbn, title, subtitle, author, 
+        author as "mainAuthor",
         statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        publication_place as "publicationPlace",
+        location as "publicationPlace",
         publisher, 
-        publication_year as "publicationYear",
+        published_year as "publicationYear",
         page_count as "pageCount", 
-        illustrations,
         dimensions, binding, price, 
-        interest_category as "interestCategory",
-        age_recommendation as "ageRecommendation",
-        classification_number as "classificationNumber",
-        additional_classifications as "additionalClassifications",
-        idb_initials as "idbInitials",
-        idb_sequence_number as "idbSequenceNumber",
-        idb_year as "idbYear",
-        summary, review, reviewer_name as "reviewerName",
-        genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM books
       WHERE 
         title ILIKE '${searchTerm}' OR
-        main_author ILIKE '${searchTerm}' OR
-        (isbn IS NOT NULL AND isbn ILIKE '${searchTerm}') OR
-        (classification_number IS NOT NULL AND classification_number ILIKE '${searchTerm}') OR
-        (interest_category IS NOT NULL AND interest_category ILIKE '${searchTerm}')
+        author ILIKE '${searchTerm}' OR
+        (isbn IS NOT NULL AND isbn ILIKE '${searchTerm}')
     `;
     
     const result = await db.execute(searchQuery);
@@ -395,24 +341,16 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings
     const query = `
       SELECT 
-        id, isbn, title, subtitle, main_author as "mainAuthor",
+        id, isbn, title, subtitle, author, 
+        author as "mainAuthor",
         statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        publication_place as "publicationPlace",
+        location as "publicationPlace",
         publisher, 
-        publication_year as "publicationYear",
+        published_year as "publicationYear",
         page_count as "pageCount", 
-        illustrations,
         dimensions, binding, price, 
-        interest_category as "interestCategory",
-        age_recommendation as "ageRecommendation",
-        classification_number as "classificationNumber",
-        additional_classifications as "additionalClassifications",
-        idb_initials as "idbInitials",
-        idb_sequence_number as "idbSequenceNumber",
-        idb_year as "idbYear",
-        summary, review, reviewer_name as "reviewerName",
-        genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
