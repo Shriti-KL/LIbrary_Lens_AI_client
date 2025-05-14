@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { parseErrorMessage, formatISBN } from '@/lib/utils';
+import { parseErrorMessage, formatISBN, exportBookToPDF } from '@/lib/utils';
 import { useLanguage } from '@/hooks/use-language';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
-import { ChevronLeft, Bookmark, Check, Pencil, Trash, Save, X } from 'lucide-react';
+import { ChevronLeft, Bookmark, Check, Pencil, Trash, Save, X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -132,6 +132,13 @@ export default function BookDetail() {
   const confirmDelete = () => {
     deleteBookMutation.mutate();
     setIsDeleteDialogOpen(false);
+  };
+  
+  // Export book as PDF
+  const handleExportPDF = () => {
+    if (book) {
+      exportBookToPDF(book);
+    }
   };
   
   // Go back to archives page
