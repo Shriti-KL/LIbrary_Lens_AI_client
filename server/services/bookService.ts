@@ -634,8 +634,24 @@ export async function getBookByIsbn(isbn: string): Promise<Partial<Book>> {
         mergedResult.genres = googleResult.genres;
       }
       
-      // Use Google Books data to fill in missing fields
+      // If we have contributor data from DNB, log it for debugging
+      if (mergedResult.contributors) {
+        console.log(`[${requestId}] Preserving contributor information from DNB: ${JSON.stringify(Object.keys(mergedResult.contributors))}`);
+      }
+
+      // Use Google Books data to fill in missing fields, but preserve certain DNB-specific fields
       for (const [key, value] of Object.entries(googleResult)) {
+        // Skip contributor information from Google (we prefer DNB's richer contributor data)
+        if (key === 'contributors' && mergedResult.contributors) {
+          continue;
+        }
+        
+        // For statement of responsibility, only use Google's if DNB's is empty
+        if (key === 'statementOfResponsibility' && mergedResult.statementOfResponsibility) {
+          continue;
+        }
+        
+        // For other fields, use Google's value if DNB's is missing
         if (!(key in mergedResult) || mergedResult[key] === undefined || mergedResult[key] === '') {
           mergedResult[key] = value;
         }

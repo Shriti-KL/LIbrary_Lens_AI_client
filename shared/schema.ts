@@ -97,6 +97,8 @@ export type Book = typeof books.$inferSelect & {
   interestCategory?: string;
   ASB?: string;
   error?: string;
+  // Contributors for different roles (similar to Python implementation)
+  contributors?: {[role: string]: string[]};
   // Verification information from multi-source validation
   verification?: {
     status: string;
@@ -116,6 +118,7 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   readingLevel?: string;
   interestCategory?: string;
   ASB?: string;
+  contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
   // Allow dynamic properties for OpenAI analysis
   [key: string]: any;

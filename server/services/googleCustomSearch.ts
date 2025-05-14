@@ -74,7 +74,7 @@ export async function googleBookSearch(query: string): Promise<any[]> {
     });
     
     // Reset quota error tracking on success
-    if (global.googleCSE_quotaError > 0) {
+    if (global.googleCSE_quotaError && global.googleCSE_quotaError > 0) {
       global.googleCSE_quotaError = 0;
       global.googleCSE_quotaReset = 0;
       console.log('Google CSE API quota error cleared after successful request');
@@ -167,7 +167,7 @@ export async function getGoodreadsData(title: string, author: string = ""): Prom
     });
     
     // Reset quota error tracking on success
-    if (global.googleCSE_quotaError > 0) {
+    if (global.googleCSE_quotaError && global.googleCSE_quotaError > 0) {
       global.googleCSE_quotaError = 0;
       global.googleCSE_quotaReset = 0;
       console.log('Google CSE API quota error cleared after successful Goodreads request');
