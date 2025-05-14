@@ -360,15 +360,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Remove any extra whitespace and multiple newlines that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // In single-book view, we don't limit the summary length
-    // (unless it's extremely long and would cause layout issues)
-    if (summaryText.length > 5000) { // Only limit extremely long summaries
-      // Find the last complete sentence
-      const truncateAt = summaryText.lastIndexOf('.', 5000);
-      if (truncateAt > 0) {
-        summaryText = summaryText.substring(0, truncateAt + 1);
-      }
-    }
+    // In single-book view, we show the complete summary and review
+    // with no length limitations to ensure all content is visible
     
     // Split the text for proper wrapping with slightly reduced line spacing
     const summaryLines = doc.splitTextToSize(summaryText, 160);
@@ -651,41 +644,48 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Remove any extra whitespace that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Calculate available space in the grid cell for summary
-    // The height value is the total cell height
-    // We need to reserve space for all the other elements (roughly 80mm for metadata, classifications, etc.)
-    const reservedSpace = 80; // Space for other elements in mm
-    const availableHeight = height - reservedSpace;
+    // No longer limit by space - we will expand the cell height dynamically
+    // This ensures all text is visible even if it's very long
     
     // Break into lines with proper wrapping
     const summaryLines = doc.splitTextToSize(summaryText, width - 10);
     
-    // Calculate how many lines we can fit in the available space
-    // Each line takes about 3mm of height with our reduced line spacing
+    // Calculate the height needed to display all text
     const lineHeight = 3;
-    // Maximum number of lines based on available height
-    const maxSummaryLines = Math.floor(availableHeight / lineHeight);
+    // We'll show all lines, not limiting them
     
     // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
     
-    // If limited by space, show as many lines as possible
-    const linesToShow = Math.min(summaryLines.length, Math.max(10, maxSummaryLines));
+    // Show all lines of the summary and review
+    const linesToShow = summaryLines.length;
     
     for (let i = 0; i < linesToShow; i++) {
       doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
       currentY += lineHeight; // Reduced line spacing to fit more text
     }
     
-    // Add ellipsis if the summary was truncated
-    if (summaryLines.length > linesToShow) {
-      doc.text("...", x + 5, currentY);
-      currentY += lineHeight;
-    }
+    // No ellipsis needed since we're showing all lines
   }
   
   // --- IK category and ID-B number ---
-  currentY = y + height - 30;
+  // Calculate where the remaining footer content should go
+  // We need to leave space for barcode (approx 20mm) and other footer elements
+  
+  // Create a new page if we don't have enough space for the barcode/footer
+  // Check if we're getting too close to the bottom of the cell
+  const spaceNeededForFooter = 30; // Space needed for barcode and footer text
+  
+  // If the currentY position is too close to the bottom edge of the specified height,
+  // increase the cell height dynamically
+  if (currentY > y + height - spaceNeededForFooter) {
+    // Instead of creating a new page, we'll put some space and continue
+    // This is better than cutting off mid-sentence
+    currentY += 5; // Add some space after the summary
+  } else {
+    // We have enough space in current page, position footer near bottom
+    currentY = y + height - spaceNeededForFooter;
+  }
   
   // Interest category if available
   if (book.interestCategory) {
