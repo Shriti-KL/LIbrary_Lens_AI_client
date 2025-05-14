@@ -205,32 +205,16 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
   };
   
   try {
-    // Check if Python ISBN service is available
-    const pythonAvailable = await isPythonIsbnServiceAvailable();
-    
-    if (pythonAvailable) {
-      // If Python service is available, use it as the primary metadata source
-      console.log(`[${lookupId}] Using Python ISBN service for enhanced metadata lookup`);
-      try {
-        const pythonResult = await lookupBookByIsbn(isbn);
-        
-        if (pythonResult && pythonResult.title && pythonResult.author) {
-          console.log(`[${lookupId}] Successfully retrieved book metadata from Python service: "${pythonResult.title}" by ${pythonResult.author}`);
-          baseBookData = pythonResult;
-        } else {
-          console.log(`[${lookupId}] Python service didn't return valid data, falling back to Google Books API`);
-          // Fallback to Google Books API
-          const googleBooksResult = await getCompleteBookByISBN(isbn, language);
-          
-          if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
-            console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
-            baseBookData = googleBooksResult;
-          } else {
-            console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
-          }
-        }
-      } catch (error: any) {
-        console.log(`[${lookupId}] Error in Python ISBN service: ${error.message}, falling back to Google Books API`);
+    // Our TypeScript ISBN service is always available now
+    console.log(`[${lookupId}] Using TypeScript ISBN service for book metadata lookup`);
+    try {
+      const bookResult = await lookupBookByIsbn(isbn);
+      
+      if (bookResult && bookResult.title && bookResult.author) {
+        console.log(`[${lookupId}] Successfully retrieved book metadata from native service: "${bookResult.title}" by ${bookResult.author}`);
+        baseBookData = bookResult;
+      } else {
+        console.log(`[${lookupId}] ISBN service didn't return valid data, falling back to Google Books API`);
         // Fallback to Google Books API
         const googleBooksResult = await getCompleteBookByISBN(isbn, language);
         
@@ -241,9 +225,9 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
           console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
         }
       }
-    } else {
-      // If Python service is not available, use Google Books API
-      console.log(`[${lookupId}] Python ISBN service not available, using Google Books API`);
+    } catch (error: any) {
+      console.log(`[${lookupId}] Error in ISBN service: ${error.message}, falling back to Google Books API`);
+      // Fallback to Google Books API
       const googleBooksResult = await getCompleteBookByISBN(isbn, language);
       
       if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
@@ -253,6 +237,18 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
         console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
       }
     }
+  } catch (error: any) {
+    // Fallback to Google Books API if there's any unexpected error
+    console.log(`[${lookupId}] Unexpected error: ${error.message}, using Google Books API`);
+    const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+    
+    if (googleBooksResult && googleBooksResult.title && googleBooksResult.author) {
+      console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.author}`);
+      baseBookData = googleBooksResult;
+    } else {
+      console.log(`[${lookupId}] Google Books didn't return valid data for ISBN: ${isbn}`);
+    }
+  }
     
     // Second step: Always use OpenAI to enhance the data
     console.log(`[${lookupId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);

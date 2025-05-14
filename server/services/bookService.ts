@@ -37,11 +37,7 @@ interface GoogleBookVolumeInfo {
     extraLarge?: string;
   };
   language?: string;
-  accessInfo?: {
-    pdf?: {
-      isAvailable?: boolean;
-    };
-  };
+  accessInfo?: any;
   isEbook?: boolean;
 }
 
@@ -71,10 +67,10 @@ interface BookData {
   author?: string;
   statementOfResponsibility?: string;
   publisher?: string;
-  publishedYear?: number;
-  pageCount?: number;
+  publishedYear?: number | null;
+  pageCount?: number | null;
   language?: string;
-  edition?: string;
+  edition?: string | null;
   location?: string;
   dimensions?: string;
   isbn?: string;
@@ -85,6 +81,22 @@ interface BookData {
   coverImageUrl?: string;
   error?: string;
   [key: string]: any;
+}
+
+interface SubField {
+  $: {
+    code: string;
+    [key: string]: string;
+  };
+  _: string;
+}
+
+interface Field {
+  $: {
+    tag: string;
+    [key: string]: string;
+  };
+  'marc:subfield': SubField | SubField[];
 }
 
 /**
@@ -261,6 +273,7 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     const xmlText = response.data;
     console.log(`DNB XML RESPONSE (first 500 chars): ${xmlText.substring(0, 500)}...`);
     
+    // Parse XML with no arrays for single elements
     const result = await parseStringPromise(xmlText, { explicitArray: false });
     
     // Extract the number of records
@@ -304,34 +317,42 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     let edition: string | undefined = undefined;
     
     // Extract datafields from MARC record
-    let datafields: any[] = recordData['marc:datafield'];
+    let datafields: Field[] = recordData['marc:datafield'];
     if (!Array.isArray(datafields)) {
       datafields = datafields ? [datafields] : [];
     }
     
+    // Use a local variable to handle the MARC subfields
+    let subfields: SubField[] = [];
+
+    // Helper function to get subfields (defined as a local variable function)
+    const getSubfields = (field: Field): SubField[] => {
+      let sf = field['marc:subfield'];
+      if (!Array.isArray(sf)) {
+        sf = sf ? [sf] : [];
+      }
+      return sf as SubField[];
+    };
+    
     // Process title and statement of responsibility (MARC field 245)
     const titleField = datafields.find(field => field.$.tag === '245');
     if (titleField) {
-      // Handle subfields array or object
-      let subfields = titleField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(titleField);
       
       // Title (subfield a)
-      const titleSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const titleSubfield = subfields.find(sf => sf.$.code === 'a');
       if (titleSubfield && titleSubfield._) {
         title = titleSubfield._.trim();
       }
       
       // Subtitle (subfield b)
-      const subtitleSubfield = subfields.find((sf: any) => sf.$.code === 'b');
+      const subtitleSubfield = subfields.find(sf => sf.$.code === 'b');
       if (subtitleSubfield && subtitleSubfield._) {
         subtitle = subtitleSubfield._.trim();
       }
       
       // Statement of responsibility (subfield c)
-      const respSubfield = subfields.find((sf: any) => sf.$.code === 'c');
+      const respSubfield = subfields.find(sf => sf.$.code === 'c');
       if (respSubfield && respSubfield._) {
         statementOfResponsibility = respSubfield._.trim();
       }
@@ -340,12 +361,9 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     // Process author information (MARC field 100)
     const authorField = datafields.find(field => field.$.tag === '100');
     if (authorField) {
-      let subfields = authorField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(authorField);
       
-      const authorSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const authorSubfield = subfields.find(sf => sf.$.code === 'a');
       if (authorSubfield && authorSubfield._) {
         mainAuthor = authorSubfield._.trim();
       }
@@ -354,25 +372,22 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     // Process publication information (MARC field 264)
     const pubField = datafields.find(field => field.$.tag === '264');
     if (pubField) {
-      let subfields = pubField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(pubField);
       
       // Location (subfield a)
-      const locSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const locSubfield = subfields.find(sf => sf.$.code === 'a');
       if (locSubfield && locSubfield._) {
         location = locSubfield._.trim();
       }
       
       // Publisher (subfield b)
-      const pubSubfield = subfields.find((sf: any) => sf.$.code === 'b');
+      const pubSubfield = subfields.find(sf => sf.$.code === 'b');
       if (pubSubfield && pubSubfield._) {
         publisher = pubSubfield._.trim();
       }
       
       // Publication year (subfield c)
-      const yearSubfield = subfields.find((sf: any) => sf.$.code === 'c');
+      const yearSubfield = subfields.find(sf => sf.$.code === 'c');
       if (yearSubfield && yearSubfield._) {
         const yearText = yearSubfield._.trim();
         const yearMatch = yearText.match(/\d{4}/);
@@ -385,13 +400,10 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     // Process physical description (MARC field 300)
     const physicalField = datafields.find(field => field.$.tag === '300');
     if (physicalField) {
-      let subfields = physicalField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(physicalField);
       
       // Extent/pages (subfield a)
-      const extentSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const extentSubfield = subfields.find(sf => sf.$.code === 'a');
       if (extentSubfield && extentSubfield._) {
         const extentText = extentSubfield._.trim();
         const pagesMatch = extentText.match(/(\d+)\s*S/);
@@ -401,7 +413,7 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       }
       
       // Dimensions (subfield c)
-      const dimSubfield = subfields.find((sf: any) => sf.$.code === 'c');
+      const dimSubfield = subfields.find(sf => sf.$.code === 'c');
       if (dimSubfield && dimSubfield._) {
         dimensions = dimSubfield._.trim();
       }
@@ -410,12 +422,9 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     // Process language (MARC field 041)
     const langField = datafields.find(field => field.$.tag === '041');
     if (langField) {
-      let subfields = langField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(langField);
       
-      const langSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const langSubfield = subfields.find(sf => sf.$.code === 'a');
       if (langSubfield && langSubfield._) {
         language = langSubfield._.trim();
       }
@@ -424,12 +433,9 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     // Process edition statement (MARC field 250)
     const editionField = datafields.find(field => field.$.tag === '250');
     if (editionField) {
-      let subfields = editionField['marc:subfield'];
-      if (!Array.isArray(subfields)) {
-        subfields = subfields ? [subfields] : [];
-      }
+      const subfields = getSubfields(editionField);
       
-      const editionSubfield = subfields.find((sf: any) => sf.$.code === 'a');
+      const editionSubfield = subfields.find(sf => sf.$.code === 'a');
       if (editionSubfield && editionSubfield._) {
         edition = editionSubfield._.trim();
       }
