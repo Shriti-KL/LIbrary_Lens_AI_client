@@ -306,10 +306,10 @@ export class DatabaseStorage implements IStorage {
         updated_at as "updatedAt"
       FROM books
       ORDER BY created_at DESC
-      LIMIT $1
+      LIMIT ${limit}
     `;
     
-    const result = await db.execute(query, [limit]);
+    const result = await db.execute(query);
     return (result.rows || []) as unknown as Book[];
   }
 }
