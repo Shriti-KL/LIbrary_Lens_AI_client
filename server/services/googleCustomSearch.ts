@@ -17,6 +17,18 @@ const apiLogger = {
 const GOOGLE_API_KEY = process.env.GOOGLE_BOOKS_API_KEY;
 const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
 
+// Store quota error information globally
+declare global {
+  var googleCSE_quotaError: number | undefined;
+  var googleCSE_quotaReset: number | undefined;
+}
+
+// Initialize if not set
+if (global.googleCSE_quotaError === undefined) {
+  global.googleCSE_quotaError = 0;
+  global.googleCSE_quotaReset = 0;
+}
+
 /**
  * Search for book information from multiple sources via Google Custom Search
  * This replaces the google_book_search function from the Python implementation
@@ -25,7 +37,20 @@ const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
  * @returns Array of search results with source information
  */
 export async function googleBookSearch(query: string): Promise<any[]> {
+  // Check if we've reached API quota limits
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  if (global.googleCSE_quotaError && global.googleCSE_quotaError > oneHourAgo) {
+    const resetTime = new Date(global.googleCSE_quotaReset || 0).toLocaleTimeString();
+    console.log(`Skipping Google CSE API call due to recent quota error. Next attempt after ${resetTime}`);
+    return [];
+  }
+  
   try {
+    if (!GOOGLE_API_KEY || !GOOGLE_CSE_ID) {
+      console.log('Google CSE API keys not configured');
+      return [];
+    }
+
     const encodedQuery = encodeURIComponent(`${query} book`);
     const url = `https://www.googleapis.com/customsearch/v1?q=${encodedQuery}&key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}`;
     
@@ -48,12 +73,28 @@ export async function googleBookSearch(query: string): Promise<any[]> {
       resultsCount: results.length
     });
     
+    // Reset quota error tracking on success
+    if (global.googleCSE_quotaError > 0) {
+      global.googleCSE_quotaError = 0;
+      global.googleCSE_quotaReset = 0;
+      console.log('Google CSE API quota error cleared after successful request');
+    }
+    
     return results;
   } catch (error: any) {
+    // Check for quota exceeded error (403)
+    if (error.response && error.response.status === 403) {
+      // Set quota exceeded flag and reset time (1 hour from now)
+      global.googleCSE_quotaError = Date.now();
+      global.googleCSE_quotaReset = Date.now() + 60 * 60 * 1000;
+      console.log(`Google CSE API quota exceeded. Will retry after ${new Date(global.googleCSE_quotaReset).toLocaleTimeString()}`);
+    }
+    
     apiLogger.logError('Google Custom Search API', {
       status: 'error',
       message: error.message,
-      query
+      query,
+      errorCode: error.response?.status
     });
     return [];
   }
@@ -68,7 +109,27 @@ export async function googleBookSearch(query: string): Promise<any[]> {
  * @returns Goodreads book data or error message
  */
 export async function getGoodreadsData(title: string, author: string = ""): Promise<any> {
+  // Check if we've reached API quota limits
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  if (global.googleCSE_quotaError && global.googleCSE_quotaError > oneHourAgo) {
+    const resetTime = new Date(global.googleCSE_quotaReset || 0).toLocaleTimeString();
+    console.log(`Skipping Goodreads search via Google CSE API due to recent quota error. Next attempt after ${resetTime}`);
+    return { 
+      error: `Google CSE API quota exceeded. Will retry after ${resetTime}`,
+      title,
+      author
+    };
+  }
+  
   try {
+    if (!GOOGLE_API_KEY || !GOOGLE_CSE_ID) {
+      return { 
+        error: "Google Custom Search API key or engine ID not configured",
+        title,
+        author
+      };
+    }
+    
     const searchQuery = encodeURIComponent(`${title} ${author} site:goodreads.com/book/show`);
     const url = `https://www.googleapis.com/customsearch/v1?q=${searchQuery}&key=${GOOGLE_API_KEY}&cx=${GOOGLE_CSE_ID}`;
     
@@ -83,7 +144,7 @@ export async function getGoodreadsData(title: string, author: string = ""): Prom
     )?.link;
     
     if (!goodreadsUrl) {
-      return { error: "Goodreads URL not found" };
+      return { error: "Goodreads URL not found", title, author };
     }
     
     // We're not scraping the Goodreads page directly as in the Python version
@@ -104,6 +165,13 @@ export async function getGoodreadsData(title: string, author: string = ""): Prom
       status: 'success',
       goodreadsUrl
     });
+    
+    // Reset quota error tracking on success
+    if (global.googleCSE_quotaError > 0) {
+      global.googleCSE_quotaError = 0;
+      global.googleCSE_quotaReset = 0;
+      console.log('Google CSE API quota error cleared after successful Goodreads request');
+    }
     
     return result;
   } catch (error: any) {
