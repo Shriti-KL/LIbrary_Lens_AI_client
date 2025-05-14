@@ -3051,3 +3051,322 @@
     "8": "genres"
   }
 }
+
+[2025-05-14 07:39:15] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95416-448-6"
+}
+
+[2025-05-14 07:39:15] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783954164486"
+}
+
+[2025-05-14 07:39:15] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783954164486"
+}
+
+[2025-05-14 07:39:16] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783954164486",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "publishedYear",
+    "3": "pageCount",
+    "4": "language",
+    "5": "isbn",
+    "6": "genres"
+  }
+}
+
+[2025-05-14 07:39:16] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-95416-448-6",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:39:16] REQUEST TO Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95416-448-6"
+}
+
+[2025-05-14 07:39:16] REQUEST TO Google Books API
+{
+  "operation": "searchBooks",
+  "isbn": "978-3-95416-448-6"
+}
+
+[2025-05-14 07:39:16] RESPONSE FROM Google Books API
+{
+  "operation": "searchBooks",
+  "query": "isbn:978-3-95416-448-6",
+  "resultsCount": 1,
+  "success": true
+}
+
+[2025-05-14 07:39:16] RESPONSE FROM Google Books API
+{
+  "operation": "getBookByISBN",
+  "isbn": "978-3-95416-448-6",
+  "success": true,
+  "bookTitle": "P.M. Schneller schlau GESCHICHTE"
+}
+
+[2025-05-14 07:39:16] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-95416-448-6",
+  "title": "",
+  "author": ""
+}
+
+[2025-05-14 07:39:28] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 458,
+    "completion_tokens": 407,
+    "total_tokens": 865,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "edition",
+    "9": "location",
+    "10": "dimensions",
+    "11": "binding",
+    "12": "price",
+    "13": "summary",
+    "14": "genres",
+    "15": "ASB",
+    "16": "interestCategory",
+    "17": "themes",
+    "18": "readingLevel",
+    "19": "hallucination"
+  },
+  "hallucinationDetected": true
+}
+
+[2025-05-14 07:39:28] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-95416-448-6",
+  "title": "Die Geschichte der Bienen",
+  "author": "Maja Lunde"
+}
+
+[2025-05-14 07:39:37] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 557,
+    "completion_tokens": 395,
+    "total_tokens": 952,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "location",
+    "9": "binding",
+    "10": "summary",
+    "11": "genres",
+    "12": "ASB",
+    "13": "interestCategory",
+    "14": "themes",
+    "15": "readingLevel",
+    "16": "hallucination"
+  },
+  "hallucinationDetected": true
+}
+
+[2025-05-14 07:41:18] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-406-83030-3 "
+}
+
+[2025-05-14 07:41:18] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:41:19] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:41:19] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}
+
+[2025-05-14 07:41:19] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-406-83030-3 ",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:41:19] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783406830303",
+  "title": "Der vergessene Widerstand",
+  "author": "Stephan Lehnstaedt"
+}
+
+[2025-05-14 07:41:26] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 491,
+    "completion_tokens": 413,
+    "total_tokens": 904,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "language",
+    "8": "summary",
+    "9": "genres",
+    "10": "ASB",
+    "11": "interestCategory",
+    "12": "themes",
+    "13": "readingLevel"
+  },
+  "hallucinationDetected": false
+}
+
+[2025-05-14 07:41:26] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783406830303",
+  "title": "Der vergessene Widerstand",
+  "author": "Stephan Lehnstaedt"
+}
+
+[2025-05-14 07:41:32] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 560,
+    "completion_tokens": 380,
+    "total_tokens": 940,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "language",
+    "8": "summary",
+    "9": "genres",
+    "10": "ASB",
+    "11": "interestCategory",
+    "12": "themes",
+    "13": "readingLevel"
+  },
+  "hallucinationDetected": false
+}
