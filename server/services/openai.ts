@@ -165,25 +165,10 @@ export async function processBookAnalysis(
     2. A critical review, beginning with "• ".
        - Include a professional assessment of quality, relevance, and target audience.
        - End with a recommendation for library acquisition.
-
-    3. 3-5 key themes as keywords
-    
-    4. 2-4 genres that best categorize the book
-    
-    5. ASB (Allgemeine Systematik für Bibliotheken) classification (e.g. "Phy 400")
-    
-    6. Reading level (e.g. "Children", "Young Adult", "Adult")
-    
-    7. Interest category (e.g. "IK: Geschichte; ab 14")
     
     Please format your response as a JSON object with these fields only:
     - summary: string (the neutral 3-5 sentence summary)
     - review: string (the critical review starting with "• ")
-    - themes: string[] (3-5 themes as keywords)
-    - genres: string[] (2-4 genres)
-    - ASB: string
-    - readingLevel: string
-    - interestCategory: string
     
     Use authentic data where available from the verified sources. Do not invent bibliographic details.
     Your summary should be completely factual and based on the authentic description.
@@ -234,16 +219,11 @@ export async function processBookAnalysis(
       hallucinationDetected: false
     })}`);
     
-    // Return OpenAI-generated fields with the new review field
+    // Return only summary and review from OpenAI, no themes/genres/classifications
     return {
       ...bookInfo,  // Include original book info
       summary: result.summary || null,
-      review: result.review || null,  // New critical review field
-      themes: result.themes || [],
-      genres: result.genres || [],
-      ASB: result.ASB || null,
-      readingLevel: result.readingLevel || null,
-      interestCategory: result.interestCategory || null
+      review: result.review || null,  // Critical review field
     };
   } catch (error: any) {
     console.error("[API] OpenAI API error:", error);

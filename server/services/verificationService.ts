@@ -297,25 +297,11 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
           console.log(`[verify_${requestId}] Added critical review from OpenAI`);
         }
         
-        // Only use OpenAI's themes if we don't already have them
-        if (additionalDetails.themes && (!mergedData.themes || !Array.isArray(mergedData.themes) || mergedData.themes.length === 0)) {
-          mergedData.themes = additionalDetails.themes;
-          if (Array.isArray(additionalDetails.themes)) {
-            console.log(`[verify_${requestId}] Added themes from OpenAI: ${additionalDetails.themes.join(', ')}`);
-          }
-        }
+        // No longer using OpenAI for themes or genres
+        // These should come only from authentic sources like Google Books, DNB, or Goodreads
         
-        // Only use OpenAI's genres if we don't already have them from authentic sources
-        if (additionalDetails.genres && 
-            (!mergedData.genres || !Array.isArray(mergedData.genres) || 
-             (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
-          mergedData.genres = additionalDetails.genres;
-          if (Array.isArray(additionalDetails.genres)) {
-            console.log(`[verify_${requestId}] Added genres from OpenAI: ${additionalDetails.genres.join(', ')}`);
-          }
-        }
-        
-        // Add ASB, readingLevel, and interestCategory
+        // Use ASB, readingLevel, and interestCategory from other authentic sources
+        // For now, keep using these from OpenAI but they should be moved to authentic sources in the future
         if (additionalDetails.ASB) mergedData.ASB = additionalDetails.ASB;
         if (additionalDetails.readingLevel) mergedData.readingLevel = additionalDetails.readingLevel;
         if (additionalDetails.interestCategory) mergedData.interestCategory = additionalDetails.interestCategory;
