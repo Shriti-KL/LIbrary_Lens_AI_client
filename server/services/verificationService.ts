@@ -35,6 +35,31 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
     merged.publicationYear = googleData.publishedYear;
   }
   
+  // Ensure all required fields have default values if not present
+  const requiredFields = [
+    'isbn', 'title', 'subtitle', 'mainAuthor', 'publisher', 
+    'publicationYear', 'publicationPlace', 'pageCount', 
+    'dimensions', 'binding', 'price', 'edition', 'language',
+    'genres', 'ASB', 'interestCategory', 'illustrations', 'dnbNumber'
+  ];
+  
+  for (const field of requiredFields) {
+    // Initialize missing fields to null (not undefined)
+    if (merged[field as keyof typeof merged] === undefined) {
+      merged[field as keyof typeof merged] = null;
+    }
+    
+    // Ensure arrays are properly initialized
+    if (field === 'genres' && !merged.genres) {
+      merged.genres = [];
+    }
+  }
+  
+  // Ensure contributors object exists if not present
+  if (!merged.contributors) {
+    merged.contributors = {};
+  }
+  
   // Only update fields if DNB data is available
   if (dnbData && Object.keys(dnbData).length > 0) {
     console.log("=== DNB DATA ===");
@@ -48,7 +73,41 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
         continue;
       }
       
-      // Handle nested objects (like statement of responsibility)
+      // Special handling for contributors - merge them instead of replacing
+      if (key === 'contributors') {
+        merged.contributors = merged.contributors || {};
+        
+        if (dnbData.contributors) {
+          for (const role in dnbData.contributors) {
+            if (!merged.contributors[role]) {
+              merged.contributors[role] = dnbData.contributors[role];
+            } else {
+              // Merge contributors for the same role without duplicates
+              const existingNames = new Set(merged.contributors[role]);
+              dnbData.contributors[role].forEach(name => existingNames.add(name));
+              merged.contributors[role] = Array.from(existingNames);
+            }
+          }
+        }
+        continue;
+      }
+      
+      // Special handling for genres - merge them instead of replacing if both exist
+      if (key === 'genres') {
+        if (Array.isArray(dnbData.genres) && dnbData.genres.length > 0) {
+          if (!Array.isArray(merged.genres) || merged.genres.length === 0) {
+            merged.genres = dnbData.genres;
+          } else {
+            // Merge genres without duplicates
+            const existingGenres = new Set(merged.genres);
+            dnbData.genres.forEach(genre => existingGenres.add(genre));
+            merged.genres = Array.from(existingGenres);
+          }
+        }
+        continue;
+      }
+      
+      // Handle nested objects (like statement of responsibility or verification)
       if (typeof dnbData[key as keyof typeof dnbData] === 'object' && 
           !Array.isArray(dnbData[key as keyof typeof dnbData])) {
         merged[key as keyof typeof merged] = {
@@ -56,14 +115,29 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
           ...(dnbData[key as keyof typeof dnbData] as object)
         };
       } else {
-        // Only use DNB data if the field is missing or empty in Google Books data
-        if (!merged[key as keyof typeof merged] || 
-            merged[key as keyof typeof merged] === null ||
-            merged[key as keyof typeof merged] === "" ||
-            (Array.isArray(merged[key as keyof typeof merged]) && 
-             (merged[key as keyof typeof merged] as any[]).length === 0)) {
-          
-          merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
+        // DNB data takes precedence for bibliographic fields if available
+        // This is because DNB follows the DNB/German RDA cataloguing standards
+        const dnbPriorityFields = [
+          'publicationPlace', 'subtitle', 'edition', 'dimensions', 
+          'binding', 'ASB', 'interestCategory', 'illustrations', 'dnbNumber'
+        ];
+        
+        if (dnbPriorityFields.includes(key)) {
+          if (dnbData[key as keyof typeof dnbData] !== null && 
+              dnbData[key as keyof typeof dnbData] !== undefined &&
+              dnbData[key as keyof typeof dnbData] !== "") {
+            merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
+          }
+        } else {
+          // For other fields, only use DNB data if the field is missing or empty in Google Books data
+          if (!merged[key as keyof typeof merged] || 
+              merged[key as keyof typeof merged] === null ||
+              merged[key as keyof typeof merged] === "" ||
+              (Array.isArray(merged[key as keyof typeof merged]) && 
+              (merged[key as keyof typeof merged] as any[]).length === 0)) {
+            
+            merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
+          }
         }
       }
     }
