@@ -206,6 +206,12 @@ async function lookupViaSRU(cleanIsbn: string): Promise<Partial<Book> | null> {
         }
       }
       
+      // Extract illustrations information
+      const illustrationsSubfield = findSubfield(physicalField, 'b');
+      if (illustrationsSubfield) {
+        bookData.illustrations = illustrationsSubfield._;
+      }
+      
       const dimSubfield = findSubfield(physicalField, 'c');
       if (dimSubfield) {
         bookData.dimensions = dimSubfield._;
