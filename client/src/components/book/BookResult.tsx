@@ -287,11 +287,13 @@ export default function BookResult({
                           <div className="pl-5 text-xs">
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                               <div><span className="font-semibold">Google Books:</span> {book.isbn ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">DNB:</span> {book.verification?.sources?.includes('DNB') ? 'Data received' : 'No data'}</div>
                               <div><span className="font-semibold">OpenAI:</span> {book.summary ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">Google Custom Search:</span> {book.verification?.sources?.includes('Google Search') ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">Goodreads:</span> {book.verification?.sources?.includes('Goodreads') ? 'Data received' : 'No data'}</div>
+                              <div><span className="font-semibold">Verification Status:</span> {book.verification?.status || 'N/A'}</div>
+                              <div><span className="font-semibold">Verification Confidence:</span> {book.verification?.confidence || 'N/A'}</div>
                               <div><span className="font-semibold">ISBN:</span> {book.isbn || 'N/A'}</div>
-                              <div><span className="font-semibold">Publication Year:</span> {book.publishedYear || 'N/A'}</div>
-                              <div><span className="font-semibold">Genres:</span> {Array.isArray(book.genres) ? book.genres.length : 0} found</div>
-                              <div><span className="font-semibold">Themes:</span> {Array.isArray(book.themes) ? book.themes.length : 0} found</div>
                             </div>
                           </div>
                         </div>
@@ -307,11 +309,11 @@ export default function BookResult({
                         </div>
                         
                         <div className="space-y-6">
-                          {/* Google Books Data */}
+                          {/* STEP 1: Google Books Data */}
                           <div>
                             <div className="flex items-center gap-2 mb-1 bg-blue-50 p-2 rounded border border-blue-200">
                               <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-                              <h5 className="font-bold">Google Books Data</h5>
+                              <h5 className="font-bold">Step 1: Google Books Data</h5>
                             </div>
                             <div className="pl-5 text-xs mb-2">
                               <p>Basic metadata retrieved from Google Books API</p>
@@ -323,13 +325,19 @@ export default function BookResult({
                                 title: book.title,
                                 subtitle: book.subtitle,
                                 author: book.author,
+                                mainAuthor: book.mainAuthor,
                                 isbn: book.isbn,
                                 publisher: book.publisher,
-                                publishedYear: book.publishedYear,
+                                publicationYear: book.publicationYear || book.publishedYear,
+                                publicationPlace: book.publicationPlace || book.location,
                                 pageCount: book.pageCount,
                                 categories: book.categories,
                                 language: book.language,
-                                imageLinks: book.coverImageUrl,
+                                coverImageUrl: book.coverImageUrl,
+                                dimensions: book.dimensions,
+                                binding: book.binding,
+                                price: book.price,
+                                edition: book.edition,
                                 industryIdentifiers: book.industryIdentifiers,
                                 printType: book.printType,
                                 maturityRating: book.maturityRating
@@ -337,32 +345,109 @@ export default function BookResult({
                             </pre>
                           </div>
                           
-                          {/* OpenAI Enhanced Data */}
+                          {/* STEP 2: DNB Data */}
                           <div>
-                            <div className="flex items-center gap-2 mb-1 bg-emerald-50 p-2 rounded border border-emerald-200">
-                              <div className="h-3 w-3 bg-emerald-500 rounded-full"></div>
-                              <h5 className="font-bold">OpenAI Enhanced Data</h5>
+                            <div className="flex items-center gap-2 mb-1 bg-yellow-50 p-2 rounded border border-yellow-200">
+                              <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
+                              <h5 className="font-bold">Step 2: DNB Data (German National Library)</h5>
                             </div>
                             <div className="pl-5 text-xs mb-2">
-                              <p>AI-generated content and metadata enhancements</p>
+                              <p>Metadata from German National Library (if available)</p>
                             </div>
                             <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
                               {JSON.stringify({
-                                summary: book.summary,
-                                genres: book.genres,
-                                themes: book.themes,
-                                readingLevel: book.readingLevel,
-                                catalogEntry: book.catalogEntry,
-                                metadata: book.metadata
+                                title: book.title,
+                                subtitle: book.subtitle,
+                                mainAuthor: book.mainAuthor,
+                                statementOfResponsibility: book.statementOfResponsibility,
+                                edition: book.edition,
+                                publicationPlace: book.publicationPlace,
+                                publisher: book.publisher,
+                                publicationYear: book.publicationYear,
+                                pageCount: book.pageCount,
+                                dimensions: book.dimensions,
+                                binding: book.binding,
+                                price: book.price,
+                                language: book.language,
+                                illustrations: book.illustrations,
+                                dnbNumber: book.dnbNumber,
+                                contributors: book.contributors,
+                                isbn: book.isbn
+                              }, null, 2)}
+                            </pre>
+                          </div>
+
+                          {/* STEP 3: Google Custom Search Data */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-purple-50 p-2 rounded border border-purple-200">
+                              <div className="h-3 w-3 bg-purple-500 rounded-full"></div>
+                              <h5 className="font-bold">Step 3: Google Custom Search & Goodreads</h5>
+                            </div>
+                            <div className="pl-5 text-xs mb-2">
+                              <p>Validation data from online book sources</p>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify({
+                                // Google Custom Search
+                                verification: book.verification,
+                                // Additional fields that might come from external sources
+                                rating: book.rating,
+                                reviews: book.reviews,
+                                source: book.verification?.sources
                               }, null, 2)}
                             </pre>
                           </div>
                           
-                          {/* Complete Raw Data */}
+                          {/* STEP 4: OpenAI Enhanced Data */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-emerald-50 p-2 rounded border border-emerald-200">
+                              <div className="h-3 w-3 bg-emerald-500 rounded-full"></div>
+                              <h5 className="font-bold">Step 4: OpenAI Enhanced Data</h5>
+                            </div>
+                            <div className="pl-5 text-xs mb-2">
+                              <p>AI-generated content for summary & critical review</p>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify({
+                                summary: book.summary,
+                                review: book.review
+                              }, null, 2)}
+                            </pre>
+                          </div>
+
+                          {/* STEP 5: New Library-Specific Fields Added Today */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 bg-amber-50 p-2 rounded border border-amber-200">
+                              <div className="h-3 w-3 bg-amber-500 rounded-full"></div>
+                              <h5 className="font-bold">Step 5: New Library-Specific Fields (Added Today)</h5>
+                            </div>
+                            <div className="pl-5 text-xs mb-2">
+                              <p>Fields added for DNB/German RDA cataloguing standards</p>
+                            </div>
+                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
+                              {JSON.stringify({
+                                // Library-specific classification
+                                interestCategory: book.interestCategory,
+                                classificationNumber: book.classificationNumber, 
+                                additionalClassifications: book.additionalClassifications,
+                                ageRecommendation: book.ageRecommendation,
+                                
+                                // ID-Besprechung fields
+                                idbInitials: book.idbInitials,
+                                idbSequenceNumber: book.idbSequenceNumber,
+                                idbYear: book.idbYear,
+                                
+                                // Reviewer information
+                                reviewerName: book.reviewerName
+                              }, null, 2)}
+                            </pre>
+                          </div>
+                          
+                          {/* STEP 6: Final Merged Data */}
                           <div>
                             <div className="flex items-center gap-2 mb-1 bg-neutral-100 p-2 rounded border border-neutral-300">
                               <div className="h-3 w-3 bg-neutral-500 rounded-full"></div>
-                              <h5 className="font-bold">Complete Raw Book Data</h5>
+                              <h5 className="font-bold">Step 6: Complete Merged Book Data</h5>
                             </div>
                             <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
                               {JSON.stringify(book, null, 2)}
@@ -371,7 +456,8 @@ export default function BookResult({
                         </div>
                         
                         <div className="mt-3 text-xs text-neutral-500">
-                          <p>This debug view shows all available book metadata merged from Google Books API and OpenAI processing.</p>
+                          <p>This debug view shows the detailed multi-source verification process across all APIs. It includes all new fields added today for DNB/German RDA cataloguing standards, and the final merged data combining information from all sources.</p>
+                          <p className="mt-1">Verification flow: Google Books → DNB → Google CSE → Goodreads → OpenAI (for summary & review only)</p>
                         </div>
                       </div>
                     </details>
