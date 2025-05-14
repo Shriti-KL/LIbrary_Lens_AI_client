@@ -97,6 +97,13 @@ export type Book = typeof books.$inferSelect & {
   interestCategory?: string;
   ASB?: string;
   error?: string;
+  // Verification information from multi-source validation
+  verification?: {
+    status: string;
+    confidence: number;
+    message?: string;
+    sources: string[];
+  };
   // Allow additional string indexer for dynamic OpenAI response fields
   [key: string]: any;
 };
