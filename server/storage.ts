@@ -71,8 +71,7 @@ export class DatabaseStorage implements IStorage {
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM books 
-      WHERE id = $1`,
-      [id]
+      WHERE id = ${id}`
     );
     
     if (result.rows && result.rows.length > 0) {
@@ -101,14 +100,11 @@ export class DatabaseStorage implements IStorage {
       FROM books
     `;
     
-    let result;
     if (userId) {
-      query += ` WHERE user_id = $1`;
-      result = await db.execute(query, [userId]);
-    } else {
-      result = await db.execute(query);
+      query += ` WHERE user_id = ${userId}`;
     }
     
+    const result = await db.execute(query);
     return (result.rows || []) as unknown as Book[];
   }
 
@@ -132,10 +128,20 @@ export class DatabaseStorage implements IStorage {
       genres: book.genres,
       language: book.language,
       cover_image_url: book.coverImageUrl,
-      user_id: book.userId,
+      user_id: book.userId || 1, // Default to user ID 1 if not specified
     };
 
-    // Insert the book with the mapped fields
+    // Format values safely for SQL insertion
+    const formatValue = (value: any) => {
+      if (value === null || value === undefined) return 'NULL';
+      if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`; // Escape single quotes
+      if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+      return value;
+    };
+
+    const now = new Date().toISOString();
+
+    // Insert the book with the mapped fields using string interpolation instead of parameters
     const query = `
       INSERT INTO books (
         isbn, title, subtitle, author, statement_of_responsibility,
@@ -143,8 +149,26 @@ export class DatabaseStorage implements IStorage {
         dimensions, binding, price, summary, genres, language,
         cover_image_url, user_id, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+        ${formatValue(dbBook.isbn)}, 
+        ${formatValue(dbBook.title)}, 
+        ${formatValue(dbBook.subtitle)}, 
+        ${formatValue(dbBook.author)}, 
+        ${formatValue(dbBook.statement_of_responsibility)},
+        ${formatValue(dbBook.edition)}, 
+        ${formatValue(dbBook.location)}, 
+        ${formatValue(dbBook.publisher)}, 
+        ${formatValue(dbBook.published_year)}, 
+        ${formatValue(dbBook.page_count)},
+        ${formatValue(dbBook.dimensions)}, 
+        ${formatValue(dbBook.binding)}, 
+        ${formatValue(dbBook.price)}, 
+        ${formatValue(dbBook.summary)}, 
+        ${formatValue(dbBook.genres)}, 
+        ${formatValue(dbBook.language)},
+        ${formatValue(dbBook.cover_image_url)}, 
+        ${formatValue(dbBook.user_id)}, 
+        '${now}', 
+        '${now}'
       ) RETURNING 
         id, isbn, title, subtitle, author, 
         author as main_author,
@@ -159,18 +183,9 @@ export class DatabaseStorage implements IStorage {
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
-
-    const now = new Date();
-    const values = [
-      dbBook.isbn, dbBook.title, dbBook.subtitle, dbBook.author, 
-      dbBook.statement_of_responsibility, dbBook.edition, dbBook.location,
-      dbBook.publisher, dbBook.published_year, dbBook.page_count,
-      dbBook.dimensions, dbBook.binding, dbBook.price, dbBook.summary,
-      dbBook.genres, dbBook.language, dbBook.cover_image_url, dbBook.user_id,
-      now, now
-    ];
     
-    const result = await db.execute(query, values);
+    // Execute the query without parameters
+    const result = await db.execute(query);
     if (result.rows && result.rows.length > 0) {
       return result.rows[0] as unknown as Book;
     }
@@ -200,23 +215,27 @@ export class DatabaseStorage implements IStorage {
     if ('coverImageUrl' in updates) dbUpdates['cover_image_url'] = updates.coverImageUrl;
     
     // Add updated timestamp
-    dbUpdates['updated_at'] = new Date();
+    dbUpdates['updated_at'] = new Date().toISOString();
+    
+    // Format values safely for SQL insertion
+    const formatValue = (value: any) => {
+      if (value === null || value === undefined) return 'NULL';
+      if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`; // Escape single quotes
+      if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+      return value;
+    };
     
     // Build the update query dynamically
     let query = 'UPDATE books SET ';
     const setClauses: string[] = [];
-    const values: any[] = [];
-    let paramIndex = 1;
     
-    // Add SET clauses for each field
+    // Add SET clauses for each field using string interpolation
     for (const [field, value] of Object.entries(dbUpdates)) {
-      setClauses.push(`${field} = $${paramIndex}`);
-      values.push(value);
-      paramIndex++;
+      setClauses.push(`${field} = ${formatValue(value)}`);
     }
     
     query += setClauses.join(', ');
-    query += ` WHERE id = $${paramIndex} RETURNING 
+    query += ` WHERE id = ${id} RETURNING 
       id, isbn, title, subtitle, author, 
       author as main_author,
       statement_of_responsibility,
@@ -231,9 +250,7 @@ export class DatabaseStorage implements IStorage {
       updated_at as "updatedAt"
     `;
     
-    values.push(id); // Add the ID parameter
-    
-    const result = await db.execute(query, values);
+    const result = await db.execute(query);
     if (result.rows && result.rows.length > 0) {
       return result.rows[0] as unknown as Book;
     }
@@ -241,7 +258,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteBook(id: number): Promise<boolean> {
-    const result = await db.execute('DELETE FROM books WHERE id = $1 RETURNING id', [id]);
+    const result = await db.execute(`DELETE FROM books WHERE id = ${id} RETURNING id`);
     return result.rows && result.rows.length > 0;
   }
   
@@ -260,7 +277,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchBooks(query: string): Promise<Book[]> {
-    const searchTerm = `%${query}%`;
+    const searchTerm = `%${query.replace(/'/g, "''")}%`;
     
     // Use raw SQL to handle field mappings while searching
     const searchQuery = `
@@ -279,12 +296,12 @@ export class DatabaseStorage implements IStorage {
         updated_at as "updatedAt"
       FROM books
       WHERE 
-        title ILIKE $1 OR
-        author ILIKE $1 OR
-        (isbn IS NOT NULL AND isbn ILIKE $1)
+        title ILIKE '${searchTerm}' OR
+        author ILIKE '${searchTerm}' OR
+        (isbn IS NOT NULL AND isbn ILIKE '${searchTerm}')
     `;
     
-    const result = await db.execute(searchQuery, [searchTerm]);
+    const result = await db.execute(searchQuery);
     return (result.rows || []) as unknown as Book[];
   }
 

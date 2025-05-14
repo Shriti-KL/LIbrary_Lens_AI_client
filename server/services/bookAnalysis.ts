@@ -501,7 +501,7 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
       // Use OpenAI for these subjective fields
       summary: openAIResult.summary || bookData.summary,
       themes: openAIResult.themes || bookData.themes,
-      genres: bookData.genres && bookData.genres.length > 0 ? bookData.genres : openAIResult.genres,
+      genres: bookData.genres && Array.isArray(bookData.genres) && bookData.genres.length > 0 ? bookData.genres : openAIResult.genres,
       ASB: openAIResult.ASB || bookData.ASB,
       readingLevel: openAIResult.readingLevel || bookData.readingLevel,
       interestCategory: openAIResult.interestCategory || bookData.interestCategory
