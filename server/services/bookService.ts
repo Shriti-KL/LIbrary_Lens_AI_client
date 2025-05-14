@@ -275,33 +275,87 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     const xmlText = response.data;
     console.log(`DNB XML RESPONSE (first 500 chars): ${xmlText.substring(0, 500)}...`);
     
-    // Parse XML with no arrays for single elements
-    const result = await parseStringPromise(xmlText, { explicitArray: false });
+    // Parse XML, making explicit arrays even for single elements to ensure consistent structure
+    // This is critical for handling namespaces in deeply nested XML
+    const result = await parseStringPromise(xmlText, { 
+      explicitArray: true,
+      tagNameProcessors: [
+        // Remove namespaces for easier processing (e.g., 'srw:records' becomes 'records')
+        (name) => name.replace(/^.*:/, '')
+      ] 
+    });
     
-    // Extract the number of records
-    const searchResponse = result['srw:searchRetrieveResponse'] || {};
-    const numberOfRecords = parseInt(searchResponse['srw:numberOfRecords'] || '0', 10);
+    // Add detailed debug logging
+    console.log(`DNB PARSED XML ROOT KEYS: ${Object.keys(result)}`);
+    
+    // Extract the search response - with namespace processing, it's now just 'searchRetrieveResponse'
+    const searchResponse = result['searchRetrieveResponse'] || {};
+    console.log(`DNB SEARCH RESPONSE KEYS: ${Object.keys(searchResponse)}`);
+    
+    // Handle arrays consistently since we're using explicitArray: true
+    const numberOfRecordsArray = searchResponse['numberOfRecords'] || [];
+    const numberOfRecords = numberOfRecordsArray.length > 0 ? 
+      parseInt(numberOfRecordsArray[0] || '0', 10) : 0;
+    console.log(`DNB NUMBER OF RECORDS: ${numberOfRecords}`);
     
     if (numberOfRecords === 0) {
       console.warn(`No records found in DNB for ISBN ${isbn}`);
       return { error: "No records found in DNB database" };
     }
     
-    // Extract MARC records
-    let records = searchResponse['srw:records']?.['srw:record'] || [];
+    // Extract MARC records - with namespaces removed, the keys are simpler
+    console.log(`DNB HAS RECORDS KEY: ${searchResponse.hasOwnProperty('records')}`);
+    const recordsArray = searchResponse['records'] || [];
     
-    // Handle single record vs array
-    if (!Array.isArray(records)) {
-      records = [records];
+    if (recordsArray.length === 0) {
+      console.error("No records element found in DNB response");
+      return { error: "No records element found in DNB response" };
     }
     
-    if (records.length === 0) {
-      console.error("No record found in DNB response");
-      return { error: "No record found in DNB response" };
+    // Get the records wrapper - with explicitArray this will be an array
+    const recordsWrapper = recordsArray[0];
+    console.log(`DNB RECORDS WRAPPER KEYS: ${Object.keys(recordsWrapper)}`);
+    
+    // Extract the record elements
+    const recordElements = recordsWrapper['record'] || [];
+    
+    if (recordElements.length === 0) {
+      console.error("No record elements found in DNB records");
+      return { error: "No record elements found in DNB records" };
     }
     
     // Process the first record
-    const recordData = records[0]['srw:recordData']['marc:record'];
+    const firstRecord = recordElements[0];
+    console.log(`DNB FIRST RECORD KEYS: ${Object.keys(firstRecord)}`);
+    
+    // Get the record data
+    if (!firstRecord.recordData || firstRecord.recordData.length === 0) {
+      console.error("No recordData in first DNB record");
+      return { error: "No recordData in first DNB record" };
+    }
+    
+    // Access the MARC record - now namespaces are removed so it's just 'record'
+    const recordDataWrapper = firstRecord.recordData[0];
+    if (!recordDataWrapper.record || recordDataWrapper.record.length === 0) {
+      console.error("No MARC record in recordData");
+      return { error: "No MARC record in recordData" };
+    }
+    
+    const record = recordDataWrapper.record[0];
+    console.log(`DNB MARC RECORD KEYS: ${Object.keys(record)}`);
+    
+    // Check if we have datafield - now it's just 'datafield' without namespace
+    if (!record.datafield || record.datafield.length === 0) {
+      console.error("No datafields found in DNB MARC record");
+      return { error: "No datafields found in DNB MARC record" };
+    }
+    
+    // For consistency, reassign recordData variable to match the rest of the function
+    const recordData = record;
+    
+    // This is the datafields array we'll work with - use the recordData.datafield
+    const datafields = recordData.datafield;
+    console.log(`DNB found ${datafields.length} datafields`);
     
     // Initialize fields
     let title: string | undefined = undefined;
@@ -324,22 +378,21 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     }
     const contributors: Contributors = {};
     
-    // Extract datafields from MARC record
-    let datafields: Field[] = recordData['marc:datafield'];
-    if (!Array.isArray(datafields)) {
-      datafields = datafields ? [datafields] : [];
-    }
-    
-    // Use a local variable to handle the MARC subfields
-    let subfields: SubField[] = [];
-
     // Helper function to get subfields (defined as a local variable function)
-    const getSubfields = (field: Field): SubField[] => {
-      let sf = field['marc:subfield'];
-      if (!Array.isArray(sf)) {
-        sf = sf ? [sf] : [];
-      }
-      return sf as SubField[];
+    // Adjusted for the new XML structure with explicitArray: true
+    const getSubfields = (field: any): any[] => {
+      return field.subfield || [];
+    };
+    
+    // Helper function to get the text value from a subfield
+    const getSubfieldValue = (subfields: any[], code: string): string | undefined => {
+      const matchingField = subfields.find(sf => sf.$ && sf.$.code === code);
+      return matchingField && matchingField._ ? matchingField._.toString().trim() : undefined;
+    };
+    
+    // Helper function to find fields by tag
+    const findFieldsByTag = (tag: string): any[] => {
+      return datafields.filter((field: any) => field.$ && field.$.tag === tag);
     };
     
     // Helper function to get contributor roles (follows Python implementation)
@@ -359,17 +412,17 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       };
       
       // Find all contributor fields (MARC 700 fields)
-      const contributorFields = datafields.filter(field => field.$.tag === '700');
+      const contributorFields = findFieldsByTag('700');
+      console.log(`Found ${contributorFields.length} contributor fields`);
       
       contributorFields.forEach(field => {
         const fieldSubfields = getSubfields(field);
         
-        const nameSubfield = fieldSubfields.find(sf => sf.$.code === 'a');
-        const roleSubfield = fieldSubfields.find(sf => sf.$.code === 'e');
+        const name = getSubfieldValue(fieldSubfields, 'a');
+        const role = getSubfieldValue(fieldSubfields, 'e');
         
-        if (nameSubfield && nameSubfield._ && roleSubfield && roleSubfield._) {
-          const roleName = roleSubfield._.toLowerCase().trim();
-          const name = nameSubfield._.trim();
+        if (name && role) {
+          const roleName = role.toLowerCase().trim();
           
           // Use mapped role or original if not in mapping
           const mappedRole = roleMapping[roleName] || roleName;
