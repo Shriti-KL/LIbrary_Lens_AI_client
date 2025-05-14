@@ -70,7 +70,7 @@ export async function analyzeBookCover(image: string): Promise<any> {
     });
 
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const result = JSON.parse(response.choices[0].message.content || "{}");
 
     // Log the response
     apiLogger.logResponse("OpenAI API", {
@@ -211,7 +211,7 @@ Focus on providing complete information where data is missing, especially:
     });
 
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
+    const result = JSON.parse(response.choices[0].message.content || "{}");
 
     // Log the full result for debugging
     console.log(`[analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}] FULL OPENAI RESULT OBJECT:`, result);
@@ -233,11 +233,11 @@ Focus on providing complete information where data is missing, especially:
       error: error.message
     });
 
-    // Return basic data if available
+    // Return basic data if available with type assertion to handle nullable values
     return {
-      isbn: analysisRequest.isbn || null,
-      title: analysisRequest.title || null,
-      author: analysisRequest.author || null,
+      isbn: analysisRequest.isbn as string | undefined,
+      title: analysisRequest.title as string | undefined,
+      author: analysisRequest.author as string | undefined,
       error: `OpenAI analysis failed: ${error.message}`
     };
   }
@@ -253,6 +253,12 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
     if (!book.title || !book.author) {
       return [];
     }
+    
+    // Create defensive copies of genres and themes for type safety
+    const bookGenres = book.genres ? 
+      (Array.isArray(book.genres) ? book.genres : []) : [];
+    const bookThemes = book.themes ? 
+      (Array.isArray(book.themes) ? book.themes : []) : [];
 
     // Log the request
     apiLogger.logRequest("OpenAI API", {
@@ -283,8 +289,8 @@ Recommend 5 books similar to:
 Title: ${book.title}
 Author: ${book.author}
 ${book.summary ? `Summary: ${book.summary.substring(0, 300)}...` : ''}
-${book.genres && book.genres.length > 0 ? `Genres: ${book.genres.join(', ')}` : ''}
-${book.themes && book.themes.length > 0 ? `Themes: ${book.themes.join(', ')}` : ''}
+${bookGenres.length > 0 ? `Genres: ${bookGenres.join(', ')}` : ''}
+${bookThemes.length > 0 ? `Themes: ${bookThemes.join(', ')}` : ''}
 
 Return ONLY a JSON array of 5 similar book recommendations.`;
 
@@ -301,7 +307,7 @@ Return ONLY a JSON array of 5 similar book recommendations.`;
     });
 
     // Parse response
-    const results = JSON.parse(response.choices[0].message.content);
+    const results = JSON.parse(response.choices[0].message.content || "[]");
 
     // Log the response
     apiLogger.logResponse("OpenAI API", {

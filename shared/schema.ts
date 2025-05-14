@@ -40,6 +40,13 @@ export const books = pgTable("books", {
   genres: jsonb("genres").default([]).notNull(),
   coverImageUrl: text("cover_image_url"),
   
+  // Additional fields for library information
+  themes: jsonb("themes").default([]),
+  readingLevel: text("reading_level"),
+  interestCategory: text("interest_category"),
+  ASB: text("asb_classification"), // Allgemeine Systematik für Bibliotheken
+  error: text("error"), // For tracking analysis errors
+  
   // Required for database operations
   userId: integer("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
