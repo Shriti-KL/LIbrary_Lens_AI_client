@@ -582,7 +582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // GET /api/books/isbn/:isbn - Get book by ISBN via Perplexity/OpenAI
+  // GET /api/books/isbn/:isbn - Get book by ISBN with verification
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
       const isbn = req.params.isbn;
@@ -595,6 +595,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const includeVerification = req.query.verification !== 'false';
       const language = req.query.language as string || "de";
       
+      // Check if we have the necessary API keys for verification
+      const hasGoogleCSEKey = process.env.GOOGLE_CSE_ID && process.env.GOOGLE_BOOKS_API_KEY;
+      
+      // Add a note about API key requirement
+      let noteForClient: string | undefined;
+      if (includeVerification && !hasGoogleCSEKey) {
+        noteForClient = "For full verification capabilities, GOOGLE_CSE_ID and GOOGLE_BOOKS_API_KEY environment variables are required";
+      }
+      
       // First try direct lookup with verification
       if (includeVerification) {
         try {
@@ -605,10 +614,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (bookWithVerification && bookWithVerification.title) {
             console.log(`Direct lookup with verification successful for ISBN: ${isbn}`);
+            
+            // Add the note to the response if needed
+            if (noteForClient && bookWithVerification.verification?.status === 'quota_exceeded') {
+              bookWithVerification.verification.note = noteForClient;
+            }
+            
             return res.status(200).json(bookWithVerification);
           }
-        } catch (verificationError) {
-          console.log(`Verification lookup failed: ${verificationError.message}, falling back to regular lookup`);
+        } catch (verificationError: any) {
+          console.log(`Verification lookup failed: ${verificationError?.message}, falling back to regular lookup`);
           // Continue to fallback method if this fails
         }
       }
@@ -621,9 +636,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Book not found" });
       }
       
+      // Add note about API keys if applicable
+      if (noteForClient && !book.verification) {
+        book.verification = {
+          status: "api_key_missing",
+          confidence: 0,
+          message: "Verification unavailable - API keys not configured",
+          sources: [],
+          note: noteForClient
+        };
+      }
+      
       res.status(200).json(book);
-    } catch (error) {
-      res.status(500).json({ message: `Error fetching book by ISBN: ${error.message}` });
+    } catch (error: any) {
+      res.status(500).json({ message: `Error fetching book by ISBN: ${error?.message}` });
     }
   });
   

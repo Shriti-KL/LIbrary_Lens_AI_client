@@ -2959,3 +2959,95 @@
     "10": "coverImageUrl"
   }
 }
+
+[2025-05-14 07:35:11] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:35:12] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:35:12] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:35:28] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564"
+}
+
+[2025-05-14 07:35:28] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564"
+}
+
+[2025-05-14 07:35:28] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}
+
+[2025-05-14 07:36:06] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564"
+}
+
+[2025-05-14 07:36:07] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564"
+}
+
+[2025-05-14 07:36:07] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783442770564",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}

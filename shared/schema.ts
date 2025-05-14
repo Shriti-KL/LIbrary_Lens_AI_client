@@ -103,6 +103,7 @@ export type Book = typeof books.$inferSelect & {
     confidence: number;
     message?: string;
     sources: string[];
+    note?: string; // Additional information about the verification process
   };
   // Allow additional string indexer for dynamic OpenAI response fields
   [key: string]: any;
