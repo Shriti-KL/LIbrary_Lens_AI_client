@@ -85,15 +85,24 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings
     let query = `
       SELECT 
-        id, isbn, title, subtitle, author, 
-        author as main_author,
-        statement_of_responsibility,
+        id, isbn, title, subtitle, main_author as "mainAuthor",
+        statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        location as publication_place,
+        publication_place as "publicationPlace",
         publisher, 
-        published_year as publication_year,
-        page_count, dimensions, binding, price, 
-        summary, review, genres, cover_image_url as "coverImageUrl",
+        publication_year as "publicationYear",
+        page_count as "pageCount", 
+        illustrations,
+        dimensions, binding, price, 
+        interest_category as "interestCategory",
+        age_recommendation as "ageRecommendation",
+        classification_number as "classificationNumber",
+        additional_classifications as "additionalClassifications",
+        idb_initials as "idbInitials",
+        idb_sequence_number as "idbSequenceNumber",
+        idb_year as "idbYear",
+        summary, review, reviewer_name as "reviewerName",
+        genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -372,8 +381,10 @@ export class DatabaseStorage implements IStorage {
       FROM books
       WHERE 
         title ILIKE '${searchTerm}' OR
-        author ILIKE '${searchTerm}' OR
-        (isbn IS NOT NULL AND isbn ILIKE '${searchTerm}')
+        main_author ILIKE '${searchTerm}' OR
+        (isbn IS NOT NULL AND isbn ILIKE '${searchTerm}') OR
+        (classification_number IS NOT NULL AND classification_number ILIKE '${searchTerm}') OR
+        (interest_category IS NOT NULL AND interest_category ILIKE '${searchTerm}')
     `;
     
     const result = await db.execute(searchQuery);
@@ -384,15 +395,24 @@ export class DatabaseStorage implements IStorage {
     // Use raw SQL to handle field mappings
     const query = `
       SELECT 
-        id, isbn, title, subtitle, author, 
-        author as main_author,
-        statement_of_responsibility,
+        id, isbn, title, subtitle, main_author as "mainAuthor",
+        statement_of_responsibility as "statementOfResponsibility",
         edition, 
-        location as publication_place,
+        publication_place as "publicationPlace",
         publisher, 
-        published_year as publication_year,
-        page_count, dimensions, binding, price, 
-        summary, review, genres, cover_image_url as "coverImageUrl",
+        publication_year as "publicationYear",
+        page_count as "pageCount", 
+        illustrations,
+        dimensions, binding, price, 
+        interest_category as "interestCategory",
+        age_recommendation as "ageRecommendation",
+        classification_number as "classificationNumber",
+        additional_classifications as "additionalClassifications",
+        idb_initials as "idbInitials",
+        idb_sequence_number as "idbSequenceNumber",
+        idb_year as "idbYear",
+        summary, review, reviewer_name as "reviewerName",
+        genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
