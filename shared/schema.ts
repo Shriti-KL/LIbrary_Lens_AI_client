@@ -38,6 +38,7 @@ export const books = pgTable("books", {
   
   // Additional fields
   summary: text("summary"),
+  review: text("review"), // Critical review with library acquisition recommendation
   genres: jsonb("genres").default([]).notNull(),
   language: text("language").default("de"),
   coverImageUrl: text("cover_image_url"),
@@ -71,6 +72,7 @@ export const bookAnalysisSchema = z.object({
   
   // Additional fields
   summary: z.string().nullable().optional(),
+  review: z.string().nullable().optional(), // Critical review with library acquisition recommendation
   genres: z.array(z.string()).nullable().optional(),
   language: z.union([z.string(), z.array(z.string()).transform(arr => arr[0])]).optional().default("de"),
   
