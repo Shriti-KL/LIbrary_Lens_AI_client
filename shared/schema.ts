@@ -101,8 +101,6 @@ export type Book = typeof books.$inferSelect & {
   interestCategory?: string;
   ASB?: string;
   error?: string;
-  // Professional review content
-  review?: string;
   // Contributors for different roles (similar to Python implementation)
   contributors?: {[role: string]: string[]};
   // Verification information from multi-source validation
@@ -126,8 +124,6 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   ASB?: string;
   contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
-  // Professional review content
-  review?: string;
   // New fields for improved OpenAI analysis
   description?: string;             // Authentic book description from reliable sources
   genres?: string[];                // Genres from authentic sources
