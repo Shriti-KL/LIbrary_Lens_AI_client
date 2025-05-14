@@ -136,6 +136,16 @@ async function lookupViaSRU(cleanIsbn: string): Promise<Partial<Book> | null> {
       return subfields.find((subfield: any) => subfield.code === code);
     };
     
+    // Function to find all fields with a specific tag
+    const findAllFields = (tag: string, record: any) => {
+      if (!record.datafield) return [];
+      
+      // Convert to array if it's not already
+      const datafields = Array.isArray(record.datafield) ? record.datafield : [record.datafield];
+      
+      return datafields.filter((field: any) => field.tag === tag);
+    };
+    
     // Extract title fields (245)
     const titleField = findField('245', record);
     if (titleField) {
@@ -161,6 +171,37 @@ async function lookupViaSRU(cleanIsbn: string): Promise<Partial<Book> | null> {
       const authorSubfield = findSubfield(authorField, 'a');
       if (authorSubfield) {
         bookData.mainAuthor = authorSubfield._;
+      }
+    }
+    
+    // Extract other contributors (700) such as co-authors, translators, editors, etc.
+    const contributorFields = findAllFields('700', record);
+    if (contributorFields && contributorFields.length > 0) {
+      const contributors: {[role: string]: string[]} = {};
+      
+      for (const contribField of contributorFields) {
+        const nameSubfield = findSubfield(contribField, 'a');
+        const roleSubfield = findSubfield(contribField, 'e') || findSubfield(contribField, '4');
+        
+        if (nameSubfield) {
+          const name = nameSubfield._;
+          const role = roleSubfield ? roleSubfield._ : 'contributor';
+          
+          // Map common German role codes to readable roles
+          let mappedRole = role;
+          if (role === 'Übers.' || role === 'trl') mappedRole = 'translator';
+          else if (role === 'Hrsg.' || role === 'edt') mappedRole = 'editor';
+          else if (role === 'Ill.' || role === 'ill') mappedRole = 'illustrator';
+          
+          if (!contributors[mappedRole]) {
+            contributors[mappedRole] = [];
+          }
+          contributors[mappedRole].push(name);
+        }
+      }
+      
+      if (Object.keys(contributors).length > 0) {
+        bookData.contributors = contributors;
       }
     }
     
