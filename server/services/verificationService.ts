@@ -297,25 +297,16 @@ export async function verifyBookData(params: {
       // Process with OpenAI
       const openAiResult = await processWithOpenAI(openAiRequest);
       
-      // Merge OpenAI data for fields not present from other sources
-      Object.keys(openAiResult).forEach(key => {
-        if (openAiResult[key as keyof typeof openAiResult] !== undefined && 
-            openAiResult[key as keyof typeof openAiResult] !== null &&
-            (result[key as keyof typeof result] === undefined || 
-            result[key as keyof typeof result] === null)) {
-          result[key as keyof typeof result] = openAiResult[key as keyof typeof openAiResult];
-        }
-      });
+      // DO NOT merge any OpenAI data other than the specific fields below
+      // This prevents hallucination by limiting what fields OpenAI can provide
+      // OpenAI should NOT provide any bibliographic data, only analysis
       
-      // Always use OpenAI for these fields even if present from other sources
+      // ONLY use OpenAI for summaries, themes, and genres - nothing else
       if (openAiResult.summary) result.summary = openAiResult.summary;
       if (openAiResult.themes) result.themes = openAiResult.themes;
       if (openAiResult.genres && (!result.genres || (Array.isArray(result.genres) && result.genres.length === 0))) {
         result.genres = openAiResult.genres;
       }
-      if (openAiResult.ASB) result.ASB = openAiResult.ASB;
-      if (openAiResult.readingLevel) result.readingLevel = openAiResult.readingLevel;
-      if (openAiResult.interestCategory) result.interestCategory = openAiResult.interestCategory;
       
       // Add OpenAI as source
       if (!result.verification?.sources.includes("OpenAI")) {
