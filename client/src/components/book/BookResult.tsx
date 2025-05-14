@@ -440,13 +440,26 @@ export default function BookResult({
             </div>
           </div>
           
-          {/* Book Summary */}
-          {book.summary && (
+          {/* Book Summary and Critical Review */}
+          {(book.summary || book.review) && (
             <div>
               <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('aiSummary')}</h4>
-              <p className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                {book.summary}
-              </p>
+              <div className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
+                {/* Summary */}
+                {book.summary && (
+                  <p className="mb-3">{book.summary}</p>
+                )}
+                
+                {/* Separator and Critical Review */}
+                {book.summary && book.review && (
+                  <div className="border-t border-neutral-300 my-3"></div>
+                )}
+                
+                {/* Critical Review */}
+                {book.review && (
+                  <p className="text-neutral-700 leading-relaxed">{book.review}</p>
+                )}
+              </div>
             </div>
           )}
           
@@ -458,13 +471,13 @@ export default function BookResult({
                 {book.themes.map((theme, index) => (
                   <div key={index} className="bg-accent/10 p-4 rounded-lg border border-accent/30 shadow-sm">
                     <h5 className="font-medium text-secondary-dark">
-                      {typeof theme === 'object' && theme !== null && 'theme' in theme
-                        ? theme.theme as string
+                      {typeof theme === 'object' && theme !== null && theme.hasOwnProperty('theme')
+                        ? (theme as any).theme
                         : typeof theme === 'string' ? theme : `Theme ${index + 1}`}
                     </h5>
                     <p className="mt-2 text-sm text-neutral-700 leading-relaxed">
-                      {typeof theme === 'object' && theme !== null && 'description' in theme
-                        ? theme.description as string
+                      {typeof theme === 'object' && theme !== null && theme.hasOwnProperty('description')
+                        ? (theme as any).description
                         : ''}
                     </p>
                   </div>
