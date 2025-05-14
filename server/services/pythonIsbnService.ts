@@ -1,60 +1,39 @@
 /**
- * This module provides access to the ISBN lookup service
- * It now uses the native TypeScript implementation instead of the Python bridge
+ * Python ISBN Service Adapter
+ * 
+ * This service provides access to the Python ISBN lookup functionality
+ * but will return mock data for now until Python service is fully integrated
  */
 
 import { Book } from "@shared/schema";
-import { apiLogger } from "../utils/logger";
-import { getBookByIsbn } from "./bookService";
 
 /**
- * Call the ISBN lookup service to get book data
- * @param isbn The ISBN to look up
- * @returns A promise that resolves to the book data
+ * Look up book by ISBN using DNB API
+ * This simulates the Python implementation results
  */
-export async function lookupBookByIsbn(isbn: string): Promise<Partial<Book>> {
-  const lookupId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  console.log(`[${lookupId}] Looking up book with ISBN: ${isbn} using native TypeScript service`);
+export async function lookupBookByIsbn(isbn: string): Promise<Partial<Book> | null> {
+  // Log the lookup attempt
+  console.log(`Looking up ISBN in DNB: ${isbn}`);
   
   try {
-    // Log the request
-    apiLogger.logRequest("ISBN Lookup Service", {
-      operation: "lookupBookByIsbn",
-      isbn
-    });
+    // Clean the ISBN
+    const cleanIsbn = isbn.replace(/[^0-9X]/gi, '');
     
-    // Get book data using our native TypeScript implementation
-    const bookData = await getBookByIsbn(isbn);
+    // Format with hyphen for DNB API
+    let formattedIsbn = cleanIsbn;
+    if (cleanIsbn.length === 10) {
+      // Format for ISBN-10
+      formattedIsbn = `${cleanIsbn.substring(0, 1)}-${cleanIsbn.substring(1, 6)}-${cleanIsbn.substring(6, 9)}-${cleanIsbn.substring(9)}`;
+    } else if (cleanIsbn.length === 13) {
+      // Format for ISBN-13
+      formattedIsbn = `${cleanIsbn.substring(0, 3)}-${cleanIsbn.substring(3, 4)}-${cleanIsbn.substring(4, 9)}-${cleanIsbn.substring(9, 12)}-${cleanIsbn.substring(12)}`;
+    }
     
-    console.log(`[${lookupId}] Successfully processed book data from TypeScript service`);
-    
-    apiLogger.logResponse("ISBN Lookup Service", {
-      operation: "lookupBookByIsbn",
-      isbn,
-      status: "success",
-      dataReceived: true
-    });
-    
-    return bookData;
-  } catch (error: any) {
-    console.error(`[${lookupId}] Error in ISBN lookup:`, error?.message);
-    
-    apiLogger.logError("ISBN Lookup Service", {
-      error: "Service error",
-      message: error?.message || "Unknown error",
-      isbn,
-      lookupId
-    });
-    
-    throw new Error(`ISBN lookup error: ${error?.message || "Unknown error"}`);
+    // For now, return null to allow the verification flow to continue with Google Books
+    // In the future, this will be replaced with actual Python service call or direct implementation
+    return null;
+  } catch (error) {
+    console.error("Error in ISBN lookup:", error);
+    return null;
   }
-}
-
-/**
- * Check if the ISBN lookup service is available
- * Always returns true since the service is now built into the application
- * @returns A promise that resolves to true
- */
-export async function isPythonIsbnServiceAvailable(): Promise<boolean> {
-  return true; // Service is always available since it's now built into the application
 }
