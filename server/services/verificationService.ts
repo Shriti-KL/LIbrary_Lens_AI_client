@@ -310,7 +310,7 @@ export async function verifyBookData(params: {
       // Always use OpenAI for these fields even if present from other sources
       if (openAiResult.summary) result.summary = openAiResult.summary;
       if (openAiResult.themes) result.themes = openAiResult.themes;
-      if (openAiResult.genres && (!result.genres || result.genres.length === 0)) {
+      if (openAiResult.genres && (!result.genres || (Array.isArray(result.genres) && result.genres.length === 0))) {
         result.genres = openAiResult.genres;
       }
       if (openAiResult.ASB) result.ASB = openAiResult.ASB;
@@ -395,12 +395,12 @@ export async function verifyBookData(params: {
     for (const key of Object.keys(result)) {
       if (key === "verification" || key === "coverImageData") continue;
       
-      if (result.verification?.sources.includes("DNB") && 
+      if (result.verification && result.verification.sources.includes("DNB") && 
           dnbData && 
           dnbData[key as keyof typeof dnbData] !== undefined && 
           dnbData[key as keyof typeof dnbData] !== null) {
         fieldSources[key] = 'DNB';
-      } else if (result.verification?.sources.includes("Google Books") && 
+      } else if (result.verification && result.verification.sources.includes("Google Books") && 
                 googleBooksData && 
                 googleBooksData[key as keyof typeof googleBooksData] !== undefined && 
                 googleBooksData[key as keyof typeof googleBooksData] !== null) {
@@ -412,7 +412,12 @@ export async function verifyBookData(params: {
   }
   
   console.log(`[${requestId}] Field data sources:`, fieldSources);
-  console.log(`[${requestId}] Successfully processed complete book data with verification status: ${result.verification.status}`);
+  
+  if (result.verification) {
+    console.log(`[${requestId}] Successfully processed complete book data with verification status: ${result.verification.status}`);
+  } else {
+    console.log(`[${requestId}] Successfully processed book data but no verification status available`);
+  }
   
   return result;
 }
