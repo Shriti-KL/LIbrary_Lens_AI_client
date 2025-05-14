@@ -103,7 +103,7 @@ def get_google_books_by_isbn(isbn: str) -> Dict:
             publisher = parts[1].strip()
         
         # Determine binding based on PDF availability or other clues
-        binding = "Buch"  # Default
+        binding = None
         if book_data.get("isEbook", False) or "pdf" in book_data.get("accessInfo", {}).get("pdf", {}):
             binding = "E-Book"
         
@@ -113,7 +113,7 @@ def get_google_books_by_isbn(isbn: str) -> Dict:
             dimensions = f"{book_data.get('dimensions').get('height', '')} cm"
         
         # The edition information is typically not provided directly by Google Books
-        edition = "1. Auflage"  # Default
+        edition = None
         
         # The result formatted according to our application's schema
         result = {
@@ -174,8 +174,15 @@ def get_dnb_metadata(isbn: str) -> Dict:
               'marc': 'http://www.loc.gov/MARC21/slim'}
         
         # Check if we got any records
-        num_records = root.find('.//srw:numberOfRecords', ns)
-        if num_records is None or int(num_records.text) == 0:
+        num_records_elem = root.find('.//srw:numberOfRecords', ns)
+        num_records = 0
+        if num_records_elem is not None and num_records_elem.text:
+            try:
+                num_records = int(num_records_elem.text)
+            except (ValueError, TypeError):
+                logger.error(f"Invalid numberOfRecords format in DNB response for ISBN {isbn}")
+        
+        if num_records == 0:
             logger.warning(f"No records found in DNB for ISBN {isbn}")
             return {"error": "No records found in DNB database"}
         
@@ -185,43 +192,43 @@ def get_dnb_metadata(isbn: str) -> Dict:
             logger.error("No record found in DNB response")
             return {"error": "No record found in DNB response"}
         
-        # Extract metadata from MARC21 fields
-        title = ""
-        subtitle = ""
-        main_author = ""
-        publisher = ""
+        # Extract metadata from MARC21 fields - initialize all as None
+        title = None
+        subtitle = None
+        main_author = None
+        publisher = None
         published_year = None
         page_count = None
-        language = "de"  # Default
-        location = ""
-        statement_of_responsibility = ""
-        dimensions = ""
-        binding = ""
-        price = ""
+        language = None
+        location = None
+        statement_of_responsibility = None
+        dimensions = None
+        binding = None
+        price = None
         
         # Process title and statement of responsibility (MARC field 245)
         title_field = record.find('.//marc:datafield[@tag="245"]', ns)
         if title_field is not None:
             # Title (subfield a)
             title_subfield = title_field.find('./marc:subfield[@code="a"]', ns)
-            if title_subfield is not None:
+            if title_subfield is not None and title_subfield.text:
                 title = title_subfield.text.strip()
                 
             # Subtitle (subfield b)
             subtitle_subfield = title_field.find('./marc:subfield[@code="b"]', ns)
-            if subtitle_subfield is not None:
+            if subtitle_subfield is not None and subtitle_subfield.text:
                 subtitle = subtitle_subfield.text.strip()
                 
             # Statement of responsibility (subfield c)
             resp_subfield = title_field.find('./marc:subfield[@code="c"]', ns)
-            if resp_subfield is not None:
+            if resp_subfield is not None and resp_subfield.text:
                 statement_of_responsibility = resp_subfield.text.strip()
         
         # Process author information (MARC field 100)
         author_field = record.find('.//marc:datafield[@tag="100"]', ns)
         if author_field is not None:
             author_subfield = author_field.find('./marc:subfield[@code="a"]', ns)
-            if author_subfield is not None:
+            if author_subfield is not None and author_subfield.text:
                 main_author = author_subfield.text.strip()
         
         # Process publication information (MARC field 264)
@@ -229,17 +236,17 @@ def get_dnb_metadata(isbn: str) -> Dict:
         if pub_field is not None:
             # Location (subfield a)
             loc_subfield = pub_field.find('./marc:subfield[@code="a"]', ns)
-            if loc_subfield is not None:
+            if loc_subfield is not None and loc_subfield.text:
                 location = loc_subfield.text.strip()
                 
             # Publisher (subfield b)
             pub_subfield = pub_field.find('./marc:subfield[@code="b"]', ns)
-            if pub_subfield is not None:
+            if pub_subfield is not None and pub_subfield.text:
                 publisher = pub_subfield.text.strip()
                 
             # Publication year (subfield c)
             year_subfield = pub_field.find('./marc:subfield[@code="c"]', ns)
-            if year_subfield is not None:
+            if year_subfield is not None and year_subfield.text:
                 year_text = year_subfield.text.strip()
                 year_match = re.search(r'\d{4}', year_text)
                 if year_match:
@@ -256,7 +263,7 @@ def get_dnb_metadata(isbn: str) -> Dict:
         if physical_field is not None:
             # Extent/pages (subfield a)
             extent_subfield = physical_field.find('./marc:subfield[@code="a"]', ns)
-            if extent_subfield is not None:
+            if extent_subfield is not None and extent_subfield.text:
                 extent_text = extent_subfield.text.strip()
                 pages_match = re.search(r'(\d+)\s*S', extent_text)
                 if pages_match:
@@ -264,22 +271,22 @@ def get_dnb_metadata(isbn: str) -> Dict:
                     
             # Dimensions (subfield c)
             dim_subfield = physical_field.find('./marc:subfield[@code="c"]', ns)
-            if dim_subfield is not None:
+            if dim_subfield is not None and dim_subfield.text:
                 dimensions = dim_subfield.text.strip()
         
         # Process language (MARC field 041)
         lang_field = record.find('.//marc:datafield[@tag="041"]', ns)
         if lang_field is not None:
             lang_subfield = lang_field.find('./marc:subfield[@code="a"]', ns)
-            if lang_subfield is not None:
+            if lang_subfield is not None and lang_subfield.text:
                 language = lang_subfield.text.strip()
         
         # Process edition statement (MARC field 250)
         edition_field = record.find('.//marc:datafield[@tag="250"]', ns)
-        edition = "1. Auflage"  # Default
+        edition = None
         if edition_field is not None:
             edition_subfield = edition_field.find('./marc:subfield[@code="a"]', ns)
-            if edition_subfield is not None:
+            if edition_subfield is not None and edition_subfield.text:
                 edition = edition_subfield.text.strip()
         
         # Format result according to our application's schema
