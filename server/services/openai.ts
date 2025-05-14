@@ -5,6 +5,7 @@
 import OpenAI from "openai";
 import { Book, BookAnalysisRequest } from "@shared/schema";
 import { apiLogger } from "../utils/logger";
+import { detectHallucination, getHallucinationIndicators } from "../utils/hallucination";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
