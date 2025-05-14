@@ -2160,3 +2160,99 @@
     "14": "readingLevel"
   }
 }
+
+[2025-05-14 07:01:35] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-8252-6276-1"
+}
+
+[2025-05-14 07:01:35] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:01:35] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:01:35] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:01:35] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-8252-6276-1",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:01:35] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "978-3-82526-276-1",
+  "title": "ChatGPT und Large Language Models? Frag doch einfach!",
+  "author": "Thomas Kessel"
+}
+
+[2025-05-14 07:01:43] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 504,
+    "completion_tokens": 366,
+    "total_tokens": 870,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "summary",
+    "10": "genres",
+    "11": "ASB",
+    "12": "interestCategory",
+    "13": "themes",
+    "14": "readingLevel"
+  },
+  "hallucinationDetected": false
+}

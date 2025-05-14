@@ -73,12 +73,36 @@ export async function analyzeBookCover(image: string): Promise<any> {
     // Parse the response
     const result = JSON.parse(response.choices[0].message.content || "{}");
 
+    // Check for hallucination in any extracted text fields
+    const allText = [
+      result.title || "",
+      result.subtitle || "",
+      result.summary || "",
+      result.author || ""
+    ].join(" ");
+    
+    const hasHallucination = detectHallucination(allText);
+    
+    // If hallucination detected, add warning
+    if (hasHallucination) {
+      const indicators = getHallucinationIndicators(allText);
+      console.log(`[WARNING] Hallucination detected in book cover analysis for "${result.title}":`, indicators);
+      
+      // Add hallucination warning to the result
+      result.hallucination = {
+        detected: true,
+        indicators: indicators,
+        warningMessage: "The extracted information may contain unreliable data."
+      };
+    }
+
     // Log the response
     apiLogger.logResponse("OpenAI API", {
       operation: "analyzeBookCover",
       model: GPT_MODEL,
       usage: response.usage,
-      fieldsExtracted: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined)
+      fieldsExtracted: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined),
+      hallucinationDetected: hasHallucination
     });
 
     return result;
@@ -214,8 +238,26 @@ Focus on providing complete information where data is missing, especially:
     // Parse the response
     const result = JSON.parse(response.choices[0].message.content || "{}");
 
+    // Check for hallucination in the summary
+    const summaryText = result.summary || "";
+    const hasHallucination = detectHallucination(summaryText);
+    
+    // If we detect hallucination, log it and mark in the result
+    if (hasHallucination) {
+      const indicators = getHallucinationIndicators(summaryText);
+      console.log(`[WARNING] Hallucination detected in book analysis for "${result.title}":`, indicators);
+      
+      // Add hallucination warning to the result
+      result.hallucination = {
+        detected: true,
+        indicators: indicators,
+        warningMessage: "This summary may contain unreliable information."
+      };
+    }
+
     // Log the full result for debugging
-    console.log(`[analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}] FULL OPENAI RESULT OBJECT:`, result);
+    const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`[${analysisId}] FULL OPENAI RESULT OBJECT:`, result);
 
     // Log successful response
     apiLogger.logResponse("OpenAI API", {
@@ -223,7 +265,8 @@ Focus on providing complete information where data is missing, especially:
       status: "success",
       model: GPT_MODEL,
       usage: response.usage,
-      fieldsProvided: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined)
+      fieldsProvided: Object.keys(result).filter(k => result[k] !== null && result[k] !== undefined),
+      hallucinationDetected: hasHallucination
     });
 
     return result;
@@ -310,13 +353,42 @@ Return ONLY a JSON array of 5 similar book recommendations.`;
     // Parse response
     const results = JSON.parse(response.choices[0].message.content || "[]");
 
+    // Check for hallucinations in the recommendations
+    if (Array.isArray(results)) {
+      for (let i = 0; i < results.length; i++) {
+        const book = results[i];
+        const bookText = [
+          book.title || "",
+          book.author || "",
+          book.reason || ""
+        ].join(" ");
+        
+        const hasHallucination = detectHallucination(bookText);
+        
+        if (hasHallucination) {
+          const indicators = getHallucinationIndicators(bookText);
+          console.log(`[WARNING] Hallucination detected in similar book recommendation #${i+1}:`, indicators);
+          
+          // Add hallucination warning to the result
+          results[i].hallucination = {
+            detected: true,
+            indicators: indicators,
+            warningMessage: "This recommendation may contain unreliable information."
+          };
+        }
+      }
+    }
+
     // Log the response
     apiLogger.logResponse("OpenAI API", {
       operation: "searchSimilarBooks",
       status: "success",
       model: GPT_MODEL,
       usage: response.usage,
-      resultsCount: Array.isArray(results) ? results.length : 0
+      resultsCount: Array.isArray(results) ? results.length : 0,
+      hallucinationsDetected: Array.isArray(results) 
+        ? results.filter(r => r.hallucination?.detected).length 
+        : 0
     });
 
     // Normalize response to ensure it's an array

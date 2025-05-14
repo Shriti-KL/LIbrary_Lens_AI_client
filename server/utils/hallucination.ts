@@ -18,9 +18,9 @@ export function detectHallucination(text: string): boolean {
   // Check for recent publication dates (future dates)
   const yearRegex = /\b(20[2-9][0-9])\b/g;
   const publicationYears: number[] = [];
-  let match;
-  while ((match = yearRegex.exec(text)) !== null) {
-    publicationYears.push(parseInt(match[1], 10));
+  let yearMatch;
+  while ((yearMatch = yearRegex.exec(text)) !== null) {
+    publicationYears.push(parseInt(yearMatch[1], 10));
   }
   
   // Check for vague language patterns
@@ -64,10 +64,14 @@ export function getHallucinationIndicators(text: string): string[] {
   
   // Check for future years
   const yearRegex = /\b(20[2-9][0-9])\b/g;
-  const yearsMatch = [...text.matchAll(yearRegex)];
-  const futureYears = yearsMatch
-    .map(match => parseInt(match[1], 10))
-    .filter(year => year > currentYear);
+  const futureYears: number[] = [];
+  let yearMatch;
+  while ((yearMatch = yearRegex.exec(text)) !== null) {
+    const year = parseInt(yearMatch[1], 10);
+    if (year > currentYear) {
+      futureYears.push(year);
+    }
+  }
   
   if (futureYears.length > 0) {
     indicators.push(`Future publication years mentioned: ${futureYears.join(', ')}`);
