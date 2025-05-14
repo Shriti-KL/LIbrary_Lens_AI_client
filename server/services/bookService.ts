@@ -80,6 +80,7 @@ interface BookData {
   summary?: string;
   genres?: string[];
   coverImageUrl?: string;
+  contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
   [key: string]: any;
 }
@@ -317,6 +318,12 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     let price: string | undefined = undefined;
     let edition: string | undefined = undefined;
     
+    // Initialize contributor collection (similar to Python implementation)
+    interface Contributors {
+      [role: string]: string[];
+    }
+    const contributors: Contributors = {};
+    
     // Extract datafields from MARC record
     let datafields: Field[] = recordData['marc:datafield'];
     if (!Array.isArray(datafields)) {
@@ -334,6 +341,53 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       }
       return sf as SubField[];
     };
+    
+    // Helper function to get contributor roles (follows Python implementation)
+    const getContributorRoles = () => {
+      // Role mapping as in the Python version
+      const roleMapping: {[key: string]: string} = {
+        'author': 'authors',
+        'illustrator': 'illustrators',
+        'editor': 'editors',
+        'translator': 'translators',
+        'introduction': 'introducers',
+        'preface': 'preface',
+        'afterword': 'afterword',
+        'commentator': 'commentators',
+        'compiler': 'compilers',
+        'arranger': 'arrangers'
+      };
+      
+      // Find all contributor fields (MARC 700 fields)
+      const contributorFields = datafields.filter(field => field.$.tag === '700');
+      
+      contributorFields.forEach(field => {
+        const fieldSubfields = getSubfields(field);
+        
+        const nameSubfield = fieldSubfields.find(sf => sf.$.code === 'a');
+        const roleSubfield = fieldSubfields.find(sf => sf.$.code === 'e');
+        
+        if (nameSubfield && nameSubfield._ && roleSubfield && roleSubfield._) {
+          const roleName = roleSubfield._.toLowerCase().trim();
+          const name = nameSubfield._.trim();
+          
+          // Use mapped role or original if not in mapping
+          const mappedRole = roleMapping[roleName] || roleName;
+          
+          if (!contributors[mappedRole]) {
+            contributors[mappedRole] = [];
+          }
+          
+          contributors[mappedRole].push(name);
+        }
+      });
+      
+      console.log(`Found ${Object.keys(contributors).length} contributor roles`);
+      return contributors;
+    };
+    
+    // Get contributor roles
+    const contributorRoles = getContributorRoles();
     
     // Process title and statement of responsibility (MARC field 245)
     const titleField = datafields.find(field => field.$.tag === '245');
@@ -442,12 +496,44 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       }
     }
     
+    // Create a better statement of responsibility by combining
+    // the original statement and contributor information
+    let enhancedStatementOfResponsibility = statementOfResponsibility || '';
+    
+    // Only add contributor information if not already in statement of responsibility
+    if (Object.keys(contributors).length > 0) {
+      const contributorDetails: string[] = [];
+      
+      Object.entries(contributors).forEach(([role, names]) => {
+        if (names.length > 0) {
+          // Format based on role
+          if (role === 'authors' || role === 'illustrators' || role === 'editors' || role === 'translators') {
+            const roleLabel = {
+              'authors': 'Von',
+              'illustrators': 'Illustriert von',
+              'editors': 'Herausgegeben von',
+              'translators': 'Übersetzt von'
+            }[role] || role.charAt(0).toUpperCase() + role.slice(1);
+            
+            contributorDetails.push(`${roleLabel} ${names.join(', ')}`);
+          }
+        }
+      });
+      
+      // If we have contributor details and no statement of responsibility, create one
+      if (contributorDetails.length > 0 && !enhancedStatementOfResponsibility) {
+        enhancedStatementOfResponsibility = contributorDetails.join('; ');
+      }
+      
+      console.log(`Enhanced statement of responsibility: ${enhancedStatementOfResponsibility}`);
+    }
+    
     // Format result according to our application's schema
     const resultData: BookData = {
       title: title || '',
       subtitle: subtitle || '',
       author: mainAuthor || '',
-      statementOfResponsibility: statementOfResponsibility || '',
+      statementOfResponsibility: enhancedStatementOfResponsibility,
       publisher: publisher || '',
       publishedYear: publishedYear,
       pageCount: pageCount,
@@ -461,7 +547,9 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       // DNB doesn't provide these fields directly:
       summary: '',
       genres: [],
-      coverImageUrl: ''
+      coverImageUrl: '',
+      // Add contributors to metadata for access by other parts of the app
+      contributors: Object.keys(contributors).length > 0 ? contributors : undefined
     };
     
     console.log(`Successfully retrieved book data for ISBN ${isbn} from DNB`);
