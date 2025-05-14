@@ -66,7 +66,7 @@ export class DatabaseStorage implements IStorage {
         publisher, 
         published_year as publication_year,
         page_count, dimensions, binding, price, 
-        summary, genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -93,7 +93,7 @@ export class DatabaseStorage implements IStorage {
         publisher, 
         published_year as publication_year,
         page_count, dimensions, binding, price, 
-        summary, genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -292,7 +292,7 @@ export class DatabaseStorage implements IStorage {
         publisher, 
         published_year as publication_year,
         page_count, dimensions, binding, price, 
-        summary, genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -319,7 +319,7 @@ export class DatabaseStorage implements IStorage {
         publisher, 
         published_year as publication_year,
         page_count, dimensions, binding, price, 
-        summary, genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
