@@ -298,6 +298,15 @@ export async function processBookAnalysis(
     
     6. Interest category (e.g. "IK: Geschichte; ab 14")
     
+    7. CRITICAL REVIEW that follows these strict guidelines:
+       - Start with a bullet point ("• ")
+       - Provide an expert assessment of the book regarding quality, target audience, and relevance
+       - Include specific reasons for your assessment
+       - Focus on objective criteria such as writing style, structure, accuracy, etc.
+       - Include a clear recommendation for library acquisition (e.g., "Empfohlen für Bibliotheken mit Schwerpunkt...")
+       - End the review with a reviewer name (choose a plausible German name)
+       - Maximum 150 words total
+    
     Please format your response as a JSON object with these fields only:
     - summary: string
     - themes: string[]
@@ -305,8 +314,11 @@ export async function processBookAnalysis(
     - ASB: string
     - readingLevel: string
     - interestCategory: string
+    - criticalReview: string
     
     IMPORTANT: If you don't have enough information to write an accurate summary, provide a very brief, generic description based solely on the title and genre. DO NOT invent plot details, characters, or content. Do not use your training data to fill in details about the book.
+    
+    For the critical review, if you don't have enough information, you may state "• Aufgrund fehlender Informationen kann keine umfassende Bewertung vorgenommen werden." and include a general recommendation based on the genre and target audience.
     `;
     
     // Make the OpenAI API call
