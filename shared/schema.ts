@@ -124,6 +124,10 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   ASB?: string;
   contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
+  // New fields for improved OpenAI analysis
+  description?: string;             // Authentic book description from reliable sources
+  genres?: string[];                // Genres from authentic sources
+  sourcesInfo?: string;             // Information about where the data came from
   // Allow dynamic properties for OpenAI analysis
   [key: string]: any;
 };

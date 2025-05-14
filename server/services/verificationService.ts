@@ -5,7 +5,7 @@
  * Follows the DNB/German RDA cataloguing standards and Python implementation
  */
 
-import { Book } from "@shared/schema";
+import { Book, BookAnalysisRequest } from "@shared/schema";
 import { getCompleteBookByISBN } from "./googleBooks";
 import { lookupBookByIsbn } from "./pythonIsbnService";
 import { searchGoodreads, searchGoogleBooks } from "./googleCustomSearch";
@@ -251,7 +251,7 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
             googleSearchResults[0].snippet : null);
         
         // Prepare complete data package for OpenAI
-        const openAiRequest = {
+        const openAiRequest: BookAnalysisRequest = {
           // Basic bibliographic data
           isbn,
           title: mergedData.title || "",
@@ -270,11 +270,11 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
           
           // Content data from authentic sources
           description: existingDescription || "",
-          genres: mergedData.genres || [],
-          themes: mergedData.themes || [],
+          genres: Array.isArray(mergedData.genres) ? mergedData.genres : [],
+          themes: Array.isArray(mergedData.themes) ? mergedData.themes : [],
           
           // Source information for context
-          sources: sources.join(", ")
+          sourcesInfo: sources.join(", ")
         };
         
         console.log(`[verify_${requestId}] Using authentic data to generate summary with OpenAI`);
@@ -294,7 +294,9 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         // Only use OpenAI's themes if we don't already have them
         if (additionalDetails.themes && (!mergedData.themes || !Array.isArray(mergedData.themes) || mergedData.themes.length === 0)) {
           mergedData.themes = additionalDetails.themes;
-          console.log(`[verify_${requestId}] Added themes from OpenAI: ${additionalDetails.themes.join(', ')}`);
+          if (Array.isArray(additionalDetails.themes)) {
+            console.log(`[verify_${requestId}] Added themes from OpenAI: ${additionalDetails.themes.join(', ')}`);
+          }
         }
         
         // Only use OpenAI's genres if we don't already have them from authentic sources
@@ -302,7 +304,9 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
             (!mergedData.genres || !Array.isArray(mergedData.genres) || 
              (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
           mergedData.genres = additionalDetails.genres;
-          console.log(`[verify_${requestId}] Added genres from OpenAI: ${additionalDetails.genres.join(', ')}`);
+          if (Array.isArray(additionalDetails.genres)) {
+            console.log(`[verify_${requestId}] Added genres from OpenAI: ${additionalDetails.genres.join(', ')}`);
+          }
         }
         
         // Add ASB, readingLevel, and interestCategory

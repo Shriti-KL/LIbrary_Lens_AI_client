@@ -182,7 +182,11 @@ export async function processBookAnalysis(
           role: "system",
           content: `You are a librarian following DNB/German RDA cataloguing standards who specializes in 
           book classification, summarization, and content analysis. Provide accurate, concise information 
-          in ${bookInfo.language} language. Do not hallucinate or invent bibliographic details.`
+          in ${bookInfo.language} language.
+          
+          IMPORTANT: Use the authentic description, genres, and themes provided to create an accurate summary. 
+          When authentic book descriptions are available, your summary should be based directly on that information.
+          Do not hallucinate or invent bibliographic details. Stay true to the authentic information.`
         },
         { role: "user", content: prompt }
       ],
