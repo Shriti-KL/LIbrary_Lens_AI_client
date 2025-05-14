@@ -59,12 +59,48 @@ export async function processBookAnalysis(
   } 
   // Handle non-ISBN cases (title/author)
   else if (analysisRequest.title || analysisRequest.author) {
-    console.log(`[${analysisId}] No ISBN provided, using title/author as base data`);
-    baseBookData = {
-      title: analysisRequest.title || undefined,
-      author: analysisRequest.author || undefined,
-      language: analysisRequest.language || "de"
-    };
+    console.log(`[${analysisId}] No ISBN provided, using enhanced title/author lookup`);
+    
+    try {
+      // Use our enhanced title/author lookup service that combines Google Books and OpenAI
+      if (analysisRequest.title) {
+        console.log(`[${analysisId}] Retrieving book metadata using title/author lookup`);
+        const bookData = await getBookByTitleAndAuthor(
+          analysisRequest.title,
+          analysisRequest.author || "",
+          analysisRequest.language || "de"
+        );
+        
+        // If we got valid data, use it as base data
+        if (bookData && bookData.title) {
+          console.log(`[${analysisId}] Successfully retrieved book metadata from title/author: "${bookData.title}" by ${bookData.author || 'Unknown'}`);
+          baseBookData = bookData;
+        } else {
+          console.log(`[${analysisId}] Title/author lookup didn't return valid data for: "${analysisRequest.title}"`);
+          // Still include the title/author in base data
+          baseBookData = {
+            title: analysisRequest.title || undefined,
+            author: analysisRequest.author || undefined,
+            language: analysisRequest.language || "de"
+          };
+        }
+      } else {
+        // Just author, not enough for lookup
+        baseBookData = {
+          title: analysisRequest.title || undefined,
+          author: analysisRequest.author || undefined,
+          language: analysisRequest.language || "de"
+        };
+      }
+    } catch (error: any) {
+      console.log(`[${analysisId}] Error retrieving data from title/author lookup:`, error?.message || String(error));
+      // Continue with just the title/author
+      baseBookData = {
+        title: analysisRequest.title || undefined,
+        author: analysisRequest.author || undefined,
+        language: analysisRequest.language || "de"
+      };
+    }
   } else {
     // Not enough information provided
     console.log(`[${analysisId}] Insufficient information for book analysis`);
@@ -551,6 +587,128 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
   // If enrichment failed, return the original data
   console.log(`Could not enrich book metadata, returning original data`);
   return bookData;
+}
+
+/**
+ * Function to analyze book cover and retrieve enhanced metadata from multiple sources
+ */
+export async function getBookFromCoverImage(imageBase64: string, language: string = "de"): Promise<Partial<Book> | null> {
+  const analysisId = `cover_analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${analysisId}] Starting book cover analysis`);
+  
+  // Base book data to be enriched
+  let baseBookData: Partial<Book> = {
+    language
+  };
+  
+  try {
+    // Step 1: Analyze cover with OpenAI
+    console.log(`[${analysisId}] Analyzing book cover with OpenAI`);
+    
+    // Import the analyzeBookCover function from OpenAI service
+    const { analyzeBookCover } = await import("./openai");
+    const coverAnalysisResult = await analyzeBookCover(imageBase64);
+    
+    if (coverAnalysisResult.error) {
+      console.log(`[${analysisId}] Error in cover analysis: ${coverAnalysisResult.error}`);
+      return {
+        error: coverAnalysisResult.error,
+        language
+      };
+    }
+    
+    console.log(`[${analysisId}] Cover analysis results:`, {
+      title: coverAnalysisResult.title,
+      author: coverAnalysisResult.author,
+      isbn: coverAnalysisResult.isbn,
+      hasHallucination: !!coverAnalysisResult.hallucination?.detected
+    });
+    
+    // Extract core data from cover analysis
+    baseBookData = {
+      ...baseBookData,
+      title: coverAnalysisResult.title || undefined,
+      author: coverAnalysisResult.author || undefined,
+      subtitle: coverAnalysisResult.subtitle || undefined,
+      publisher: coverAnalysisResult.publisher || undefined,
+      publishedYear: coverAnalysisResult.publishedYear || undefined,
+      pageCount: coverAnalysisResult.pageCount || undefined,
+      isbn: coverAnalysisResult.isbn || undefined,
+      coverImageData: `data:image/jpeg;base64,${imageBase64}`
+    };
+    
+    // Add additional fields if present
+    if (coverAnalysisResult.summary) baseBookData.summary = coverAnalysisResult.summary;
+    if (coverAnalysisResult.genres && Array.isArray(coverAnalysisResult.genres)) {
+      baseBookData.genres = coverAnalysisResult.genres;
+    }
+    
+    // Step 2: If ISBN was detected, use it for enhanced lookup
+    if (baseBookData.isbn) {
+      console.log(`[${analysisId}] ISBN detected in cover: ${baseBookData.isbn}, performing enhanced lookup`);
+      try {
+        const isbnLookupResult = await getBookByISBNWithFallback(baseBookData.isbn, language);
+        
+        if (isbnLookupResult && isbnLookupResult.title) {
+          console.log(`[${analysisId}] Found book via ISBN lookup: "${isbnLookupResult.title}" by ${isbnLookupResult.author || 'Unknown'}`);
+          
+          // Merge data, prioritizing ISBN lookup but keeping cover data
+          const mergedData = {
+            ...baseBookData,
+            ...isbnLookupResult,
+            // Keep cover image data even if ISBN lookup has a different cover URL
+            coverImageData: baseBookData.coverImageData
+          };
+          
+          console.log(`[${analysisId}] Successfully combined cover analysis with ISBN lookup`);
+          return mergedData;
+        }
+      } catch (error: any) {
+        console.log(`[${analysisId}] Error in ISBN lookup from cover: ${error.message}`);
+      }
+    }
+    
+    // Step 3: If title was detected but no ISBN or ISBN lookup failed, try title lookup
+    if (baseBookData.title) {
+      console.log(`[${analysisId}] Performing title lookup for: "${baseBookData.title}"`);
+      
+      try {
+        const titleLookupResult = await getBookByTitleAndAuthor(
+          baseBookData.title,
+          baseBookData.author || "",
+          language
+        );
+        
+        if (titleLookupResult && titleLookupResult.title) {
+          console.log(`[${analysisId}] Found book via title lookup: "${titleLookupResult.title}" by ${titleLookupResult.author || 'Unknown'}`);
+          
+          // Merge data, prioritizing title lookup but keeping cover data
+          const mergedData = {
+            ...baseBookData,
+            ...titleLookupResult,
+            // Keep cover image data 
+            coverImageData: baseBookData.coverImageData
+          };
+          
+          console.log(`[${analysisId}] Successfully combined cover analysis with title lookup`);
+          return mergedData;
+        }
+      } catch (error: any) {
+        console.log(`[${analysisId}] Error in title lookup from cover: ${error.message}`);
+      }
+    }
+    
+    // If we reach here, return whatever we extracted from the cover
+    console.log(`[${analysisId}] Using data extracted directly from cover`);
+    return baseBookData;
+    
+  } catch (error: any) {
+    console.log(`[${analysisId}] Error during cover analysis:`, error?.message || String(error));
+    return {
+      error: `Book cover analysis failed: ${error.message}`,
+      language
+    };
+  }
 }
 
 /**

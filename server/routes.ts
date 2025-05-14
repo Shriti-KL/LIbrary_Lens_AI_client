@@ -86,20 +86,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`[${requestId}] Analyzing book cover to extract information`);
           console.log(`[${requestId}] Auto-extract mode detected with empty fields: title=${hasTitle}, author=${hasAuthor}`);
           
-          // Import the analyzeBookCover function from OpenAI service
-          const { analyzeBookCover } = await import("./services/openai");
-          const coverAnalysisResult = await analyzeBookCover(imageBase64);
+          // Use enhanced cover image analysis that combines multiple sources
+          const { getBookFromCoverImage } = await import("./services/bookAnalysis");
+          const language = (bookInfo.language || "de") as string;
+          const coverAnalysisResult = await getBookFromCoverImage(imageBase64, language);
           
-          // Use the analysis results for fields that weren't provided
-          bookInfo = {
-            ...bookInfo,
-            title: coverAnalysisResult.title || "Unknown Title",
-            author: coverAnalysisResult.author || "Unknown Author",
-            isbn: coverAnalysisResult.isbn || null,
-            publisher: coverAnalysisResult.publisher || null,
-            publishedYear: coverAnalysisResult.publishedYear || null,
-            coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
-          };
+          if (coverAnalysisResult) {
+            // Merge the results with any user-provided data
+            bookInfo = {
+              ...bookInfo,
+              ...coverAnalysisResult,
+              // Ensure we have the image data with the correct MIME type
+              coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
+            };
+            
+            console.log(`[${requestId}] Cover analysis complete - Found: "${bookInfo.title || 'Unknown Title'}" by ${bookInfo.author || 'Unknown Author'}`);
+          } else {
+            // Fallback if cover analysis failed
+            console.log(`[${requestId}] Cover analysis failed, using minimal data`);
+            bookInfo = {
+              ...bookInfo,
+              title: bookInfo.title || "Unknown Title",
+              author: bookInfo.author || "Unknown Author",
+              coverImageData: `data:${req.file.mimetype};base64,${imageBase64}`
+            };
+          }
         } else {
           console.log(`[${requestId}] Using manually entered book details`);
           bookInfo.coverImageData = `data:${req.file.mimetype};base64,${imageBase64}`;
