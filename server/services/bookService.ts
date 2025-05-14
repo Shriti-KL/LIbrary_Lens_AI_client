@@ -411,27 +411,43 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
         'arranger': 'arrangers'
       };
       
-      // Find all contributor fields (MARC 700 fields)
+      // Find all contributor fields (MARC 700 fields for contributors, 100 for main author)
       const contributorFields = findFieldsByTag('700');
-      console.log(`Found ${contributorFields.length} contributor fields`);
+      const mainAuthorFields = findFieldsByTag('100');
+      console.log(`Found ${contributorFields.length} contributor fields and ${mainAuthorFields.length} main author fields`);
       
+      // Always add the main author as first contributor with role "author"
+      if (mainAuthorFields.length > 0) {
+        const mainAuthorField = mainAuthorFields[0];
+        const mainAuthorSubfields = getSubfields(mainAuthorField);
+        const mainAuthorName = getSubfieldValue(mainAuthorSubfields, 'a');
+        
+        if (mainAuthorName) {
+          contributors['authors'] = [mainAuthorName];
+          console.log(`Added main author to contributors: ${mainAuthorName}`);
+        }
+      }
+      
+      // Process additional contributors
       contributorFields.forEach(field => {
         const fieldSubfields = getSubfields(field);
         
         const name = getSubfieldValue(fieldSubfields, 'a');
         const role = getSubfieldValue(fieldSubfields, 'e');
         
-        if (name && role) {
-          const roleName = role.toLowerCase().trim();
+        if (name) {
+          // If role is specified, use it, otherwise default to "contributor"
+          const roleKey = role ? role.toLowerCase().trim() : 'contributor';
           
           // Use mapped role or original if not in mapping
-          const mappedRole = roleMapping[roleName] || roleName;
+          const mappedRole = roleMapping[roleKey] || roleKey;
           
           if (!contributors[mappedRole]) {
             contributors[mappedRole] = [];
           }
           
           contributors[mappedRole].push(name);
+          console.log(`Added contributor with role ${mappedRole}: ${name}`);
         }
       });
       
@@ -452,12 +468,30 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
       const rawTitle = getSubfieldValue(subfields, 'a');
       if (rawTitle) {
         // Clean up title by removing special chars often found in MARC records
-        title = rawTitle.replace(/[\x98\x9C"«»]/g, '').trim();
+        // Many MARC records from DNB/OCLC have special markers like «», "", etc.
+        title = rawTitle.replace(/[\x98\x9C"«»„"]/g, '').trim();
+        
+        // Check if title needs correction: If it has leading space, something is wrong
+        if (title.startsWith(' ')) {
+          // Get content after the first word separator
+          const parts = title.split(' ');
+          if (parts.length > 1) {
+            // Remove the first empty segment and reconstruct
+            parts.shift();
+            title = parts.join(' ');
+          }
+        }
         
         // Debug log to see what characters might be in the raw title
         console.log(`DNB RAW TITLE: "${rawTitle}" (hex: ${Buffer.from(rawTitle).toString('hex')})`);
       }
-      subtitle = getSubfieldValue(subfields, 'b');
+      
+      // Get subtitle and clean it up the same way
+      const rawSubtitle = getSubfieldValue(subfields, 'b');
+      if (rawSubtitle) {
+        subtitle = rawSubtitle.replace(/[\x98\x9C"«»„"]/g, '').trim();
+      }
+      
       statementOfResponsibility = getSubfieldValue(subfields, 'c');
     }
     
