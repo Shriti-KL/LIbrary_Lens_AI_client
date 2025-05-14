@@ -13,6 +13,128 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const OPENAI_MODEL = "gpt-4o";
 
 /**
+ * Detect potential hallucinations in a summary
+ * This is a simple approach looking for certain patterns that might indicate hallucination
+ */
+function detectHallucination(summary: string, title: string, author: string): boolean {
+  if (!summary) return false;
+  
+  // Convert to lowercase for comparison
+  const lowerSummary = summary.toLowerCase();
+  const lowerTitle = title.toLowerCase();
+  const lowerAuthor = author ? author.toLowerCase() : "";
+  
+  // Check for patterns that often indicate hallucination
+  const warningPatterns = [
+    // Overly specific claims when we have minimal metadata
+    "based on true events",
+    "bestselling",
+    "critically acclaimed",
+    "award-winning",
+    "highly regarded",
+    "masterfully",
+    "beautifully written",
+    "extraordinary",
+    
+    // Phrases that indicate judgment
+    "must-read",
+    "captivating",
+    "engaging",
+    "brilliant",
+    "powerful",
+    "masterpiece",
+    "tour de force",
+    
+    // Content claims that are less likely to be known from just metadata
+    "reveals the author's",
+    "explores the depths of",
+    "takes the reader on a journey",
+    "offers a profound",
+    "provides insight into",
+    "reflects on the nature of",
+    
+    // Personal reading experience
+    "readers will be",
+    "readers will find",
+    "compelling reading",
+    "leaves the reader",
+    "immerses the reader",
+    
+    // Marketing language
+    "perfect for fans of",
+    "not to be missed",
+    "unforgettable"
+  ];
+  
+  // Check for these pattern indicators
+  for (const pattern of warningPatterns) {
+    if (lowerSummary.includes(pattern)) {
+      console.log(`[API] Hallucination warning pattern detected: "${pattern}"`);
+      return true;
+    }
+  }
+  
+  // If the summary mentions "book" or "novel", it's referring to itself (not ideal)
+  if (lowerSummary.includes("this book") || 
+      lowerSummary.includes("the book") || 
+      lowerSummary.includes("this novel") || 
+      lowerSummary.includes("the novel")) {
+    console.log(`[API] Hallucination warning: Summary refers to 'book' or 'novel'`);
+    return true;
+  }
+  
+  // If the summary mentions "author" or specific author name in possessive form, it's likely making claims
+  if (lowerSummary.includes("the author") || 
+      lowerSummary.includes("author's") ||
+      (lowerAuthor && lowerSummary.includes(`${lowerAuthor}'s`))) {
+    console.log(`[API] Hallucination warning: Summary refers to the author`);
+    return true;
+  }
+  
+  // No hallucination indicators found
+  return false;
+}
+
+/**
+ * Generate a generic summary based on title and genres only
+ * Used as a fallback when hallucination is detected
+ */
+function generateGenericSummary(title: string, genres: string[] = []): string {
+  // Check if we have any genres
+  if (!genres || genres.length === 0) {
+    return `Eine Veröffentlichung mit dem Titel "${title}". Keine weitere Inhaltsangabe verfügbar.`;
+  }
+  
+  // Determine if it's fiction or non-fiction based on genres
+  const fictionGenres = [
+    "roman", "krimi", "thriller", "science fiction", "fantasy", "lyrik",
+    "gedichte", "märchen", "kinder", "jugend", "abenteuer"
+  ];
+  
+  const nonFictionGenres = [
+    "sachbuch", "biografie", "ratgeber", "wissenschaft", "geschichte", "philosophie",
+    "politik", "wirtschaft", "psychologie", "selbsthilfe", "reise"
+  ];
+  
+  // Convert genres to lowercase for comparison
+  const lowerGenres = genres.map(g => g.toLowerCase());
+  
+  // Check if any genres match fiction or non-fiction
+  const isFiction = lowerGenres.some(g => fictionGenres.some(fg => g.includes(fg)));
+  const isNonFiction = lowerGenres.some(g => nonFictionGenres.some(nfg => g.includes(nfg)));
+  
+  // If we can determine genre type, generate an appropriate generic summary
+  if (isFiction) {
+    return `Ein literarisches Werk mit dem Titel "${title}" aus dem Bereich ${genres.join(", ")}. Es handelt sich um eine fiktionale Erzählung. Weitere Details zum Inhalt sind nicht verfügbar.`;
+  } else if (isNonFiction) {
+    return `Ein Sachbuch mit dem Titel "${title}" zum Thema ${genres.join(", ")}. Es behandelt Aspekte und Perspektiven im genannten Fachbereich. Weitere Details zum Inhalt sind nicht verfügbar.`;
+  } else {
+    // Default generic summary if we can't determine
+    return `Eine Veröffentlichung mit dem Titel "${title}" aus dem Bereich ${genres.join(", ")}. Weitere Details zum Inhalt sind nicht verfügbar.`;
+  }
+}
+
+/**
  * Handle book cover analysis - Extract metadata from a book cover image
  * using DNB/German RDA cataloguing standards
  */
@@ -122,7 +244,19 @@ export async function processBookAnalysis(
       language: analysisRequest.language || "de"
     };
     
-    // Define prompt based on DNB/German RDA standards
+    // Use a web search API to get additional information about the book
+    let additionalInfo = "";
+    
+    try {
+      if (bookInfo.title && (bookInfo.mainAuthor || bookInfo.isbn)) {
+        // TODO: Add web search API integration here if needed
+        // Deliberately not implementing this yet until requested
+      }
+    } catch (error) {
+      console.log("[API] Error getting additional book information:", error);
+    }
+    
+    // Define prompt based on DNB/German RDA standards with improved summary guidelines
     const prompt = `
     Book Information:
     ISBN: ${bookInfo.isbn}
@@ -140,12 +274,28 @@ export async function processBookAnalysis(
     Price: ${bookInfo.price}
     Language: ${bookInfo.language}
     
+    ${additionalInfo}
+    
     Provide the following information for this book:
-    1. A concise summary (approximately 150 words)
-    2. 3-5 key themes
-    3. 2-4 genres
-    4. ASB (Allgemeine Systematik für Bibliotheken) classification (e.g. "Phy 400")
+    
+    1. A SUMMARY that follows these strict guidelines:
+       - 3-5 sentences only (approximately 100-150 words)
+       - For fiction: objectively describe main characters and plot without revealing the ending
+       - For non-fiction: objectively describe the key themes and approaches
+       - Be factual and precise, without personal evaluation or opinion
+       - Avoid phrases like "this book is about" or "this book tells the story of"
+       - DO NOT mention "the author" or the book itself in the summary
+       - DO NOT evaluate or judge the quality of the book
+       - End the summary without any evaluation
+    
+    2. 3-5 key themes as single words or short phrases
+    
+    3. 2-4 genres following library classification standards
+    
+    4. ASB (Allgemeine Systematik für Bibliotheken) classification code (e.g. "Phy 400")
+    
     5. Reading level (e.g. "Children", "Young Adult", "Adult")
+    
     6. Interest category (e.g. "IK: Geschichte; ab 14")
     
     Please format your response as a JSON object with these fields only:
@@ -156,7 +306,7 @@ export async function processBookAnalysis(
     - readingLevel: string
     - interestCategory: string
     
-    Don't invent any bibliographic information not provided - only include the enrichment fields requested.
+    IMPORTANT: If you don't have enough information to write an accurate summary, provide a very brief, generic description based solely on the title and genre. DO NOT invent plot details, characters, or content. Do not use your training data to fill in details about the book.
     `;
     
     // Make the OpenAI API call
@@ -165,13 +315,25 @@ export async function processBookAnalysis(
       messages: [
         {
           role: "system",
-          content: `You are a librarian following DNB/German RDA cataloguing standards who specializes in 
-          book classification, summarization, and content analysis. Provide accurate, concise information 
-          in ${bookInfo.language} language. Do not hallucinate or invent bibliographic details.`
+          content: `You are a professional librarian following DNB/German RDA cataloguing standards who specializes in 
+          book classification, summarization, and content analysis. You will:
+          
+          1. Provide accurate, concise information in ${bookInfo.language} language
+          2. Write objective, factual summaries without personal evaluation
+          3. Never invent or hallucinate book details, characters, or plot elements
+          4. Only base your summary on the information directly provided to you
+          5. Be extremely cautious about making claims about book content
+          6. For fiction books: describe main characters and plot without revealing endings
+          7. For non-fiction books: describe key themes and approaches objectively
+          8. Follow the strict guidelines provided for length and content
+          9. If you lack sufficient information, provide only a brief, generic description based on title and genre
+          10. End all summaries without any evaluation or judgment
+
+          Your primary goal is accuracy and objectivity over creativity.`
         },
         { role: "user", content: prompt }
       ],
-      temperature: 0.2,
+      temperature: 0.1, // Lowered temperature for more deterministic output
       response_format: { type: "json_object" }
     });
     
@@ -188,6 +350,23 @@ export async function processBookAnalysis(
     
     console.log("[API] FULL OPENAI RESULT OBJECT:", result);
     
+    // Check for potential hallucinations in the summary
+    let hallucinationDetected = false;
+    
+    if (result.summary) {
+      hallucinationDetected = detectHallucination(
+        result.summary, 
+        bookInfo.title, 
+        bookInfo.mainAuthor
+      );
+      
+      if (hallucinationDetected) {
+        console.warn("[API] WARNING: Potential hallucination detected in summary");
+        // Replace potentially hallucinated summary with a generic one
+        result.summary = generateGenericSummary(bookInfo.title, result.genres);
+      }
+    }
+    
     const usage = response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
     
     console.log(`[API] OpenAI API response: ${JSON.stringify({
@@ -196,7 +375,7 @@ export async function processBookAnalysis(
       model: OPENAI_MODEL,
       usage: usage,
       fieldsProvided: Object.keys(result),
-      hallucinationDetected: false
+      hallucinationDetected: hallucinationDetected
     })}`);
     
     // Return OpenAI-generated fields (summary, themes, genres only)
