@@ -318,16 +318,25 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 7;
   }
   
-  // --- 6. Book summary/description ---
-  if (book.summary) {
+  // --- 6. Book summary/description and critical review ---
+  if (book.summary || book.review) {
     yPos += 2;
     
     // Set text style for summary text
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     
-    // Clean up the summary to remove redundant metadata
-    let summaryText = book.summary;
+    // Combine summary and review with the | separator
+    let summaryText = '';
+    if (book.summary) {
+      summaryText = book.summary;
+    }
+    if (book.summary && book.review) {
+      summaryText += ' | ';
+    }
+    if (book.review) {
+      summaryText += book.review;
+    }
     
     // Remove metadata-like patterns that might be in the summary
     const metadataPatterns = [
@@ -604,12 +613,21 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     currentY += 5;
   }
   
-  // --- Summary - ensure full summary appears ---
-  if (book.summary) {
+  // --- Summary and Review - ensure full content appears ---
+  if (book.summary || book.review) {
     doc.setFontSize(gridFontSize - 1);
     
-    // Clean up the summary to remove redundant metadata - similar to the function above
-    let summaryText = book.summary;
+    // Combine summary and review with the | separator
+    let summaryText = '';
+    if (book.summary) {
+      summaryText = book.summary;
+    }
+    if (book.summary && book.review) {
+      summaryText += ' | ';
+    }
+    if (book.review) {
+      summaryText += book.review;
+    }
     
     // Remove metadata-like patterns
     const metadataPatterns = [

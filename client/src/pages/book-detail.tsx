@@ -543,27 +543,14 @@ export default function BookDetail() {
                     {/* Summary and Review */}
                     <div className="mb-6">
                       <div className="prose prose-neutral max-w-none">
-                        {/* Summary */}
-                        {book.summary && (
-                          <p className="text-neutral-700 whitespace-pre-line mb-3">
-                            {book.summary}
-                          </p>
-                        )}
-                        
-                        {/* Separator and Critical Review */}
-                        {book.summary && book.review && (
-                          <div className="border-t border-neutral-300 my-3"></div>
-                        )}
-                        
-                        {/* Critical Review */}
-                        {book.review && (
+                        {/* Combined Summary and Review with | separator */}
+                        {(book.summary || book.review) ? (
                           <p className="text-neutral-700 whitespace-pre-line">
-                            {book.review}
+                            {book.summary || ''}
+                            {book.summary && book.review && ' | '}
+                            {book.review || ''}
                           </p>
-                        )}
-                        
-                        {/* Fallback if neither summary nor review is available */}
-                        {!book.summary && !book.review && (
+                        ) : (
                           <p className="text-neutral-700 whitespace-pre-line">
                             {t('noSummaryAvailable')}
                           </p>

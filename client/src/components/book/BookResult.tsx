@@ -445,20 +445,12 @@ export default function BookResult({
             <div>
               <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('aiSummary')}</h4>
               <div className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                {/* Summary */}
-                {book.summary && (
-                  <p className="mb-3">{book.summary}</p>
-                )}
-                
-                {/* Separator and Critical Review */}
-                {book.summary && book.review && (
-                  <div className="border-t border-neutral-300 my-3"></div>
-                )}
-                
-                {/* Critical Review */}
-                {book.review && (
-                  <p className="text-neutral-700 leading-relaxed">{book.review}</p>
-                )}
+                {/* Combined Summary and Review with | separator */}
+                <p>
+                  {book.summary || ''}
+                  {book.summary && book.review && ' | '}
+                  {book.review || ''}
+                </p>
               </div>
             </div>
           )}
@@ -471,12 +463,14 @@ export default function BookResult({
                 {book.themes.map((theme, index) => (
                   <div key={index} className="bg-accent/10 p-4 rounded-lg border border-accent/30 shadow-sm">
                     <h5 className="font-medium text-secondary-dark">
-                      {typeof theme === 'object' && theme !== null && theme.hasOwnProperty('theme')
+                      {typeof theme === 'object' && theme !== null && 
+                       Object.prototype.hasOwnProperty.call(theme, 'theme')
                         ? (theme as any).theme
                         : typeof theme === 'string' ? theme : `Theme ${index + 1}`}
                     </h5>
                     <p className="mt-2 text-sm text-neutral-700 leading-relaxed">
-                      {typeof theme === 'object' && theme !== null && theme.hasOwnProperty('description')
+                      {typeof theme === 'object' && theme !== null && 
+                       Object.prototype.hasOwnProperty.call(theme, 'description')
                         ? (theme as any).description
                         : ''}
                     </p>
