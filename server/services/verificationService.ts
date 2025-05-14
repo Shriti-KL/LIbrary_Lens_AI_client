@@ -12,8 +12,8 @@ import { searchGoodreads, searchGoogleBooks } from "./googleCustomSearch";
 import { processBookAnalysis } from "./openai";
 
 /**
- * Merge metadata from different sources, prioritizing DNB data
- * This follows the Python implementation's merge_metadata function
+ * Merge metadata from different sources, prioritizing Google Books data
+ * but filling in missing fields from DNB and other sources
  */
 function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Partial<Book> {
   console.log("=== GOOGLE BOOKS DATA ===");
@@ -22,6 +22,7 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
   // Create a new object to avoid modifying the original
   const merged = { ...googleData };
   
+  // Map standard fields for consistency
   if (googleData.author && !googleData.mainAuthor) {
     merged.mainAuthor = googleData.author;
   }
@@ -55,8 +56,15 @@ function mergeMetadata(googleData: Partial<Book>, dnbData: Partial<Book>): Parti
           ...(dnbData[key as keyof typeof dnbData] as object)
         };
       } else {
-        // Replace with DNB data (DNB has priority)
-        merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
+        // Only use DNB data if the field is missing or empty in Google Books data
+        if (!merged[key as keyof typeof merged] || 
+            merged[key as keyof typeof merged] === null ||
+            merged[key as keyof typeof merged] === "" ||
+            (Array.isArray(merged[key as keyof typeof merged]) && 
+             (merged[key as keyof typeof merged] as any[]).length === 0)) {
+          
+          merged[key as keyof typeof merged] = dnbData[key as keyof typeof dnbData];
+        }
       }
     }
   } else {
@@ -120,28 +128,48 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
       mergedData.mainAuthor = mergedData.author;
     }
     
-    // Step 4: Validate with Google Custom Search
-    console.log(`[verify_${requestId}] Step 4: Validating with Google Custom Search`);
+    // Step 4: Validate with Google Custom Search and fill missing data
+    console.log(`[verify_${requestId}] Step 4: Getting additional data from Google Custom Search`);
     const searchQuery = `${mergedData.title} ${mergedData.mainAuthor || mergedData.author || ""}`;
     let googleSearchResults = [];
     
     try {
       googleSearchResults = await searchGoogleBooks(searchQuery);
+      
       if (googleSearchResults && googleSearchResults.length > 0) {
         console.log(`[verify_${requestId}] Google Search found ${googleSearchResults.length} results`);
         console.log("=== GOOGLE CUSTOM SEARCH RESULTS ===");
         console.log(JSON.stringify(googleSearchResults.slice(0, 2), null, 2)); // Log just the first two for brevity
+        
         sources.push("Google Search");
+        
+        // Use Google Custom Search data to fill in missing fields
+        // Since this is a lower quality source, only use it if fields are missing
+        if (googleSearchResults[0]) {
+          const gcsResult = googleSearchResults[0];
+          
+          // Extract information from snippet or title if needed
+          // This is a simple implementation - we're just checking a few key fields as examples
+          if (!mergedData.subtitle && gcsResult.title && gcsResult.title.includes(':')) {
+            const parts = gcsResult.title.split(':');
+            if (parts.length > 1 && parts[0].trim().toLowerCase() === mergedData.title?.toLowerCase()) {
+              mergedData.subtitle = parts[1].trim();
+              console.log(`[verify_${requestId}] Added subtitle from Google CSE: ${mergedData.subtitle}`);
+            }
+          }
+          
+          // More fields could be added here based on your needs
+        }
       } else {
         console.log(`[verify_${requestId}] Google Search found no results`);
       }
     } catch (error: any) {
       console.log(`[verify_${requestId}] Error in Google Search: ${error.message || error}`);
-      // Skip this step if Google CSE fails, don't use mock data
+      // Skip this step if Google CSE fails
     }
     
-    // Step 5: Get Goodreads data for additional validation
-    console.log(`[verify_${requestId}] Step 5: Getting Goodreads data for validation`);
+    // Step 5: Get Goodreads data for additional validation and missing fields
+    console.log(`[verify_${requestId}] Step 5: Getting Goodreads data for validation and missing fields`);
     let goodreadsData: any = null;
     let dataMatches = true;
     
@@ -151,7 +179,7 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         mergedData.mainAuthor || mergedData.author || ""
       );
       
-      // Check if Goodreads data has an error field - may be due to missing credentials
+      // Check if Goodreads data has an error field
       if (!goodreadsData || goodreadsData.error) {
         console.log(`[verify_${requestId}] Goodreads data retrieval note: ${goodreadsData?.error || 'No data returned'}`);
         // Skip this step if no real Goodreads data is available
@@ -163,7 +191,7 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         
         sources.push("Goodreads");
         
-        // Check if key information matches
+        // First validate if the data matches
         if (mergedData.title && goodreadsData.title) {
           const title1 = (mergedData.title || "").toLowerCase();
           const title2 = (goodreadsData.title || "").toLowerCase();
@@ -180,6 +208,26 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
             console.log(`Title match: ${titleMatch}, Author match: ${authorMatch}`);
             console.log(`Merged title: "${mergedData.title}", Goodreads title: "${goodreadsData.title}"`);
             console.log(`Merged author: "${mergedData.mainAuthor || mergedData.author}", Goodreads author: "${goodreadsData.author}"`);
+          } else {
+            // Data matches, so we can use Goodreads to fill missing fields
+            console.log(`[verify_${requestId}] Goodreads data matches, using to fill missing fields`);
+            
+            // Fill in missing fields
+            if (!mergedData.genres && goodreadsData.genres) {
+              mergedData.genres = goodreadsData.genres;
+              console.log(`[verify_${requestId}] Added genres from Goodreads: ${mergedData.genres.join(', ')}`);
+            }
+            
+            if (!mergedData.publishedYear && !mergedData.publicationYear && goodreadsData.year) {
+              mergedData.publicationYear = parseInt(goodreadsData.year);
+              console.log(`[verify_${requestId}] Added publication year from Goodreads: ${mergedData.publicationYear}`);
+            }
+            
+            // Add more fields here as needed
+            if (goodreadsData.rating && !mergedData.rating) {
+              mergedData.rating = goodreadsData.rating;
+              console.log(`[verify_${requestId}] Added rating from Goodreads: ${mergedData.rating}`);
+            }
           }
         }
       }
