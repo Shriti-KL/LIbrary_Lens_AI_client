@@ -3460,3 +3460,159 @@
     "8": "genres"
   }
 }
+
+[2025-05-14 07:51:49] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:51:49] RESPONSE FROM DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "edition",
+    "9": "location",
+    "10": "dimensions",
+    "11": "isbn",
+    "12": "genres"
+  }
+}
+
+[2025-05-14 07:51:49] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:51:50] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}
+
+[2025-05-14 07:52:05] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:52:06] RESPONSE FROM DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "edition",
+    "9": "location",
+    "10": "dimensions",
+    "11": "isbn",
+    "12": "genres"
+  }
+}
+
+[2025-05-14 07:52:06] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:52:06] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}
+
+[2025-05-14 07:52:19] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:52:20] RESPONSE FROM DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "edition",
+    "9": "location",
+    "10": "dimensions",
+    "11": "isbn",
+    "12": "genres"
+  }
+}
+
+[2025-05-14 07:52:20] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303"
+}
+
+[2025-05-14 07:52:20] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783406830303",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publishedYear",
+    "5": "pageCount",
+    "6": "language",
+    "7": "isbn",
+    "8": "genres"
+  }
+}

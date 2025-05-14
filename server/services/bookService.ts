@@ -443,61 +443,45 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     const contributorRoles = getContributorRoles();
     
     // Process title and statement of responsibility (MARC field 245)
-    const titleField = datafields.find(field => field.$.tag === '245');
-    if (titleField) {
+    const titleFields = findFieldsByTag('245');
+    if (titleFields.length > 0) {
+      const titleField = titleFields[0];
       const subfields = getSubfields(titleField);
       
-      // Title (subfield a)
-      const titleSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (titleSubfield && titleSubfield._) {
-        title = titleSubfield._.trim();
+      // Title, subtitle, and statement of responsibility
+      const rawTitle = getSubfieldValue(subfields, 'a');
+      if (rawTitle) {
+        // Clean up title by removing special chars often found in MARC records
+        title = rawTitle.replace(/[\x98\x9C"«»]/g, '').trim();
+        
+        // Debug log to see what characters might be in the raw title
+        console.log(`DNB RAW TITLE: "${rawTitle}" (hex: ${Buffer.from(rawTitle).toString('hex')})`);
       }
-      
-      // Subtitle (subfield b)
-      const subtitleSubfield = subfields.find(sf => sf.$.code === 'b');
-      if (subtitleSubfield && subtitleSubfield._) {
-        subtitle = subtitleSubfield._.trim();
-      }
-      
-      // Statement of responsibility (subfield c)
-      const respSubfield = subfields.find(sf => sf.$.code === 'c');
-      if (respSubfield && respSubfield._) {
-        statementOfResponsibility = respSubfield._.trim();
-      }
+      subtitle = getSubfieldValue(subfields, 'b');
+      statementOfResponsibility = getSubfieldValue(subfields, 'c');
     }
     
     // Process author information (MARC field 100)
-    const authorField = datafields.find(field => field.$.tag === '100');
-    if (authorField) {
+    const authorFields = findFieldsByTag('100');
+    if (authorFields.length > 0) {
+      const authorField = authorFields[0];
       const subfields = getSubfields(authorField);
       
-      const authorSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (authorSubfield && authorSubfield._) {
-        mainAuthor = authorSubfield._.trim();
-      }
+      mainAuthor = getSubfieldValue(subfields, 'a');
     }
     
     // Process publication information (MARC field 264)
-    const pubField = datafields.find(field => field.$.tag === '264');
-    if (pubField) {
+    const pubFields = findFieldsByTag('264');
+    if (pubFields.length > 0) {
+      const pubField = pubFields[0];
       const subfields = getSubfields(pubField);
       
-      // Location (subfield a)
-      const locSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (locSubfield && locSubfield._) {
-        location = locSubfield._.trim();
-      }
+      // Location, publisher, and publication year
+      location = getSubfieldValue(subfields, 'a');
+      publisher = getSubfieldValue(subfields, 'b');
       
-      // Publisher (subfield b)
-      const pubSubfield = subfields.find(sf => sf.$.code === 'b');
-      if (pubSubfield && pubSubfield._) {
-        publisher = pubSubfield._.trim();
-      }
-      
-      // Publication year (subfield c)
-      const yearSubfield = subfields.find(sf => sf.$.code === 'c');
-      if (yearSubfield && yearSubfield._) {
-        const yearText = yearSubfield._.trim();
+      const yearText = getSubfieldValue(subfields, 'c');
+      if (yearText) {
         const yearMatch = yearText.match(/\d{4}/);
         if (yearMatch) {
           publishedYear = parseInt(yearMatch[0], 10);
@@ -506,47 +490,43 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
     }
     
     // Process physical description (MARC field 300)
-    const physicalField = datafields.find(field => field.$.tag === '300');
-    if (physicalField) {
+    const physicalFields = findFieldsByTag('300');
+    if (physicalFields.length > 0) {
+      const physicalField = physicalFields[0];
       const subfields = getSubfields(physicalField);
       
-      // Extent/pages (subfield a)
-      const extentSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (extentSubfield && extentSubfield._) {
-        const extentText = extentSubfield._.trim();
+      // Extract page count from extent
+      const extentText = getSubfieldValue(subfields, 'a');
+      if (extentText) {
         const pagesMatch = extentText.match(/(\d+)\s*S/);
         if (pagesMatch) {
           pageCount = parseInt(pagesMatch[1], 10);
         }
       }
       
-      // Dimensions (subfield c)
-      const dimSubfield = subfields.find(sf => sf.$.code === 'c');
-      if (dimSubfield && dimSubfield._) {
-        dimensions = dimSubfield._.trim();
-      }
+      // Get dimensions
+      dimensions = getSubfieldValue(subfields, 'c');
     }
     
     // Process language (MARC field 041)
-    const langField = datafields.find(field => field.$.tag === '041');
-    if (langField) {
+    const langFields = findFieldsByTag('041');
+    if (langFields.length > 0) {
+      const langField = langFields[0];
       const subfields = getSubfields(langField);
       
-      const langSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (langSubfield && langSubfield._) {
-        language = langSubfield._.trim();
+      const langCode = getSubfieldValue(subfields, 'a');
+      if (langCode) {
+        language = langCode;
       }
     }
     
     // Process edition statement (MARC field 250)
-    const editionField = datafields.find(field => field.$.tag === '250');
-    if (editionField) {
+    const editionFields = findFieldsByTag('250');
+    if (editionFields.length > 0) {
+      const editionField = editionFields[0];
       const subfields = getSubfields(editionField);
       
-      const editionSubfield = subfields.find(sf => sf.$.code === 'a');
-      if (editionSubfield && editionSubfield._) {
-        edition = editionSubfield._.trim();
-      }
+      edition = getSubfieldValue(subfields, 'a');
     }
     
     // Create a better statement of responsibility by combining
