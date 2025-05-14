@@ -131,9 +131,45 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
     const statementOfResponsibility = authors.length > 0 ? 
       `by ${authors.join(', ')}` : null;
     
+    // Extract other contributors if available
+    let otherContributors: {[role: string]: string[]} = {};
+    if (volumeInfo.authors && volumeInfo.authors.length > 1) {
+      // Add co-authors as contributors
+      otherContributors['co-author'] = volumeInfo.authors.slice(1);
+    }
+    
     // Parse publication year from date
     const publicationYear = volumeInfo.publishedDate ? 
       parseInt(volumeInfo.publishedDate.substring(0, 4)) : null;
+    
+    // Extract and format dimensions from physical data when available
+    let dimensions = null;
+    if (volumeInfo.dimensions) {
+      // Format existing dimensions to cm format
+      const height = volumeInfo.dimensions.height;
+      const width = volumeInfo.dimensions.width;
+      const thickness = volumeInfo.dimensions.thickness;
+      
+      if (height || width || thickness) {
+        let dimensionsParts = [];
+        if (height) dimensionsParts.push(`${height}`);
+        if (width) dimensionsParts.push(`${width}`);
+        if (thickness) dimensionsParts.push(`${thickness}`);
+        dimensions = dimensionsParts.join(' x ') + ' cm';
+      }
+    }
+    
+    // Extract binding type from volumeInfo when available
+    let binding = null;
+    if (volumeInfo.printType === 'BOOK') {
+      binding = volumeInfo.maturityRating === 'NOT_MATURE' ? 'Hardcover' : null;
+    }
+    
+    // Extract better edition information
+    // We prioritize direct edition info or printedPageCount info over contentVersion
+    const edition = volumeInfo.edition || 
+                    (volumeInfo.printedPageCount ? `Print: ${volumeInfo.printedPageCount} pages` : null) || 
+                    volumeInfo.contentVersion || null;
     
     // Format according to DNB/German RDA cataloguing standards
     const book: Partial<Book> = {
@@ -147,15 +183,16 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
       publicationYear: publicationYear,
       publicationPlace: null, // Not provided by Google Books API
       pageCount: volumeInfo.pageCount || null,
-      dimensions: null, // Not directly provided
-      binding: null, // Not directly provided
+      dimensions: dimensions,
+      binding: binding,
       price: saleInfo.listPrice ? 
         `${saleInfo.listPrice.amount} ${saleInfo.listPrice.currencyCode}` : null,
-      edition: volumeInfo.contentVersion || null,
+      edition: edition,
       language: volumeInfo.language || language,
       summary: volumeInfo.description || null,
       genres: volumeInfo.categories || [],
       coverImageUrl: volumeInfo.imageLinks?.thumbnail || null,
+      contributors: otherContributors,
     };
     
     // Log success
