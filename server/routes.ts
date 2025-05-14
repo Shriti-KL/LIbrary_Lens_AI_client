@@ -5,6 +5,7 @@ import multer from "multer";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertBookSchema, bookAnalysisSchema } from "@shared/schema";
+import { analyzeBookCover } from "./services/openai";
 
 // Configure multer for in-memory storage
 const upload = multer({
@@ -25,77 +26,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Track analysis ID for logging
       const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      console.log(`[${analysisId}] Processing book analysis request`);
       
-      // UNIFIED APPROACH: Direct all analysis through the verificationService
       let bookData;
-      const { verifyBookData } = await import("./services/verificationService");
       
-      // Prepare verification parameters
-      const verificationParams: any = {
-        language
-      };
-      
-      // Add image data if provided
-      if (req.file) {
-        console.log(`[${analysisId}] Processing analysis with cover image`);
+      // Case 1: ISBN provided - Use this as primary source
+      if (formData.isbn) {
+        console.log(`[${analysisId}] Analysis by ISBN: ${formData.isbn}`);
+        const { verifyBookByIsbn } = await import("./services/verificationService");
+        bookData = await verifyBookByIsbn(formData.isbn);
+      }
+      // Case 2: Cover image provided - Use image analysis
+      else if (req.file) {
+        console.log(`[${analysisId}] Analysis by cover image`);
         const imageBuffer = req.file.buffer;
         const base64Image = imageBuffer.toString('base64');
-        verificationParams.coverImageData = base64Image;
+        
+        // Extract data from cover image
+        const coverData = await analyzeBookCover(base64Image);
+        
+        // If ISBN detected, use it for verification
+        if (coverData.isbn) {
+          console.log(`[${analysisId}] ISBN detected in cover: ${coverData.isbn}`);
+          const { verifyBookByIsbn } = await import("./services/verificationService");
+          bookData = await verifyBookByIsbn(coverData.isbn);
+          
+          // Add cover image data
+          bookData.coverImageData = base64Image;
+        } else if (coverData.title) {
+          // Use the openai service directly
+          console.log(`[${analysisId}] No ISBN in cover, using title: ${coverData.title}`);
+          bookData = coverData;
+          bookData.coverImageData = base64Image;
+          
+          // Add verification info
+          bookData.verification = {
+            status: "ai_generated",
+            confidence: 0.3,
+            sources: ["OpenAI"],
+            message: "Book information extracted from cover image by AI"
+          };
+        } else {
+          return res.status(400).json({ 
+            error: "Could not extract book information from cover image" 
+          });
+        }
       }
-      
-      // Add text fields if provided
-      if (formData.isbn) {
-        console.log(`[${analysisId}] Analysis includes ISBN: ${formData.isbn}`);
-        verificationParams.isbn = formData.isbn;
-      }
-      
-      if (formData.title) {
-        console.log(`[${analysisId}] Analysis includes title: ${formData.title}`);
-        verificationParams.title = formData.title;
-      }
-      
-      if (formData.author) {
-        console.log(`[${analysisId}] Analysis includes author: ${formData.author}`);
-        verificationParams.author = formData.author;
-      }
-      
-      // Execute unified verification
-      console.log(`[${analysisId}] Starting unified verification with params:`, {
-        hasISBN: !!verificationParams.isbn,
-        hasTitle: !!verificationParams.title,
-        hasAuthor: !!verificationParams.author,
-        hasCoverImage: !!verificationParams.coverImageData,
-        language: verificationParams.language
-      });
-      
-      bookData = await verifyBookData(verificationParams);
-      
-      if (!bookData || !bookData.title) {
+      // Case 3: Title provided - Use title for search
+      else if (formData.title) {
+        console.log(`[${analysisId}] Analysis by title: ${formData.title}`);
+        
+        // Use the verification service with title
+        const { searchBooks } = await import("./services/googleBooks");
+        const { processBookAnalysis } = await import("./services/openai");
+        
+        // Search by title
+        const searchResults = await searchBooks({
+          title: formData.title,
+          author: formData.author || "",
+          maxResults: 1
+        });
+        
+        if (searchResults && searchResults.length > 0) {
+          console.log(`[${analysisId}] Found book by title search`);
+          
+          // If we found an ISBN, verify with that
+          if (searchResults[0].isbn) {
+            console.log(`[${analysisId}] ISBN found in title search: ${searchResults[0].isbn}`);
+            const { verifyBookByIsbn } = await import("./services/verificationService");
+            bookData = await verifyBookByIsbn(searchResults[0].isbn);
+          } else {
+            // Otherwise use the search result directly
+            bookData = searchResults[0];
+            
+            // Add verification info
+            bookData.verification = {
+              status: "partially_verified",
+              confidence: 0.5,
+              sources: ["Google Books"],
+              message: "Book information found by title search but not fully verified"
+            };
+            
+            // Get additional details
+            const openAiResult = await processBookAnalysis({
+              title: bookData.title,
+              author: bookData.author || "",
+              language
+            });
+            
+            // Add summary and themes
+            if (openAiResult.summary) bookData.summary = openAiResult.summary;
+            if (openAiResult.themes) bookData.themes = openAiResult.themes;
+            
+            // Add genres if not present
+            if (openAiResult.genres && (!bookData.genres || !Array.isArray(bookData.genres) || bookData.genres.length === 0)) {
+              bookData.genres = openAiResult.genres;
+            }
+            
+            // Add OpenAI as source
+            bookData.verification.sources.push("OpenAI");
+          }
+        } else {
+          console.log(`[${analysisId}] No books found by title search`);
+          
+          // Use OpenAI directly if no books found
+          bookData = await processBookAnalysis({
+            title: formData.title,
+            author: formData.author || "",
+            language
+          });
+          
+          // Add verification info
+          bookData.verification = {
+            status: "ai_generated",
+            confidence: 0.3,
+            sources: ["OpenAI"],
+            message: "Book information generated by AI, no verification with authoritative sources"
+          };
+        }
+      } else {
         return res.status(400).json({ 
-          message: "Could not analyze book with provided information" 
+          error: "Please provide an ISBN, title, or book cover image" 
         });
       }
       
-      // Check for verification data
-      const verificationStatus = bookData.verification?.status || "unknown";
-      console.log(`[${analysisId}] Successfully processed complete book data: "${bookData.title}" by ${bookData.author || 'Unknown'}`);
+      // Check that we got some results
+      if (!bookData || !bookData.title) {
+        return res.status(400).json({ 
+          error: "Could not analyze book with provided information" 
+        });
+      }
       
-      // Log bibliographic data for debugging
-      console.log(`[${analysisId}] BIBLIOGRAPHIC DATA CHECK from final merged result:`);
-      console.log(`- Title: "${bookData.title || 'N/A'}"`);
-      console.log(`- Subtitle: "${bookData.subtitle || 'N/A'}"`);
-      console.log(`- Main Author: "${bookData.author || 'N/A'}"`);
-      console.log(`- Statement of Responsibility: ${bookData.statementOfResponsibility || 'N/A'}`);
-      console.log(`- Edition: ${bookData.edition || 'N/A'}`);
-      console.log(`- Location: ${bookData.location || 'N/A'}`);
-      console.log(`- Publisher: ${bookData.publisher || 'N/A'}`);
-      console.log(`- Published Year: ${bookData.publishedYear || 'N/A'}`);
-      console.log(`- Page Count: ${bookData.pageCount || 'N/A'}`);
-      console.log(`- Dimensions: ${bookData.dimensions || 'N/A'}`);
-      console.log(`- ISBN: ${bookData.isbn || 'N/A'}`);
-      console.log(`- Binding: ${bookData.binding || 'N/A'}`);
-      console.log(`- Price: ${bookData.price || 'N/A'}`);
-      console.log(`- Language: ${bookData.language || 'N/A'}`);
+      // Log successful analysis
+      console.log(`[${analysisId}] Successfully analyzed book: "${bookData.title}" by ${bookData.author || 'Unknown'}`);
       
       // Send response
       res.status(200).json(bookData);
@@ -244,30 +307,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Convert image to base64
           const base64Image = file.buffer.toString('base64');
           
-          // Process the image using our unified verification service
-          const { verifyBookByCover } = await import("./services/verificationService");
-          const bookData = await verifyBookByCover(base64Image);
+          // Extract data from cover image
+          const coverData = await analyzeBookCover(base64Image);
           
-          if (bookData && bookData.title) {
-            // Add user ID if authenticated
-            if (req.isAuthenticated()) {
-              bookData.userId = req.user.id;
-            }
+          let bookData;
+          
+          // If ISBN detected, use it for verification
+          if (coverData.isbn) {
+            const { verifyBookByIsbn } = await import("./services/verificationService");
+            bookData = await verifyBookByIsbn(coverData.isbn);
+            bookData.coverImageData = base64Image;
+          } else if (coverData.title) {
+            // Use cover data directly
+            bookData = coverData;
+            bookData.coverImageData = base64Image;
             
-            // Store in database
-            const savedBook = await storage.createBook(bookData as any);
-            results.push({ 
-              success: true, 
-              book: savedBook,
-              originalName: file.originalname
-            });
+            // Add verification info
+            bookData.verification = {
+              status: "ai_generated",
+              confidence: 0.3,
+              sources: ["OpenAI"],
+              message: "Book information extracted from cover image by AI"
+            };
           } else {
             results.push({ 
               success: false, 
-              error: "Could not analyze book cover", 
+              error: "Could not extract book information from cover image", 
               originalName: file.originalname
             });
+            continue;
           }
+          
+          // Add user ID if authenticated
+          if (req.isAuthenticated()) {
+            bookData.userId = req.user.id;
+          }
+          
+          // Store in database
+          const savedBook = await storage.createBook(bookData as any);
+          results.push({ 
+            success: true, 
+            book: savedBook,
+            originalName: file.originalname
+          });
         } catch (fileError: any) {
           console.error(`Error processing file ${file.originalname}:`, fileError);
           results.push({ 
@@ -285,33 +367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book lookup endpoint (by title, author, or ISBN)
-  app.get("/api/books/lookup", async (req: Request, res: Response) => {
-    try {
-      const title = req.query.title as string;
-      const author = req.query.author as string;
-      const isbn = req.query.isbn as string;
-      const language = req.query.language as string || "de";
-      
-      if (!title && !author && !isbn) {
-        return res.status(400).json({ error: "At least one search parameter is required" });
-      }
-      
-      // Use our unified verification service
-      const { verifyBookData } = await import("./services/verificationService");
-      const bookData = await verifyBookData({ title, author, isbn, language });
-      
-      if (!bookData || !bookData.title) {
-        return res.status(404).json({ error: "Book not found with provided parameters" });
-      }
-      
-      res.json(bookData);
-    } catch (error: any) {
-      console.error("Error in book lookup:", error);
-      res.status(500).json({ error: "Error during book lookup" });
-    }
-  });
-
   // ISBN lookup endpoint
   app.get("/api/books/isbn/:isbn", async (req: Request, res: Response) => {
     try {
@@ -321,11 +376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "ISBN is required" });
       }
       
-      const language = req.query.language as string || "de";
-      
-      // Use our unified verification service
+      // Use the simplified verification service
       const { verifyBookByIsbn } = await import("./services/verificationService");
-      const bookData = await verifyBookByIsbn(isbn, language);
+      const bookData = await verifyBookByIsbn(isbn);
       
       if (!bookData || !bookData.title) {
         return res.status(404).json({ error: "Book not found" });
@@ -347,11 +400,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "At least title, author, or genres are required" });
       }
       
-      // Import LLM-based recommendation service
-      const openai = await import("./services/openai");
+      // Import OpenAI service
+      const { searchSimilarBooks } = await import("./services/openai");
       
       // Use title and author to get recommendations
-      const similarBooks = await openai.searchSimilarBooks({
+      const similarBooks = await searchSimilarBooks({
         title: title || "",
         author: author || "",
         genres: genres || []
