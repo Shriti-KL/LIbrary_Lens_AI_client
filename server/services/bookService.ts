@@ -7,6 +7,7 @@ import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import { Book } from '@shared/schema';
 import { apiLogger } from '../utils/logger';
+import { verifyBookData, googleBookSearch, getGoodreadsData } from './googleCustomSearch';
 
 // Type definitions for API responses
 interface GoogleBookVolumeInfo {
@@ -491,29 +492,39 @@ export async function getDnbMetadata(isbn: string): Promise<BookData> {
  * @returns Merged book data
  */
 export async function getBookByIsbn(isbn: string): Promise<Partial<Book>> {
+  // Generate a unique request ID for tracking this lookup in logs
+  const requestId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  
   // Clean ISBN format for searching
   const cleanIsbn = isbn.replace(/[^0-9X]/g, '');
-  console.log(`Starting book lookup for ISBN: ${isbn} (cleaned: ${cleanIsbn})`);
+  console.log(`[${requestId}] Starting multi-source book lookup for ISBN: ${isbn} (cleaned: ${cleanIsbn})`);
   
-  // Initialize an empty result
+  // Initialize an empty result and track sources
   const mergedResult: BookData = { isbn: cleanIsbn };
+  const sourcesUsed: string[] = [];
   
-  // First try DNB (more authoritative for German books)
+  // Step 1: Query DNB (German National Library) - more authoritative for German books
+  console.log(`[${requestId}] Step 1: Querying DNB (German National Library)`);
   const dnbResult = await getDnbMetadata(cleanIsbn);
   const hasDnbData = !dnbResult.error;
   
   if (hasDnbData) {
-    console.log(`Found book in DNB: ${dnbResult.title}`);
+    console.log(`[${requestId}] Found book in DNB: ${dnbResult.title}`);
+    sourcesUsed.push('DNB');
     Object.assign(mergedResult, dnbResult);
+  } else {
+    console.log(`[${requestId}] No DNB data found, error: ${dnbResult.error}`);
   }
   
-  // Then try Google Books (for cover image and summary)
+  // Step 2: Query Google Books API
+  console.log(`[${requestId}] Step 2: Querying Google Books API`);
   const googleResult = await getGoogleBooksByIsbn(cleanIsbn);
   const hasGoogleData = !googleResult.error;
   
   // If we have Google Books data
   if (hasGoogleData) {
-    console.log(`Found book in Google Books: ${googleResult.title}`);
+    console.log(`[${requestId}] Found book in Google Books: ${googleResult.title}`);
+    sourcesUsed.push('Google Books');
     
     // If we don't have DNB data, use Google Books as base
     if (!hasDnbData) {
@@ -542,20 +553,209 @@ export async function getBookByIsbn(isbn: string): Promise<Partial<Book>> {
         }
       }
     }
+  } else {
+    console.log(`[${requestId}] No Google Books data found, error: ${googleResult.error}`);
   }
   
-  // No hardcoded validation for year or page count
-  // Just keep the original data as provided by the sources
+  // Step 3: Additional verification with Google Custom Search
+  // Only proceed if we have at least a title to search for
+  if (mergedResult.title) {
+    console.log(`[${requestId}] Step 3: Starting additional verification with Google Custom Search`);
+    
+    try {
+      // Step 3a: Get Goodreads data for verification
+      const goodreadsData = await getGoodreadsData(mergedResult.title, mergedResult.author || "");
+      if (!goodreadsData.error) {
+        console.log(`[${requestId}] Found book on Goodreads: ${goodreadsData.title}`);
+        sourcesUsed.push('Goodreads');
+        
+        // If we have a summary missing and Goodreads has a description, use it
+        if (!mergedResult.summary && goodreadsData.description) {
+          mergedResult.summary = goodreadsData.description;
+        }
+      } else {
+        console.log(`[${requestId}] No Goodreads data found: ${goodreadsData.error}`);
+      }
+      
+      // Step 3b: Get general search results for additional cross-verification
+      const searchQuery = `${mergedResult.title} ${mergedResult.author || ""} book`;
+      const googleSearchResults = await googleBookSearch(searchQuery);
+      
+      if (googleSearchResults.length > 0) {
+        console.log(`[${requestId}] Found ${googleSearchResults.length} additional references via Google Search`);
+        sourcesUsed.push('Google CSE');
+        
+        // Analyze the verification results
+        const verificationStatus = analyzeVerificationResults(mergedResult, goodreadsData, googleSearchResults);
+        
+        // Add verification metadata to the result
+        mergedResult.verification = {
+          status: verificationStatus.status,
+          confidence: verificationStatus.confidence,
+          sources: sourcesUsed
+        };
+        
+        // Log the verification status
+        console.log(`[${requestId}] Verification status: ${verificationStatus.status} (${verificationStatus.confidence}% confidence)`);
+      } else {
+        console.log(`[${requestId}] No additional search results found`);
+      }
+    } catch (error: any) {
+      console.warn(`[${requestId}] Error during verification: ${error.message}`);
+      // Continue with the data we have even if verification failed
+    }
+  }
   
   // Log the detailed merged result for debugging
-  console.log(`FINAL MERGED BOOK DATA: ${JSON.stringify(mergedResult, null, 2)}`);
+  console.log(`[${requestId}] BIBLIOGRAPHIC DATA CHECK from final ISBN lookup result:`);
+  console.log(`- Title: "${mergedResult.title}"`);
+  console.log(`- Subtitle: "${mergedResult.subtitle}"`);
+  console.log(`- Main Author: "${mergedResult.author}"`);
+  console.log(`- Statement of Responsibility: ${mergedResult.statementOfResponsibility}`);
+  console.log(`- Edition: ${mergedResult.edition || 'N/A'}`);
+  console.log(`- Location: ${mergedResult.location || 'N/A'}`);
+  console.log(`- Publisher: ${mergedResult.publisher}`);
+  console.log(`- Published Year: ${mergedResult.publishedYear}`);
+  console.log(`- Page Count: ${mergedResult.pageCount}`);
+  console.log(`- Dimensions: ${mergedResult.dimensions || 'N/A'}`);
+  console.log(`- ISBN: ${mergedResult.isbn}`);
+  console.log(`- Binding: ${mergedResult.binding || 'N/A'}`);
+  console.log(`- Price: ${mergedResult.price || 'N/A'}`);
+  console.log(`- Language: ${mergedResult.language}`);
+  console.log(`- Genres: ${JSON.stringify(mergedResult.genres)}`);
+  console.log(`- Summary: ${mergedResult.summary?.substring(0, 40)}...`);
   
-  // Log a summary of the result
+  // Log a summary of the result with source information
   if (mergedResult.title) {
-    console.log(`Successfully processed book data: '${mergedResult.title}' by ${mergedResult.author}`);
+    console.log(`[${requestId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author}`);
+    
+    // Check if there's an ISBN mismatch (this can happen during format conversion)
+    if (mergedResult.isbn !== cleanIsbn) {
+      console.log(`[${requestId}] WARNING: ISBN mismatch between request (${isbn}) and final result (${mergedResult.isbn}). Using requested ISBN.`);
+      mergedResult.isbn = cleanIsbn;
+    }
+    
+    // Generate field source report
+    const fieldSources: Record<string, string> = {};
+    for (const key in mergedResult) {
+      if (key !== 'error' && key !== 'verification') {
+        if (dnbResult[key] && googleResult[key]) {
+          fieldSources[key] = 'Both';
+        } else if (dnbResult[key]) {
+          fieldSources[key] = 'DNB';
+        } else if (googleResult[key]) {
+          fieldSources[key] = 'Google Books';
+        } else if (key === 'verification') {
+          fieldSources[key] = 'Verification';
+        } else {
+          fieldSources[key] = 'Other';
+        }
+      }
+    }
+    console.log(`[${requestId}] Field data sources:`, fieldSources);
   } else {
-    console.warn(`Failed to find complete book data for ISBN: ${isbn}`);
+    console.warn(`[${requestId}] Failed to find complete book data for ISBN: ${isbn}`);
   }
   
   return mergedResult as Partial<Book>;
+}
+
+/**
+ * Analyze verification results to determine confidence level
+ * Local helper function to maintain consistency with the verification service
+ */
+function analyzeVerificationResults(
+  book: any, 
+  goodreadsData: any, 
+  googleSearchResults: any[]
+): { status: string, confidence: number } {
+  let confidenceScore = 0;
+  const maxScore = 5; // Maximum possible score
+  let matches = 0;
+  let checks = 0;
+  
+  // Check if Goodreads data is available and matches
+  if (!goodreadsData.error) {
+    checks++;
+    // Check title similarity
+    if (isSimilar(book.title || "", goodreadsData.title)) {
+      confidenceScore += 1;
+      matches++;
+    }
+    
+    // Check author similarity if available
+    if (book.author && goodreadsData.author) {
+      checks++;
+      if (isSimilar(book.author, goodreadsData.author)) {
+        confidenceScore += 1;
+        matches++;
+      }
+    }
+  }
+  
+  // Check if we have Google search results
+  if (googleSearchResults.length > 0) {
+    checks++;
+    
+    // Check how many search results match our book data
+    const matchingResults = googleSearchResults.filter(result => 
+      isSimilar(book.title || "", result.title)
+    );
+    
+    if (matchingResults.length > 0) {
+      confidenceScore += 1;
+      matches++;
+      
+      // Additional confidence if multiple sources mention the book
+      const uniqueSources = new Set(matchingResults.map(r => r.source));
+      if (uniqueSources.size > 1) {
+        confidenceScore += 1;
+      }
+    }
+  }
+  
+  // Calculate final confidence percentage
+  const confidence = checks > 0 
+    ? Number((confidenceScore / Math.max(maxScore, checks) * 100).toFixed(1)) 
+    : 0;
+    
+  // Determine verification status
+  let status = "unverified";
+  if (matches > 0) {
+    status = confidence >= 70 ? "verified" : "partially_verified";
+  }
+  
+  return { status, confidence };
+}
+
+/**
+ * Simple text similarity function for verification
+ */
+function isSimilar(text1: string, text2: string): boolean {
+  if (!text1 || !text2) return false;
+  
+  const normalized1 = text1.toLowerCase().replace(/[\s:,?!.-]+/g, ' ').trim();
+  const normalized2 = text2.toLowerCase().replace(/[\s:,?!.-]+/g, ' ').trim();
+  
+  // Check for exact match or containment
+  if (normalized1 === normalized2 || 
+      normalized1.includes(normalized2) || 
+      normalized2.includes(normalized1)) {
+    return true;
+  }
+  
+  // Check for word similarity
+  const words1 = normalized1.split(' ');
+  const words2 = normalized2.split(' ');
+  
+  // Count matching words (only consider words with length > 3 to avoid common words)
+  const commonWords = words1.filter(word => 
+    word.length > 3 && words2.includes(word)
+  );
+  
+  // Require at least 60% of words to match for longer texts
+  const minLength = Math.min(words1.length, words2.length);
+  const matchPercentage = commonWords.length / minLength;
+  
+  return matchPercentage >= 0.6;
 }

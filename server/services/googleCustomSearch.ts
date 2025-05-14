@@ -325,6 +325,10 @@ function isSimilarAuthor(author1: string, author2: string): boolean {
   const reversedAuthor1 = names1.length > 1 
     ? `${names1[names1.length - 1]} ${names1.slice(0, -1).join(' ')}` 
     : normalizedAuthor1;
+  
+  const reversedAuthor2 = names2.length > 1
+    ? `${names2[names2.length - 1]} ${names2.slice(0, -1).join(' ')}`
+    : normalizedAuthor2;
     
   if (reversedAuthor1 === normalizedAuthor2 || normalizedAuthor1 === reversedAuthor2) {
     return true;
