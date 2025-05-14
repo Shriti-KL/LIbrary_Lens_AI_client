@@ -215,7 +215,7 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
             // Fill in missing fields
             if (!mergedData.genres && goodreadsData.genres) {
               mergedData.genres = goodreadsData.genres;
-              console.log(`[verify_${requestId}] Added genres from Goodreads: ${mergedData.genres.join(', ')}`);
+              console.log(`[verify_${requestId}] Added genres from Goodreads: ${goodreadsData.genres.join(', ')}`);
             }
             
             if (!mergedData.publishedYear && !mergedData.publicationYear && goodreadsData.year) {
@@ -236,36 +236,81 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
       // Continue even if this step fails
     }
     
-    // Step 6: Get additional details from OpenAI for summary, themes, genres only
-    console.log(`[verify_${requestId}] Step 6: Getting additional details from OpenAI for enrichment`);
+    // Step 6: Get summary from OpenAI using all collected authentic data
+    console.log(`[verify_${requestId}] Step 6: Getting summary from OpenAI using collected authentic data`);
     
     try {
       // Only if we have at least the basic book data from an authentic source
       if (mergedData.title) {
-        // Prepare data for OpenAI - only use it for generating creative content, not facts
+        // Gather existing description/content data from Google Books, DNB, or other sources
+        // to help OpenAI create an accurate summary
+        const existingDescription = 
+          googleBooksData?.description || 
+          googleBooksData?.fullDescription || 
+          (googleSearchResults && googleSearchResults.length > 0 ? 
+            googleSearchResults[0].snippet : null);
+        
+        // Prepare complete data package for OpenAI
         const openAiRequest = {
+          // Basic bibliographic data
           isbn,
           title: mergedData.title || "",
+          subtitle: mergedData.subtitle || "",
           mainAuthor: mergedData.mainAuthor || mergedData.author || "",
-          language: mergedData.language || "de"
+          statementOfResponsibility: mergedData.statementOfResponsibility || "",
+          edition: mergedData.edition || "",
+          publicationPlace: mergedData.publicationPlace || "",
+          publisher: mergedData.publisher || "",
+          publicationYear: mergedData.publicationYear || null,
+          pageCount: mergedData.pageCount || null,
+          dimensions: mergedData.dimensions || "",
+          binding: mergedData.binding || "",
+          price: mergedData.price || "",
+          language: mergedData.language || "de",
+          
+          // Content data from authentic sources
+          description: existingDescription || "",
+          genres: mergedData.genres || [],
+          themes: mergedData.themes || [],
+          
+          // Source information for context
+          sources: sources.join(", ")
         };
         
-        // Only use OpenAI for summary, themes, and genres (creative content)
+        console.log(`[verify_${requestId}] Using authentic data to generate summary with OpenAI`);
+        
+        // Request summary and enrichment from OpenAI using authentic data
         const additionalDetails = await processBookAnalysis(openAiRequest);
         
         console.log("=== OPENAI ADDITIONAL DETAILS ===");
         console.log(JSON.stringify(additionalDetails, null, 2));
         
-        // Only use OpenAI for non-factual, creative content fields
-        if (additionalDetails.summary) mergedData.summary = additionalDetails.summary;
-        if (additionalDetails.themes) mergedData.themes = additionalDetails.themes;
+        // Only use OpenAI for creative content fields
+        if (additionalDetails.summary) {
+          mergedData.summary = additionalDetails.summary;
+          console.log(`[verify_${requestId}] Added summary from OpenAI (based on authentic data)`);
+        }
+        
+        // Only use OpenAI's themes if we don't already have them
+        if (additionalDetails.themes && (!mergedData.themes || !Array.isArray(mergedData.themes) || mergedData.themes.length === 0)) {
+          mergedData.themes = additionalDetails.themes;
+          console.log(`[verify_${requestId}] Added themes from OpenAI: ${additionalDetails.themes.join(', ')}`);
+        }
+        
+        // Only use OpenAI's genres if we don't already have them from authentic sources
         if (additionalDetails.genres && 
             (!mergedData.genres || !Array.isArray(mergedData.genres) || 
              (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
           mergedData.genres = additionalDetails.genres;
+          console.log(`[verify_${requestId}] Added genres from OpenAI: ${additionalDetails.genres.join(', ')}`);
         }
         
-        // Add OpenAI as source only for specific fields
+        // Add ASB, readingLevel, and interestCategory
+        if (additionalDetails.ASB) mergedData.ASB = additionalDetails.ASB;
+        if (additionalDetails.readingLevel) mergedData.readingLevel = additionalDetails.readingLevel;
+        if (additionalDetails.interestCategory) mergedData.interestCategory = additionalDetails.interestCategory;
+        
+        // Add OpenAI as source
         sources.push("OpenAI");
       }
       

@@ -122,7 +122,17 @@ export async function processBookAnalysis(
       language: analysisRequest.language || "de"
     };
     
-    // Define prompt based on DNB/German RDA standards
+    // Extract additional content fields from the request
+    const description = analysisRequest.description || "";
+    const existingGenres = Array.isArray(analysisRequest.genres) && analysisRequest.genres.length > 0 
+      ? analysisRequest.genres.join(", ") 
+      : "";
+    const existingThemes = Array.isArray(analysisRequest.themes) && analysisRequest.themes.length > 0 
+      ? analysisRequest.themes.join(", ") 
+      : "";
+    const sources = analysisRequest.sources || "";
+    
+    // Define prompt based on DNB/German RDA standards, including authentic description data
     const prompt = `
     Book Information:
     ISBN: ${bookInfo.isbn}
@@ -140,7 +150,12 @@ export async function processBookAnalysis(
     Price: ${bookInfo.price}
     Language: ${bookInfo.language}
     
-    Provide the following information for this book:
+    ${description ? `Authentic Book Description: ${description}` : ''}
+    ${existingGenres ? `Verified Genres: ${existingGenres}` : ''}
+    ${existingThemes ? `Identified Themes: ${existingThemes}` : ''}
+    ${sources ? `Data Sources: ${sources}` : ''}
+    
+    Based on the authentic book information above, provide the following:
     1. A concise summary (approximately 150 words)
     2. 3-5 key themes
     3. 2-4 genres
@@ -156,7 +171,7 @@ export async function processBookAnalysis(
     - readingLevel: string
     - interestCategory: string
     
-    Don't invent any bibliographic information not provided - only include the enrichment fields requested.
+    Use authentic data where available from the verified sources. Do not invent bibliographic details.
     `;
     
     // Make the OpenAI API call
