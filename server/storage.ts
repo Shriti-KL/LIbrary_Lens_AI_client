@@ -164,6 +164,7 @@ export class DatabaseStorage implements IStorage {
         ${formatValue(dbBook.binding)}, 
         ${formatValue(dbBook.price)}, 
         ${formatValue(dbBook.summary)}, 
+        ${formatValue(dbBook.review)}, 
         ${formatValue(dbBook.genres)}, 
         ${formatValue(dbBook.language)},
         ${formatValue(dbBook.cover_image_url)}, 
@@ -179,7 +180,7 @@ export class DatabaseStorage implements IStorage {
         publisher, 
         published_year as publication_year,
         page_count, dimensions, binding, price, 
-        summary, genres, cover_image_url as "coverImageUrl",
+        summary, review, genres, cover_image_url as "coverImageUrl",
         language, user_id as "userId",
         created_at as "createdAt",
         updated_at as "updatedAt"
@@ -199,7 +200,7 @@ export class DatabaseStorage implements IStorage {
     
     // Copy simple fields that haven't changed names
     ['isbn', 'title', 'subtitle', 'edition', 'publisher', 
-     'dimensions', 'binding', 'price', 'summary', 'genres', 
+     'dimensions', 'binding', 'price', 'summary', 'review', 'genres', 
      'language', 'userId'].forEach(field => {
       if (field in updates) {
         const dbField = field === 'userId' ? 'user_id' : field;
@@ -245,7 +246,7 @@ export class DatabaseStorage implements IStorage {
       publisher, 
       published_year as publication_year,
       page_count, dimensions, binding, price, 
-      summary, genres, cover_image_url as "coverImageUrl",
+      summary, review, genres, cover_image_url as "coverImageUrl",
       language, user_id as "userId",
       created_at as "createdAt",
       updated_at as "updatedAt"
