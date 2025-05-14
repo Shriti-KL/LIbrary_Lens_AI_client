@@ -131,25 +131,13 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
         console.log(`[verify_${requestId}] Google Search found ${googleSearchResults.length} results`);
         console.log("=== GOOGLE CUSTOM SEARCH RESULTS ===");
         console.log(JSON.stringify(googleSearchResults.slice(0, 2), null, 2)); // Log just the first two for brevity
+        sources.push("Google Search");
       } else {
         console.log(`[verify_${requestId}] Google Search found no results`);
       }
     } catch (error: any) {
       console.log(`[verify_${requestId}] Error in Google Search: ${error.message || error}`);
-      // Use mock data for verification if Google CSE fails
-      googleSearchResults = [
-        {
-          title: mergedData.title || "",
-          source: "Google CSE Mock",
-          link: `https://example.com/books/${isbn}`,
-          snippet: `This is a mock result for ${mergedData.title || ""} by ${mergedData.mainAuthor || mergedData.author || ""}`,
-        }
-      ];
-    }
-    
-    // Add Google CSE as a source if we have results
-    if (googleSearchResults && googleSearchResults.length > 0) {
-      sources.push("Google Search");
+      // Skip this step if Google CSE fails, don't use mock data
     }
     
     // Step 5: Get Goodreads data for additional validation
@@ -166,12 +154,7 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
       // Check if Goodreads data has an error field - may be due to missing credentials
       if (!goodreadsData || goodreadsData.error) {
         console.log(`[verify_${requestId}] Goodreads data retrieval note: ${goodreadsData?.error || 'No data returned'}`);
-        
-        // If we have mock data from Goodreads (which includes the title and source fields), use it
-        if (goodreadsData && goodreadsData.title && goodreadsData.source) {
-          console.log(`[verify_${requestId}] Using Goodreads mock data for verification`);
-          sources.push(goodreadsData.source);
-        }
+        // Skip this step if no real Goodreads data is available
       } else {
         // If we have real Goodreads data
         console.log(`[verify_${requestId}] Goodreads data retrieved successfully`);
@@ -197,10 +180,6 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
             console.log(`Title match: ${titleMatch}, Author match: ${authorMatch}`);
             console.log(`Merged title: "${mergedData.title}", Goodreads title: "${goodreadsData.title}"`);
             console.log(`Merged author: "${mergedData.mainAuthor || mergedData.author}", Goodreads author: "${goodreadsData.author}"`);
-            
-            // We'll consider it a match anyway since external services may not be available
-            dataMatches = true;
-            console.log(`[verify_${requestId}] Proceeding with verification despite potential mismatch`);
           }
         }
       }
@@ -209,53 +188,74 @@ export async function verifyBookData(isbn: string): Promise<Partial<Book>> {
       // Continue even if this step fails
     }
     
-    // Step 6: Get additional details from OpenAI for enrichment
-    console.log(`[verify_${requestId}] Step 6: Data verified, getting additional details from OpenAI`);
+    // Step 6: Get additional details from OpenAI for summary, themes, genres only
+    console.log(`[verify_${requestId}] Step 6: Getting additional details from OpenAI for enrichment`);
     
     try {
-      // Prepare data for OpenAI
-      const openAiRequest = {
-        isbn,
-        title: mergedData.title || "",
-        mainAuthor: mergedData.mainAuthor || mergedData.author || "",
-        language: mergedData.language || "de"
-      };
-      
-      // Only generate summary, themes, and genres with OpenAI
-      const additionalDetails = await processBookAnalysis(openAiRequest);
-      
-      console.log("=== OPENAI ADDITIONAL DETAILS ===");
-      console.log(JSON.stringify(additionalDetails, null, 2));
-      
-      // Only use OpenAI for these specific fields
-      if (additionalDetails.summary) mergedData.summary = additionalDetails.summary;
-      if (additionalDetails.themes) mergedData.themes = additionalDetails.themes;
-      if (additionalDetails.genres && 
-          (!mergedData.genres || !Array.isArray(mergedData.genres) || 
-           (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
-        mergedData.genres = additionalDetails.genres;
+      // Only if we have at least the basic book data from an authentic source
+      if (mergedData.title) {
+        // Prepare data for OpenAI - only use it for generating creative content, not facts
+        const openAiRequest = {
+          isbn,
+          title: mergedData.title || "",
+          mainAuthor: mergedData.mainAuthor || mergedData.author || "",
+          language: mergedData.language || "de"
+        };
+        
+        // Only use OpenAI for summary, themes, and genres (creative content)
+        const additionalDetails = await processBookAnalysis(openAiRequest);
+        
+        console.log("=== OPENAI ADDITIONAL DETAILS ===");
+        console.log(JSON.stringify(additionalDetails, null, 2));
+        
+        // Only use OpenAI for non-factual, creative content fields
+        if (additionalDetails.summary) mergedData.summary = additionalDetails.summary;
+        if (additionalDetails.themes) mergedData.themes = additionalDetails.themes;
+        if (additionalDetails.genres && 
+            (!mergedData.genres || !Array.isArray(mergedData.genres) || 
+             (Array.isArray(mergedData.genres) && mergedData.genres.length === 0))) {
+          mergedData.genres = additionalDetails.genres;
+        }
+        
+        // Add OpenAI as source only for specific fields
+        sources.push("OpenAI");
       }
       
-      // Add OpenAI as source
-      sources.push("OpenAI");
-      
-      // Add verification data
-      mergedData.verification = {
-        status: "verified",
-        confidence: 0.9,
-        message: "Book information verified across multiple sources",
-        sources
-      };
+      // Add verification data - consider verified only if we have data from reliable sources
+      if (sources.includes("Google Books") || sources.includes("DNB")) {
+        mergedData.verification = {
+          status: "verified",
+          confidence: sources.length > 2 ? 0.9 : 0.7,
+          message: "Book information verified across authentic sources",
+          sources
+        };
+      } else {
+        mergedData.verification = {
+          status: "unverified",
+          confidence: 0.5,
+          message: "Insufficient authentic data sources for verification",
+          sources
+        };
+      }
     } catch (error: any) {
       console.log(`[verify_${requestId}] Error getting additional details from OpenAI: ${error.message || error}`);
       
-      // Still mark as verified even if OpenAI fails
-      mergedData.verification = {
-        status: "verified",
-        confidence: 0.8,
-        message: "Book information verified across data sources, but AI enhancement failed",
-        sources
-      };
+      // If OpenAI fails, still verify if we have reliable data sources
+      if (sources.includes("Google Books") || sources.includes("DNB")) {
+        mergedData.verification = {
+          status: "verified",
+          confidence: 0.7,
+          message: "Book information verified with authentic data sources",
+          sources
+        };
+      } else {
+        mergedData.verification = {
+          status: "unverified",
+          confidence: 0.5,
+          message: "Insufficient authentic data sources for verification",
+          sources
+        };
+      }
     }
     
     // Log final data

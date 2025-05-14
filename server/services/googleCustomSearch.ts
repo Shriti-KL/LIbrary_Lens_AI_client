@@ -38,13 +38,7 @@ export async function searchGoodreads(title: string, author: string = ""): Promi
     if (!GOOGLE_CSE_KEY || !GOOGLE_CSE_ID) {
       console.log(`[API] Goodreads search skipped: Missing Google CSE credentials`);
       return { 
-        error: "Missing Google CSE credentials", 
-        title, 
-        author,
-        source: "Goodreads Mock", 
-        rating: 4.2,
-        reviews: 158,
-        language: "de"
+        error: "Missing Google CSE credentials"
       };
     }
 
@@ -84,15 +78,9 @@ export async function searchGoodreads(title: string, author: string = ""): Promi
       author
     });
 
-    // Return an error response with mock data for verification
+    // Return an error response
     return { 
-      error: `Goodreads search failed: ${error.message}`, 
-      title, 
-      author,
-      source: "Goodreads Mock", 
-      rating: 4.2,
-      reviews: 158,
-      language: "de"
+      error: `Goodreads search failed: ${error.message}`
     };
   }
 }
@@ -120,15 +108,8 @@ export async function searchGoogleBooks(query: string): Promise<any[]> {
     // Check if we have the required credentials
     if (!GOOGLE_CSE_KEY || !GOOGLE_CSE_ID) {
       console.log(`[API] Google CSE Books search skipped: Missing Google CSE credentials`);
-      // Return a mock result to allow verification to continue
-      return [
-        {
-          title: query.split(' ')[0] + " (Mock Result)",
-          link: "https://example.com/book",
-          snippet: "This is a mock result for verification when Google CSE credentials are unavailable.",
-          source: "Google CSE Mock"
-        }
-      ];
+      // Return an empty array if credentials are missing
+      return [];
     }
 
     const encodedQuery = encodeURIComponent(`${query} book review OR author OR isbn`);
@@ -159,14 +140,7 @@ export async function searchGoogleBooks(query: string): Promise<any[]> {
       query
     });
 
-    // Return a mock result to allow verification to continue
-    return [
-      {
-        title: query.split(' ')[0] + " (Mock Result)",
-        link: "https://example.com/book",
-        snippet: "This is a mock result for verification when Google CSE credentials are unavailable.",
-        source: "Google CSE Mock"
-      }
-    ];
+    // Return an empty array if there's an error
+    return [];
   }
 }
