@@ -353,8 +353,128 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
 }
 
 /**
- * Function to enrich existing book metadata
+ * Function to get book information by title and author with same verification approach as ISBN
  */
+export async function getBookByTitleAndAuthor(title: string, author: string = "", language: string = "de"): Promise<Partial<Book> | null> {
+  const lookupId = `title_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${lookupId}] Looking up book by title: "${title}" and author: "${author}"`);
+  
+  // Base book data to be enriched - start with just the title and author
+  let baseBookData: Partial<Book> = {
+    title,
+    author: author || undefined,
+    language
+  };
+  
+  try {
+    // Step 1: Search Google Books for metadata
+    console.log(`[${lookupId}] Searching Google Books API for title/author`);
+    
+    try {
+      // Import the searchBooks function from googleBooks service
+      const { searchBooks } = await import("./googleBooks");
+      
+      // Search parameters
+      const searchParams = {
+        title,
+        author: author || undefined,
+        maxResults: 5
+      };
+      
+      // Search Google Books API
+      const searchResults = await searchBooks(searchParams);
+      
+      if (searchResults && searchResults.length > 0) {
+        // Get the first result (most relevant)
+        const firstResult = searchResults[0];
+        console.log(`[${lookupId}] Found book in Google Books: "${firstResult.title}" by ${firstResult.author || 'Unknown'}`);
+        
+        // Merge Google Books data with base data
+        baseBookData = {
+          ...baseBookData,
+          ...firstResult,
+          // Keep original title/author if they were provided
+          title: title || firstResult.title,
+          author: author || firstResult.author || undefined
+        };
+      } else {
+        console.log(`[${lookupId}] No results found in Google Books for title: "${title}" and author: "${author}"`);
+      }
+    } catch (error: any) {
+      console.log(`[${lookupId}] Error in Google Books search: ${error.message}`);
+    }
+    
+    // Step 2: Always use OpenAI to enhance the data
+    console.log(`[${lookupId}] Sending data to OpenAI for summary, genres, themes, and metadata enhancement`);
+    
+    // Create a request for OpenAI with all available fields from previous steps
+    const request: BookAnalysisRequest = {
+      isbn: baseBookData.isbn || null,
+      title: baseBookData.title || "",
+      author: baseBookData.author || "",
+      language: baseBookData.language || language
+    };
+    
+    // Add all the available fields for more context
+    if (baseBookData.subtitle) request.subtitle = baseBookData.subtitle;
+    if (baseBookData.publisher) request.publisher = baseBookData.publisher;
+    if (baseBookData.publishedYear) request.publishedYear = baseBookData.publishedYear;
+    if (baseBookData.pageCount) request.pageCount = baseBookData.pageCount;
+    if (baseBookData.binding) request.binding = baseBookData.binding;
+    if (baseBookData.coverImageUrl) request.coverImageUrl = baseBookData.coverImageUrl;
+    
+    // Process book with OpenAI
+    const openAIResult = await processBookAnalysisWithOpenAI(request);
+    
+    // Merge the results, prioritizing Google Books data over OpenAI for factual fields
+    const mergedResult = {
+      ...openAIResult,
+      // Preserve original fields if available in the Google Books data
+      isbn: baseBookData.isbn || openAIResult.isbn,
+      title: baseBookData.title || openAIResult.title,
+      author: baseBookData.author || openAIResult.author,
+      subtitle: baseBookData.subtitle || openAIResult.subtitle,
+      publisher: baseBookData.publisher || openAIResult.publisher,
+      publishedYear: baseBookData.publishedYear || openAIResult.publishedYear,
+      pageCount: baseBookData.pageCount || openAIResult.pageCount,
+      language: baseBookData.language || openAIResult.language,
+      coverImageUrl: baseBookData.coverImageUrl || openAIResult.coverImageUrl
+    };
+    
+    // Log bibliographic data
+    console.log(`[${lookupId}] BIBLIOGRAPHIC DATA CHECK from title/author lookup:`);
+    console.log(`- Title: "${mergedResult.title}"`);
+    console.log(`- Subtitle: "${mergedResult.subtitle || 'N/A'}"`);
+    console.log(`- Author: "${mergedResult.author || 'Unknown'}"`);
+    console.log(`- Publisher: ${mergedResult.publisher || 'N/A'}`);
+    console.log(`- Published Year: ${mergedResult.publishedYear || 'N/A'}`);
+    console.log(`- Page Count: ${mergedResult.pageCount || 'N/A'}`);
+    console.log(`- Language: ${mergedResult.language || 'N/A'}`);
+    
+    // Log the source of each field
+    const fieldSources: Record<string, string> = {};
+    for (const key of Object.keys(mergedResult)) {
+      if (key in baseBookData && key in openAIResult) {
+        fieldSources[key] = 'Both';
+      } else if (key in baseBookData) {
+        fieldSources[key] = 'Google Books';
+      } else if (key in openAIResult) {
+        fieldSources[key] = 'OpenAI';
+      }
+    }
+    console.log(`[${lookupId}] Field data sources:`, fieldSources);
+    
+    console.log(`[${lookupId}] Successfully processed complete book data: "${mergedResult.title}" by ${mergedResult.author || 'Unknown'}`);
+    return mergedResult;
+    
+  } catch (error: any) {
+    console.log(`[${lookupId}] Error during title/author lookup:`, error?.message || String(error));
+    
+    // Return whatever base data we have
+    return baseBookData;
+  }
+}
+
 export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Partial<Book>> {
   // If we have an ISBN, use it for enrichment
   if (bookData.isbn) {
