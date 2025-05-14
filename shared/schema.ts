@@ -40,13 +40,6 @@ export const books = pgTable("books", {
   genres: jsonb("genres").default([]).notNull(),
   coverImageUrl: text("cover_image_url"),
   
-  // Additional fields for library information
-  themes: jsonb("themes").default([]),
-  readingLevel: text("reading_level"),
-  interestCategory: text("interest_category"),
-  ASB: text("asb_classification"), // Allgemeine Systematik für Bibliotheken
-  error: text("error"), // For tracking analysis errors
-  
   // Required for database operations
   userId: integer("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -96,7 +89,17 @@ export const bookAnalysisSchema = z.object({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type Book = typeof books.$inferSelect;
+// Base types
+export type Book = typeof books.$inferSelect & {
+  // Additional virtual fields that are not stored in the database directly
+  themes?: string[];
+  readingLevel?: string;
+  interestCategory?: string;
+  ASB?: string;
+  error?: string;
+  // Allow additional string indexer for dynamic OpenAI response fields
+  [key: string]: any;
+};
 export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   // Additional runtime properties not in the database schema
@@ -105,7 +108,9 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   readingLevel?: string;
   interestCategory?: string;
   ASB?: string;
-  [key: string]: any; // Allow dynamic properties for OpenAI analysis
+  error?: string;
+  // Allow dynamic properties for OpenAI analysis
+  [key: string]: any;
 };
 
 // Analysis options - simplified to match Python service
