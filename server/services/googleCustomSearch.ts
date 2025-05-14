@@ -147,12 +147,34 @@ export async function verifyBookData(book: Partial<Book>): Promise<any> {
   const verificationStatus = analyzeVerificationResults(book, goodreadsData, googleSearchResults);
   
   // Add verification status to the book data
+  // Prepare the list of actual sources used
+  const sourcesArray: string[] = [];
+  if (!goodreadsData.error) sourcesArray.push('Goodreads');
+  if (googleSearchResults.length > 0) sourcesArray.push('Google Search');
+  
+  // Add a message based on verification status
+  let message: string | undefined;
+  if (verificationStatus.status === 'high') {
+    message = 'Multiple sources confirm this book data';
+  } else if (verificationStatus.status === 'medium') {
+    message = 'Some sources partially confirm this book data';
+  } else if (verificationStatus.status === 'low') {
+    message = 'Limited verification available for this book data';
+  } else if (verificationStatus.status === 'unverified') {
+    message = 'Unable to verify this book data with external sources';
+  } else if (verificationStatus.status === 'error') {
+    message = 'Verification service error';
+  }
+  
   return {
     ...book,
     verification: {
       status: verificationStatus.status,
       confidence: verificationStatus.confidence,
-      sources: {
+      message,
+      sources: sourcesArray,
+      // Include detailed source data for debugging if needed
+      _sourcesDetail: {
         goodreads: goodreadsData.error ? null : goodreadsData,
         googleSearch: googleSearchResults.length > 0 ? googleSearchResults : null
       }

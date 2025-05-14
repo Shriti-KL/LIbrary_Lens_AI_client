@@ -591,9 +591,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ISBN is required" });
       }
       
+      // Get verification parameters
+      const includeVerification = req.query.verification !== 'false';
+      const language = req.query.language as string || "de";
+      
+      // First try direct lookup with verification
+      if (includeVerification) {
+        try {
+          // Import the getBookByIsbn function from bookService directly
+          // This preserves the verification data
+          const { getBookByIsbn } = await import("./services/bookService");
+          const bookWithVerification = await getBookByIsbn(isbn);
+          
+          if (bookWithVerification && bookWithVerification.title) {
+            console.log(`Direct lookup with verification successful for ISBN: ${isbn}`);
+            return res.status(200).json(bookWithVerification);
+          }
+        } catch (verificationError) {
+          console.log(`Verification lookup failed: ${verificationError.message}, falling back to regular lookup`);
+          // Continue to fallback method if this fails
+        }
+      }
+      
       // Import the getBookByISBNWithFallback function from bookAnalysis service
       const { getBookByISBNWithFallback } = await import("./services/bookAnalysis");
-      const book = await getBookByISBNWithFallback(isbn, req.query.language as string || "de");
+      const book = await getBookByISBNWithFallback(isbn, language);
       
       if (!book) {
         return res.status(404).json({ message: "Book not found" });
