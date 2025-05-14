@@ -125,6 +125,7 @@ export class DatabaseStorage implements IStorage {
       binding: book.binding,
       price: book.price,
       summary: book.summary,
+      review: book.review, // Add the review field
       genres: book.genres,
       language: book.language,
       cover_image_url: book.coverImageUrl,
@@ -146,7 +147,7 @@ export class DatabaseStorage implements IStorage {
       INSERT INTO books (
         isbn, title, subtitle, author, statement_of_responsibility,
         edition, location, publisher, published_year, page_count,
-        dimensions, binding, price, summary, genres, language,
+        dimensions, binding, price, summary, review, genres, language,
         cover_image_url, user_id, created_at, updated_at
       ) VALUES (
         ${formatValue(dbBook.isbn)}, 
