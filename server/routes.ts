@@ -244,6 +244,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.userId = req.user.id;
       }
       
+      // Debug logging to see what's coming in
+      console.log('Book save data:', JSON.stringify({
+        title: validatedData.title,
+        review: validatedData.review
+      }));
+      
       const book = await storage.createBook(validatedData);
       res.status(201).json(book);
     } catch (error: any) {
