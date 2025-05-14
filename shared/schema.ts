@@ -114,6 +114,9 @@ export type Book = typeof books.$inferSelect & {
     sources: string[];
     note?: string; // Additional information about the verification process
   };
+  // Fields for specialized library categorization
+  illustrations?: string; // Illustrations information
+  dnbNumber?: string; // DNB-specific cataloging number
   // Allow additional string indexer for dynamic OpenAI response fields
   [key: string]: any;
 };
@@ -132,6 +135,9 @@ export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   description?: string;             // Authentic book description from reliable sources
   genres?: string[];                // Genres from authentic sources
   sourcesInfo?: string;             // Information about where the data came from
+  // Fields for specialized library categorization
+  illustrations?: string;           // Illustrations information
+  dnbNumber?: string;               // DNB-specific cataloging number
   // Allow dynamic properties for OpenAI analysis
   [key: string]: any;
 };

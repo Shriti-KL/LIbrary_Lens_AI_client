@@ -296,6 +296,75 @@ async function lookupViaSRU(cleanIsbn: string): Promise<Partial<Book> | null> {
       }
     }
     
+    // Extract Categories/Genres (084 for DDC, 082 for Dewey, 650 for subjects)
+    // First try subject headings (650)
+    const subjectFields = findAllFields('650', record);
+    const genres: string[] = [];
+    
+    if (subjectFields && subjectFields.length > 0) {
+      for (const field of subjectFields) {
+        const subjectSubfield = findSubfield(field, 'a');
+        if (subjectSubfield && subjectSubfield._) {
+          genres.push(subjectSubfield._);
+        }
+      }
+    }
+    
+    // Add DDC classification (084)
+    const ddcFields = findAllFields('084', record);
+    if (ddcFields && ddcFields.length > 0) {
+      for (const field of ddcFields) {
+        const codeSubfield = findSubfield(field, 'a');
+        const typeSubfield = findSubfield(field, '2');
+        
+        if (codeSubfield && typeSubfield && typeSubfield._ === 'ddc') {
+          genres.push(`DDC ${codeSubfield._}`);
+        }
+      }
+    }
+    
+    if (genres.length > 0) {
+      bookData.genres = genres;
+    }
+    
+    // Extract ASB classification (specific German library classification)
+    const asbFields = findAllFields('084', record);
+    if (asbFields && asbFields.length > 0) {
+      for (const field of asbFields) {
+        const codeSubfield = findSubfield(field, 'a');
+        const typeSubfield = findSubfield(field, '2');
+        
+        if (codeSubfield && typeSubfield && (typeSubfield._ === 'asb' || typeSubfield._ === 'rvk')) {
+          bookData.ASB = codeSubfield._;
+          break;
+        }
+      }
+    }
+    
+    // Extract interest category (IK) - often in local notes fields
+    const noteFields = findAllFields('500', record);
+    if (noteFields && noteFields.length > 0) {
+      for (const field of noteFields) {
+        const noteSubfield = findSubfield(field, 'a');
+        if (noteSubfield && /Interessenkreis|IK:/i.test(noteSubfield._)) {
+          const match = noteSubfield._.match(/Interessenkreis:?\s*([^.]+)|IK:\s*([^.]+)/i);
+          if (match) {
+            bookData.interestCategory = (match[1] || match[2]).trim();
+            break;
+          }
+        }
+      }
+    }
+    
+    // Extract DNB-specific cataloging numbers (015, 016)
+    const dnbNumberField = findField('015', record);
+    if (dnbNumberField) {
+      const numberSubfield = findSubfield(dnbNumberField, 'a');
+      if (numberSubfield) {
+        bookData.dnbNumber = numberSubfield._;
+      }
+    }
+    
     // Log the extracted data
     const fieldsFound = Object.keys(bookData).filter(key => key !== 'isbn' && key !== 'source');
     
