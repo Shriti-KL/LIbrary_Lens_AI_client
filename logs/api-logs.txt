@@ -2411,3 +2411,391 @@
   },
   "hallucinationDetected": false
 }
+
+[2025-05-14 07:28:59] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-7110-0062-1"
+}
+
+[2025-05-14 07:28:59] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783711000621"
+}
+
+[2025-05-14 07:29:02] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783711000621"
+}
+
+[2025-05-14 07:29:02] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783711000621",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "author",
+    "2": "statementOfResponsibility",
+    "3": "publishedYear",
+    "4": "pageCount",
+    "5": "language",
+    "6": "isbn",
+    "7": "genres",
+    "8": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:29:02] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "978-3-7110-0062-1",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:29:02] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783711000621",
+  "title": "Irgendwann kommt alles ans Licht",
+  "author": "Walther Parson"
+}
+
+[2025-05-14 07:29:11] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 483,
+    "completion_tokens": 371,
+    "total_tokens": 854,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "location",
+    "9": "binding",
+    "10": "summary",
+    "11": "genres",
+    "12": "ASB",
+    "13": "interestCategory",
+    "14": "themes",
+    "15": "readingLevel"
+  },
+  "hallucinationDetected": false
+}
+
+[2025-05-14 07:29:14] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:29:14] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:29:15] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:29:15] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:29:15] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:29:15] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783825262761",
+  "title": "ChatGPT und Large Language Models? Frag doch einfach!",
+  "author": "Thomas Kessel"
+}
+
+[2025-05-14 07:29:21] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 499,
+    "completion_tokens": 380,
+    "total_tokens": 879,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "edition",
+    "10": "location",
+    "11": "dimensions",
+    "12": "binding",
+    "13": "price",
+    "14": "summary",
+    "15": "genres",
+    "16": "ASB",
+    "17": "interestCategory",
+    "18": "themes",
+    "19": "readingLevel"
+  },
+  "hallucinationDetected": false
+}
+
+[2025-05-14 07:30:00] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:00] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:01] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:01] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:30:01] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:30:01] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783825262761",
+  "title": "ChatGPT und Large Language Models? Frag doch einfach!",
+  "author": "Thomas Kessel"
+}
+
+[2025-05-14 07:30:06] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 499,
+    "completion_tokens": 347,
+    "total_tokens": 846,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "summary",
+    "10": "genres",
+    "11": "ASB",
+    "12": "interestCategory",
+    "13": "themes",
+    "14": "readingLevel"
+  },
+  "hallucinationDetected": false
+}
+
+[2025-05-14 07:30:11] REQUEST TO ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:11] REQUEST TO DNB API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:11] REQUEST TO Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761"
+}
+
+[2025-05-14 07:30:12] RESPONSE FROM Google Books API
+{
+  "operation": "lookupByISBN",
+  "isbn": "9783825262761",
+  "success": true,
+  "fieldsFound": {
+    "0": "title",
+    "1": "subtitle",
+    "2": "author",
+    "3": "statementOfResponsibility",
+    "4": "publisher",
+    "5": "publishedYear",
+    "6": "pageCount",
+    "7": "language",
+    "8": "isbn",
+    "9": "genres",
+    "10": "coverImageUrl"
+  }
+}
+
+[2025-05-14 07:30:12] RESPONSE FROM ISBN Lookup Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": "9783825262761",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 07:30:12] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "de",
+  "isbn": "9783825262761",
+  "title": "ChatGPT und Large Language Models? Frag doch einfach!",
+  "author": "Thomas Kessel"
+}
+
+[2025-05-14 07:30:18] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 499,
+    "completion_tokens": 338,
+    "total_tokens": 837,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "summary",
+    "10": "genres",
+    "11": "ASB",
+    "12": "interestCategory",
+    "13": "themes",
+    "14": "readingLevel"
+  },
+  "hallucinationDetected": false
+}

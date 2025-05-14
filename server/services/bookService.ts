@@ -562,47 +562,102 @@ export async function getBookByIsbn(isbn: string): Promise<Partial<Book>> {
   if (mergedResult.title) {
     console.log(`[${requestId}] Step 3: Starting additional verification with Google Custom Search`);
     
-    try {
-      // Step 3a: Get Goodreads data for verification
-      const goodreadsData = await getGoodreadsData(mergedResult.title, mergedResult.author || "");
-      if (!goodreadsData.error) {
-        console.log(`[${requestId}] Found book on Goodreads: ${goodreadsData.title}`);
-        sourcesUsed.push('Goodreads');
-        
-        // If we have a summary missing and Goodreads has a description, use it
-        if (!mergedResult.summary && goodreadsData.description) {
-          mergedResult.summary = goodreadsData.description;
+    // Check if we have both API keys needed for verification
+    const hasVerificationApiKeys = process.env.GOOGLE_BOOKS_API_KEY && process.env.GOOGLE_CSE_ID;
+    
+    if (!hasVerificationApiKeys) {
+      console.log(`[${requestId}] Skipping verification step - API keys not configured`);
+      // Add basic verification info without detailed analysis
+      mergedResult.verification = {
+        status: "unavailable",
+        confidence: 0,
+        message: "Cross-source verification unavailable - API keys not configured",
+        sources: sourcesUsed
+      };
+    } else {
+      try {
+        // Step 3a: Get Goodreads data for verification
+        const goodreadsData = await getGoodreadsData(mergedResult.title, mergedResult.author || "");
+        if (!goodreadsData.error) {
+          console.log(`[${requestId}] Found book on Goodreads: ${goodreadsData.title}`);
+          sourcesUsed.push('Goodreads');
+          
+          // If we have a summary missing and Goodreads has a description, use it
+          if (!mergedResult.summary && goodreadsData.description) {
+            mergedResult.summary = goodreadsData.description;
+          }
+        } else {
+          // Handle quota errors specially
+          if (goodreadsData.error.includes('403')) {
+            console.log(`[${requestId}] Google CSE API quota exceeded or authentication error`);
+            mergedResult.verification = {
+              status: "quota_exceeded",
+              confidence: 0,
+              message: "Cross-source verification temporarily unavailable - API quota exceeded",
+              sources: sourcesUsed
+            };
+          } else {
+            console.log(`[${requestId}] No Goodreads data found: ${goodreadsData.error}`);
+          }
         }
-      } else {
-        console.log(`[${requestId}] No Goodreads data found: ${goodreadsData.error}`);
+        
+        // Step 3b: Get general search results for additional cross-verification
+        // Only if we didn't already detect a quota issue
+        if (!mergedResult.verification || mergedResult.verification.status !== "quota_exceeded") {
+          const searchQuery = `${mergedResult.title} ${mergedResult.author || ""} book`;
+          const googleSearchResults = await googleBookSearch(searchQuery);
+          
+          if (googleSearchResults.length > 0) {
+            console.log(`[${requestId}] Found ${googleSearchResults.length} additional references via Google Search`);
+            sourcesUsed.push('Google CSE');
+            
+            // Analyze the verification results
+            const verificationStatus = analyzeVerificationResults(mergedResult, goodreadsData, googleSearchResults);
+            
+            // Add verification metadata to the result
+            mergedResult.verification = {
+              status: verificationStatus.status,
+              confidence: verificationStatus.confidence,
+              sources: sourcesUsed
+            };
+            
+            // Log the verification status
+            console.log(`[${requestId}] Verification status: ${verificationStatus.status} (${verificationStatus.confidence}% confidence)`);
+          } else {
+            console.log(`[${requestId}] No additional search results found`);
+            
+            // If we have at least two sources already, we can still provide basic verification
+            if (sourcesUsed.length >= 2) {
+              mergedResult.verification = {
+                status: "basic_verification",
+                confidence: sourcesUsed.length * 20, // Simple confidence based on number of sources
+                message: "Basic verification completed without additional references",
+                sources: sourcesUsed
+              };
+            }
+          }
+        }
+      } catch (error: any) {
+        console.warn(`[${requestId}] Error during verification: ${error.message}`);
+        
+        // Handle quota errors specially
+        if (error.message.includes('403')) {
+          mergedResult.verification = {
+            status: "quota_exceeded",
+            confidence: 0,
+            message: "Cross-source verification temporarily unavailable - API quota exceeded",
+            sources: sourcesUsed
+          };
+        } else {
+          // Other error occurred
+          mergedResult.verification = {
+            status: "error",
+            confidence: 0,
+            message: `Verification error: ${error.message}`,
+            sources: sourcesUsed
+          };
+        }
       }
-      
-      // Step 3b: Get general search results for additional cross-verification
-      const searchQuery = `${mergedResult.title} ${mergedResult.author || ""} book`;
-      const googleSearchResults = await googleBookSearch(searchQuery);
-      
-      if (googleSearchResults.length > 0) {
-        console.log(`[${requestId}] Found ${googleSearchResults.length} additional references via Google Search`);
-        sourcesUsed.push('Google CSE');
-        
-        // Analyze the verification results
-        const verificationStatus = analyzeVerificationResults(mergedResult, goodreadsData, googleSearchResults);
-        
-        // Add verification metadata to the result
-        mergedResult.verification = {
-          status: verificationStatus.status,
-          confidence: verificationStatus.confidence,
-          sources: sourcesUsed
-        };
-        
-        // Log the verification status
-        console.log(`[${requestId}] Verification status: ${verificationStatus.status} (${verificationStatus.confidence}% confidence)`);
-      } else {
-        console.log(`[${requestId}] No additional search results found`);
-      }
-    } catch (error: any) {
-      console.warn(`[${requestId}] Error during verification: ${error.message}`);
-      // Continue with the data we have even if verification failed
     }
   }
   
