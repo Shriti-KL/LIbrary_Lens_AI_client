@@ -41,6 +41,9 @@ def get_google_books_by_isbn(isbn: str) -> Dict:
         response.raise_for_status()  # Raise exception for HTTP errors
         data = response.json()
         
+        # Log the raw response for debugging
+        logger.info(f"GOOGLE BOOKS RAW DATA: {json.dumps(data, indent=2)}")
+        
         if data.get("totalItems", 0) == 0:
             logger.warning(f"No book found with ISBN {isbn} in Google Books API")
             return {"error": "No book found with this ISBN"}
@@ -106,6 +109,26 @@ def get_google_books_by_isbn(isbn: str) -> Dict:
         # The edition information is typically not provided directly by Google Books
         edition = None
         
+        # Log extracted fields for debugging
+        logger.info("GOOGLE BOOKS EXTRACTED FIELDS:")
+        logger.info(f"  - Title: {book_data.get('title', '')}")
+        logger.info(f"  - Subtitle: {book_data.get('subtitle', '')}")
+        logger.info(f"  - Main Author: {main_author}")
+        logger.info(f"  - Statement of Responsibility: {statement_of_responsibility}")
+        logger.info(f"  - Location: {location}")
+        logger.info(f"  - Publisher: {publisher}")  
+        logger.info(f"  - Published Year: {published_year}")
+        logger.info(f"  - Page Count: {book_data.get('pageCount')}")
+        logger.info(f"  - Dimensions: {dimensions}")
+        logger.info(f"  - Language: {book_data.get('language', '')}")
+        logger.info(f"  - Edition: {edition}")
+        logger.info(f"  - Binding: {binding}")
+        logger.info(f"  - ISBN: {formatted_isbn or isbn}")
+        logger.info(f"  - Price: {price}")
+        logger.info(f"  - Summary Length: {len(book_data.get('description', '')) if book_data.get('description') else 0}")
+        logger.info(f"  - Genres: {book_data.get('categories', [])}")
+        logger.info(f"  - Cover URL: {book_data.get('imageLinks', {}).get('thumbnail', '')}")
+        
         # The result formatted according to our application's schema
         result = {
             "title": book_data.get("title", ""),
@@ -154,11 +177,15 @@ def get_dnb_metadata(isbn: str) -> Dict:
             "recordSchema": "MARC21-xml"
         }
         
+        logger.info(f"DNB REQUEST URL: {base_url} with params {params}")
+        
         response = requests.get(base_url, params=params)
         response.raise_for_status()
         
         # Parse XML response using ElementTree
-        root = ET.fromstring(response.text)
+        xml_text = response.text
+        logger.info(f"DNB XML RESPONSE (first 500 chars): {xml_text[:500]}...")
+        root = ET.fromstring(xml_text)
         
         # Define namespace
         ns = {'srw': 'http://www.loc.gov/zing/srw/',
@@ -274,6 +301,21 @@ def get_dnb_metadata(isbn: str) -> Dict:
             if edition_subfield is not None and edition_subfield.text:
                 edition = edition_subfield.text.strip()
         
+        # Log extracted fields for debugging
+        logger.info("DNB EXTRACTED FIELDS:")
+        logger.info(f"  - Title: {title}")
+        logger.info(f"  - Subtitle: {subtitle}")
+        logger.info(f"  - Main Author: {main_author}")
+        logger.info(f"  - Statement of Responsibility: {statement_of_responsibility}")
+        logger.info(f"  - Location: {location}")
+        logger.info(f"  - Publisher: {publisher}")  
+        logger.info(f"  - Published Year: {published_year}")
+        logger.info(f"  - Page Count: {page_count}")
+        logger.info(f"  - Dimensions: {dimensions}")
+        logger.info(f"  - Language: {language}")
+        logger.info(f"  - Edition: {edition}")
+        logger.info(f"  - Binding: {binding}")
+        
         # Format result according to our application's schema
         result = {
             "title": title or "",
@@ -362,7 +404,10 @@ def get_book_by_isbn(isbn: str) -> Dict:
     # No hardcoded validation for year or page count
     # Just keep the original data as provided by the sources
     
-    # Log the result
+    # Log the detailed merged result for debugging
+    logger.info(f"FINAL MERGED BOOK DATA: {json.dumps(merged_result, indent=2, default=str)}")
+    
+    # Log a summary of the result
     if merged_result.get("title"):
         logger.info(f"Successfully processed book data: '{merged_result.get('title')}' by {merged_result.get('author')}")
     else:

@@ -1154,3 +1154,118 @@
     "17": "readingLevel"
   }
 }
+
+[2025-05-14 06:03:25] REQUEST TO Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": " 978-3-7518-4023-1"
+}
+
+[2025-05-14 06:03:27] RESPONSE FROM Python Book Service
+{
+  "operation": "lookupBookByIsbn",
+  "isbn": " 978-3-7518-4023-1",
+  "status": "success",
+  "dataReceived": true
+}
+
+[2025-05-14 06:03:27] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783751840231",
+  "title": "Himmelsstriche",
+  "author": "Malkmus, Bernhard"
+}
+
+[2025-05-14 06:03:34] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 704,
+    "completion_tokens": 386,
+    "total_tokens": 1090,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "dimensions",
+    "11": "summary",
+    "12": "genres",
+    "13": "themes",
+    "14": "readingLevel",
+    "15": "interestCategory",
+    "16": "ASB"
+  }
+}
+
+[2025-05-14 06:03:34] REQUEST TO OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "model": "gpt-4o",
+  "language": "ger",
+  "isbn": "9783751840231",
+  "title": "Himmelsstriche",
+  "author": "Malkmus, Bernhard"
+}
+
+[2025-05-14 06:03:38] RESPONSE FROM OpenAI API
+{
+  "operation": "processBookAnalysis",
+  "status": "success",
+  "model": "gpt-4o",
+  "usage": {
+    "prompt_tokens": 873,
+    "completion_tokens": 399,
+    "total_tokens": 1272,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "fieldsProvided": {
+    "0": "isbn",
+    "1": "title",
+    "2": "subtitle",
+    "3": "author",
+    "4": "statementOfResponsibility",
+    "5": "publisher",
+    "6": "publishedYear",
+    "7": "pageCount",
+    "8": "language",
+    "9": "location",
+    "10": "summary",
+    "11": "genres",
+    "12": "ASB",
+    "13": "interestCategory",
+    "14": "themes",
+    "15": "readingLevel"
+  }
+}
