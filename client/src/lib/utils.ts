@@ -208,47 +208,51 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     titleText = `${titleFull}: ${subtitle}`;
   }
   
-  // Add statement of responsibility
+  // Process author and contributors information
+  let authorText = "";
+  let otherContributors = "";
+  
+  // Use statement of responsibility if available, otherwise build from author/contributors
   if (book.statementOfResponsibility) {
-    titleText += ` / ${book.statementOfResponsibility}`;
+    authorText = book.statementOfResponsibility;
   } else {
-    // Use authors and contributors to construct statement of responsibility
-    let authorName = book.mainAuthor || book.author || "";
+    authorText = book.mainAuthor || book.author || "";
     
-    // Check for contributors
-    let otherContributors = "";
+    // Process contributors if available
     if (book.contributors && (typeof book.contributors === 'object')) {
-      // If contributors is an object with role keys (new format)
+      const contributorsList = [];
+      
+      // Handle new format (object with role keys)
       if (!Array.isArray(book.contributors)) {
-        const contributorsList = [];
         for (const role in book.contributors) {
           if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
             contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
           }
         }
-        if (contributorsList.length > 0) {
-          otherContributors = ` ; ${contributorsList.join(" ; ")}`;
-        }
       } 
-      // If contributors is an array of objects with name and role (old format)
+      // Handle old format (array of objects)
       else if (book.contributors.length > 0) {
-        const contributorsList = book.contributors
+        book.contributors
           .filter((c: any) => c.name && c.role)
-          .map((c: any) => `${c.name} (${c.role})`)
-          .join(" ; ");
-        
-        if (contributorsList) {
-          otherContributors = ` ; ${contributorsList}`;
-        }
+          .forEach((c: any) => {
+            contributorsList.push(`${c.name} (${c.role})`);
+          });
+      }
+      
+      if (contributorsList.length > 0) {
+        otherContributors = contributorsList.join(" ; ");
       }
     }
-    
-    // Add author and contributors to title text
-    if (authorName) {
-      titleText += ` / ${authorName}${otherContributors}`;
-    } else if (otherContributors) {
-      titleText += ` /${otherContributors}`;
+  }
+  
+  // Add author and contributors to title text
+  if (authorText) {
+    titleText += ` / ${authorText}`;
+    if (otherContributors && !book.statementOfResponsibility) {
+      titleText += ` ; ${otherContributors}`;
     }
+  } else if (otherContributors) {
+    titleText += ` / ${otherContributors}`;
   }
   
   // Split the title text for proper wrapping
@@ -263,82 +267,76 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 4. Publication Information ---
   yPos += 2; // Extra space before publication info
   
-  // Build full publication string following the exact target format
-  let publicationInfo = '';
-  
-  // Start with edition information
-  if (book.edition) {
-    // Make sure edition is properly formatted as "Auflage" instead of just numbers
-    let editionText = book.edition;
-    
-    // If the edition doesn't include the word "Auflage", add it appropriately
-    if (!editionText.toLowerCase().includes("auflage")) {
-      // Check if it starts with a number
-      const match = editionText.match(/^(\d+)(?:\.)?/);
-      if (match) {
-        const num = match[1];
-        editionText = `${num}. Auflage`;
-      }
-    }
-    
-    publicationInfo += `${editionText}`;
-  }
-  
-  // Add location and publisher 
+  // Simplified publication info construction following German cataloging standards
+  const edition = book.edition || '';
   const location = book.publicationPlace || book.location || '';
   const publisher = book.publisher || '';
+  const year = book.publicationYear || book.publishedYear || '';
+  const pages = book.pageCount || '';
+  const illustrations = book.illustrations || '';
+  const dimensions = book.dimensions || '';
   
-  if (publicationInfo) {
-    publicationInfo += `. – ${location}: ${publisher}`;
-  } else {
-    publicationInfo += `${location}: ${publisher}`;
+  // Format edition properly if needed
+  let editionText = edition;
+  if (edition && !edition.toLowerCase().includes("auflage") && /^\d+/.test(edition)) {
+    const match = edition.match(/^(\d+)(?:\.)?/);
+    if (match) {
+      editionText = `${match[1]}. Auflage`;
+    }
   }
   
-  // Add year
-  const year = book.publicationYear || book.publishedYear;
+  // Build the publication info string in the required format
+  let publicationInfo = '';
+  
+  // Edition
+  if (editionText) {
+    publicationInfo += editionText;
+  }
+  
+  // Location and publisher
+  if (location || publisher) {
+    if (publicationInfo) {
+      publicationInfo += `. – ${location}: ${publisher}`;
+    } else {
+      publicationInfo += `${location}: ${publisher}`;
+    }
+  }
+  
+  // Year
   if (year) {
     publicationInfo += `, ${year}`;
   }
   
-  // Add physical description - pages
-  const pages = book.pageCount || '';
+  // Pages
   if (pages) {
     publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
-  } else {
+  } else if (publicationInfo) {
     publicationInfo += `. – `;
   }
   
-  // Add illustration information if available
-  if (book.illustrations) {
-    publicationInfo += `: ${book.illustrations}`;
-  } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
-    // Check if there are illustrators in contributors
-    let hasIllustrators = false;
-    
-    if (book.contributors) {
-      // New format - object with roles as keys
-      if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
-        hasIllustrators = true;
-      }
-      // Old format - array of objects with name and role
-      else if (Array.isArray(book.contributors)) {
-        hasIllustrators = book.contributors.some((c: any) => 
-          c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+  // Illustrations
+  let hasIllustrations = illustrations;
+  
+  // Check for illustrators in contributors if illustrations field is empty
+  if (!hasIllustrations && book.contributors) {
+    if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
+      hasIllustrations = 'Illustrationen';
+    } else if (Array.isArray(book.contributors)) {
+      const hasIllustrator = book.contributors.some((c: any) => 
+        c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+      if (hasIllustrator) {
+        hasIllustrations = 'Illustrationen';
       }
     }
-    
-    if (book.illustrator || hasIllustrators) {
-      publicationInfo += `: Illustrationen`;
-    }
-  } else {
-    // Default to "keine Illustrationen" if specifically requested to show this info
-    // Leave blank by default unless explicitly requested to show "keine Illustrationen"
-    // publicationInfo += `: keine Illustrationen`;
   }
   
-  // Add dimensions if available
-  if (book.dimensions) {
-    publicationInfo += ` ; ${book.dimensions}`;
+  if (hasIllustrations) {
+    publicationInfo += `: ${hasIllustrations}`;
+  }
+  
+  // Dimensions
+  if (dimensions) {
+    publicationInfo += ` ; ${dimensions}`;
   }
   
   // Split the publication info text for proper wrapping
