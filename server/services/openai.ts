@@ -40,25 +40,46 @@ export async function analyzeBookCover(image: string, apiKey?: string): Promise<
           role: "system",
           content: `You are a librarian following DNB/German RDA cataloguing standards.
           Extract the following information from the book cover image:
-          - ISBN
-          - Title
-          - Subtitle (if present)
-          - Main Author
-          - Statement of Responsibility
-          - Edition
-          - Publication Place
-          - Publisher
-          - Publication Year
-          - Dimensions
-          - Binding
-          - Price (if visible)
           
-          Format your response as a valid JSON object with these fields. Use null if information is not available.`
+          1. Book title
+          2. Subtitle (if present)
+          3. Author name(s)
+          4. ISBN (if visible)
+          5. Publisher
+          6. Edition information (if visible)
+          7. Publication year
+          8. Language
+          9. Format/binding type
+          10. Brief description of cover art
+          
+          Return the information in JSON format with these fields:
+          {
+            "title": "string",
+            "subtitle": "string or null",
+            "author": "string or null",
+            "isbn": "string or null",
+            "publisher": "string or null",
+            "edition": "string or null",
+            "publicationYear": "number or null",
+            "language": "string (two-letter language code)",
+            "binding": "string or null",
+            "coverDescription": "string"
+          }
+          
+          Important:
+          - Only extract information that is clearly visible in the image
+          - Use null for fields you cannot determine
+          - For language, use two-letter codes (e.g., 'de' for German, 'en' for English)
+          - Do not make up or guess any information
+          - Format the JSON properly so it can be parsed`
         },
         {
-          role: "user", 
+          role: "user",
           content: [
-            { type: "text", text: "Extract book metadata from this cover:" },
+            {
+              type: "text",
+              text: "Extract the book information from this cover image following DNB/German RDA standards."
+            },
             {
               type: "image_url",
               image_url: {
@@ -70,32 +91,17 @@ export async function analyzeBookCover(image: string, apiKey?: string): Promise<
       ],
       response_format: { type: "json_object" }
     });
-    
-    // Parse the response
-    const content = response.choices[0].message.content || "{}";
-    const result = JSON.parse(content);
-    
-    console.log("[API] Cover analysis completed");
-    
-    // Return the extracted data
-    return {
-      isbn: result.isbn || null,
-      title: result.title || null,
-      subtitle: result.subtitle || null,
-      mainAuthor: result.mainAuthor || null,
-      statementOfResponsibility: result.statementOfResponsibility || null,
-      edition: result.edition || null,
-      publicationPlace: result.publicationPlace || null,
-      publisher: result.publisher || null,
-      publicationYear: result.publicationYear || null,
-      dimensions: result.dimensions || null,
-      binding: result.binding || null,
-      price: result.price || null,
-      language: result.language || "de"
-    };
-  } catch (error: any) {
+
+    // Parse and return the JSON response
+    const result = JSON.parse(response.choices[0].message.content);
+    console.log("[API] Book cover analysis complete");
+    return result;
+  } catch (error) {
     console.error("[API] Error analyzing book cover:", error);
-    throw new Error(`Error analyzing book cover: ${error.message}`);
+    return {
+      error: "Failed to analyze book cover",
+      details: error.message
+    };
   }
 }
 
@@ -104,79 +110,42 @@ export async function analyzeBookCover(image: string, apiKey?: string): Promise<
  * Only generates summary, themes, and genres - no bibliographic data
  */
 export async function processBookAnalysis(
-  analysisRequest: BookAnalysisRequest
-): Promise<Partial<Book>> {
+  analysisRequest: BookAnalysisRequest,
+  apiKey?: string
+): Promise<any> {
+  const bookInfo = { ...analysisRequest };
   try {
-    console.log(`[API] Request to OpenAI API: ${JSON.stringify({
-      operation: "processBookAnalysis",
-      model: OPENAI_MODEL,
-      language: analysisRequest.language,
-      isbn: analysisRequest.isbn,
-      title: analysisRequest.title,
-      mainAuthor: analysisRequest.mainAuthor || analysisRequest.author
-    })}`);
+    console.log("[API] Processing book analysis with OpenAI...");
     
-    // Extract fields to ensure consistent structure
-    const bookInfo = {
-      isbn: analysisRequest.isbn || "",
-      title: analysisRequest.title || "",
-      subtitle: analysisRequest.subtitle || "",
-      mainAuthor: analysisRequest.mainAuthor || analysisRequest.author || "",
-      statementOfResponsibility: analysisRequest.statementOfResponsibility || "",
-      edition: analysisRequest.edition || "",
-      publicationPlace: analysisRequest.publicationPlace || "",
-      publisher: analysisRequest.publisher || "",
-      publicationYear: analysisRequest.publicationYear || analysisRequest.publishedYear || null,
-      pageCount: analysisRequest.pageCount || null,
-      dimensions: analysisRequest.dimensions || "",
-      binding: analysisRequest.binding || "",
-      price: analysisRequest.price || "",
-      language: analysisRequest.language || "de"
-    };
+    // Create OpenAI client with provided key or environment fallback
+    const openai = createOpenAIClient(apiKey);
     
-    // Extract additional content fields from the request
-    const description = analysisRequest.description || "";
-    const existingGenres = Array.isArray(analysisRequest.genres) && analysisRequest.genres.length > 0 
-      ? analysisRequest.genres.join(", ") 
-      : "";
-    const existingThemes = Array.isArray(analysisRequest.themes) && analysisRequest.themes.length > 0 
-      ? analysisRequest.themes.join(", ") 
-      : "";
-    const sources = analysisRequest.sources || "";
-    
-    // Define prompt based on DNB/German RDA standards with improved cataloging instructions
+    // Build a prompt to analyze the book
     const prompt = `
-    Book Information:
-    ISBN: ${bookInfo.isbn}
-    Title: ${bookInfo.title}
-    Subtitle: ${bookInfo.subtitle}
-    Main Author: ${bookInfo.mainAuthor}
-    Statement of Responsibility: ${bookInfo.statementOfResponsibility}
-    Edition: ${bookInfo.edition}
-    Publication Place: ${bookInfo.publicationPlace}
-    Publisher: ${bookInfo.publisher}
-    Publication Year: ${bookInfo.publicationYear}
-    Page Count: ${bookInfo.pageCount}
-    Dimensions: ${bookInfo.dimensions}
-    Binding: ${bookInfo.binding}
-    Price: ${bookInfo.price}
-    Language: ${bookInfo.language}
+    I need a professional library catalog entry for the following book in ${bookInfo.language || 'German'} language:
     
-    ${description ? `Authentic Book Description: ${description}` : ''}
-    ${existingGenres ? `Verified Genres: ${existingGenres}` : ''}
-    ${existingThemes ? `Identified Themes: ${existingThemes}` : ''}
-    ${sources ? `Data Sources: ${sources}` : ''}
+    BIBLIOGRAPHIC INFO:
+    - Title: ${bookInfo.title || 'Not available'}
+    - Author: ${bookInfo.author || bookInfo.mainAuthor || 'Not available'}
+    - ISBN: ${bookInfo.isbn || 'Not available'}
+    - Publisher: ${bookInfo.publisher || 'Not available'}
+    - Publication Year: ${bookInfo.publicationYear || 'Not available'}
+    - Edition: ${bookInfo.edition || 'Not available'}
+    - Page Count: ${bookInfo.pageCount || 'Not available'}
+    - Language: ${bookInfo.language || 'de'}
     
-    Given the metadata and description above, create a professional library catalog entry with:
-
-    1. A neutral summary in 3–5 sentences describing the book's content objectively.
-       - For fiction, include characters and plot.
-       - For non-fiction, mention main themes and goals.
-       - End the summary without any judgment or evaluation.
-
-    2. A critical review, beginning with "• ".
-       - Include a professional assessment of quality, relevance, and target audience.
-       - End with a recommendation for library acquisition.
+    ADDITIONAL CONTEXT:
+    ${bookInfo.description ? `Book Description: ${bookInfo.description}` : ''}
+    ${bookInfo.themes ? `Themes: ${bookInfo.themes.join(', ')}` : ''}
+    ${bookInfo.subject ? `Subject: ${bookInfo.subject}` : ''}
+    ${bookInfo.categories ? `Categories: ${bookInfo.categories.join(', ')}` : ''}
+    ${bookInfo.genres ? `Genres: ${bookInfo.genres.join(', ')}` : ''}
+    
+    For this catalog entry, I need ONLY:
+    
+    1. A neutral, factual summary of the book's content (approximately 150 words / 1000 characters). This should be a straightforward description of what the book is about based on authentic information.
+    
+    2. A critical review (approximately 150 words) that evaluates the book's content and importance for a library collection. Include a recommendation for acquisition. Start the review with a "• " bullet point character.
     
     Please format your response as a JSON object with these fields only:
     - summary: string (the neutral 3-5 sentence summary)
@@ -208,65 +177,71 @@ export async function processBookAnalysis(
     });
     
     // Parse the response
-    const content = response.choices[0].message.content || "{}";
-    let result;
+    const result = JSON.parse(response.choices[0].message.content);
+    console.log("[API] Book analysis complete");
     
-    try {
-      result = JSON.parse(content);
-    } catch (error) {
-      console.error("[API] Error parsing OpenAI response:", error);
-      throw new Error("Invalid response format from OpenAI");
-    }
-    
-    console.log("[API] FULL OPENAI RESULT OBJECT:", result);
-    
-    const usage = response.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-    
-    console.log(`[API] OpenAI API response: ${JSON.stringify({
-      operation: "processBookAnalysis",
-      status: "success", 
-      model: OPENAI_MODEL,
-      usage: usage,
-      fieldsProvided: Object.keys(result),
-      hallucinationDetected: false
-    })}`);
-    
-    // Return only summary and review from OpenAI, no themes/genres/classifications
+    // Return the OpenAI-generated fields merged with the original request
     return {
-      ...bookInfo,  // Include original book info
-      summary: result.summary || null,
-      review: result.review || null,  // Critical review field
+      ...bookInfo,
+      summary: result.summary,
+      review: result.review
     };
-  } catch (error: any) {
-    console.error("[API] OpenAI API error:", error);
-    throw new Error(`OpenAI API error: ${error.message}`);
+  } catch (error) {
+    console.error("[API] Error processing book analysis:", error);
+    return {
+      ...bookInfo,
+      error: "Failed to process book analysis",
+      details: error.message
+    };
   }
 }
 
 /**
  * Find similar books based on a reference book
  */
-export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
+export async function searchSimilarBooks(book: Partial<Book>, apiKey?: string): Promise<any[]> {
   try {
-    console.log(`[API] Requesting similar books for "${book.title}" by ${book.mainAuthor || book.author || 'Unknown'}`);
+    console.log("[API] Searching for similar books with OpenAI...");
     
-    // Create a prompt for the OpenAI API
+    // Create OpenAI client with provided key or environment fallback
+    const openai = createOpenAIClient(apiKey);
+    
+    // Build a prompt to find similar books
     const prompt = `
-    Based on this book:
-    Title: ${book.title || ""}
-    Author: ${book.mainAuthor || book.author || ""}
-    Genres: ${Array.isArray(book.genres) ? book.genres.join(", ") : (book.genres || "")}
+    I need recommendations for books similar to the following:
     
-    Suggest 5 similar books following DNB/German RDA standards. Format your response as a JSON array with objects containing these fields:
-    - title: string (required)
-    - subtitle: string (optional)
-    - mainAuthor: string (required)
-    - publicationYear: number (optional)
-    - isbn: string (optional)
-    - publisher: string (optional)
-    - summary: string (brief description, optional)
+    Title: ${book.title}
+    Author: ${book.author || book.mainAuthor}
+    Genre: ${book.genres?.join(', ') || 'Unknown'}
+    Themes: ${book.themes?.join(', ') || 'Unknown'}
+    Summary: ${book.summary || 'Not available'}
     
-    Only include books that actually exist. Do not generate fictional books.
+    Please suggest 5 similar books with these characteristics:
+    - Similar themes, subjects, or genres
+    - Books that readers of this book might also enjoy
+    - A mix of classic and contemporary titles
+    - Primarily in the ${book.language || 'German'} language
+    
+    For each recommendation, provide:
+    - Title
+    - Author
+    - ISBN (if a specific edition is recommended)
+    - Publication year
+    - Publisher
+    - A brief explanation of why it's similar
+    
+    Format your response as a valid JSON array of books:
+    [
+      {
+        "title": "string",
+        "author": "string",
+        "isbn": "string or null",
+        "publicationYear": number or null,
+        "publisher": "string or null",
+        "similarity": "string explaining why it's similar"
+      },
+      ...
+    ]
     `;
     
     // Make the API call
@@ -275,35 +250,24 @@ export async function searchSimilarBooks(book: Partial<Book>): Promise<any[]> {
       messages: [
         {
           role: "system",
-          content: "You are a knowledgeable librarian following DNB/German RDA cataloguing standards who can suggest books similar to a given reference book."
+          content: `You are a knowledgeable librarian specializing in book recommendations. Your task is to suggest similar books 
+          based on the information provided. Make accurate, thoughtful recommendations. Do not invent books that don't exist.
+          Prioritize well-known, authentic titles that match the requested language and themes.`
         },
         { role: "user", content: prompt }
       ],
-      temperature: 0.7,
+      temperature: 0.5,
       response_format: { type: "json_object" }
     });
     
-    // Parse the response
-    const content = response.choices[0].message.content || "{}";
-    let result;
-    
+    // Parse and return the results
     try {
-      result = JSON.parse(content);
-      // Ensure we have a books array
-      if (!Array.isArray(result) && result.books && Array.isArray(result.books)) {
-        result = result.books;
-      } else if (!Array.isArray(result)) {
-        result = [];
-      }
-    } catch (error) {
-      console.error("[API] Error parsing similar books response:", error);
+      const result = JSON.parse(response.choices[0].message.content);
+      return Array.isArray(result) ? result : [];
+    } catch (e) {
+      console.error("[API] Error parsing similar books response:", e);
       return [];
     }
-    
-    console.log(`[API] Found ${result.length} similar books via OpenAI`);
-    
-    // Return the books array
-    return result;
   } catch (error) {
     console.error("[API] Error finding similar books:", error);
     return [];

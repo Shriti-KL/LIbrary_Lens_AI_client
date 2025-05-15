@@ -8,10 +8,6 @@
 import axios from "axios";
 import { apiLogger } from "../utils/logger";
 
-// Configure API key and search engine ID from environment
-const GOOGLE_CSE_KEY = process.env.GOOGLE_CSE_KEY || process.env.GOOGLE_BOOKS_API_KEY;
-const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
-
 /**
  * Search Goodreads for a book via Google Custom Search
  * 
@@ -19,9 +15,16 @@ const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
  * 
  * @param title Book title to search for
  * @param author Book author (optional)
+ * @param apiKey Google CSE API key (optional)
+ * @param cseId Google Custom Search Engine ID (optional)
  * @returns Book data from Goodreads or error
  */
-export async function searchGoodreads(title: string, author: string = ""): Promise<any> {
+export async function searchGoodreads(
+  title: string, 
+  author: string = "", 
+  apiKey?: string,
+  cseId?: string
+): Promise<any> {
   if (!title) {
     console.log(`[API] Goodreads search skipped: No title provided`);
     return { error: "No title provided for Goodreads search" };
@@ -34,8 +37,12 @@ export async function searchGoodreads(title: string, author: string = ""): Promi
       author
     })}`);
 
+    // Use provided keys or fallback to environment variables
+    const googleCSEKey = apiKey || process.env.GOOGLE_CSE_KEY || process.env.GOOGLE_BOOKS_API_KEY;
+    const googleCSEId = cseId || process.env.GOOGLE_CSE_ID;
+
     // Check if we have the required credentials
-    if (!GOOGLE_CSE_KEY || !GOOGLE_CSE_ID) {
+    if (!googleCSEKey || !googleCSEId) {
       console.log(`[API] Goodreads search skipped: Missing Google CSE credentials`);
       return { 
         error: "Missing Google CSE credentials"
@@ -44,7 +51,7 @@ export async function searchGoodreads(title: string, author: string = ""): Promi
 
     // Prepare the search query (following Python implementation)
     const query = encodeURIComponent(`${title} ${author} site:goodreads.com`);
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CSE_KEY}&cx=${GOOGLE_CSE_ID}&q=${query}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${googleCSEKey}&cx=${googleCSEId}&q=${query}`;
 
     // Fetch data from Goodreads via Google CSE
     const response = await axios.get(url);
@@ -91,9 +98,15 @@ export async function searchGoodreads(title: string, author: string = ""): Promi
  * This replicates the google_book_search function from Python
  * 
  * @param query Search query text
+ * @param apiKey Google CSE API key (optional)
+ * @param cseId Google Custom Search Engine ID (optional)
  * @returns Array of book search results
  */
-export async function searchGoogleBooks(query: string): Promise<any[]> {
+export async function searchGoogleBooks(
+  query: string,
+  apiKey?: string,
+  cseId?: string
+): Promise<any[]> {
   if (!query) {
     console.log(`[API] Google CSE Books search skipped: No query provided`);
     return [];
@@ -105,15 +118,19 @@ export async function searchGoogleBooks(query: string): Promise<any[]> {
       query
     })}`);
 
+    // Use provided keys or fallback to environment variables
+    const googleCSEKey = apiKey || process.env.GOOGLE_CSE_KEY || process.env.GOOGLE_BOOKS_API_KEY;
+    const googleCSEId = cseId || process.env.GOOGLE_CSE_ID;
+
     // Check if we have the required credentials
-    if (!GOOGLE_CSE_KEY || !GOOGLE_CSE_ID) {
+    if (!googleCSEKey || !googleCSEId) {
       console.log(`[API] Google CSE Books search skipped: Missing Google CSE credentials`);
       // Return an empty array if credentials are missing
       return [];
     }
 
     const encodedQuery = encodeURIComponent(`${query} book review OR author OR isbn`);
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_CSE_KEY}&cx=${GOOGLE_CSE_ID}&q=${encodedQuery}`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${googleCSEKey}&cx=${googleCSEId}&q=${encodedQuery}`;
 
     // Fetch data from Google CSE
     const response = await axios.get(url);
