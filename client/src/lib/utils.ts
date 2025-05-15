@@ -167,6 +167,9 @@ interface NormalizedBookData {
   genres: string[];
   themes: string[];
   language: string;
+  reviewerName?: string; // Reviewer who created the critical review
+  ageRecommendation?: string; // Age recommendation for the book
+  dnbNumber?: string; // DNB catalog number
 }
 
 /**
@@ -201,7 +204,10 @@ function normalizeBookData(book: Book): NormalizedBookData {
     themes: Array.isArray(book.themes) 
       ? (book.themes as any[]).map(t => typeof t === 'string' ? t : (t && t.name) ? t.name : '')
       : [],
-    language: book.language || 'de'
+    language: book.language || 'de',
+    reviewerName: book.reviewerName || book.reviewer_name || '',
+    ageRecommendation: book.ageRecommendation || '',
+    dnbNumber: book.dnbNumber || ''
   };
 }
 
@@ -565,8 +571,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(10);
   
   // Use reviewer name if available, with multiple fallbacks
-  if (book.reviewerName) {
-    doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+  if (normalizedBook.reviewerName) {
+    doc.text(normalizedBook.reviewerName, 190, yPos, { align: 'right' });
   } else if (book.reviewer_name) {
     // Alternative field name
     doc.text(book.reviewer_name, 190, yPos, { align: 'right' });
@@ -585,19 +591,26 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
   
-  if (book.interestCategory) {
-    ikLine = `IK: ${book.interestCategory}`;
+  if (normalizedBook.interestCategory) {
+    ikLine = `IK: ${normalizedBook.interestCategory}`;
     
     // Add age recommendation if available
-    if (book.ageRecommendation) {
-      ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
+    if (normalizedBook.ageRecommendation) {
+      // Format age recommendation properly - handle singular/plural
+      const ageRec = normalizedBook.ageRecommendation;
+      // Check if it's "1" year or multiple years for proper grammar
+      const ageText = ageRec === '1' ? 'Jahr' : 'Jahren';
+      ikLine += `; geeignet ab ${ageRec} ${ageText}`;
     }
     
     doc.setFont("helvetica", "bold");
     doc.text(ikLine, 22, yPos);
     yPos += 5;
-  } else if (book.ageRecommendation) {
-    ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
+  } else if (normalizedBook.ageRecommendation) {
+    // Format age recommendation properly
+    const ageRec = normalizedBook.ageRecommendation;
+    const ageText = ageRec === '1' ? 'Jahr' : 'Jahren';
+    ikLine = `Geeignet ab ${ageRec} ${ageText}`;
     doc.setFont("helvetica", "bold");
     doc.text(ikLine, 22, yPos);
     yPos += 5;
