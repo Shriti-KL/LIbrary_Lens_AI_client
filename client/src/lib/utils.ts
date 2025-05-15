@@ -755,16 +755,26 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   // Add illustrations info if available
-  if (book.illustrations) pubInfo += pubInfo.length > 0 ? `: ${book.illustrations}` : book.illustrations;
+  if (book.illustrations) {
+    physDesc += physDesc ? `: ${book.illustrations}` : book.illustrations;
+  }
   
-  if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
+  // Add dimensions if available
+  if (book.dimensions) {
+    physDesc += physDesc ? ` ; ${book.dimensions}` : book.dimensions;
+  }
   
-  if (pubInfo.length > 0) {
-    const pubLines = doc.splitTextToSize(pubInfo, width - 10);
-    for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
-      doc.text(pubLines[i], x + 5, currentY);
-      currentY += 4;
-    }
+  if (physDesc) {
+    bibliographicLine += `. – ${physDesc}`;
+  }
+  
+  // Split text for grid with reduced width
+  const bibLines = doc.splitTextToSize(bibliographicLine, width - 10);
+  
+  // Draw bibliographic info with tight spacing
+  for (let i = 0; i < Math.min(bibLines.length, 4); i++) { // Limit to avoid overflowing
+    doc.text(bibLines[i], x + 5, currentY);
+    currentY += 3.5;
   }
   
   // --- ISBN and price - condensed ---
