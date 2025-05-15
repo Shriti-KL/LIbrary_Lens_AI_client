@@ -129,53 +129,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBook(book: InsertBook): Promise<Book> {
-    // Determine a valid author value - we need this since the author field is NOT NULL in the database
-    let authorValue = book.mainAuthor;
-    
-    // If mainAuthor is missing, try to get a suitable value from other fields
-    if (!authorValue) {
-      // Try to get author from statement of responsibility
-      if (book.statementOfResponsibility) {
-        const parts = book.statementOfResponsibility.split('/');
-        if (parts.length > 1) {
-          authorValue = parts[1].trim();
-        }
-      }
-      
-      // Fallback to contributors if available
-      // We need to use any typing here since contributors isn't in the InsertBook type
-      const bookAny = book as any;
-      if (!authorValue && bookAny.contributors && typeof bookAny.contributors === 'object') {
-        if (!Array.isArray(bookAny.contributors)) {
-          // New format: contributors as object with roles as keys
-          for (const role in bookAny.contributors) {
-            if (Array.isArray(bookAny.contributors[role]) && bookAny.contributors[role].length > 0) {
-              authorValue = bookAny.contributors[role][0];
-              break;
-            }
-          }
-        } else if (bookAny.contributors.length > 0) {
-          // Old format: contributors as array of objects
-          const firstContributor = bookAny.contributors[0];
-          if (firstContributor && firstContributor.name) {
-            authorValue = firstContributor.name;
-          }
-        }
-      }
-      
-      // Last resort fallback (required since the column is NOT NULL)
-      if (!authorValue) {
-        authorValue = book.title ? `${book.title} (Editor)` : 'Unknown Author';
-      }
-    }
-
     // Map the fields to the database column names
     const dbBook: Record<string, any> = {
       // Core bibliographic fields
       isbn: book.isbn,
       title: book.title,
       subtitle: book.subtitle,
-      author: authorValue, // Maintain the author field for backward compatibility
+      author: book.mainAuthor, // Maintain the author field for backward compatibility
       main_author: book.mainAuthor, // New field for the primary author
       statement_of_responsibility: book.statementOfResponsibility,
       edition: book.edition,

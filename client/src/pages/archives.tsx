@@ -836,21 +836,14 @@ export default function Archives() {
                       <div>
                         <h4 className="text-sm font-medium text-neutral-600 uppercase tracking-wider">{t('themes')}</h4>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {book.themes.map((theme, index) => {
-                            // Check if theme is an object with name property or just a string
-                            const isThemeObject = typeof theme === 'object' && theme !== null;
-                            const themeName = isThemeObject && 'name' in theme ? (theme as any).name : theme;
-                            const themeDescription = isThemeObject && 'description' in theme ? (theme as any).description : null;
-                            
-                            return (
-                              <div key={index} className="flex gap-1.5 items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
-                                <span className="text-sm">{themeName}</span>
-                                {themeDescription && (
-                                  <span className="text-xs text-blue-500">{themeDescription}</span>
-                                )}
-                              </div>
-                            );
-                          })}
+                          {book.themes.map((theme, index) => (
+                            <div key={index} className="flex gap-1.5 items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
+                              <span className="text-sm">{theme.name}</span>
+                              {theme.description && (
+                                <span className="text-xs text-blue-500">{theme.description}</span>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

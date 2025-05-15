@@ -128,7 +128,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 // Base types
 export type Book = typeof books.$inferSelect & {
   // Additional virtual fields that are not stored in the database directly
-  themes?: Array<string | { name: string; description?: string }>; // Support both string and object formats
+  themes?: string[];
   readingLevel?: string;
   error?: string;
   // Contributors for different roles (similar to Python implementation)
@@ -158,7 +158,7 @@ export type InsertBook = z.infer<typeof insertBookSchema>;
 export type BookAnalysisRequest = z.infer<typeof bookAnalysisSchema> & {
   // Additional runtime properties not in the database schema
   coverImageData?: string;
-  themes?: Array<string | { name: string; description?: string }>; // Match Book type structure
+  themes?: string[];
   readingLevel?: string;
   contributors?: {[role: string]: string[]};  // Added contributors field
   error?: string;
