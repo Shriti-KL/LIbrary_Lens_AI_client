@@ -140,6 +140,71 @@ interface BookMetadata {
   [key: string]: any; // Allow for other dynamic properties
 }
 
+// Preprocessed book data for PDF generation with consistent fields
+interface NormalizedBookData {
+  id: number | null;
+  isbn: string;
+  title: string;
+  subtitle: string;
+  author: string;
+  mainAuthor: string;
+  statementOfResponsibility: string;
+  contributors: { [role: string]: string[] } | any[];
+  edition: string;
+  publicationPlace: string;
+  publisher: string;
+  publicationYear: number | null;
+  pageCount: number | null;
+  illustrations: string;
+  dimensions: string;
+  binding: string;
+  price: string;
+  catalogNumber: string; // ASB number
+  secondaryClassification: string;
+  interestCategory: string;
+  summary: string;
+  review: string;
+  genres: string[];
+  themes: string[];
+  language: string;
+}
+
+/**
+ * Normalize book data to ensure consistent formatting in PDF exports
+ * This helps prevent issues with missing or inconsistent data formats
+ */
+function normalizeBookData(book: Book): NormalizedBookData {
+  return {
+    id: book.id || null,
+    isbn: book.isbn || '',
+    title: book.title || '',
+    subtitle: book.subtitle || '',
+    author: book.author || '',
+    mainAuthor: book.mainAuthor || book.author || '',
+    statementOfResponsibility: book.statementOfResponsibility || '',
+    contributors: book.contributors || [],
+    edition: book.edition || '',
+    publicationPlace: book.publicationPlace || book.location || '',
+    publisher: book.publisher || '',
+    publicationYear: book.publicationYear || book.publishedYear || null,
+    pageCount: book.pageCount || null,
+    illustrations: book.illustrations || '',
+    dimensions: book.dimensions || '',
+    binding: book.binding || '',
+    price: book.price || '',
+    catalogNumber: book.catalogNumber || book.classificationNumber || '',
+    secondaryClassification: book.secondaryClassification || book.additionalClassifications || '',
+    interestCategory: book.interestCategory || '',
+    summary: book.summary || '',
+    review: book.review || '',
+    genres: Array.isArray(book.genres) ? book.genres : [],
+    themes: Array.isArray(book.themes) 
+      ? (book.themes as any[]).map(t => typeof t === 'string' ? t : (t && t.name) ? t.name : '')
+      : [],
+    language: book.language || 'de'
+  };
+}
+
 // Format a single book for PDF export - returns the ending Y position
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
@@ -588,25 +653,26 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
+    compress: true // Use compression for smaller file size
   });
   
+  // Normalize book data to ensure consistent formatting
+  const normalizedBook = normalizeBookData(book);
+  
   // Configure language-specific text
-  const bookLanguage = book.language || language;
+  const bookLanguage = normalizedBook.language || language;
   
-  // Modify any labels or text based on the book's language
-  // Note: The formatBookEntryForPDF function already handles German formatting
-  // with commas for decimal points, "Seiten" instead of "pages", etc.
-  
-  // Format book entry
+  // Format book entry with normalized data
   formatBookEntryForPDF(doc, book);
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
-  const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+  const safeFilename = (normalizedBook.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
   
   // Set the correct filename prefix based on language
   const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
-  doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
+  const timestamp = new Date().toISOString().substring(0, 10);
+  doc.save(`${safeFilename || `${filenamePrefix}_${timestamp}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
