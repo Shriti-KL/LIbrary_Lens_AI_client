@@ -400,17 +400,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const results = [];
       
+      // Get session API keys
+      const apiKeys = (req.session as SessionData).apiKeys || {};
+      
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
         
         try {
           const base64Image = file.buffer.toString('base64');
-          const coverData = await analyzeBookCover(base64Image);
+          const coverData = await analyzeBookCover(base64Image, apiKeys.openai_api_key);
           
           let bookData;
           
           if (coverData.isbn) {
-            bookData = await verifyBookByIsbn(coverData.isbn);
+            bookData = await verifyBookByIsbn(coverData.isbn, apiKeys);
             bookData.coverImageData = base64Image;
           } else {
             bookData = coverData;
@@ -460,13 +463,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "At least title, author, or genres are required" });
       }
       
+      // Get session API keys
+      const apiKeys = (req.session as SessionData).apiKeys || {};
+      
       const { searchSimilarBooks } = await import("./services/openai");
       
       const similarBooks = await searchSimilarBooks({
         title: title || "",
         author: author || "",
         genres: genres || []
-      });
+      }, apiKeys.openai_api_key);
       
       res.json({ similarBooks });
     } catch (error: any) {
