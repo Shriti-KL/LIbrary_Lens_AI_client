@@ -449,7 +449,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 8. Interest category (IK) and Age recommendation on bottom left ---
-  yPos += 10;
+  yPos += 8; // Reduced spacing to maintain balanced layout
   
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
@@ -463,11 +463,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(9); // Slightly smaller font for metadata information
     doc.text(ikLine, 22, yPos);
     yPos += 5;
   } else if (book.ageRecommendation) {
     ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
     doc.text(ikLine, 22, yPos);
     yPos += 5;
   }
@@ -484,6 +486,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (initials && (sequenceNumber || idbYear)) {
     idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(9); // Match size with IK section
     doc.text(idBLine, 22, yPos);
     yPos += 5;
   }
@@ -491,9 +494,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Legacy format support - if an ID-B number is provided directly
   else if (book.idBNumber) {
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
     doc.text(book.idBNumber, 22, yPos);
     yPos += 5;
   }
+  
+  // Reset font settings to default after special sections
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
   
   // --- 10. Barcode and footer ---
   yPos += 10;
