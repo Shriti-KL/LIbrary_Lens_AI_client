@@ -151,14 +151,18 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Top-left ASB label
   doc.text("ASB:", 22, yPos);
   
-  // Top-right classification number
-  const asbNumber = book.classificationNumber || "";
+  // Top-right classification number (ASB)
+  const asbNumber = book.classificationNumber || book.ASB || "";
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
   // Second line - additional classifications under ASB
   yPos += 7;
-  const additionalClass = book.additionalClassifications || "";
-  doc.text(additionalClass, 22, yPos);
+  // Include DNB number as additional classification if available
+  let addClassText = book.additionalClassifications || "";
+  if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
+    addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
+  }
+  doc.text(addClassText, 22, yPos);
   
   yPos += 15; // Space after classifications
   
@@ -313,6 +317,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     if (book.illustrator || hasIllustrators) {
       publicationInfo += `: Illustrationen`;
     }
+  } else {
+    // Default to "keine Illustrationen" if specifically requested to show this info
+    // Leave blank by default unless explicitly requested to show "keine Illustrationen"
+    // publicationInfo += `: keine Illustrationen`;
   }
   
   // Add dimensions if available
@@ -416,9 +424,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // Use reviewer name if available
+  // Use reviewer name if available, with multiple fallbacks
   if (book.reviewerName) {
     doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+  } else if (book.reviewer_name) {
+    // Alternative field name
+    doc.text(book.reviewer_name, 190, yPos, { align: 'right' });
+  } else if (book.user && typeof book.user === 'object' && book.user.fullName) {
+    // Fallback to user's full name if available
+    doc.text(book.user.fullName, 190, yPos, { align: 'right' });
+  } else if (book.userId) {
+    // If only user ID is available, we show a placeholder
+    // In a real implementation, we would fetch user details from the database
+    doc.text(`ID: ${book.userId}`, 190, yPos, { align: 'right' });
   }
   
   // --- 8. Interest category (IK) and Age recommendation on bottom left ---
@@ -448,17 +466,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 9. ID-B information in format: ID-[Initials] [Number]/[Year] ---
   let idBLine = '';
   
-  if (book.idbInitials || book.idbSequenceNumber || book.idbYear) {
-    const initials = book.idbInitials || '';
-    const sequenceNumber = book.idbSequenceNumber || '';
-    const year = book.idbYear || '';
-    
-    if (initials && (sequenceNumber || year)) {
-      idBLine = `ID-${initials} ${sequenceNumber}/${year}`;
-      doc.setFont("helvetica", "normal");
-      doc.text(idBLine, 22, yPos);
-      yPos += 5;
-    }
+  // Support multiple field naming conventions for these fields
+  const initials = book.idbInitials || book.idb_initials || '';
+  const sequenceNumber = book.idbSequenceNumber || book.idb_sequence_number || '';
+  const idbYear = book.idbYear || book.idb_year || '';
+  
+  // If we have at least initials and one other field, show the ID-B line
+  if (initials && (sequenceNumber || idbYear)) {
+    idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
+    doc.setFont("helvetica", "normal");
+    doc.text(idBLine, 22, yPos);
+    yPos += 5;
+  }
+  
+  // Legacy format support - if an ID-B number is provided directly
+  else if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, 22, yPos);
+    yPos += 5;
   }
   
   // --- 10. Barcode and footer ---
