@@ -749,7 +749,12 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // --- ISBN and price - condensed ---
   if (book.isbn) {
-    currentY += 2;
+    currentY += 3; // Increased spacing before ISBN line
+    
+    // Format ISBN with consistent typography
+    doc.setFontSize(gridFontSize - 0.5); // Slightly smaller font for ISBN
+    doc.setFont("helvetica", "normal");
+    
     let isbnText = `ISBN ${formatISBN(book.isbn)}`;
     
     // Add binding type if available
@@ -757,18 +762,24 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
       isbnText += ` - ${book.binding}`;
     }
     
-    // Add price if available
+    // Add price if available (with comma as decimal separator for German formatting)
     if (book.price) {
       isbnText += ` : EUR ${book.price.toString().replace('.', ',')}`;
     }
     
+    // Ensure ISBN fits in the available space
     doc.text(doc.splitTextToSize(isbnText, width - 10)[0], x + 5, currentY);
     currentY += 5;
   }
   
   // --- Summary and Review - ensure full content appears ---
   if (book.summary || book.review) {
-    doc.setFontSize(gridFontSize - 1);
+    // Add proper spacing before summary
+    currentY += 2;
+    
+    // Set consistent typography for summary text
+    doc.setFontSize(gridFontSize - 1); // Smallest font size for summary in grid
+    doc.setFont("helvetica", "normal");
     
     // Combine summary and review with the | separator
     let summaryText = '';
@@ -776,7 +787,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
       summaryText = book.summary;
     }
     if (book.summary && book.review) {
-      summaryText += ' | ';
+      summaryText += ' | '; // Clear visual separator between summary and review
     }
     if (book.review) {
       summaryText += book.review;
@@ -817,27 +828,74 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
     
-    // Show all lines of the summary and review
-    const linesToShow = summaryLines.length;
+    // Limit the number of lines shown in the grid view to keep cell sizes consistent
+    const maxLinesToShow = 5; // Show at most 5 lines in grid view
+    const linesToShow = Math.min(summaryLines.length, maxLinesToShow);
     
+    // Display summary text with proper justification for clean appearance
     for (let i = 0; i < linesToShow; i++) {
-      doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
-      currentY += lineHeight; // Reduced line spacing to fit more text
+      doc.text(summaryLines[i], x + 5, currentY, { 
+        align: 'justify',
+        maxWidth: width - 12 // Slightly narrower for better margins
+      });
+      currentY += lineHeight; // Consistent spacing between lines
     }
     
-    // No ellipsis needed since we're showing all lines
+    // Add ellipsis if we truncated the text
+    if (summaryLines.length > maxLinesToShow) {
+      doc.text("...", x + 5, currentY);
+      currentY += lineHeight;
+    }
   }
   
-  // --- IK category and ID-B number ---
-  // Calculate where the remaining footer content should go
-  // We need to leave space for barcode (approx 20mm) and other footer elements
+  // --- IK category and ID-B number at bottom of grid cell ---
   
-  // Create a new page if we don't have enough space for the barcode/footer
-  // Check if we're getting too close to the bottom of the cell
-  const spaceNeededForFooter = 30; // Space needed for barcode and footer text
+  // Add spacing before bottom section
+  currentY += 3;
   
-  // If the currentY position is too close to the bottom edge of the specified height,
-  // increase the cell height dynamically
+  // Set consistent typography for bottom section
+  doc.setFontSize(gridFontSize - 0.5); // Consistent with ISBN size
+  
+  // Interest category with age recommendation
+  if (book.interestCategory || book.ageRecommendation) {
+    // Format IK line with proper styling
+    doc.setFont("helvetica", "bold"); // Bold for IK
+    
+    let ikLine = '';
+    if (book.interestCategory) {
+      ikLine = `IK: ${book.interestCategory}`;
+    }
+    
+    // Add age recommendation in abbreviated format for grid
+    if (book.ageRecommendation) {
+      if (ikLine) {
+        ikLine += `; ab ${book.ageRecommendation} J.`;
+      } else {
+        ikLine = `Ab ${book.ageRecommendation} Jahren`;
+      }
+    }
+    
+    doc.text(ikLine, x + 5, currentY);
+    currentY += 4;
+  }
+  
+  // ID-B information in the grid footer
+  const initials = book.idbInitials || book.idb_initials || '';
+  const sequenceNumber = book.idbSequenceNumber || book.idb_sequence_number || '';
+  const idbYear = book.idbYear || book.idb_year || '';
+  
+  if (initials && (sequenceNumber || idbYear)) {
+    doc.setFont("helvetica", "normal"); // Normal weight for ID-B
+    let idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
+    doc.text(idBLine, x + 5, currentY);
+    currentY += 4;
+  } 
+  // Legacy ID-B number support
+  else if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, x + 5, currentY);
+    currentY += 4;
+  }
   if (currentY > y + height - spaceNeededForFooter) {
     // Instead of creating a new page, we'll put some space and continue
     // This is better than cutting off mid-sentence
