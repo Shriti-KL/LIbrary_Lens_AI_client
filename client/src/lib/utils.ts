@@ -279,10 +279,20 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const location = book.publicationPlace || book.location || '';
   const publisher = book.publisher || '';
   
-  if (publicationInfo) {
-    publicationInfo += `. – ${location}: ${publisher}`;
-  } else {
-    publicationInfo += `${location}: ${publisher}`;
+  // Only add location/publisher information if at least one is present
+  if (location || publisher) {
+    const separator = publicationInfo ? '. – ' : '';
+    
+    if (location && publisher) {
+      publicationInfo += `${separator}${location}: ${publisher}`;
+    } else if (location) {
+      publicationInfo += `${separator}${location}`;
+    } else if (publisher) {
+      publicationInfo += `${separator}${publisher}`;
+    }
+  } else if (publicationInfo) {
+    // Only add separator if we already have some content (like edition)
+    publicationInfo += '. – ';
   }
   
   // Add year
@@ -293,43 +303,52 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Add physical description - pages
   const pages = book.pageCount || '';
+  
+  // Only add page info if available, otherwise no need for empty separator
   if (pages) {
-    publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
-  } else {
-    publicationInfo += `. – `;
+    // Add separator only if we have content so far
+    const separator = publicationInfo ? '. – ' : '';
+    publicationInfo += `${separator}${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+  } else if (publicationInfo) {
+    // Only add this separator if we have previous content
+    publicationInfo += '. – ';
   }
   
   // Add illustration information if available
-  if (book.illustrations) {
-    publicationInfo += `: ${book.illustrations}`;
-  } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
-    // Check if there are illustrators in contributors
-    let hasIllustrators = false;
-    
-    if (book.contributors) {
-      // New format - object with roles as keys
-      if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
-        hasIllustrators = true;
+  // Only add illustration info if we have preceding content
+  if (publicationInfo) {
+    if (book.illustrations) {
+      publicationInfo += `: ${book.illustrations}`;
+    } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
+      // Check if there are illustrators in contributors
+      let hasIllustrators = false;
+      
+      if (book.contributors) {
+        // New format - object with roles as keys
+        if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
+          hasIllustrators = true;
+        }
+        // Old format - array of objects with name and role
+        else if (Array.isArray(book.contributors)) {
+          hasIllustrators = book.contributors.some((c: any) => 
+            c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+        }
       }
-      // Old format - array of objects with name and role
-      else if (Array.isArray(book.contributors)) {
-        hasIllustrators = book.contributors.some((c: any) => 
-          c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+      
+      if (book.illustrator || hasIllustrators) {
+        publicationInfo += `: Illustrationen`;
       }
     }
-    
-    if (book.illustrator || hasIllustrators) {
-      publicationInfo += `: Illustrationen`;
-    }
-  } else {
-    // Default to "keine Illustrationen" if specifically requested to show this info
-    // Leave blank by default unless explicitly requested to show "keine Illustrationen"
-    // publicationInfo += `: keine Illustrationen`;
   }
   
-  // Add dimensions if available
+  // Add dimensions if available and have preceding content
   if (book.dimensions) {
-    publicationInfo += ` ; ${book.dimensions}`;
+    // Only add dimensions if we have preceding content
+    if (publicationInfo) {
+      publicationInfo += ` ; ${book.dimensions}`;
+    } else {
+      publicationInfo += book.dimensions;
+    }
   }
   
   // Split the publication info text for proper wrapping
