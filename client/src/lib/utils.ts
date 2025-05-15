@@ -668,44 +668,91 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   currentY += 5;
   
-  // --- Book title ---
+  // --- Bibliographic Information as a single continuous block ---
   doc.setFont("helvetica", "normal");
   
-  // Truncate and format the title to fit
-  let titleText = book.title;
-  if (titleText.length > 60) {
-    titleText = titleText.substring(0, 57) + "...";
+  // Start building bibliographic line with title and subtitle
+  let titleFull = book.title || "";
+  let subtitle = book.subtitle || '';
+  
+  // Extract subtitle from title if not provided separately
+  if (!subtitle) {
+    if (titleFull.includes(" - ")) {
+      const titleParts = titleFull.split(" - ");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(" - ").trim();
+    } else if (titleFull.includes(":")) {
+      const titleParts = titleFull.split(":");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(":").trim();
+    }
   }
   
-  // Add author after title
-  titleText += ` / ${book.author}`;
-  
-  // Split for wrapping with reduced width
-  const titleLines = doc.splitTextToSize(titleText, width - 10);
-  for (let i = 0; i < Math.min(titleLines.length, 3); i++) { // Limit to 3 lines
-    doc.text(titleLines[i], x + 5, currentY);
-    currentY += 4;
+  // Build complete bibliographic line
+  let bibliographicLine = titleFull;
+  if (subtitle) {
+    bibliographicLine += `: ${subtitle}`;
   }
   
-  currentY += 2;
+  // Add statement of responsibility
+  if (book.statementOfResponsibility) {
+    bibliographicLine += ` / ${book.statementOfResponsibility.trim()}`;
+  } else {
+    // Use author information
+    let authorName = book.mainAuthor || book.author || "";
+    if (authorName) bibliographicLine += ` / ${authorName.trim()}`;
+    
+    // Add contributors if available
+    if (book.contributors && typeof book.contributors === 'object') {
+      let contributorsText = "";
+      if (!Array.isArray(book.contributors)) {
+        // New format with roles as keys
+        const contributorsList = [];
+        for (const role in book.contributors) {
+          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+          }
+        }
+        if (contributorsList.length > 0) {
+          contributorsText = ` ; ${contributorsList.join(" ; ")}`;
+          bibliographicLine += contributorsText;
+        }
+      }
+    }
+  }
   
-  // --- Publication info - condensed ---
-  let pubInfo = "";
+  // Add edition, publication place, publisher, year
+  if (book.edition) bibliographicLine += `. – ${book.edition}`;
   
-  // Add components only if they exist, using the new field names with fallbacks
-  if (book.edition) pubInfo += book.edition;
+  // Publication place and publisher
+  const place = book.publicationPlace || book.location || '';
+  const publisher = book.publisher || '';
+  const year = book.publicationYear || book.publishedYear || '';
   
-  // Use publicationPlace first, with location as fallback
-  const location = book.publicationPlace || book.location;
-  if (location) pubInfo += pubInfo.length > 0 ? ` – ${location}` : location;
+  let pubInfo = '';
+  if (place && publisher) {
+    pubInfo = `${place}: ${publisher}`;
+  } else if (place) {
+    pubInfo = place;
+  } else if (publisher) {
+    pubInfo = publisher;
+  }
   
-  if (book.publisher) pubInfo += pubInfo.length > 0 ? `: ${book.publisher}` : book.publisher;
+  if (year && pubInfo) {
+    pubInfo += `, ${year}`;
+  } else if (year) {
+    pubInfo = `${year}`;
+  }
   
-  // Use publicationYear first, with publishedYear as fallback
-  const year = book.publicationYear || book.publishedYear;
-  if (year) pubInfo += pubInfo.length > 0 ? `, ${year}` : `${year}`;
+  if (pubInfo) {
+    bibliographicLine += `. – ${pubInfo}`;
+  }
   
-  if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
+  // Add physical description
+  let physDesc = '';
+  if (book.pageCount) {
+    physDesc = `${book.pageCount} ${Number(book.pageCount) === 1 ? 'Seite' : 'Seiten'}`;
+  }
   
   // Add illustrations info if available
   if (book.illustrations) pubInfo += pubInfo.length > 0 ? `: ${book.illustrations}` : book.illustrations;
