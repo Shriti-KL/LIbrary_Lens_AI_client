@@ -561,42 +561,22 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 5;
   }
   
-  // --- 10. Barcode and footer ---
+  // --- 10. Footer (no barcode) ---
   yPos += 10;
   
-  // Generate a barcode and center it
-  const barcodeHeight = 12;
-  const barcodeWidth = 90;
-  const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
-  
-  // Add the classification number above the barcode
+  // Add the classification number (no barcode)
+  const startX = doc.internal.pageSize.width / 2;
   doc.setFontSize(7);
-  doc.setFont("courier", "normal");
-  doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
+  doc.setFont("helvetica", "normal");
   
-  // Draw barcode lines
-  doc.setDrawColor(0);
-  doc.setFillColor(0, 0, 0);
-  doc.setLineWidth(0.1);
-  
-  // Create a realistic barcode pattern
-  let barX = startX;
-  const numBars = 50;
-  const spacing = barcodeWidth / numBars;
-  
-  for (let i = 0; i < numBars; i++) {
-    const isThickBar = (i % 7 === 0 || i % 11 === 0 || i % 3 === 2);
-    const barWidth = isThickBar ? spacing * 2 : spacing * 0.7;
-    
-    if (i % 4 !== 3 || i % 8 === 0) {
-      doc.rect(barX, yPos, barWidth, barcodeHeight, 'F');
-    }
-    
-    barX += spacing;
+  // Add ASB number if available
+  if (asbNumber && asbNumber.trim() !== "") {
+    doc.text(asbNumber, startX, yPos, { align: 'center' });
+    yPos += 5;
   }
   
-  // Add ekz-Informationsdienst text below barcode
-  yPos += barcodeHeight + 5;
+  // Add ekz-Informationsdienst text
+  yPos += 3;
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
@@ -916,33 +896,19 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     doc.text(book.idBNumber, x + 5, currentY);
   }
   
-  // --- Barcode and footer ---
-  // Draw simplified barcode
-  currentY = y + height - 15;
-  const barcodeWidth = width * 0.7;
-  const barcodeHeight = 8;
-  const barcodeX = x + (width - barcodeWidth) / 2;
+  // --- Footer (no barcode) ---
+  // Position the footer at the bottom
+  currentY = y + height - 8;
   
-  // Add ASB number above barcode
+  // Add ASB number
   doc.setFontSize(7);
-  doc.setFont("courier", "normal");
-  doc.text(asbNumber.toString(), barcodeX + barcodeWidth/2, currentY - 1, { align: 'center' });
-  
-  // Draw barcode
-  doc.setDrawColor(0);
-  doc.setFillColor(0, 0, 0); // RGB format expected by jsPDF
-  
-  for (let i = 0; i < 30; i++) {
-    const barX = barcodeX + (i * (barcodeWidth / 30));
-    const barWidth = 0.7 * (barcodeWidth / 30);
-    
-    if (i % 3 !== 1) { // Pattern for barcode
-      doc.rect(barX, currentY, barWidth, barcodeHeight, 'F');
-    }
+  doc.setFont("helvetica", "normal");
+  if (asbNumber && asbNumber.toString().trim() !== "") {
+    doc.text(asbNumber.toString(), x + width/2, currentY, { align: 'center' });
+    currentY += 4;
   }
   
   // Add ekz footer text
-  currentY += barcodeHeight + 3;
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.text("ekz-Informationsdienst", x + width/2, currentY, { align: 'center' });
