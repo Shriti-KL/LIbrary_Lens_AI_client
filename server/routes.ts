@@ -80,6 +80,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.apiKeys.google_cse_key &&
       req.session.apiKeys.google_cse_id
     );
+    
+    console.log(`[DEBUG] API Keys Status - User: ${req.user.username}, Has keys: ${!!hasKeys}`);
+    console.log(`[DEBUG] OpenAI key exists: ${!!req.session.apiKeys?.openai_api_key}`);
+    console.log(`[DEBUG] Google Books key exists: ${!!req.session.apiKeys?.google_books_api_key}`);
+    console.log(`[DEBUG] Google CSE key exists: ${!!req.session.apiKeys?.google_cse_key}`);
+    console.log(`[DEBUG] Google CSE ID exists: ${!!req.session.apiKeys?.google_cse_id}`);
 
     return res.status(200).json({ 
       hasKeys: !!hasKeys,
