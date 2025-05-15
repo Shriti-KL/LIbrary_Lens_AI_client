@@ -441,9 +441,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 7. Reviewer name in bottom right ---
-  yPos += 5;
+  // Add proper spacing before bottom section with reviewer name
+  yPos += 8; // Increased spacing for clear visual separation
+  
+  // Set consistent styling for reviewer name
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(10); // Smaller font for reviewer name
   
   // Use reviewer name if available, with multiple fallbacks
   if (book.reviewerName) {
@@ -461,7 +464,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 8. Interest category (IK) and Age recommendation on bottom left ---
-  yPos += 10;
+  // Appropriate spacing after reviewer name
+  yPos += 8; // Use consistent spacing for bottom section elements
   
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
@@ -474,14 +478,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
     }
     
-    doc.setFont("helvetica", "bold");
+    doc.setFont("helvetica", "bold"); // Use bold for IK category
+    doc.setFontSize(10); // Maintain consistent font size in bottom section
     doc.text(ikLine, 22, yPos);
-    yPos += 5;
+    yPos += 6; // Space after IK line
   } else if (book.ageRecommendation) {
     ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
     doc.text(ikLine, 22, yPos);
-    yPos += 5;
+    yPos += 6; // Space after age recommendation
+  } else {
+    // If neither IK nor age recommendation available, still maintain vertical spacing
+    yPos += 2;
   }
   
   // --- 9. ID-B information in format: ID-[Initials] [Number]/[Year] ---
@@ -492,19 +501,20 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const sequenceNumber = book.idbSequenceNumber || book.idb_sequence_number || '';
   const idbYear = book.idbYear || book.idb_year || '';
   
+  // Set consistent typography for ID-B line
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  
   // If we have at least initials and one other field, show the ID-B line
   if (initials && (sequenceNumber || idbYear)) {
     idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
-    doc.setFont("helvetica", "normal");
     doc.text(idBLine, 22, yPos);
-    yPos += 5;
+    yPos += 6; // Space after ID-B line
   }
-  
   // Legacy format support - if an ID-B number is provided directly
   else if (book.idBNumber) {
-    doc.setFont("helvetica", "normal");
     doc.text(book.idBNumber, 22, yPos);
-    yPos += 5;
+    yPos += 6; // Space after ID-B number
   }
   
   // --- 10. Barcode and footer ---
@@ -626,17 +636,24 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // ASB label left
   doc.text("ASB:", x + 5, currentY);
   
-  // ASB number right
-  const asbNumber = book.catalogNumber || "";
+  // ASB number right - using classificationNumber with fallback to ASB property
+  const asbNumber = book.classificationNumber || book.ASB || book.catalogNumber || "";
   if (asbNumber) {
     doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
   }
   
   // Secondary classification under ASB
   currentY += 5;
-  const secondaryCode = book.secondaryClassification || "";
-  if (secondaryCode) {
-    doc.text(secondaryCode, x + 5, currentY);
+  
+  // Include DNB number in additional classifications if available
+  let additionalCodes = book.additionalClassifications || book.secondaryClassification || "";
+  if (book.dnbNumber && !additionalCodes.includes(book.dnbNumber)) {
+    additionalCodes = additionalCodes ? `${additionalCodes}, ${book.dnbNumber}` : book.dnbNumber;
+  }
+  
+  if (additionalCodes) {
+    doc.setFont("helvetica", "normal"); // Use normal weight for additional classifications
+    doc.text(additionalCodes, x + 5, currentY);
   }
   
   currentY += 8;
@@ -650,36 +667,59 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
+  // Use consistent typography - author in bold with slightly larger text
+  doc.setFontSize(gridFontSize + 1);
   doc.setFont("helvetica", "bold");
   doc.text(authorFormatted + ":", x + 5, currentY);
   
-  currentY += 5;
+  // Proper spacing after author
+  currentY += 6;
   
   // --- Book title ---
-  doc.setFont("helvetica", "normal");
+  // First line in bold, rest in normal weight
+  doc.setFontSize(gridFontSize);
+  doc.setFont("helvetica", "bold");
   
-  // Truncate and format the title to fit
-  let titleText = book.title;
-  if (titleText.length > 60) {
-    titleText = titleText.substring(0, 57) + "...";
+  // Format the title to fit nicely
+  let titleText = book.title || "";
+  
+  // Add subtitle if available
+  if (book.subtitle) {
+    titleText += `: ${book.subtitle}`;
   }
   
-  // Add author after title
-  titleText += ` / ${book.author}`;
+  // Add statement of responsibility if different from author
+  if (book.statementOfResponsibility && book.statementOfResponsibility !== book.author) {
+    titleText += ` / ${book.statementOfResponsibility}`;
+  } else if (book.author) {
+    // Only add author again if needed for proper citation
+    // In compact view, we might want to avoid repeating the author
+    // titleText += ` / ${book.author}`;
+  }
   
   // Split for wrapping with reduced width
   const titleLines = doc.splitTextToSize(titleText, width - 10);
+  
+  // First line in bold, the rest in normal weight
   for (let i = 0; i < Math.min(titleLines.length, 3); i++) { // Limit to 3 lines
+    if (i === 0) {
+      doc.setFont("helvetica", "bold");
+    } else {
+      doc.setFont("helvetica", "normal");
+    }
     doc.text(titleLines[i], x + 5, currentY);
-    currentY += 4;
+    currentY += 4.5; // Slightly increased line spacing for readability
   }
   
   currentY += 2;
   
   // --- Publication info - condensed ---
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(gridFontSize - 0.5); // Slightly smaller font for publication details
+  
   let pubInfo = "";
   
-  // Add components only if they exist, using the new field names with fallbacks
+  // Add components only if they exist, using consistent field naming with fallbacks
   if (book.edition) pubInfo += book.edition;
   
   // Use publicationPlace first, with location as fallback
