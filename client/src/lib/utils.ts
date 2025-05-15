@@ -119,9 +119,28 @@ export function formatISBN(isbn: string | null): string {
 }
 
 // Remove hyphens and other non-alphanumeric characters from ISBN for searching
+// This function standardizes ISBN formats for accurate comparisons/searching
 export function cleanISBNForSearch(isbn: string | null): string {
   if (!isbn) return '';
-  return isbn.replace(/[^\dX]/gi, '');
+  
+  // Remove all non-digit and non-X characters (X can appear as check digit in ISBN-10)
+  const cleaned = isbn.replace(/[^\dX]/gi, '');
+  
+  // Handle common edge cases
+  if (cleaned.length === 10 || cleaned.length === 13) {
+    // Valid ISBN-10 or ISBN-13 length
+    return cleaned;
+  } else if (cleaned.length > 13) {
+    // Sometimes ISBNs have additional code digits at the end
+    // Return the first 13 digits as standard ISBN-13
+    return cleaned.substring(0, 13);
+  } else if (cleaned.length === 9 && /^\d+$/.test(cleaned)) {
+    // Missing check digit in ISBN-10, return as is
+    return cleaned;
+  }
+  
+  // Return the cleaned ISBN for any other cases
+  return cleaned;
 }
 
 // Generate a PDF export for a book
@@ -682,12 +701,20 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
-  const safeFilename = (normalizedBook.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+  const safeFilename = (normalizedBook.title || 'book').replace(/[/\\?%*:|"<>]/g, '-').trim();
   
   // Set the correct filename prefix based on language
   const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
   const timestamp = new Date().toISOString().substring(0, 10);
-  doc.save(`${safeFilename || `${filenamePrefix}_${timestamp}`}.pdf`);
+  
+  // Limit filename length to prevent excessively long filenames
+  const maxLength = 50;
+  const truncatedFilename = safeFilename.length > maxLength ? 
+    safeFilename.substring(0, maxLength) + '...' : 
+    safeFilename;
+    
+  // Use simplified filename with timestamp for better organization
+  doc.save(`${truncatedFilename || `${filenamePrefix}_${timestamp}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
@@ -1053,10 +1080,18 @@ export function exportMultipleBooksToSinglePDF(books: Book[], language: string =
     doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
   }
   
-  // Generate timestamped filename
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-  const filename = language === 'de' ? `Buchkatalog_${timestamp}.pdf` : `BookCatalog_${timestamp}.pdf`;
+  // Generate timestamped filename with book count
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 10);
+  const bookCount = books.length;
   
-  // Save file
+  // Create language-specific, informative filenames
+  let filename = '';
+  if (language === 'de') {
+    filename = `Buchkatalog_${bookCount}_Einträge_${timestamp}.pdf`;
+  } else {
+    filename = `BookCatalog_${bookCount}_entries_${timestamp}.pdf`;
+  }
+  
+  // Save file with compression enabled
   doc.save(filename);
 }
