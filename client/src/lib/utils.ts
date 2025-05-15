@@ -667,6 +667,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   const gridFontSize = 9; // Smaller font for grid layout
   const startY = y;
   let currentY = startY + 5;
+  const spaceNeededForFooter = 30; // Space needed for barcode and footer text
   
   // Draw a thin border around the entire cell
   doc.setDrawColor(0);
@@ -822,6 +823,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
     // For multiple book PDF, we need to limit text to fit in the cell
+    // Use the space needed for footer (declared at function level)
+    
     // Calculate available space for summary text
     const availableHeight = (y + height - spaceNeededForFooter) - currentY;
     const lineHeight = 3;
@@ -854,16 +857,10 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // Calculate where the remaining footer content should go
   // We need to leave space for barcode (approx 20mm) and other footer elements
   
-  // Create a new page if we don't have enough space for the barcode/footer
-  // Check if we're getting too close to the bottom of the cell
-  const spaceNeededForFooter = 30; // Space needed for barcode and footer text
-  
   // For multiple book PDF, we need to be strict about fixed cell height
-  // But ensure we don't overflow by trimming text if necessary
-  
-  // Hard limit: never go beyond the allocated cell height - footer space
+  // Ensure we don't overflow by adjusting current position if needed
   if (currentY > y + height - spaceNeededForFooter) {
-    // We've gone too far - truncate and adjust position
+    // We've gone too far - adjust position
     currentY = y + height - spaceNeededForFooter;
   }
   
