@@ -520,7 +520,7 @@ export async function enrichBookMetadata(bookData: Partial<Book>, apiKeys?: any)
 /**
  * Function to analyze book cover and retrieve enhanced metadata from multiple sources
  */
-export async function getBookFromCoverImage(imageBase64: string, language: string = "de"): Promise<Partial<Book> | null> {
+export async function getBookFromCoverImage(imageBase64: string, language: string = "de", apiKeys?: any): Promise<Partial<Book> | null> {
   // Implementation to come later
   return null;
 }
@@ -528,7 +528,7 @@ export async function getBookFromCoverImage(imageBase64: string, language: strin
 /**
  * Get similar books recommendations
  */
-export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
+export async function getSimilarBooks(book: Partial<Book>, apiKeys?: any): Promise<any[]> {
   const similarId = `similar_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${similarId}] Finding similar books for: "${book.title}" by ${book.mainAuthor || book.author || 'Unknown'}`);
   
@@ -539,7 +539,7 @@ export async function getSimilarBooks(book: Partial<Book>): Promise<any[]> {
   
   try {
     // Call OpenAI to get similar books
-    const openAIResult = await searchSimilarBooks(book);
+    const openAIResult = await searchSimilarBooks(book, apiKeys?.openai_api_key);
     
     // Ensure we have valid book objects
     const validBooks = openAIResult.filter(book => book && book.title && (book.mainAuthor || book.author));
