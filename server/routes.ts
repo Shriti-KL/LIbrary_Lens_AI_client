@@ -100,6 +100,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const language = formData.language || "de";
       const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       
+      // Extract API keys from session if available
+      const sessionApiKeys = (req.session as any).apiKeys || {};
+      const apiKeys = {
+        openai_api_key: sessionApiKeys.openai_api_key,
+        google_books_api_key: sessionApiKeys.google_books_api_key,
+        google_cse_key: sessionApiKeys.google_cse_key,
+        google_cse_id: sessionApiKeys.google_cse_id
+      };
+      
       console.log(`[${analysisId}] Processing book analysis request`);
       let bookData;
       
@@ -107,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (formData.isbn) {
         console.log(`[${analysisId}] Analysis by ISBN: ${formData.isbn}`);
         const cleanIsbn = formData.isbn.replace(/[^0-9X]/gi, '');
-        bookData = await verifyBookByIsbn(cleanIsbn);
+        bookData = await verifyBookByIsbn(cleanIsbn, apiKeys);
       }
       // Case 2: Cover image provided
       else if (req.file) {
@@ -116,12 +125,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const base64Image = imageBuffer.toString('base64');
         
         // Extract data from cover image
-        const coverData = await analyzeBookCover(base64Image);
+        const coverData = await analyzeBookCover(base64Image, apiKeys.openai_api_key);
         
         // If ISBN detected, use verification flow
         if (coverData.isbn) {
           console.log(`[${analysisId}] ISBN detected in cover: ${coverData.isbn}`);
-          bookData = await verifyBookByIsbn(coverData.isbn);
+          bookData = await verifyBookByIsbn(coverData.isbn, apiKeys);
           bookData.coverImageData = base64Image;
         } else {
           // Use the cover data directly
@@ -134,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: coverData.title,
               author: coverData.author || "",
               language
-            });
+            }, apiKeys.openai_api_key);
             
             bookData = { ...bookData, ...enhancedData };
           }
@@ -156,14 +165,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const searchResults = await searchBooks({
           title: formData.title,
           author: formData.author || "",
-          maxResults: 1
+          maxResults: 1,
+          apiKey: apiKeys.google_books_api_key
         });
         
         if (searchResults && searchResults.length > 0) {
           // If ISBN is available, use verification flow
           if (searchResults[0].isbn) {
             console.log(`[${analysisId}] ISBN found in title search: ${searchResults[0].isbn}`);
-            bookData = await verifyBookByIsbn(searchResults[0].isbn);
+            bookData = await verifyBookByIsbn(searchResults[0].isbn, apiKeys);
           } else {
             // Use search result directly
             bookData = searchResults[0];
@@ -173,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               title: bookData.title,
               author: bookData.author || "",
               language
-            });
+            }, apiKeys.openai_api_key);
             
             // Add OpenAI data
             if (openAiResult.summary) bookData.summary = openAiResult.summary;
@@ -196,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             title: formData.title,
             author: formData.author || "",
             language
-          });
+          }, apiKeys.openai_api_key);
           
           bookData.verification = {
             status: "ai_generated",
