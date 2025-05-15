@@ -280,80 +280,73 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 4. Publication Information ---
   yPos += 3; // Proper spacing before publication info, but not too much
   
-  // Build full publication string following the exact target format
+  // Build bibliographic string following exact target format with proper punctuation
+  // [Title]: [Subtitle] / [Author] ; [Other Contributors]. – [Edition]. – [Place]: [Publisher], [Year]. – [Pages] pages: [Illustrations] ; [Dimensions]
+  
+  // Create a clean single-line publication string with proper punctuation and spacing
   let publicationInfo = '';
   
-  // Start with edition information
-  if (book.edition) {
-    publicationInfo += `${book.edition}`;
+  // Trim all input values to avoid accidental double spaces
+  const edition = book.edition ? book.edition.trim() : '';
+  const location = (book.publicationPlace || book.location || '').trim();
+  const publisher = (book.publisher || '').trim();
+  const year = book.publicationYear || book.publishedYear || '';
+  const pages = book.pageCount || '';
+  const illustrations = book.illustrations ? book.illustrations.trim() : '';
+  const dimensions = book.dimensions ? book.dimensions.trim() : '';
+  
+  // Start with edition information if available
+  if (edition) {
+    publicationInfo += edition;
   }
   
-  // Add location and publisher 
-  const location = book.publicationPlace || book.location || '';
-  const publisher = book.publisher || '';
-  
-  // Only add location/publisher information if at least one is present
+  // Add location and publisher with proper spacing and punctuation
   if (location || publisher) {
-    const separator = publicationInfo ? '. – ' : '';
+    // Add separator if we have previous content
+    if (publicationInfo) {
+      publicationInfo += '. – ';
+    }
     
     if (location && publisher) {
-      publicationInfo += `${separator}${location}: ${publisher}`;
+      publicationInfo += `${location}: ${publisher}`;
     } else if (location) {
-      publicationInfo += `${separator}${location}`;
+      publicationInfo += location;
     } else if (publisher) {
-      publicationInfo += `${separator}${publisher}`;
+      publicationInfo += publisher;
     }
-  } else if (publicationInfo) {
-    // Only add separator if we already have some content (like edition)
-    publicationInfo += '. – ';
-  }
-  
-  // Add year - add it only if we have location/publisher or at least something before
-  const year = book.publicationYear || book.publishedYear;
-  
-  if (year) {
-    // Only add the comma if we already have location/publisher info
-    if (publicationInfo && (location || publisher)) {
+    
+    // Add year with comma if we have location/publisher
+    if (year) {
       publicationInfo += `, ${year}`;
-    } 
-    // Otherwise, add it directly if we have edition info
-    else if (publicationInfo) {
-      publicationInfo += `. – ${year}`;
     }
-    // Or as the first element if nothing else
-    else {
-      publicationInfo += `${year}`;
+  } else if (year) {
+    // Year standalone needs proper separator if something came before
+    if (publicationInfo) {
+      publicationInfo += '. – ';
     }
+    publicationInfo += `${year}`;
   }
   
-  // Add physical description - pages
-  const pages = book.pageCount || '';
-  
-  // Only add page info if available, otherwise no need for empty separator
+  // Add page count with proper separator
   if (pages) {
-    // Add separator only if we have content so far
-    const separator = publicationInfo ? '. – ' : '';
-    publicationInfo += `${separator}${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
-  } else if (publicationInfo) {
-    // Only add this separator if we have previous content
-    publicationInfo += '. – ';
-  }
-  
-  // Add illustration information if available
-  // Only add illustration info if we have preceding content
-  if (publicationInfo) {
-    if (book.illustrations) {
-      publicationInfo += `: ${book.illustrations}`;
+    if (publicationInfo) {
+      publicationInfo += '. – ';
+    }
+    publicationInfo += `${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+    
+    // Add illustration info if available
+    if (illustrations) {
+      publicationInfo += `: ${illustrations}`;
     } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
-      // Check if there are illustrators in contributors
+      // Check if there are illustrators
       let hasIllustrators = false;
       
       if (book.contributors) {
-        // New format - object with roles as keys
+        // Object format with roles as keys
         if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
           hasIllustrators = true;
         }
-        // Old format - array of objects with name and role
+        // Array format with objects having role property
         else if (Array.isArray(book.contributors)) {
           hasIllustrators = book.contributors.some((c: any) => 
             c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
@@ -366,27 +359,43 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Add dimensions if available and have preceding content
-  if (book.dimensions) {
-    // Only add dimensions if we have preceding content
+  // Add dimensions with proper semicolon separator
+  if (dimensions) {
     if (publicationInfo) {
-      publicationInfo += ` ; ${book.dimensions}`;
+      // Check if we already have illustrations (indicated by a colon)
+      if (publicationInfo.includes(':')) {
+        publicationInfo += ` ; ${dimensions}`;
+      } else if (pages) {
+        // If we have pages but no illustrations
+        publicationInfo += ` ; ${dimensions}`;
+      } else {
+        // If we have neither pages nor illustrations
+        publicationInfo += `. – ${dimensions}`;
+      }
     } else {
-      publicationInfo += book.dimensions;
+      publicationInfo += dimensions;
     }
   }
   
   // Adjust font size to match reference format
   doc.setFontSize(10);
   
-  // Split the publication info text for proper wrapping with better margins
-  const pubLines = doc.splitTextToSize(publicationInfo, 150);
+  // Ensure publication info text fits within page bounds but maintains continuous paragraph flow
+  // Use a wider margin to prevent text from appearing too close to edge
+  const lineWidth = 160;
+  
+  // Use text wrapping that properly manages spaces at line breaks
+  const pubLines = doc.splitTextToSize(publicationInfo, lineWidth);
   
   // Set the publication info lines
   doc.setFont("helvetica", "normal");
+  
+  // Use smaller line spacing to ensure paragraph appears cohesive
+  const lineSpacing = 4.5;
+  
   for (let i = 0; i < pubLines.length; i++) {
     doc.text(pubLines[i], 22, yPos);
-    yPos += 5;
+    yPos += lineSpacing;
   }
   
   // Reset font size
