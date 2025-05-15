@@ -151,22 +151,22 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Top-left ASB label
   doc.text("ASB:", 22, yPos);
   
-  // Top-right catalog number
-  const asbNumber = book.catalogNumber || "";
+  // Top-right classification number
+  const asbNumber = book.classificationNumber || "";
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
-  // Second line - secondary classification under ASB
+  // Second line - additional classifications under ASB
   yPos += 7;
-  const secondaryCode = book.secondaryClassification || "";
-  doc.text(secondaryCode, 22, yPos);
+  const additionalClass = book.additionalClassifications || "";
+  doc.text(additionalClass, 22, yPos);
   
   yPos += 15; // Space after classifications
   
   // --- 2. Author's name in bold ---
-  // Format author's name to "LastName, FirstName:" as shown in the sample
-  let authorFormatted = book.author;
-  if (book.author.includes(" ") && !book.author.includes(",")) {
-    const nameParts = book.author.split(" ");
+  // Format author's name to "LastName, FirstName:" as shown in the target format
+  let authorFormatted = book.mainAuthor || book.author || "";
+  if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
+    const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
     const firstName = nameParts.join(" ");
     authorFormatted = `${lastName}, ${firstName}`;
@@ -182,50 +182,68 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
-  let titleFull = book.title;
-  let subtitle = '';
+  let titleFull = book.title || "";
+  let subtitle = book.subtitle || '';
   
-  // Extract subtitle if present (after dash or colon)
-  if (book.title.includes(" - ")) {
-    const titleParts = book.title.split(" - ");
-    titleFull = titleParts[0].trim();
-    subtitle = titleParts.slice(1).join(" - ").trim();
-  } else if (book.title.includes(":")) {
-    const titleParts = book.title.split(":");
-    titleFull = titleParts[0].trim();
-    subtitle = titleParts.slice(1).join(":").trim();
+  // If subtitle is not available but title contains a separator, extract it
+  if (!subtitle) {
+    if (titleFull.includes(" - ")) {
+      const titleParts = titleFull.split(" - ");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(" - ").trim();
+    } else if (titleFull.includes(":")) {
+      const titleParts = titleFull.split(":");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(":").trim();
+    }
   }
   
   // Format the title line with subtitle if present
   let titleText = titleFull;
   if (subtitle) {
-    titleText = `${titleFull} : ${subtitle}`;
+    titleText = `${titleFull}: ${subtitle}`;
   }
   
-  // Use statement of responsibility if available, otherwise construct from available data
+  // Add statement of responsibility
   if (book.statementOfResponsibility) {
     titleText += ` / ${book.statementOfResponsibility}`;
   } else {
-    let hasEditors = false;
-    if (book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0) {
-      // Find editors/publishers
-      const editors = book.contributors.filter((c: any) => 
-        c.role?.toLowerCase() === 'herausgeber' || c.role?.toLowerCase() === 'editor');
-      
-      if (editors.length > 0) {
-        titleText += ` / ${editors.map((e: any) => e.name).join(", ")} (Herausgeber)`;
-        hasEditors = true;
+    // Use authors and contributors to construct statement of responsibility
+    let authorName = book.mainAuthor || book.author || "";
+    
+    // Check for contributors
+    let otherContributors = "";
+    if (book.contributors && (typeof book.contributors === 'object')) {
+      // If contributors is an object with role keys (new format)
+      if (!Array.isArray(book.contributors)) {
+        const contributorsList = [];
+        for (const role in book.contributors) {
+          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+          }
+        }
+        if (contributorsList.length > 0) {
+          otherContributors = ` ; ${contributorsList.join(" ; ")}`;
+        }
+      } 
+      // If contributors is an array of objects with name and role (old format)
+      else if (book.contributors.length > 0) {
+        const contributorsList = book.contributors
+          .filter((c: any) => c.name && c.role)
+          .map((c: any) => `${c.name} (${c.role})`)
+          .join(" ; ");
+        
+        if (contributorsList) {
+          otherContributors = ` ; ${contributorsList}`;
+        }
       }
     }
     
-    // If no editors found, add the author in the correct format
-    if (!hasEditors) {
-      // If we have illustrator information, include it with the author
-      if (book.illustrator) {
-        titleText += ` / ${book.author} ; Illustrationen von ${book.illustrator}`;
-      } else {
-        titleText += ` / ${book.author}`;
-      }
+    // Add author and contributors to title text
+    if (authorName) {
+      titleText += ` / ${authorName}${otherContributors}`;
+    } else if (otherContributors) {
+      titleText += ` /${otherContributors}`;
     }
   }
   
@@ -241,56 +259,71 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // --- 4. Publication Information ---
   yPos += 2; // Extra space before publication info
   
-  // Build full publication string following the exact format in the sample image
+  // Build full publication string following the exact target format
   let publicationInfo = '';
   
   // Start with edition information
-  publicationInfo += book.edition || '';
+  if (book.edition) {
+    publicationInfo += `${book.edition}`;
+  }
   
   // Add location and publisher 
-  const location = book.location || '';
+  const location = book.publicationPlace || book.location || '';
   const publisher = book.publisher || '';
-  publicationInfo += `. - ${location} : ${publisher}`;
+  
+  if (publicationInfo) {
+    publicationInfo += `. – ${location}: ${publisher}`;
+  } else {
+    publicationInfo += `${location}: ${publisher}`;
+  }
   
   // Add year
-  publicationInfo += book.publishedYear ? `, ${book.publishedYear}` : ``;
+  const year = book.publicationYear || book.publishedYear;
+  if (year) {
+    publicationInfo += `, ${year}`;
+  }
   
   // Add physical description - pages
-  publicationInfo += `. - ${book.pageCount || ''} Seiten`;
+  const pages = book.pageCount || '';
+  if (pages) {
+    publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+  } else {
+    publicationInfo += `. – `;
+  }
   
-  // Add illustration information if appropriate - using format from sample image
-  if (book.illustrator || (book.contributors && Array.isArray(book.contributors))) {
-    // Check direct illustrator field first
-    if (book.illustrator) {
-      publicationInfo += ` : Illustrationen`;
-      // Default to color illustrations
-      publicationInfo += `, farbig`;
-    } 
-    // Then check contributors array
-    else if (book.contributors && Array.isArray(book.contributors)) {
-      const illustrators = book.contributors.filter((c: any) => 
-        c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
-      
-      if (illustrators.length > 0) {
-        publicationInfo += ` : Illustrationen`;
-        // Default to color illustrations
-        publicationInfo += `, farbig`;
+  // Add illustration information if available
+  if (book.illustrations) {
+    publicationInfo += `: ${book.illustrations}`;
+  } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
+    // Check if there are illustrators in contributors
+    let hasIllustrators = false;
+    
+    if (book.contributors) {
+      // New format - object with roles as keys
+      if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
+        hasIllustrators = true;
       }
+      // Old format - array of objects with name and role
+      else if (Array.isArray(book.contributors)) {
+        hasIllustrators = book.contributors.some((c: any) => 
+          c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+      }
+    }
+    
+    if (book.illustrator || hasIllustrators) {
+      publicationInfo += `: Illustrationen`;
     }
   }
   
   // Add dimensions if available
-  publicationInfo += book.dimensions ? ` ; ${book.dimensions}` : ``;
-  
-  // Add series information or publisher info if available
-  if (book.series) {
-    publicationInfo += ` (${book.series})`;
+  if (book.dimensions) {
+    publicationInfo += ` ; ${book.dimensions}`;
   }
   
-  // Split the publication info text for proper wrapping - match exact width from sample
+  // Split the publication info text for proper wrapping
   const pubLines = doc.splitTextToSize(publicationInfo, 165);
   
-  // Set the publication info lines with helvetica font matching the sample
+  // Set the publication info lines
   doc.setFont("helvetica", "normal");
   for (let i = 0; i < pubLines.length; i++) {
     doc.text(pubLines[i], 22, yPos);
@@ -305,12 +338,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Add binding type if available
     if (book.binding) {
-      isbnLine += ` - ${book.binding}`;
+      isbnLine += ` ${book.binding}`;
     }
     
     // Add price if available (with comma, not period, for decimal values in German format)
     if (book.price) {
-      isbnLine += ` : EUR ${book.price.toString().replace('.', ',')}`;
+      // Format price with comma for decimal separator (German format)
+      let formattedPrice = "";
+      
+      if (typeof book.price === 'number') {
+        formattedPrice = book.price.toString().replace('.', ',');
+      } else if (typeof book.price === 'string') {
+        formattedPrice = book.price.replace('.', ',');
+      } else {
+        // Handle other potential types safely
+        formattedPrice = String(book.price).replace('.', ',');
+      }
+      
+      isbnLine += `: EUR ${formattedPrice}`;
     }
     
     doc.setFont("helvetica", "normal");
@@ -326,7 +371,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     
-    // Combine summary and review with the | separator
+    // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
     if (book.summary) {
       summaryText = book.summary;
@@ -338,7 +383,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       summaryText += book.review;
     }
     
-    // Remove metadata-like patterns that might be in the summary
+    // Clean up the text by removing any metadata patterns
     const metadataPatterns = [
       /\*\*Titel:\*\*.*\n?/i,
       /\*\*Autor(?:in)?:\*\*.*\n?/i,
@@ -357,13 +402,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       summaryText = summaryText.replace(pattern, '');
     });
     
-    // Remove any extra whitespace and multiple newlines that might remain
+    // Remove any extra whitespace and multiple newlines
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // In single-book view, we show the complete summary and review
-    // with no length limitations to ensure all content is visible
-    
-    // Split the text for proper wrapping with slightly reduced line spacing
+    // Split the text for proper wrapping 
     const summaryLines = doc.splitTextToSize(summaryText, 160);
     
     // Create content for each line with justified text
@@ -389,53 +431,73 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.text(book.reviewerName, 190, yPos, { align: 'right' });
   }
   
-  // --- 8. Interest category (IK) and ID-B number on bottom left ---
+  // --- 8. Interest category (IK) and Age recommendation on bottom left ---
   yPos += 10;
   
-  // Interest category if available
+  // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
+  let ikLine = '';
+  
   if (book.interestCategory) {
+    ikLine = `IK: ${book.interestCategory}`;
+    
+    // Add age recommendation if available
+    if (book.ageRecommendation) {
+      ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
+    }
+    
     doc.setFont("helvetica", "bold");
-    doc.text(book.interestCategory, 22, yPos);
+    doc.text(ikLine, 22, yPos);
+    yPos += 5;
+  } else if (book.ageRecommendation) {
+    ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
+    doc.setFont("helvetica", "bold");
+    doc.text(ikLine, 22, yPos);
     yPos += 5;
   }
   
-  // ID-B number if available
-  if (book.idBNumber) {
-    doc.setFont("helvetica", "normal");
-    doc.text(book.idBNumber, 22, yPos);
+  // --- 9. ID-B information in format: ID-[Initials] [Number]/[Year] ---
+  let idBLine = '';
+  
+  if (book.idbInitials || book.idbSequenceNumber || book.idbYear) {
+    const initials = book.idbInitials || '';
+    const sequenceNumber = book.idbSequenceNumber || '';
+    const year = book.idbYear || '';
+    
+    if (initials && (sequenceNumber || year)) {
+      idBLine = `ID-${initials} ${sequenceNumber}/${year}`;
+      doc.setFont("helvetica", "normal");
+      doc.text(idBLine, 22, yPos);
+      yPos += 5;
+    }
   }
   
-  // --- 9. Add Barcode and footer ---
+  // --- 10. Barcode and footer ---
   yPos += 10;
   
-  // Generate a realistic barcode according to the image sample
+  // Generate a barcode and center it
   const barcodeHeight = 12;
   const barcodeWidth = 90;
   const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
   
-  // Add the catalog number above the barcode for reference - exactly as in sample
+  // Add the classification number above the barcode
   doc.setFontSize(7);
   doc.setFont("courier", "normal");
   doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
   
-  // Draw barcode lines in the style shown in the reference image
+  // Draw barcode lines
   doc.setDrawColor(0);
   doc.setFillColor(0, 0, 0);
   doc.setLineWidth(0.1);
   
-  // Create a more realistic EAN/ISBN-style barcode pattern
-  // Some thicker and some thinner bars, with specific spacing patterns
+  // Create a realistic barcode pattern
   let barX = startX;
-  const numBars = 50;  // Number of bars in barcode
+  const numBars = 50;
   const spacing = barcodeWidth / numBars;
   
   for (let i = 0; i < numBars; i++) {
-    // Create varying bar widths to look like a real barcode
-    // Thicker bars at specific positions to emulate EAN/ISBN pattern
     const isThickBar = (i % 7 === 0 || i % 11 === 0 || i % 3 === 2);
     const barWidth = isThickBar ? spacing * 2 : spacing * 0.7;
     
-    // Only draw some bars (with specific pattern) for realistic appearance
     if (i % 4 !== 3 || i % 8 === 0) {
       doc.rect(barX, yPos, barWidth, barcodeHeight, 'F');
     }
@@ -443,7 +505,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     barX += spacing;
   }
   
-  // Add ekz-Informationsdienst text below barcode exactly as in the sample
+  // Add ekz-Informationsdienst text below barcode
   yPos += barcodeHeight + 5;
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
@@ -453,20 +515,30 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 }
 
 // Export a single book to PDF
-export function exportBookToPDF(book: Book): void {
+export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
   });
   
+  // Configure language-specific text
+  const bookLanguage = book.language || language;
+  
+  // Modify any labels or text based on the book's language
+  // Note: The formatBookEntryForPDF function already handles German formatting
+  // with commas for decimal points, "Seiten" instead of "pages", etc.
+  
   // Format book entry
   formatBookEntryForPDF(doc, book);
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
-  const safeFilename = book.title.replace(/[/\\?%*:|"<>]/g, '-');
-  doc.save(`${safeFilename || 'book'}.pdf`);
+  const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+  
+  // Set the correct filename prefix based on language
+  const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
+  doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
