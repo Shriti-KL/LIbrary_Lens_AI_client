@@ -281,14 +281,16 @@ export async function verifyBookData(isbn: string, apiKeys?: ApiKeys): Promise<P
       // Only use OpenAI for analysis if we have sufficient authentic metadata
       if (sources.length >= 2) {
         // Create a request that contains the verified data
-        const openAiRequest: BookAnalysisRequest = {
+        const openAiRequest = {
           language: mergedData.language || "de",
           isbn: isbn,
           title: mergedData.title,
           subtitle: mergedData.subtitle,
           mainAuthor: mergedData.mainAuthor,
-          description: mergedData.description
-        };
+          description: mergedData.description,
+          // Ensure genres is properly typed
+          genres: Array.isArray(mergedData.genres) ? mergedData.genres : []
+        } as BookAnalysisRequest;
         
         // Process with OpenAI (only for summary and review, not metadata)
         // OpenAI will use the authentic metadata we've already gathered
