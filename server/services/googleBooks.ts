@@ -38,8 +38,8 @@ export async function searchBooks(params: GoogleBookSearchParams): Promise<any[]
       query += query ? ` isbn:${params.isbn}` : `isbn:${params.isbn}`;
     }
     
-    // Use provided API key or fallback to environment variable
-    const apiKey = params.apiKey || process.env.GOOGLE_BOOKS_API_KEY;
+    // Only use provided API key, no fallback
+    const apiKey = params.apiKey;
     
     if (!apiKey) {
       throw new Error("Google Books API key is required but not provided");
@@ -107,8 +107,8 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
   try {
     console.log(`[API] Searching Google Books API for ISBN: ${isbn}`);
     
-    // Use provided API key or fallback to environment variable
-    const key = apiKey || process.env.GOOGLE_BOOKS_API_KEY;
+    // Only use provided API key, no fallback
+    const key = apiKey;
     
     if (!key) {
       throw new Error("Google Books API key is required but not provided");
