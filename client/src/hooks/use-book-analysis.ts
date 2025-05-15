@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Book } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/hooks/use-language";
+import { useApiKeys } from "@/hooks/use-api-keys";
 
 // Storage keys
 const STORAGE_KEY_RESULT = 'currentAnalysisData';
@@ -13,6 +14,7 @@ const STORAGE_KEY_LANGUAGE = 'book_analysis_language';
 export function useBookAnalysis() {
   const { toast } = useToast();
   const { language } = useLanguage();
+  const { showApiKeysModal } = useApiKeys();
 
   // Initialize state for analysis steps
   const [analysisSteps, setAnalysisSteps] = useState({
@@ -126,8 +128,19 @@ export function useBookAnalysis() {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
+        // Try to parse as JSON first
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            throw new Error(errorData.message);
+          } else if (errorData.error) {
+            throw new Error(errorData.error);
+          }
+        } catch (jsonError) {
+          // If not JSON, get as text
+          const errorText = await response.text();
+          throw new Error(errorText || response.statusText);
+        }
       }
       
       // Metadata completed
@@ -169,11 +182,27 @@ export function useBookAnalysis() {
       return result;
     },
     onError: (error) => {
-      toast({
-        title: "Analysis Failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      const errorMessage = error.message || '';
+      
+      // Check if the error is related to missing API keys
+      if (errorMessage.toLowerCase().includes('api keys required')) {
+        // Show API keys modal if the error is related to missing API keys
+        console.log('Opening API Keys modal due to missing API keys error');
+        showApiKeysModal();
+        
+        toast({
+          title: "API Keys Required",
+          description: "Please enter your API keys to continue with book analysis",
+          variant: "destructive"
+        });
+      } else {
+        // Standard error toast for other errors
+        toast({
+          title: "Analysis Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
       
       // Reset all steps
       setAnalysisSteps({

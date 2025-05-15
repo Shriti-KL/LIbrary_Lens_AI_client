@@ -4,6 +4,7 @@ import { Book } from '@shared/schema';
 import { useBookAnalysis } from '@/hooks/use-book-analysis';
 import { useLanguage } from '@/hooks/use-language';
 import { useNavigationGuard } from '@/lib/navigation-guard';
+import { useApiKeys } from '@/hooks/use-api-keys';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';

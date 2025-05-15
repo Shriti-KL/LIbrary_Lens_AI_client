@@ -42,7 +42,15 @@ export function ApiKeysProvider({ children }: { children: ReactNode }) {
   
   // Show modal automatically after login if keys are missing
   useEffect(() => {
+    console.log('[DEBUG] API Keys Status Check:', {
+      hasUser: !!user,
+      hasApiKeysStatus: !!apiKeysStatus,
+      apiKeysExist: apiKeysStatus?.hasKeys,
+      isModalCurrentlyOpen: isModalOpen,
+    });
+    
     if (user && apiKeysStatus && !apiKeysStatus.hasKeys && !isModalOpen) {
+      console.log('[DEBUG] Opening API keys modal because keys are missing');
       // Always show the modal if API keys are missing
       setIsModalOpen(true);
     }
