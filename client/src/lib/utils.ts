@@ -148,7 +148,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   
-  // Top-left ASB label
+  // Top-left ASB label - bold
   doc.text("ASB:", 22, yPos);
   
   // Top-right classification number (ASB)
@@ -162,6 +162,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
     addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
   }
+  doc.setFont("helvetica", "normal");
   doc.text(addClassText, 22, yPos);
   
   yPos += 15; // Space after classifications
