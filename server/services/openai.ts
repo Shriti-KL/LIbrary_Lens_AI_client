@@ -93,14 +93,18 @@ export async function analyzeBookCover(image: string, apiKey?: string): Promise<
     });
 
     // Parse and return the JSON response
-    const result = JSON.parse(response.choices[0].message.content);
-    console.log("[API] Book cover analysis complete");
-    return result;
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (content) {
+      const result = JSON.parse(content);
+      console.log("[API] Book cover analysis complete");
+      return result;
+    }
+    return { error: "No content returned from OpenAI" };
+  } catch (error: any) {
     console.error("[API] Error analyzing book cover:", error);
     return {
       error: "Failed to analyze book cover",
-      details: error.message
+      details: error?.message || String(error)
     };
   }
 }
@@ -177,21 +181,29 @@ export async function processBookAnalysis(
     });
     
     // Parse the response
-    const result = JSON.parse(response.choices[0].message.content);
-    console.log("[API] Book analysis complete");
-    
-    // Return the OpenAI-generated fields merged with the original request
-    return {
-      ...bookInfo,
-      summary: result.summary,
-      review: result.review
-    };
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (content) {
+      const result = JSON.parse(content);
+      console.log("[API] Book analysis complete");
+      
+      // Return the OpenAI-generated fields merged with the original request
+      return {
+        ...bookInfo,
+        summary: result.summary,
+        review: result.review
+      };
+    } else {
+      return {
+        ...bookInfo,
+        error: "No content returned from OpenAI"
+      };
+    }
+  } catch (error: any) {
     console.error("[API] Error processing book analysis:", error);
     return {
       ...bookInfo,
       error: "Failed to process book analysis",
-      details: error.message
+      details: error?.message || String(error)
     };
   }
 }
@@ -210,10 +222,10 @@ export async function searchSimilarBooks(book: Partial<Book>, apiKey?: string): 
     const prompt = `
     I need recommendations for books similar to the following:
     
-    Title: ${book.title}
-    Author: ${book.author || book.mainAuthor}
-    Genre: ${book.genres?.join(', ') || 'Unknown'}
-    Themes: ${book.themes?.join(', ') || 'Unknown'}
+    Title: ${book.title || 'Unknown'}
+    Author: ${book.author || book.mainAuthor || 'Unknown'}
+    Genre: ${Array.isArray(book.genres) ? book.genres.join(', ') : 'Unknown'}
+    Themes: ${Array.isArray(book.themes) ? book.themes.join(', ') : 'Unknown'}
     Summary: ${book.summary || 'Not available'}
     
     Please suggest 5 similar books with these characteristics:
