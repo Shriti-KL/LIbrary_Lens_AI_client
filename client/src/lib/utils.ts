@@ -270,53 +270,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Build full publication string following the exact target format
   let publicationInfo = '';
   
-  // Start with edition information - with proper spacing matching the example (S c h o...)
+  // Start with edition information
   if (book.edition) {
-    // Format edition with proper spacing to match the example
-    // If it contains "Auflage", apply the special formatting with spaced characters
-    if (book.edition.toLowerCase().includes('auflage')) {
-      // Create the spaced "Auflage" text to match the example
-      const parts = book.edition.split('auflage', 2);
-      if (parts.length === 2) {
-        // Take the first part (like "2. "), add formatted "A u f l a g e", then add remainder
-        const prefix = parts[0];
-        // Replace with properly spaced "A u f l a g e"
-        const spacedAuflage = "A u f l a g e";
-        publicationInfo += `${prefix}${spacedAuflage}${parts[1]}`;
-      } else {
-        // Just use original if we can't format properly
-        publicationInfo += book.edition;
-      }
-    } else {
-      publicationInfo += book.edition;
-    }
+    publicationInfo += `${book.edition}`;
   }
   
-  // Add location and publisher with proper spacing
+  // Add location and publisher 
   const location = book.publicationPlace || book.location || '';
   const publisher = book.publisher || '';
   
-  // Format publisher info with special formatting for "Scho neiche" if present
-  if (location || publisher) {
-    let publisherText = '';
-    
-    // Check if the publisher contains "Biber & Butzemann" like in the example
-    const formattedLocation = location ? location : '';
-    let formattedPublisher = publisher ? publisher : '';
-    
-    // Check if it contains "Scho neiche" and add special spacing
-    if (publisher && publisher.toLowerCase().includes("biber") && publisher.toLowerCase().includes("butzemann")) {
-      // Add special spacing for "S c h o  n e i c h e: " pattern
-      publisherText = `S c h o  n e i c h e: ${formattedPublisher}`;
-    } else {
-      publisherText = `${formattedLocation}${formattedLocation && formattedPublisher ? ': ' : ''}${formattedPublisher}`;
-    }
-    
-    if (publicationInfo) {
-      publicationInfo += ` – ${publisherText}`;
-    } else {
-      publicationInfo += publisherText;
-    }
+  if (publicationInfo) {
+    publicationInfo += `. – ${location}: ${publisher}`;
+  } else {
+    publicationInfo += `${location}: ${publisher}`;
   }
   
   // Add year
@@ -328,9 +294,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Add physical description - pages
   const pages = book.pageCount || '';
   if (pages) {
-    publicationInfo += ` – ${pages} ${pages === 1 ? 'S.' : 'S.'}`;
+    publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
   } else {
-    publicationInfo += ` – `;
+    publicationInfo += `. – `;
   }
   
   // Add illustration information if available
@@ -361,21 +327,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // publicationInfo += `: keine Illustrationen`;
   }
   
-  // Add dimensions and weight as part of the dimensions if available
-  // Format: "21 cm, 450 g" as shown in the example
+  // Add dimensions if available
   if (book.dimensions) {
-    // Check if weight is already included in dimensions
-    if (book.dimensions.includes('g') || book.dimensions.includes('kg')) {
-      publicationInfo += ` ; ${book.dimensions}`;
-    } else if (book.weight) {
-      // If separate weight field exists, append it
-      publicationInfo += ` ; ${book.dimensions}, ${book.weight}`;
-    } else {
-      publicationInfo += ` ; ${book.dimensions}`;
-    }
-  } else if (book.weight) {
-    // If only weight is available
-    publicationInfo += ` ; ${book.weight}`;
+    publicationInfo += ` ; ${book.dimensions}`;
   }
   
   // Split the publication info text for proper wrapping
