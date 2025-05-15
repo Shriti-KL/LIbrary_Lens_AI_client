@@ -151,19 +151,32 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Top-left ASB label - bold
   doc.text("ASB:", 22, yPos);
   
-  // Top-right classification number (ASB)
-  const asbNumber = book.classificationNumber || book.ASB || "";
-  doc.text(asbNumber, 190, yPos, { align: 'right' });
+  // Top-right classification number (ASB) - multiple field names supported
+  const asbNumber = book.classificationNumber || book.classification_number || book.ASB || "";
+  
+  // Make ASB number right-aligned with proper spacing
+  if (asbNumber) {
+    doc.text(asbNumber, 190, yPos, { align: 'right' });
+  }
   
   // Second line - additional classifications under ASB
   yPos += 7;
+  
   // Include DNB number as additional classification if available
   let addClassText = book.additionalClassifications || "";
+  
   if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
     addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
   }
-  doc.setFont("helvetica", "normal");
-  doc.text(addClassText, 22, yPos);
+  
+  // Only display this line if we actually have additional classifications
+  if (addClassText) {
+    doc.setFont("helvetica", "normal");
+    doc.text(addClassText, 22, yPos);
+  } else {
+    // Adjust spacing if no additional classifications
+    yPos -= 3;
+  }
   
   yPos += 15; // Space after classifications
   
@@ -573,10 +586,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const barcodeWidth = 90;
   const startX = (doc.internal.pageSize.width - barcodeWidth) / 2;
   
-  // Add the classification number above the barcode
-  doc.setFontSize(7);
-  doc.setFont("courier", "normal");
-  doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
+  // Add the classification number above the barcode only if we have one
+  if (asbNumber) {
+    doc.setFontSize(7);
+    doc.setFont("courier", "normal");
+    doc.text(asbNumber, startX + barcodeWidth/2, yPos - 2, { align: 'center' });
+  }
   
   // Draw barcode lines
   doc.setDrawColor(0);
