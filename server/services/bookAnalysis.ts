@@ -235,7 +235,7 @@ export async function processBookAnalysis(
 /**
  * Function to get book information by ISBN with clean fallback logic
  */
-export async function getBookByISBNWithFallback(isbn: string, language: string = "de"): Promise<Partial<Book> | null> {
+export async function getBookByISBNWithFallback(isbn: string, language: string = "de", apiKeys?: any): Promise<Partial<Book> | null> {
   const lookupId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${lookupId}] Looking up book by ISBN: ${isbn}`);
   
