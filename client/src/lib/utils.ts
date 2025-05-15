@@ -233,7 +233,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Ensure proper formatting with the slash separator
     let stmtResp = book.statementOfResponsibility.trim();
     // If statement doesn't already start with "by" or similar, keep it as is
-    titleText += ` / ${stmtResp}`;
+    bibliographicLine += ` / ${stmtResp}`;
   } else {
     // Use authors and contributors to construct statement of responsibility
     let authorName = book.mainAuthor || book.author || "";
@@ -270,50 +270,55 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Add author and contributors to title text with proper spacing
     if (authorName) {
-      titleText += ` / ${authorName}${otherContributors}`;
+      bibliographicLine += ` / ${authorName}${otherContributors}`;
     } else if (otherContributors) {
-      titleText += ` / ${otherContributors.trim()}`;
+      bibliographicLine += ` / ${otherContributors.trim()}`;
     }
   }
   
-  // Split the title text for proper wrapping with narrower width for better margins
-  // Ensure consistent width with publication info and trim to prevent trailing spaces
-  const titleLines = doc.splitTextToSize(titleText.trim(), 145);
-  
-  // Set the title lines
-  for (let i = 0; i < titleLines.length; i++) {
-    doc.text(titleLines[i], 22, yPos);
-    yPos += 5;
+  // Add edition
+  const edition = book.edition ? book.edition.trim() : '';
+  if (edition) {
+    bibliographicLine += `. – ${edition}`;
   }
   
-  // --- 4. Publication Information - Single Cohesive Paragraph ---
-  yPos += 3; // Small spacing before publication info
-  
-  // Build bibliographic string according to German cataloging standard format
-  // This should form a single, cohesive paragraph with proper punctuation
-  // Format: [Edition]. – [Place]: [Publisher], [Year]. – [Pages] : [Illustrations] ; [Dimensions]
-  
-  // Pre-process all values - trim and clean them
-  const edition = book.edition ? book.edition.trim() : '';
-  const location = (book.publicationPlace || book.location || '').trim();
+  // Add publication place, publisher and year
+  const place = (book.publicationPlace || book.location || '').trim();
   const publisher = (book.publisher || '').trim();
-  
-  // Handle year - ensure it's numeric and without decimal
   let yearText = '';
   if (book.publicationYear || book.publishedYear) {
     const year = book.publicationYear || book.publishedYear;
     yearText = String(year).trim();
     if (yearText.includes('.')) {
-      yearText = yearText.split('.')[0]; // Take only integer part
+      yearText = yearText.split('.')[0]; // Integer part only
     }
   }
   
-  // Handle pages - clean and format
+  let pubInfo = '';
+  if (place && publisher) {
+    pubInfo = `${place}: ${publisher}`;
+  } else if (place) {
+    pubInfo = place;
+  } else if (publisher) {
+    pubInfo = publisher;
+  }
+  
+  if (yearText && pubInfo) {
+    pubInfo += `, ${yearText}`;
+  } else if (yearText) {
+    pubInfo = yearText;
+  }
+  
+  if (pubInfo) {
+    bibliographicLine += `. – ${pubInfo}`;
+  }
+  
+  // Add physical description (pages, illustrations, dimensions)
   let pagesText = '';
   if (book.pageCount) {
     let pagesValue = String(book.pageCount).trim();
     if (pagesValue.includes('.')) {
-      pagesValue = pagesValue.split('.')[0]; // Take integer part
+      pagesValue = pagesValue.split('.')[0];
     }
     
     const pagesNum = parseInt(pagesValue, 10);
@@ -326,39 +331,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Other elements
   const illustrations = book.illustrations ? book.illustrations.trim() : '';
   const dimensions = book.dimensions ? book.dimensions.trim() : '';
   
-  // Now construct the complete bibliographic string with proper spacing and punctuation
-  const bibliographicElements = [];
-  
-  // 1. Edition
-  if (edition) {
-    bibliographicElements.push(edition);
-  }
-  
-  // 2. Publication Info (Location, Publisher, Year)
-  let pubInfo = '';
-  if (location && publisher) {
-    pubInfo = `${location}: ${publisher}`;
-  } else if (location) {
-    pubInfo = location;
-  } else if (publisher) {
-    pubInfo = publisher;
-  }
-  
-  if (yearText && pubInfo) {
-    pubInfo += `, ${yearText}`;
-  } else if (yearText) {
-    pubInfo = yearText;
-  }
-  
-  if (pubInfo) {
-    bibliographicElements.push(pubInfo);
-  }
-  
-  // 3. Physical Description (Pages, Illustrations, Dimensions)
   let physicalDesc = '';
   if (pagesText) {
     physicalDesc = pagesText;
@@ -381,189 +356,111 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   if (physicalDesc) {
-    bibliographicElements.push(physicalDesc);
+    bibliographicLine += `. – ${physicalDesc}`;
   }
   
-  // Join all elements with proper separator
-  let publicationInfo = '';
-  for (let i = 0; i < bibliographicElements.length; i++) {
-    if (i > 0) {
-      publicationInfo += '. – ';  // Em dash with proper spacing
-    }
-    publicationInfo += bibliographicElements[i];
-  }
-  
-  // Set font and size for bibliographic info
+  // Render the complete bibliographic information as a continuous paragraph
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  const lineWidth = 145;
+  const lines = doc.splitTextToSize(bibliographicLine, lineWidth);
   
-  // Use a narrower width to ensure text stays within margins
-  // This is critical for maintaining paragraph appearance
-  const lineWidth = 148;
-  
-  // Split text with proper wrapping that maintains paragraph flow
-  const pubLines = doc.splitTextToSize(publicationInfo.trim(), lineWidth);
-  
-  // Use tight line spacing to ensure paragraph cohesion
-  // This is key to making it look like one continuous paragraph
-  const lineSpacing = 4;
-  
-  // Draw text lines with proper spacing
-  for (let i = 0; i < pubLines.length; i++) {
-    doc.text(pubLines[i], 22, yPos);
-    yPos += lineSpacing;
+  for (let i = 0; i < lines.length; i++) {
+    doc.text(lines[i], 22, yPos);
+    yPos += 4; // Tight line spacing for paragraph appearance
   }
   
   // Reset font size
   doc.setFontSize(11);
   
-  // --- 5. ISBN and Price information ---
+  // --- 4. ISBN and price information ---
+  yPos += 7;
   if (book.isbn) {
-    yPos += 2; // Extra small space before ISBN line
-    
     let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type if available
     if (book.binding) {
       isbnLine += ` ${book.binding}`;
     }
     
-    // Add price if available (with comma, not period, for decimal values in German format)
-    // Check if the price is already in string format and contains "EUR" - don't add it again
-    if (book.price && typeof book.price === 'string' && book.price.includes('EUR')) {
-      // Price is already formatted, use as is but ensure no duplication
-      if (!isbnLine.includes("EUR")) {
-        isbnLine += ` : ${book.price.trim()}`;
-      }
-    } 
-    // Handle numeric price or string price that doesn't contain EUR yet
-    else if (book.price && !isbnLine.includes("EUR")) {
-      // Convert price to string and format for German display (comma instead of decimal point)
-      let priceText = String(book.price);
-      
-      // Make sure we have proper decimal formatting
-      if (priceText.includes('.')) {
-        // Split by decimal point to handle the decimal places properly
-        const [whole, decimal] = priceText.split('.');
-        
-        // Format with exactly 2 decimal places
-        if (decimal && decimal.length === 1) {
-          priceText = `${whole},${decimal}0`;
-        } else if (decimal) {
-          priceText = `${whole},${decimal.substring(0, 2)}`;
-        } else {
-          priceText = `${whole},00`;
+    // Format price with German conventions (comma for decimal)
+    if (book.price) {
+      let priceText = '';
+      if (typeof book.price === 'string' && book.price.includes('EUR')) {
+        priceText = book.price.trim();
+      } else {
+        // Format price with German conventions
+        priceText = String(book.price).replace('.', ',');
+        if (!priceText.includes(',')) {
+          priceText += ',00';
         }
-      } else if (!priceText.includes(',') && !isNaN(Number(priceText))) {
-        priceText += ',00';
+        priceText = `EUR ${priceText}`;
       }
       
-      isbnLine += ` : EUR ${priceText.trim()}`;
+      isbnLine += ` : ${priceText}`;
     }
     
-    doc.setFont("helvetica", "normal");
     doc.text(isbnLine, 22, yPos);
     yPos += 7;
   }
   
-  // --- 6. Book summary/description and critical review ---
+  // --- 5. Summary and critical review (with | separator) ---
+  yPos += 3;
   if (book.summary || book.review) {
-    yPos += 2;
-    
-    // Set text style for summary text
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     
-    // Combine summary and review with the | separator exactly as in target format
-    let summaryText = '';
-    
+    // Format according to template with | separator
+    let contentText = '';
     if (book.summary) {
-      // Take the summary as is or trim if too long
-      summaryText = book.summary;
+      contentText = book.summary.trim();
     }
     
-    // Add separator between summary and review
     if (book.summary && book.review) {
-      // Make sure there's proper spacing around the separator
-      summaryText += ' | ';
+      contentText += ' | '; // Explicit separator as requested
     }
     
     if (book.review) {
-      // Add the review text
-      summaryText += book.review;
+      contentText += book.review.trim();
     }
     
-    // Clean up the text by removing any metadata patterns
-    const metadataPatterns = [
-      /\*\*Titel:\*\*.*\n?/i,
-      /\*\*Autor(?:in)?:\*\*.*\n?/i,
-      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
-      /\*\*ISBN:\*\*.*\n?/i,
-      /\*\*Verlag:\*\*.*\n?/i,
-      /Titel:.*\n?/i,
-      /Autor(?:in)?:.*\n?/i,
-      /Erscheinungsjahr:.*\n?/i,
-      /ISBN:.*\n?/i,
-      /Verlag:.*\n?/i
-    ];
+    // Clean up text by removing metadata patterns and extra whitespace
+    contentText = contentText
+      .replace(/\*\*.*?\*\*.*?(?:\n|$)/g, '') // Remove markdown headers
+      .replace(/^\s*[-•]\s*/gm, '')          // Remove bullet points
+      .replace(/\n\s*\n/g, '\n')             // Remove extra line breaks
+      .trim();
     
-    // Apply all patterns
-    metadataPatterns.forEach(pattern => {
-      summaryText = summaryText.replace(pattern, '');
-    });
-    
-    // Remove any extra whitespace and multiple newlines
-    summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
-    
-    // Split the text for proper wrapping with consistent width (match other sections)
-    const summaryWidth = 145; // Match other width constraints for consistency
-    const summaryLines = doc.splitTextToSize(summaryText.trim(), summaryWidth);
-    
-    // Create content for each line with justified text and consistent width
+    const summaryLines = doc.splitTextToSize(contentText, 145);
     for (let i = 0; i < summaryLines.length; i++) {
-      doc.text(summaryLines[i], 22, yPos, { 
-        align: 'justify',
-        maxWidth: summaryWidth,
-      });
-      yPos += 4.5; // Slightly reduce line spacing to fit more text
+      doc.text(summaryLines[i], 22, yPos, { align: 'justify' });
+      yPos += 4.5;
     }
-    
-    // Add a small space after the summary
-    yPos += 2;
   }
   
-  // --- 7. Reviewer name in bottom right ---
-  yPos += 7; // Slightly more space before reviewer name
-  doc.setFont("helvetica", "italic"); // Use italic for reviewer name as per professional standards
+  // --- 6. Reviewer name ---
+  yPos += 7;
+  doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   
-  // Use reviewer name if available, with multiple fallbacks
+  // Use reviewer name with fallbacks
   let reviewerText = "";
   if (book.reviewerName) {
     reviewerText = book.reviewerName;
   } else if (book.reviewer_name) {
-    // Alternative field name
     reviewerText = book.reviewer_name;
   } else if (book.user && typeof book.user === 'object' && book.user.fullName) {
-    // Fallback to user's full name if available
     reviewerText = book.user.fullName;
   } else if (book.userId) {
-    // If only user ID is available, we show a placeholder
     reviewerText = `ID: ${book.userId}`;
   }
   
-  // Only add text if we have a reviewer
   if (reviewerText) {
     doc.text(reviewerText, 190, yPos, { align: 'right' });
   }
   
-  // --- 8. Interest category (IK) and Age recommendation on bottom left ---
-  yPos += 8; // Reduced spacing to maintain balanced layout
+  // --- 7. IK categories and age recommendation ---
+  yPos += 8;
+  doc.setFont("helvetica", "normal");
   
-  // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
-  
-  // Support both field naming conventions (interestCategory and interest_category)
   const interestCategory = book.interestCategory || book.interest_category || '';
   
   if (interestCategory) {
