@@ -43,42 +43,10 @@ export function ApiKeysProvider({ children }: { children: ReactNode }) {
   // Show modal automatically after login if keys are missing
   useEffect(() => {
     if (user && apiKeysStatus && !apiKeysStatus.hasKeys && !isModalOpen) {
-      // Check localStorage first
-      const localStorageKeys = checkRequiredApiKeys();
-      
-      if (localStorageKeys.hasAllRequired) {
-        // If keys are in localStorage but not in session, send them to server
-        updateServerKeysFromLocalStorage();
-      } else {
-        // If no keys anywhere, show the modal
-        setIsModalOpen(true);
-      }
+      // Always show the modal if API keys are missing
+      setIsModalOpen(true);
     }
   }, [user, apiKeysStatus]);
-  
-  // Function to update server with keys from localStorage
-  const updateServerKeysFromLocalStorage = async () => {
-    try {
-      const response = await fetch('/api/session/api-keys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          openai_api_key: localStorage.getItem(API_KEYS.OPENAI) || '',
-          google_books_api_key: localStorage.getItem(API_KEYS.GOOGLE_BOOKS) || '',
-          google_cse_key: localStorage.getItem(API_KEYS.GOOGLE_CSE) || '',
-          google_cse_id: localStorage.getItem(API_KEYS.GOOGLE_CSE_ID) || '',
-        }),
-      });
-      
-      if (response.ok) {
-        refetch(); // Refresh the status after updating
-      }
-    } catch (error) {
-      console.error('Failed to update server with localStorage keys:', error);
-    }
-  };
   
   // Function to show modal on demand
   const showApiKeysModal = () => {

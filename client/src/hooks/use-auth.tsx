@@ -47,52 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       
-      // Immediately try to upload API keys from localStorage to session after login
-      const uploadApiKeysFromStorage = async () => {
-        console.log("Attempting to restore API keys from localStorage after login");
-        try {
-          // Get API keys from localStorage
-          const OPENAI_KEY = localStorage.getItem("user_openai_api_key") || '';
-          const GOOGLE_BOOKS_KEY = localStorage.getItem("user_google_books_api_key") || '';
-          const GOOGLE_CSE_KEY = localStorage.getItem("user_google_cse_key") || '';
-          const GOOGLE_CSE_ID = localStorage.getItem("user_google_cse_id") || '';
-          
-          console.log("API keys found in localStorage:", {
-            hasOpenAI: !!OPENAI_KEY,
-            hasGoogleBooks: !!GOOGLE_BOOKS_KEY,
-            hasGoogleCSE: !!GOOGLE_CSE_KEY,
-            hasGoogleCSEId: !!GOOGLE_CSE_ID
-          });
-          
-          // Only proceed if we have some keys
-          if (OPENAI_KEY || GOOGLE_BOOKS_KEY) {
-            const response = await fetch('/api/session/api-keys', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                openai_api_key: OPENAI_KEY,
-                google_books_api_key: GOOGLE_BOOKS_KEY,
-                google_cse_key: GOOGLE_CSE_KEY,
-                google_cse_id: GOOGLE_CSE_ID
-              })
-            });
-            
-            if (response.ok) {
-              console.log("API keys successfully restored from localStorage to session");
-              // Invalidate the API keys status query to refresh UI
-              queryClient.invalidateQueries({ queryKey: ['/api/session/api-keys/status'] });
-            } else {
-              console.error("Failed to restore API keys to session:", await response.text());
-            }
-          }
-        } catch (error) {
-          console.error("Error restoring API keys after login:", error);
-        }
-      };
-      
-      // Execute the key restoration
-      uploadApiKeysFromStorage();
-      
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
@@ -114,52 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
-      
-      // Immediately try to upload API keys from localStorage to session after registration
-      const uploadApiKeysFromStorage = async () => {
-        console.log("Attempting to restore API keys from localStorage after registration");
-        try {
-          // Get API keys from localStorage
-          const OPENAI_KEY = localStorage.getItem("user_openai_api_key") || '';
-          const GOOGLE_BOOKS_KEY = localStorage.getItem("user_google_books_api_key") || '';
-          const GOOGLE_CSE_KEY = localStorage.getItem("user_google_cse_key") || '';
-          const GOOGLE_CSE_ID = localStorage.getItem("user_google_cse_id") || '';
-          
-          console.log("API keys found in localStorage for new user:", {
-            hasOpenAI: !!OPENAI_KEY,
-            hasGoogleBooks: !!GOOGLE_BOOKS_KEY,
-            hasGoogleCSE: !!GOOGLE_CSE_KEY,
-            hasGoogleCSEId: !!GOOGLE_CSE_ID
-          });
-          
-          // Only proceed if we have some keys
-          if (OPENAI_KEY || GOOGLE_BOOKS_KEY) {
-            const response = await fetch('/api/session/api-keys', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                openai_api_key: OPENAI_KEY,
-                google_books_api_key: GOOGLE_BOOKS_KEY,
-                google_cse_key: GOOGLE_CSE_KEY,
-                google_cse_id: GOOGLE_CSE_ID
-              })
-            });
-            
-            if (response.ok) {
-              console.log("API keys successfully restored from localStorage to session for new user");
-              // Invalidate the API keys status query to refresh UI
-              queryClient.invalidateQueries({ queryKey: ['/api/session/api-keys/status'] });
-            } else {
-              console.error("Failed to restore API keys to session for new user:", await response.text());
-            }
-          }
-        } catch (error) {
-          console.error("Error restoring API keys after registration:", error);
-        }
-      };
-      
-      // Execute the key restoration
-      uploadApiKeysFromStorage();
       
       toast({
         title: "Registration successful",

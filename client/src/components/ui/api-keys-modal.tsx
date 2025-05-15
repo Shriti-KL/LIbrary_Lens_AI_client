@@ -19,29 +19,24 @@ export const API_KEYS = {
   GOOGLE_CSE_ID: "user_google_cse_id"
 };
 
-// Helper to retrieve all stored API keys
+// Helper to retrieve stored API keys (empty values since we don't use localStorage)
 export function getStoredApiKeys() {
   return {
-    [API_KEYS.OPENAI]: localStorage.getItem(API_KEYS.OPENAI) || "",
-    [API_KEYS.GOOGLE_BOOKS]: localStorage.getItem(API_KEYS.GOOGLE_BOOKS) || "",
-    [API_KEYS.GOOGLE_CSE]: localStorage.getItem(API_KEYS.GOOGLE_CSE) || "",
-    [API_KEYS.GOOGLE_CSE_ID]: localStorage.getItem(API_KEYS.GOOGLE_CSE_ID) || ""
+    [API_KEYS.OPENAI]: "",
+    [API_KEYS.GOOGLE_BOOKS]: "",
+    [API_KEYS.GOOGLE_CSE]: "",
+    [API_KEYS.GOOGLE_CSE_ID]: ""
   };
 }
 
-// Helper to check if required API keys are available
+// Helper to check if required API keys are available 
+// (Now just returns all false since we're not using localStorage)
 export function checkRequiredApiKeys() {
-  const keys = getStoredApiKeys();
   return {
-    hasOpenAI: !!keys[API_KEYS.OPENAI],
-    hasGoogleBooks: !!keys[API_KEYS.GOOGLE_BOOKS],
-    hasGoogleCSE: !!(keys[API_KEYS.GOOGLE_CSE] && keys[API_KEYS.GOOGLE_CSE_ID]),
-    hasAllRequired: !!(
-      keys[API_KEYS.OPENAI] && 
-      keys[API_KEYS.GOOGLE_BOOKS] && 
-      keys[API_KEYS.GOOGLE_CSE] &&
-      keys[API_KEYS.GOOGLE_CSE_ID]
-    )
+    hasOpenAI: false,
+    hasGoogleBooks: false,
+    hasGoogleCSE: false,
+    hasAllRequired: false
   };
 }
 
@@ -58,11 +53,7 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
   const handleSave = async () => {
     setIsSaving(true);
     
-    // Store in localStorage
-    localStorage.setItem(API_KEYS.OPENAI, openAIKey);
-    localStorage.setItem(API_KEYS.GOOGLE_BOOKS, googleBooksKey);
-    localStorage.setItem(API_KEYS.GOOGLE_CSE, googleCSEKey);
-    localStorage.setItem(API_KEYS.GOOGLE_CSE_ID, googleCSEId);
+    // Do not store in localStorage anymore - API keys should be session-specific per user
     
     // Also send to server for current session validation
     try {
