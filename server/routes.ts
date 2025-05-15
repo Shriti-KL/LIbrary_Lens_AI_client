@@ -124,38 +124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const imageBuffer = req.file.buffer;
         const base64Image = imageBuffer.toString('base64');
         
-        // Extract data from cover image
-        const coverData = await analyzeBookCover(base64Image, apiKeys.openai_api_key);
-        
-        // If ISBN detected, use verification flow
-        if (coverData.isbn) {
-          console.log(`[${analysisId}] ISBN detected in cover: ${coverData.isbn}`);
-          bookData = await verifyBookByIsbn(coverData.isbn, apiKeys);
-          bookData.coverImageData = base64Image;
-        } else {
-          // Use the cover data directly
-          bookData = coverData;
-          bookData.coverImageData = base64Image;
-          
-          // Try to get more data using OpenAI
-          if (coverData.title) {
-            const enhancedData = await processBookAnalysis({
-              title: coverData.title,
-              author: coverData.author || "",
-              language
-            }, apiKeys.openai_api_key);
-            
-            bookData = { ...bookData, ...enhancedData };
-          }
-          
-          // Add verification data
-          bookData.verification = {
-            status: "ai_generated",
-            confidence: 0.3,
-            sources: ["OpenAI"],
-            message: "Book information extracted from cover image by AI"
-          };
-        }
+        // Use the getBookFromCoverImage function that handles all the API integration
+        const { getBookFromCoverImage } = await import("./services/bookAnalysis");
+        bookData = await getBookFromCoverImage(base64Image, language, apiKeys);
       }
       // Case 3: Title provided
       else if (formData.title) {

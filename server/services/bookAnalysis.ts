@@ -1,8 +1,9 @@
 import { Book, BookAnalysisRequest } from "@shared/schema";
 import { getCompleteBookByISBN } from "./googleBooks";
 import { apiLogger } from "../utils/logger";
-import { processBookAnalysis as processBookAnalysisWithOpenAI } from "./openai";
+import { processBookAnalysis as processBookAnalysisWithOpenAI, analyzeBookCover } from "./openai";
 import { lookupBookByIsbn } from "./pythonIsbnService";
+import { verifyBookByIsbn } from "./verificationService";
 
 /**
  * Process a book analysis request with enhanced logic:
@@ -521,8 +522,66 @@ export async function enrichBookMetadata(bookData: Partial<Book>, apiKeys?: any)
  * Function to analyze book cover and retrieve enhanced metadata from multiple sources
  */
 export async function getBookFromCoverImage(imageBase64: string, language: string = "de", apiKeys?: any): Promise<Partial<Book> | null> {
-  // Implementation to come later
-  return null;
+  const coverId = `cover_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  console.log(`[${coverId}] Analyzing book cover image`);
+  
+  try {
+    // Extract data from cover image using OpenAI
+    const coverData = await analyzeBookCover(imageBase64, apiKeys?.openai_api_key);
+    
+    if (!coverData || coverData.error) {
+      console.log(`[${coverId}] Error analyzing cover: ${coverData?.error || 'Unknown error'}`);
+      return null;
+    }
+    
+    // Store the cover image data
+    let bookData: Partial<Book> = {
+      ...coverData,
+      coverImageData: imageBase64
+    };
+    
+    // If ISBN detected, use verification flow for more comprehensive data
+    if (coverData.isbn) {
+      console.log(`[${coverId}] ISBN detected in cover: ${coverData.isbn}`);
+      const verifiedData = await verifyBookByIsbn(coverData.isbn, apiKeys);
+      
+      if (verifiedData && verifiedData.title) {
+        // Merge the verified data with the cover image
+        bookData = {
+          ...verifiedData,
+          coverImageData: imageBase64
+        };
+      }
+    } else if (coverData.title) {
+      // If no ISBN but title available, try to enhance with OpenAI
+      console.log(`[${coverId}] No ISBN, enhancing with title: ${coverData.title}`);
+      
+      const enhancedData = await processBookAnalysis({
+        title: coverData.title,
+        author: coverData.author || "",
+        language
+      }, apiKeys?.openai_api_key);
+      
+      if (enhancedData) {
+        bookData = { ...bookData, ...enhancedData };
+      }
+      
+      // Add verification status
+      bookData.verification = {
+        status: "ai_generated",
+        confidence: 0.3,
+        sources: ["OpenAI"],
+        message: "Book information extracted from cover image by AI"
+      };
+    }
+    
+    console.log(`[${coverId}] Cover analysis completed: "${bookData.title || 'Unknown'}"`);
+    return bookData;
+    
+  } catch (error: any) {
+    console.error(`[${coverId}] Error in cover analysis:`, error?.message || String(error));
+    return null;
+  }
 }
 
 /**
