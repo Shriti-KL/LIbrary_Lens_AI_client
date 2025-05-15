@@ -713,17 +713,20 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFont("helvetica", "normal");
   
   // Truncate and format the title to fit
-  let titleText = book.title;
-  if (titleText.length > 60) {
-    titleText = titleText.substring(0, 57) + "...";
+  let titleText = book.title || "";
+  if (titleText.length > 50) { // Further reduced to ensure it fits
+    titleText = titleText.substring(0, 47) + "...";
   }
   
-  // Add author after title
-  titleText += ` / ${book.author}`;
+  // Add author after title (only if not already shown above)
+  const authorToShow = book.author || "";
+  if (authorToShow && authorToShow !== authorFormatted) {
+    titleText += ` / ${authorToShow}`;
+  }
   
   // Split for wrapping with reduced width
   const titleLines = doc.splitTextToSize(titleText, width - 10);
-  for (let i = 0; i < Math.min(titleLines.length, 3); i++) { // Limit to 3 lines
+  for (let i = 0; i < Math.min(titleLines.length, 2); i++) { // Limit to 2 lines to save space
     doc.text(titleLines[i], x + 5, currentY);
     currentY += 4;
   }
@@ -818,28 +821,33 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Remove any extra whitespace that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // No longer limit by space - we will expand the cell height dynamically
-    // This ensures all text is visible even if it's very long
+    // For multiple book PDF, we need to limit text to fit in the cell
+    // Calculate available space for summary text
+    const availableHeight = (y + height - spaceNeededForFooter) - currentY;
+    const lineHeight = 3;
     
     // Break into lines with proper wrapping
     const summaryLines = doc.splitTextToSize(summaryText, width - 10);
     
-    // Calculate the height needed to display all text
-    const lineHeight = 3;
-    // We'll show all lines, not limiting them
+    // Calculate how many lines we can fit in the available space
+    const maxLinesToShow = Math.floor(availableHeight / lineHeight);
     
     // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
     
-    // Show all lines of the summary and review
-    const linesToShow = summaryLines.length;
+    // Show only the lines that will fit
+    const linesToShow = Math.min(summaryLines.length, maxLinesToShow);
     
     for (let i = 0; i < linesToShow; i++) {
       doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
       currentY += lineHeight; // Reduced line spacing to fit more text
     }
     
-    // No ellipsis needed since we're showing all lines
+    // Add ellipsis if we couldn't show all lines
+    if (summaryLines.length > linesToShow) {
+      doc.text("...", x + 5, currentY);
+      currentY += lineHeight;
+    }
   }
   
   // --- IK category and ID-B number ---
@@ -850,14 +858,12 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // Check if we're getting too close to the bottom of the cell
   const spaceNeededForFooter = 30; // Space needed for barcode and footer text
   
-  // If the currentY position is too close to the bottom edge of the specified height,
-  // increase the cell height dynamically
+  // For multiple book PDF, we need to be strict about fixed cell height
+  // But ensure we don't overflow by trimming text if necessary
+  
+  // Hard limit: never go beyond the allocated cell height - footer space
   if (currentY > y + height - spaceNeededForFooter) {
-    // Instead of creating a new page, we'll put some space and continue
-    // This is better than cutting off mid-sentence
-    currentY += 5; // Add some space after the summary
-  } else {
-    // We have enough space in current page, position footer near bottom
+    // We've gone too far - truncate and adjust position
     currentY = y + height - spaceNeededForFooter;
   }
   
