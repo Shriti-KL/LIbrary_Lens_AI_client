@@ -274,13 +274,17 @@ export async function searchSimilarBooks(book: Partial<Book>, apiKey?: string): 
     
     // Parse and return the results
     try {
-      const result = JSON.parse(response.choices[0].message.content);
-      return Array.isArray(result) ? result : [];
+      const content = response.choices[0].message.content;
+      if (content) {
+        const result = JSON.parse(content);
+        return Array.isArray(result) ? result : [];
+      }
+      return [];
     } catch (e) {
       console.error("[API] Error parsing similar books response:", e);
       return [];
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("[API] Error finding similar books:", error);
     return [];
   }

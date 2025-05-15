@@ -267,7 +267,7 @@ export async function searchSimilarBooks(book: Partial<Book>, apiKey?: string): 
     }
     
     // Strategy 2: Search by genre/category if available
-    if (book.genres && book.genres.length > 0) {
+    if (book.genres && Array.isArray(book.genres) && book.genres.length > 0) {
       const query = `subject:${book.genres[0]}`;
       const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${key}`;
       

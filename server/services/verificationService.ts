@@ -282,9 +282,12 @@ export async function verifyBookData(isbn: string, apiKeys?: ApiKeys): Promise<P
       if (sources.length >= 2) {
         // Create a request that contains the verified data
         const openAiRequest: BookAnalysisRequest = {
-          ...mergedData,
+          language: mergedData.language || "de",
           isbn: isbn,
-          language: mergedData.language || "de"
+          title: mergedData.title,
+          subtitle: mergedData.subtitle,
+          mainAuthor: mergedData.mainAuthor,
+          description: mergedData.description
         };
         
         // Process with OpenAI (only for summary and review, not metadata)
