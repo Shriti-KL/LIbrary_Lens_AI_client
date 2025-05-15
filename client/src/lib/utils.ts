@@ -562,29 +562,52 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 
 // Export a single book to PDF
 export function exportBookToPDF(book: Book, language: string = 'de'): void {
-  // Create a new PDF with standard A4 size (German DIN A4)
-  const doc = new jsPDF({
-    unit: 'mm',
-    format: 'a4',
-  });
-  
-  // Configure language-specific text
-  const bookLanguage = book.language || language;
-  
-  // Modify any labels or text based on the book's language
-  // Note: The formatBookEntryForPDF function already handles German formatting
-  // with commas for decimal points, "Seiten" instead of "pages", etc.
-  
-  // Format book entry
-  formatBookEntryForPDF(doc, book);
-  
-  // Save the PDF with the book title as filename
-  // Remove any forbidden characters from filename
-  const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
-  
-  // Set the correct filename prefix based on language
-  const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
-  doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
+  try {
+    if (!book || !book.title) {
+      console.warn('Missing book data for PDF export');
+      throw new Error('Invalid book data for PDF export');
+    }
+    
+    // Create a new PDF with standard A4 size (German DIN A4)
+    const doc = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    // Configure language-specific text
+    const bookLanguage = book.language || language;
+    
+    // Modify any labels or text based on the book's language
+    // Note: The formatBookEntryForPDF function already handles German formatting
+    // with commas for decimal points, "Seiten" instead of "pages", etc.
+    
+    try {
+      // Format book entry with explicit error handling
+      formatBookEntryForPDF(doc, book);
+    } catch (formatError) {
+      console.error('Error formatting book entry for PDF:', formatError);
+      throw new Error('PDF formatting failed');
+    }
+    
+    // Save the PDF with the book title as filename
+    // Remove any forbidden characters from filename
+    const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+    
+    // Set the correct filename prefix based on language
+    const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
+    
+    try {
+      doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
+    } catch (saveError) {
+      console.error('Error saving PDF:', saveError);
+      throw new Error('PDF save failed');
+    }
+    
+    console.log('Successfully exported PDF for book:', book.title);
+  } catch (error) {
+    console.error('PDF export error:', error);
+    throw error; // Re-throw for component error handling
+  }
 }
 
 // Draw a single box with correction info - used on the first page
