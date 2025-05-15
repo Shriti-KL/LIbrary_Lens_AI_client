@@ -237,7 +237,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = `isbn_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
       console.log(`[${requestId}] Looking up ISBN: ${isbn}`);
       
-      const bookData = await verifyBookByIsbn(isbn);
+      // Extract API keys from session if available
+      const sessionApiKeys = (req.session as any).apiKeys || {};
+      
+      // Pass session API keys to the verification service
+      const bookData = await verifyBookByIsbn(isbn, {
+        openai_api_key: sessionApiKeys.openai_api_key,
+        google_books_api_key: sessionApiKeys.google_books_api_key,
+        google_cse_key: sessionApiKeys.google_cse_key,
+        google_cse_id: sessionApiKeys.google_cse_id
+      });
       
       if (!bookData || !bookData.title) {
         return res.status(404).json({ error: "Book not found" });
