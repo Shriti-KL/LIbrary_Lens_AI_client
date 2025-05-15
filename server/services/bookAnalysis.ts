@@ -312,7 +312,7 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       )
     );
     
-    const openAIResult = await processBookAnalysisWithOpenAI(request);
+    const openAIResult = await processBookAnalysisWithOpenAI(request, apiKeys?.openai_api_key);
     
     // Merge the results, prioritizing reliable data
     const mergedResult = {
@@ -429,7 +429,7 @@ export async function getBookByTitleAndAuthor(title: string, author: string = ""
       )
     );
     
-    const openAIResult = await processBookAnalysisWithOpenAI(request);
+    const openAIResult = await processBookAnalysisWithOpenAI(request, apiKeys?.openai_api_key);
     
     // Merge the results, prioritizing Google Books data for factual fields
     const mergedResult = {
@@ -456,7 +456,7 @@ export async function getBookByTitleAndAuthor(title: string, author: string = ""
 /**
  * Enrich book metadata with additional fields from OpenAI
  */
-export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Partial<Book>> {
+export async function enrichBookMetadata(bookData: Partial<Book>, apiKeys?: any): Promise<Partial<Book>> {
   const enrichId = `enrich_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${enrichId}] Enriching book metadata for: "${bookData.title}" by ${bookData.mainAuthor || bookData.author || 'Unknown'}`);
   
@@ -494,7 +494,7 @@ export async function enrichBookMetadata(bookData: Partial<Book>): Promise<Parti
     );
     
     // Call OpenAI to enhance the metadata
-    const openAIResult = await processBookAnalysisWithOpenAI(request);
+    const openAIResult = await processBookAnalysisWithOpenAI(request, apiKeys?.openai_api_key);
     
     // Merge the results, prioritizing existing data for factual fields
     const mergedResult = {
