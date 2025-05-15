@@ -73,12 +73,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Check if keys are in session
+    // Check if required keys are in session (Google CSE is optional)
     const hasKeys = req.session.apiKeys && (
       req.session.apiKeys.openai_api_key &&
-      req.session.apiKeys.google_books_api_key &&
-      req.session.apiKeys.google_cse_key &&
-      req.session.apiKeys.google_cse_id
+      req.session.apiKeys.google_books_api_key
     );
     
     console.log(`[DEBUG] API Keys Status - User: ${req.user.username}, Has keys: ${!!hasKeys}`);

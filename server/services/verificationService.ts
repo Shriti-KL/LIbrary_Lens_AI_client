@@ -174,104 +174,118 @@ export async function verifyBookData(isbn: string, apiKeys?: ApiKeys): Promise<P
       mergedData.mainAuthor = mergedData.author;
     }
     
-    // Step 4: Validate with Google Custom Search and fill missing data
-    console.log(`[verify_${requestId}] Step 4: Getting additional data from Google Custom Search`);
+    // Step 4: Validate with Google Custom Search and fill missing data (if keys are provided)
+    console.log(`[verify_${requestId}] Step 4: Checking for Google CSE keys`);
     const searchQuery = `${mergedData.title} ${mergedData.mainAuthor || mergedData.author || ""}`;
     let googleSearchResults = [];
     
-    try {
-      googleSearchResults = await searchGoogleBooks(
-        searchQuery, 
-        apiKeys?.google_cse_key, 
-        apiKeys?.google_cse_id
-      );
+    // Only use Google CSE if both key and ID are provided
+    if (apiKeys?.google_cse_key && apiKeys?.google_cse_id) {
+      console.log(`[verify_${requestId}] Google CSE keys found, proceeding with Google Custom Search`);
       
-      if (googleSearchResults && googleSearchResults.length > 0) {
-        console.log(`[verify_${requestId}] Google Search found ${googleSearchResults.length} results`);
-        console.log("=== GOOGLE CUSTOM SEARCH RESULTS ===");
-        console.log(JSON.stringify(googleSearchResults.slice(0, 2), null, 2)); // Log just the first two for brevity
+      try {
+        googleSearchResults = await searchGoogleBooks(
+          searchQuery, 
+          apiKeys.google_cse_key, 
+          apiKeys.google_cse_id
+        );
         
-        sources.push("Google Search");
-        
-        // Use Google Custom Search data to fill in missing fields
-        // Since this is a lower quality source, only use it if fields are missing
-        if (googleSearchResults[0]) {
-          const gcsResult = googleSearchResults[0];
+        if (googleSearchResults && googleSearchResults.length > 0) {
+          console.log(`[verify_${requestId}] Google Search found ${googleSearchResults.length} results`);
+          console.log("=== GOOGLE CUSTOM SEARCH RESULTS ===");
+          console.log(JSON.stringify(googleSearchResults.slice(0, 2), null, 2)); // Log just the first two for brevity
           
-          // Extract information from snippet or title if needed
-          // This is a simple implementation - we're just checking a few key fields as examples
-          if (!mergedData.subtitle && gcsResult.title && gcsResult.title.includes(':')) {
-            const parts = gcsResult.title.split(':');
-            if (parts.length > 1 && parts[0].trim().toLowerCase() === mergedData.title?.toLowerCase()) {
-              mergedData.subtitle = parts[1].trim();
-              console.log(`[verify_${requestId}] Added subtitle from Google CSE: ${mergedData.subtitle}`);
+          sources.push("Google Search");
+          
+          // Use Google Custom Search data to fill in missing fields
+          // Since this is a lower quality source, only use it if fields are missing
+          if (googleSearchResults[0]) {
+            const gcsResult = googleSearchResults[0];
+            
+            // Extract information from snippet or title if needed
+            // This is a simple implementation - we're just checking a few key fields as examples
+            if (!mergedData.subtitle && gcsResult.title && gcsResult.title.includes(':')) {
+              const parts = gcsResult.title.split(':');
+              if (parts.length > 1 && parts[0].trim().toLowerCase() === mergedData.title?.toLowerCase()) {
+                mergedData.subtitle = parts[1].trim();
+                console.log(`[verify_${requestId}] Added subtitle from Google CSE: ${mergedData.subtitle}`);
+              }
             }
+            
+            // More fields could be added here based on your needs
           }
-          
-          // More fields could be added here based on your needs
+        } else {
+          console.log(`[verify_${requestId}] Google Search found no results`);
         }
-      } else {
-        console.log(`[verify_${requestId}] Google Search found no results`);
+      } catch (error: any) {
+        console.log(`[verify_${requestId}] Error in Google Search: ${error.message || error}`);
+        // Skip this step if Google CSE fails
       }
-    } catch (error: any) {
-      console.log(`[verify_${requestId}] Error in Google Search: ${error.message || error}`);
-      // Skip this step if Google CSE fails
+    } else {
+      console.log(`[verify_${requestId}] Google CSE keys not provided, skipping Google Custom Search step`);
     }
     
-    // Step 5: Get Goodreads data for additional validation and missing fields
-    console.log(`[verify_${requestId}] Step 5: Getting Goodreads data for validation and missing fields`);
+    // Step 5: Get Goodreads data for additional validation and missing fields (if Google CSE keys are provided)
+    console.log(`[verify_${requestId}] Step 5: Checking for Google CSE keys for Goodreads search`);
     let goodreadsData: any = null;
     let dataMatches = true;
     
-    try {
-      goodreadsData = await searchGoodreads(
-        mergedData.title || "", 
-        mergedData.mainAuthor || mergedData.author || "",
-        apiKeys?.google_cse_key,
-        apiKeys?.google_cse_id
-      );
+    // Only use Goodreads search if Google CSE keys are provided
+    if (apiKeys?.google_cse_key && apiKeys?.google_cse_id) {
+      console.log(`[verify_${requestId}] Google CSE keys found, proceeding with Goodreads search`);
       
-      // Check if Goodreads data has an error field
-      if (goodreadsData && !goodreadsData.error) {
-        console.log(`[verify_${requestId}] Goodreads search successful`);
-        console.log("=== GOODREADS DATA ===");
-        console.log(JSON.stringify(goodreadsData, null, 2));
+      try {
+        goodreadsData = await searchGoodreads(
+          mergedData.title || "", 
+          mergedData.mainAuthor || mergedData.author || "",
+          apiKeys.google_cse_key,
+          apiKeys.google_cse_id
+        );
         
-        sources.push("Goodreads");
-        
-        // Compare basic metadata for verification
-        // This helps detect if we've got the right book across sources
-        if (goodreadsData.title && mergedData.title) {
-          // Use edit distance or another method to fuzzy match titles
-          // For simplicity, we're doing a basic check here
-          const cleanTitle1 = goodreadsData.title.toLowerCase().replace(/[^\w\s]/g, '');
-          const cleanTitle2 = mergedData.title.toLowerCase().replace(/[^\w\s]/g, '');
+        // Check if Goodreads data has an error field
+        if (goodreadsData && !goodreadsData.error) {
+          console.log(`[verify_${requestId}] Goodreads search successful`);
+          console.log("=== GOODREADS DATA ===");
+          console.log(JSON.stringify(goodreadsData, null, 2));
           
-          // If the titles aren't similar, we might have the wrong book
-          if (!cleanTitle2.includes(cleanTitle1) && !cleanTitle1.includes(cleanTitle2)) {
-            console.log(`[verify_${requestId}] Warning: Goodreads title doesn't match: "${goodreadsData.title}" vs "${mergedData.title}"`);
-            dataMatches = false;
-          }
-        }
-        
-        // If data matches, use Goodreads to fill in missing fields
-        if (dataMatches) {
-          // Use Goodreads rating if available
-          if (goodreadsData.rating && !mergedData.rating) {
-            mergedData.rating = goodreadsData.rating;
+          sources.push("Goodreads");
+          
+          // Compare basic metadata for verification
+          // This helps detect if we've got the right book across sources
+          if (goodreadsData.title && mergedData.title) {
+            // Use edit distance or another method to fuzzy match titles
+            // For simplicity, we're doing a basic check here
+            const cleanTitle1 = goodreadsData.title.toLowerCase().replace(/[^\w\s]/g, '');
+            const cleanTitle2 = mergedData.title.toLowerCase().replace(/[^\w\s]/g, '');
+            
+            // If the titles aren't similar, we might have the wrong book
+            if (!cleanTitle2.includes(cleanTitle1) && !cleanTitle1.includes(cleanTitle2)) {
+              console.log(`[verify_${requestId}] Warning: Goodreads title doesn't match: "${goodreadsData.title}" vs "${mergedData.title}"`);
+              dataMatches = false;
+            }
           }
           
-          // Add Goodreads link for reference
-          if (goodreadsData.url) {
-            mergedData.goodreadsUrl = goodreadsData.url;
+          // If data matches, use Goodreads to fill in missing fields
+          if (dataMatches) {
+            // Use Goodreads rating if available
+            if (goodreadsData.rating && !mergedData.rating) {
+              mergedData.rating = goodreadsData.rating;
+            }
+            
+            // Add Goodreads link for reference
+            if (goodreadsData.url) {
+              mergedData.goodreadsUrl = goodreadsData.url;
+            }
           }
+        } else {
+          console.log(`[verify_${requestId}] Goodreads search error: ${goodreadsData?.error || 'Unknown error'}`);
         }
-      } else {
-        console.log(`[verify_${requestId}] Goodreads search error: ${goodreadsData?.error || 'Unknown error'}`);
+      } catch (error: any) {
+        console.log(`[verify_${requestId}] Error in Goodreads search: ${error.message || error}`);
+        // Skip this step if Goodreads search fails
       }
-    } catch (error: any) {
-      console.log(`[verify_${requestId}] Error in Goodreads search: ${error.message || error}`);
-      // Skip this step if Goodreads search fails
+    } else {
+      console.log(`[verify_${requestId}] Google CSE keys not provided, skipping Goodreads search step`);
     }
     
     // Step 6: Get additional book details from OpenAI
