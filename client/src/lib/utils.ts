@@ -177,9 +177,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
+  // Set author name in bold with proper size for emphasis
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold"); 
-  doc.text(authorFormatted + ":", 22, yPos);
+  if (authorFormatted) {
+    doc.text(authorFormatted + ":", 22, yPos);
+  }
   
   yPos += 6; // Space after author name
   
@@ -351,8 +354,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     // Add price if available (with comma, not period, for decimal values in German format)
-    if (book.price) {
-      // Price is a string in the schema, so no need for complex type handling
+    if (book.price && !isbnLine.includes("EUR")) {
+      // Convert price to string and format for German display (comma instead of decimal point)
       const priceText = String(book.price).replace('.', ',');
       isbnLine += `: EUR ${priceText}`;
     }
@@ -421,23 +424,28 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 7. Reviewer name in bottom right ---
-  yPos += 5;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  yPos += 7; // Slightly more space before reviewer name
+  doc.setFont("helvetica", "italic"); // Use italic for reviewer name as per professional standards
+  doc.setFontSize(9);
   
   // Use reviewer name if available, with multiple fallbacks
+  let reviewerText = "";
   if (book.reviewerName) {
-    doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+    reviewerText = book.reviewerName;
   } else if (book.reviewer_name) {
     // Alternative field name
-    doc.text(book.reviewer_name, 190, yPos, { align: 'right' });
+    reviewerText = book.reviewer_name;
   } else if (book.user && typeof book.user === 'object' && book.user.fullName) {
     // Fallback to user's full name if available
-    doc.text(book.user.fullName, 190, yPos, { align: 'right' });
+    reviewerText = book.user.fullName;
   } else if (book.userId) {
     // If only user ID is available, we show a placeholder
-    // In a real implementation, we would fetch user details from the database
-    doc.text(`ID: ${book.userId}`, 190, yPos, { align: 'right' });
+    reviewerText = `ID: ${book.userId}`;
+  }
+  
+  // Only add text if we have a reviewer
+  if (reviewerText) {
+    doc.text(reviewerText, 190, yPos, { align: 'right' });
   }
   
   // --- 8. Interest category (IK) and Age recommendation on bottom left ---
@@ -697,8 +705,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
       isbnText += ` - ${book.binding}`;
     }
     
-    // Add price if available
-    if (book.price) {
+    // Add price if available (only if not already included)
+    if (book.price && !isbnText.includes("EUR")) {
       isbnText += ` : EUR ${book.price.toString().replace('.', ',')}`;
     }
     
