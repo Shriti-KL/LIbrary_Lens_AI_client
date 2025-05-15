@@ -129,13 +129,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBook(book: InsertBook): Promise<Book> {
+    // Determine a valid author value - we need this since the author field is NOT NULL in the database
+    let authorValue = book.mainAuthor;
+    
+    // If mainAuthor is missing, try to get a suitable value from other fields
+    if (!authorValue) {
+      // Try to get author from statement of responsibility
+      if (book.statementOfResponsibility) {
+        const parts = book.statementOfResponsibility.split('/');
+        if (parts.length > 1) {
+          authorValue = parts[1].trim();
+        }
+      }
+      
+      // Fallback to contributors
+      if (!authorValue && book.contributors && typeof book.contributors === 'object') {
+        if (!Array.isArray(book.contributors)) {
+          // New format: contributors as object with roles as keys
+          for (const role in book.contributors) {
+            if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+              authorValue = book.contributors[role][0];
+              break;
+            }
+          }
+        } else if (book.contributors.length > 0) {
+          // Old format: contributors as array of objects
+          const firstContributor = book.contributors[0];
+          if (firstContributor && firstContributor.name) {
+            authorValue = firstContributor.name;
+          }
+        }
+      }
+      
+      // Last resort fallback (required since the column is NOT NULL)
+      if (!authorValue) {
+        authorValue = book.title ? `${book.title} (Editor)` : 'Unknown Author';
+      }
+    }
+
     // Map the fields to the database column names
     const dbBook: Record<string, any> = {
       // Core bibliographic fields
       isbn: book.isbn,
       title: book.title,
       subtitle: book.subtitle,
-      author: book.mainAuthor, // Maintain the author field for backward compatibility
+      author: authorValue, // Maintain the author field for backward compatibility
       main_author: book.mainAuthor, // New field for the primary author
       statement_of_responsibility: book.statementOfResponsibility,
       edition: book.edition,
