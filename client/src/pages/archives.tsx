@@ -254,12 +254,10 @@ export default function Archives() {
     }
   };
   
-  // Export selected books to PDF with improved error handling
+  // Export selected books
   const exportSelectedBooks = () => {
-    // Get all selected books from the filtered list
     const booksToExport = filteredBooks.filter(book => selectedBooks.has(book.id));
     
-    // Check if there are any books selected
     if (booksToExport.length === 0) {
       toast({
         title: t('noBookSelected'),
@@ -269,42 +267,17 @@ export default function Archives() {
       return;
     }
     
-    // Validate book data before export
-    const invalidBooks = booksToExport.filter(book => !book.title || !book.author);
-    if (invalidBooks.length > 0 && invalidBooks.length === booksToExport.length) {
-      toast({
-        title: t('exportFailed'),
-        description: t('selectedBooksIncomplete'),
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    // Try to export the books with error handling
     try {
-      // Show toast for large exports to indicate processing
-      if (booksToExport.length > 5) {
-        toast({
-          title: t('exportStarted'),
-          description: t('preparingLargePDF'),
-        });
-      }
-      
-      // Call the export function
       exportMultipleBooksToSinglePDF(booksToExport);
-      
-      // Show success message
       toast({
         title: t('exportSuccess'),
         description: t('booksExportedToPDF'),
       });
     } catch (error) {
       console.error('PDF export error:', error);
-      
-      // Show detailed error message
       toast({
         title: t('exportFailed'),
-        description: error instanceof Error ? error.message : t('errorGeneratingPDF'),
+        description: t('errorGeneratingPDF'),
         variant: 'destructive',
       });
     }
