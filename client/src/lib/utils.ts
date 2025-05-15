@@ -119,28 +119,9 @@ export function formatISBN(isbn: string | null): string {
 }
 
 // Remove hyphens and other non-alphanumeric characters from ISBN for searching
-// This function standardizes ISBN formats for accurate comparisons/searching
 export function cleanISBNForSearch(isbn: string | null): string {
   if (!isbn) return '';
-  
-  // Remove all non-digit and non-X characters (X can appear as check digit in ISBN-10)
-  const cleaned = isbn.replace(/[^\dX]/gi, '');
-  
-  // Handle common edge cases
-  if (cleaned.length === 10 || cleaned.length === 13) {
-    // Valid ISBN-10 or ISBN-13 length
-    return cleaned;
-  } else if (cleaned.length > 13) {
-    // Sometimes ISBNs have additional code digits at the end
-    // Return the first 13 digits as standard ISBN-13
-    return cleaned.substring(0, 13);
-  } else if (cleaned.length === 9 && /^\d+$/.test(cleaned)) {
-    // Missing check digit in ISBN-10, return as is
-    return cleaned;
-  }
-  
-  // Return the cleaned ISBN for any other cases
-  return cleaned;
+  return isbn.replace(/[^\dX]/gi, '');
 }
 
 // Generate a PDF export for a book
@@ -571,13 +552,51 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Split the text for proper wrapping 
     const summaryLines = doc.splitTextToSize(summaryText, 160);
     
-    // Create content for each line with justified text
-    for (let i = 0; i < summaryLines.length; i++) {
-      doc.text(summaryLines[i], 22, yPos, { 
-        align: 'justify',
-        maxWidth: 160,
-      });
-      yPos += 4.5; // Slightly reduce line spacing to fit more text
+    // Calculate available space on current page
+    const bottomMargin = 30;
+    const availableHeight = doc.internal.pageSize.height - bottomMargin - yPos;
+    const maxLines = Math.floor(availableHeight / 4.5); // Using line height of 4.5
+    
+    // Check if text needs a page break
+    if (summaryLines.length > maxLines) {
+      // Handle text that spans multiple pages
+      let remainingLines = [...summaryLines];
+      
+      // Draw as many lines as will fit on current page
+      for (let i = 0; i < Math.min(maxLines, remainingLines.length); i++) {
+        doc.text(remainingLines[i], 22, yPos, { 
+          align: 'justify',
+          maxWidth: 160,
+        });
+        yPos += 4.5;
+      }
+      
+      // Remove the lines we've already drawn
+      remainingLines = remainingLines.slice(maxLines);
+      
+      // If we have remaining lines, start a new page and continue
+      if (remainingLines.length > 0) {
+        doc.addPage();
+        yPos = 40; // Reset position to top of new page
+        
+        // Continue with remaining lines
+        for (let i = 0; i < remainingLines.length; i++) {
+          doc.text(remainingLines[i], 22, yPos, { 
+            align: 'justify',
+            maxWidth: 160,
+          });
+          yPos += 4.5;
+        }
+      }
+    } else {
+      // Standard case - all text fits on one page
+      for (let i = 0; i < summaryLines.length; i++) {
+        doc.text(summaryLines[i], 22, yPos, { 
+          align: 'justify',
+          maxWidth: 160,
+        });
+        yPos += 4.5; // Slightly reduce line spacing to fit more text
+      }
     }
     
     // Add a small space after the summary
@@ -958,15 +977,31 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     const summaryLines = doc.splitTextToSize(summaryText, contentWidth);
     const linesToShow = Math.min(summaryLines.length, maxLinesToShow);
     
-    // Display summary text with consistent spacing
-    for (let i = 0; i < linesToShow; i++) {
-      doc.text(summaryLines[i], x + margins.left, currentY);
-      currentY += lineHeight.summary;
-    }
-    
-    // Add ellipsis if text was truncated
+    // Improved text display with better truncation handling
     if (summaryLines.length > linesToShow) {
-      doc.text("...", x + margins.left, currentY);
+      // Case: Summary is too long for the available space
+      const visibleLines = summaryLines.slice(0, linesToShow - 1); // Save one line for ellipsis
+      
+      // Display visible lines with proper spacing
+      for (let i = 0; i < visibleLines.length; i++) {
+        doc.text(visibleLines[i], x + margins.left, currentY);
+        currentY += lineHeight.summary;
+      }
+      
+      // Add more descriptive ellipsis with consistent styling and language support
+      doc.setFont("helvetica", "italic");
+      // Use language-specific continuation message
+      const continuationText = normalizedBook.language === 'de' 
+        ? "...(Fortsetzung bei vollständiger Anzeige)" 
+        : "...(continued in full view)";
+      doc.text(continuationText, x + margins.left, currentY);
+      doc.setFont("helvetica", "normal");
+    } else {
+      // Case: Summary fits within available space
+      for (let i = 0; i < summaryLines.length; i++) {
+        doc.text(summaryLines[i], x + margins.left, currentY);
+        currentY += lineHeight.summary;
+      }
     }
   }
   
