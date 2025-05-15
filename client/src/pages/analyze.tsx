@@ -8,6 +8,7 @@ import { useApiKeys } from '@/hooks/use-api-keys';
 import AnalysisForm from '@/components/book/AnalysisForm';
 import AnalysisOptions from '@/components/book/AnalysisOptions';
 import BookResult from '@/components/book/BookResult';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,12 +19,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Key } from 'lucide-react';
 
 export default function Analyze() {
   const { t, language } = useLanguage();
   const [location, navigate] = useLocation();
   const { registerGuard, unregisterGuard } = useNavigationGuard();
+  const { showApiKeysModal, apiKeysStatus } = useApiKeys();
   
   // Get the book analysis hook functions
   const { 
@@ -278,6 +280,27 @@ export default function Analyze() {
           <div className="md:grid md:grid-cols-6 md:gap-8">
             {/* Left Column - Upload & Analysis Options */}
             <div className="md:col-span-2 space-y-8">
+              {/* API Keys Status */}
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  {apiKeysStatus?.hasKeys 
+                    ? t('apiKeysConfigured', 'API Keys configured') 
+                    : <span className="flex items-center text-amber-500">
+                        {t('apiKeysMissing', 'API Keys missing')}
+                      </span>
+                  }
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={showApiKeysModal}
+                  className="flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" />
+                  {t('configureApiKeys', 'Configure API Keys')}
+                </Button>
+              </div>
+              
               {/* Upload Form */}
               <AnalysisForm 
                 onSubmit={handleSubmit} 
