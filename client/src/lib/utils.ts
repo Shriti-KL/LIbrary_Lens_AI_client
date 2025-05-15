@@ -260,16 +260,17 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       }
     }
     
-    // Add author and contributors to title text
+    // Add author and contributors to title text with proper spacing
     if (authorName) {
-      titleText += ` / ${authorName}${otherContributors}`;
+      titleText += ` / ${authorName.trim()}${otherContributors}`;
     } else if (otherContributors) {
-      titleText += ` /${otherContributors}`;
+      titleText += ` / ${otherContributors.trim()}`;
     }
   }
   
   // Split the title text for proper wrapping with narrower width for better margins
-  const titleLines = doc.splitTextToSize(titleText, 150);
+  // Ensure consistent width with publication info and trim to prevent trailing spaces
+  const titleLines = doc.splitTextToSize(titleText.trim(), 145);
   
   // Set the title lines
   for (let i = 0; i < titleLines.length; i++) {
@@ -381,11 +382,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(10);
   
   // Ensure publication info text fits within page bounds but maintains continuous paragraph flow
-  // Use a wider margin to prevent text from appearing too close to edge
-  const lineWidth = 160;
+  // Use a narrower width to prevent text from going beyond page margins
+  const lineWidth = 150;
   
   // Use text wrapping that properly manages spaces at line breaks
-  const pubLines = doc.splitTextToSize(publicationInfo, lineWidth);
+  // Trim the publication info to remove any trailing spaces that might cause line break issues
+  const pubLines = doc.splitTextToSize(publicationInfo.trim(), lineWidth);
   
   // Set the publication info lines
   doc.setFont("helvetica", "normal");
@@ -491,14 +493,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Remove any extra whitespace and multiple newlines
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Split the text for proper wrapping 
-    const summaryLines = doc.splitTextToSize(summaryText, 160);
+    // Split the text for proper wrapping with consistent width (match other sections)
+    const summaryWidth = 145; // Match other width constraints for consistency
+    const summaryLines = doc.splitTextToSize(summaryText.trim(), summaryWidth);
     
-    // Create content for each line with justified text
+    // Create content for each line with justified text and consistent width
     for (let i = 0; i < summaryLines.length; i++) {
       doc.text(summaryLines[i], 22, yPos, { 
         align: 'justify',
-        maxWidth: 160,
+        maxWidth: summaryWidth,
       });
       yPos += 4.5; // Slightly reduce line spacing to fit more text
     }
