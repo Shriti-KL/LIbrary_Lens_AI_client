@@ -109,6 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         google_cse_id: sessionApiKeys.google_cse_id
       };
       
+      // Check if API keys are available
+      if (!apiKeys.openai_api_key || !apiKeys.google_books_api_key) {
+        return res.status(400).json({ 
+          error: "API keys required", 
+          message: "Please provide API keys in your account settings before analyzing books." 
+        });
+      }
+      
       console.log(`[${analysisId}] Processing book analysis request`);
       let bookData;
       
@@ -220,14 +228,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract API keys from session if available
       const sessionApiKeys = (req.session as any).apiKeys || {};
-      
-      // Pass session API keys to the verification service
-      const bookData = await verifyBookByIsbn(isbn, {
+      const apiKeys = {
         openai_api_key: sessionApiKeys.openai_api_key,
         google_books_api_key: sessionApiKeys.google_books_api_key,
         google_cse_key: sessionApiKeys.google_cse_key,
         google_cse_id: sessionApiKeys.google_cse_id
-      });
+      };
+      
+      // Check if API keys are available
+      if (!apiKeys.openai_api_key || !apiKeys.google_books_api_key) {
+        return res.status(400).json({ 
+          error: "API keys required", 
+          message: "Please provide API keys in your account settings before analyzing books." 
+        });
+      }
+      
+      // Pass session API keys to the verification service
+      const bookData = await verifyBookByIsbn(isbn, apiKeys);
       
       if (!bookData || !bookData.title) {
         return res.status(404).json({ error: "Book not found" });
@@ -374,6 +391,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get session API keys
       const apiKeys = (req.session as SessionData).apiKeys || {};
       
+      // Check if API keys are available
+      if (!apiKeys || !apiKeys.openai_api_key || !apiKeys.google_books_api_key) {
+        return res.status(400).json({ 
+          error: "API keys required", 
+          message: "Please provide API keys in your account settings before analyzing books." 
+        });
+      }
+      
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
         
@@ -436,6 +461,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get session API keys
       const apiKeys = (req.session as SessionData).apiKeys || {};
+      
+      // Check if API keys are available
+      if (!apiKeys.openai_api_key) {
+        return res.status(400).json({ 
+          error: "API keys required", 
+          message: "Please provide API keys in your account settings before finding similar books." 
+        });
+      }
       
       const { searchSimilarBooks } = await import("./services/openai");
       
