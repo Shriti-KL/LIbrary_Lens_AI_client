@@ -37,9 +37,9 @@ export async function searchGoodreads(
       author
     })}`);
 
-    // Use provided keys or fallback to environment variables
-    const googleCSEKey = apiKey || process.env.GOOGLE_CSE_KEY || process.env.GOOGLE_BOOKS_API_KEY;
-    const googleCSEId = cseId || process.env.GOOGLE_CSE_ID;
+    // Only use provided keys, no fallback to environment variables
+    const googleCSEKey = apiKey;
+    const googleCSEId = cseId;
 
     // Check if we have the required credentials
     if (!googleCSEKey || !googleCSEId) {
@@ -118,9 +118,9 @@ export async function searchGoogleBooks(
       query
     })}`);
 
-    // Use provided keys or fallback to environment variables
-    const googleCSEKey = apiKey || process.env.GOOGLE_CSE_KEY || process.env.GOOGLE_BOOKS_API_KEY;
-    const googleCSEId = cseId || process.env.GOOGLE_CSE_ID;
+    // Only use provided keys, no fallback to environment variables
+    const googleCSEKey = apiKey;
+    const googleCSEId = cseId;
 
     // Check if we have the required credentials
     if (!googleCSEKey || !googleCSEId) {

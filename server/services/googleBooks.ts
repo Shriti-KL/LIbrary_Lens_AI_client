@@ -208,8 +208,8 @@ export async function getCompleteBookByISBN(isbn: string, language: string = "de
  */
 export async function getBookByISBN(isbn: string, apiKey?: string): Promise<any | null> {
   try {
-    // Use provided API key or fallback to environment variable
-    const key = apiKey || process.env.GOOGLE_BOOKS_API_KEY;
+    // Only use provided API key, no fallback
+    const key = apiKey;
     
     if (!key) {
       throw new Error("Google Books API key is required but not provided");
@@ -236,8 +236,8 @@ export async function getBookByISBN(isbn: string, apiKey?: string): Promise<any 
  */
 export async function searchSimilarBooks(book: Partial<Book>, apiKey?: string): Promise<any[]> {
   try {
-    // Use provided API key or fallback to environment variable
-    const key = apiKey || process.env.GOOGLE_BOOKS_API_KEY;
+    // Only use provided API key, no fallback
+    const key = apiKey;
     
     if (!key) {
       throw new Error("Google Books API key is required but not provided");
