@@ -919,6 +919,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     doc.text(book.idBNumber, x + 5, currentY);
     currentY += 4;
   }
+  // Space needed for footer elements like barcode etc. (approximately 20-30mm)
+  const spaceNeededForFooter = 30;
+  
   if (currentY > y + height - spaceNeededForFooter) {
     // Instead of creating a new page, we'll put some space and continue
     // This is better than cutting off mid-sentence
@@ -978,82 +981,129 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
 
 // Export multiple books to a single PDF with the specified format from the image
 export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
-  if (!books || books.length === 0) return;
-  
-  // Create a new PDF with standard A4 size (German DIN A4)
-  const doc = new jsPDF({
-    unit: 'mm',
-    format: 'a4',
-  });
-  
-  // Page dimensions
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const margin = 10;
-  
-  // Grid dimensions - Adjust to provide more space for content
-  const gridColumns = 2;
-  // Reduce to 1 row per page after the first page to allow more space for content
-  const gridRows = 1;
-  const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
-  // Increase the cell height to accommodate more text, especially for summaries
-  // Use 140mm height per cell for even more space
-  const cellHeight = 140; // Fixed height in mm to ensure enough space for summary
-  
-  // First page layout - two correction boxes at the top
-  const boxWidth = 80;
-  const boxHeight = 70;
-  const boxY = 20;
-  
-  // Draw the two correction boxes
-  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2, boxY, boxWidth, boxHeight);
-  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2 + boxWidth + 20, boxY, boxWidth, boxHeight);
-  
-  let currentBook = 0;
-  
-  // First page - two books in the bottom half
-  if (currentBook < books.length) {
-    // First book - bottom left
-    formatBookEntryForGrid(doc, books[currentBook], margin, boxY + boxHeight + 20, cellWidth, cellHeight);
-    currentBook++;
-    
-    if (currentBook < books.length) {
-      // Second book - bottom right
-      formatBookEntryForGrid(doc, books[currentBook], margin + cellWidth + margin/2, boxY + boxHeight + 20, cellWidth, cellHeight);
-      currentBook++;
+  try {
+    // Input validation
+    if (!books || books.length === 0) {
+      console.warn('No books provided for PDF export');
+      throw new Error('No books to export');
     }
-  }
-  
-  // Process remaining books in 2x2 grid on subsequent pages
-  while (currentBook < books.length) {
-    // Add a new page
-    doc.addPage();
     
-    for (let row = 0; row < gridRows && currentBook < books.length; row++) {
-      for (let col = 0; col < gridColumns && currentBook < books.length; col++) {
-        const x = margin + (col * (cellWidth + margin/2));
-        const y = margin + (row * (cellHeight + margin/2));
-        
-        formatBookEntryForGrid(doc, books[currentBook], x, y, cellWidth, cellHeight);
+    // Filter out invalid books
+    const validBooks = books.filter(book => book && book.title);
+    if (validBooks.length === 0) {
+      console.warn('No valid books found for PDF export');
+      throw new Error('No valid books to export');
+    }
+    
+    // Create PDF document
+    const doc = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    // Page dimensions
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 10;
+    
+    // Grid layout
+    const gridColumns = 2;
+    const gridRows = 1;
+    const cellWidth = (pageWidth - (margin * 3)) / gridColumns;
+    const cellHeight = 140; // Fixed height for consistent layout
+    
+    // Correction boxes (first page)
+    const boxWidth = 80;
+    const boxHeight = 70;
+    const boxY = 20;
+    
+    // Draw correction boxes safely
+    try {
+      drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2, boxY, boxWidth, boxHeight);
+      drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2 + boxWidth + 20, boxY, boxWidth, boxHeight);
+    } catch (error) {
+      console.error('Error drawing correction boxes:', error);
+      // Continue - non-critical element
+    }
+    
+    // Process books
+    let currentBook = 0;
+    
+    // First page - first two books
+    if (currentBook < validBooks.length) {
+      try {
+        formatBookEntryForGrid(doc, validBooks[currentBook], margin, boxY + boxHeight + 20, cellWidth, cellHeight);
         currentBook++;
+      } catch (error) {
+        console.error('Error formatting first book:', error);
+        currentBook++; // Skip problematic book
+      }
+      
+      if (currentBook < validBooks.length) {
+        try {
+          formatBookEntryForGrid(doc, validBooks[currentBook], margin + cellWidth + margin/2, boxY + boxHeight + 20, cellWidth, cellHeight);
+          currentBook++;
+        } catch (error) {
+          console.error('Error formatting second book:', error);
+          currentBook++; // Skip problematic book
+        }
       }
     }
-  }
-  
-  // Add page numbers with localized text depending on language
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
     
-    // Use proper language for page numbers
-    const pageText = language === 'de' ? `Seite ${i} von ${pageCount}` : `Page ${i} of ${pageCount}`;
-    doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
+    // Process remaining books on subsequent pages
+    while (currentBook < validBooks.length) {
+      try {
+        doc.addPage();
+        
+        for (let row = 0; row < gridRows && currentBook < validBooks.length; row++) {
+          for (let col = 0; col < gridColumns && currentBook < validBooks.length; col++) {
+            const x = margin + (col * (cellWidth + margin/2));
+            const y = margin + (row * (cellHeight + margin/2));
+            
+            try {
+              formatBookEntryForGrid(doc, validBooks[currentBook], x, y, cellWidth, cellHeight);
+            } catch (error) {
+              console.error(`Error formatting book ${currentBook}:`, error);
+              // Continue with next book
+            }
+            currentBook++;
+          }
+        }
+      } catch (error) {
+        console.error('Error adding page to PDF:', error);
+        break; // Stop processing if page creation fails
+      }
+    }
+    
+    // Add page numbers
+    try {
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(9);
+        
+        const pageText = language === 'de' ? `Seite ${i} von ${pageCount}` : `Page ${i} of ${pageCount}`;
+        doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
+      }
+    } catch (error) {
+      console.error('Error adding page numbers:', error);
+      // Continue - non-critical element
+    }
+    
+    // Save PDF
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+      const filename = language === 'de' ? `Buchkatalog_${timestamp}.pdf` : `BookCatalog_${timestamp}.pdf`;
+      doc.save(filename);
+      console.log(`PDF exported successfully with ${validBooks.length} books`);
+    } catch (error) {
+      console.error('Error saving PDF:', error);
+      throw new Error('PDF konnte nicht gespeichert werden');
+    }
+    
+  } catch (error) {
+    console.error('PDF export error:', error);
+    throw error; // Re-throw for UI error handling
   }
-  
-  // Generate a timestamped filename with language-appropriate naming
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-  const filename = language === 'de' ? `Buchkatalog_${timestamp}.pdf` : `BookCatalog_${timestamp}.pdf`;
-  doc.save(filename);
 }
