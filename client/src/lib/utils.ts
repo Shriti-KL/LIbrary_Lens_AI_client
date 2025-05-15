@@ -145,6 +145,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   let yPos = startY;
   
   // --- 1. ASB Classification in top-right and top-left corner ---
+  // Set consistent typography for headers
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   
@@ -162,9 +163,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
     addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
   }
+  doc.setFont("helvetica", "normal"); // Use normal font for additional classifications
   doc.text(addClassText, 22, yPos);
   
-  yPos += 15; // Space after classifications
+  // Add proper spacing after classifications section
+  yPos += 18; // Increased spacing to create visual separation
   
   // --- 2. Author's name in bold ---
   // Format author's name to "LastName, FirstName:" as shown in the target format
@@ -176,14 +179,16 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
-  doc.setFontSize(11);
+  doc.setFontSize(12); // Slightly larger font for author
   doc.setFont("helvetica", "bold"); 
   doc.text(authorFormatted + ":", 22, yPos);
   
-  yPos += 6; // Space after author name
+  yPos += 9; // Increased spacing after author name for better visual separation
   
   // --- 3. Book title and publication info ---
-  doc.setFont("helvetica", "normal");
+  // Set consistent typography for title
+  doc.setFontSize(11.5); // Slightly larger for title than normal text
+  doc.setFont("helvetica", "bold"); // Use bold for title line
   
   // Get the title and subtitle if available
   let titleFull = book.title || "";
@@ -254,11 +259,22 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Split the title text for proper wrapping
   const titleLines = doc.splitTextToSize(titleText, 155);
   
-  // Set the title lines
+  // Set the title lines (first line in bold, rest in normal weight)
   for (let i = 0; i < titleLines.length; i++) {
+    if (i === 0) {
+      // First line remains bold
+      doc.setFont("helvetica", "bold");
+    } else {
+      // Subsequent lines in normal weight
+      doc.setFont("helvetica", "normal");
+    }
     doc.text(titleLines[i], 22, yPos);
-    yPos += 5;
+    yPos += 6; // Slightly increased line spacing for better readability
   }
+  
+  // Reset to normal font after title
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
   
   // --- 4. Publication Information ---
   yPos += 2; // Extra space before publication info
@@ -363,11 +379,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 6. Book summary/description and critical review ---
   if (book.summary || book.review) {
-    yPos += 2;
+    yPos += 4; // Increase spacing before summary section
     
-    // Set text style for summary text
+    // Set text style for summary text - slightly smaller than body text
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(10); // Standard size for summary text
     
     // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
@@ -375,6 +391,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       summaryText = book.summary;
     }
     if (book.summary && book.review) {
+      // Add a visual separator for clarity
       summaryText += ' | ';
     }
     if (book.review) {
@@ -403,20 +420,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Remove any extra whitespace and multiple newlines
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Split the text for proper wrapping 
-    const summaryLines = doc.splitTextToSize(summaryText, 160);
+    // Split the text for proper wrapping with a slightly narrower column
+    // for better readability of summary text
+    const summaryLines = doc.splitTextToSize(summaryText, 155);
     
     // Create content for each line with justified text
     for (let i = 0; i < summaryLines.length; i++) {
       doc.text(summaryLines[i], 22, yPos, { 
         align: 'justify',
-        maxWidth: 160,
+        maxWidth: 155,
       });
-      yPos += 4.5; // Slightly reduce line spacing to fit more text
+      
+      // Use proper line spacing - a bit tighter than normal text
+      // but enough for good readability
+      yPos += 4.2; // Slightly reduced line spacing for summary text
     }
     
-    // Add a small space after the summary
-    yPos += 2;
+    // Add proper spacing after the summary
+    yPos += 3;
   }
   
   // --- 7. Reviewer name in bottom right ---
