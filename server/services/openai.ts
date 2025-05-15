@@ -8,14 +8,12 @@ import OpenAI from "openai";
 
 // Function to create OpenAI client with session API key or fallback to environment
 function createOpenAIClient(apiKey?: string) {
-  // Use provided key or fall back to environment variable
-  const key = apiKey || process.env.OPENAI_API_KEY;
-  
-  if (!key) {
+  // Only use provided key, no fallback to environment
+  if (!apiKey) {
     throw new Error("OpenAI API key is required but not provided");
   }
   
-  return new OpenAI({ apiKey: key });
+  return new OpenAI({ apiKey: apiKey });
 }
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
