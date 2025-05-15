@@ -529,20 +529,29 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
   
-  if (book.interestCategory) {
-    ikLine = `IK: ${book.interestCategory}`;
+  // Support both field naming conventions (interestCategory and interest_category)
+  const interestCategory = book.interestCategory || book.interest_category || '';
+  
+  if (interestCategory) {
+    ikLine = `IK: ${interestCategory}`;
     
     // Add age recommendation if available
-    if (book.ageRecommendation) {
-      ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
+    // Support both field name conventions (ageRecommendation and age_recommendation)
+    const ageRecommendation = book.ageRecommendation || book.age_recommendation || '';
+    
+    if (ageRecommendation) {
+      ikLine += `; geeignet ab ${ageRecommendation} Jahren`;
     }
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9); // Slightly smaller font for metadata information
     doc.text(ikLine, 22, yPos);
     yPos += 5;
-  } else if (book.ageRecommendation) {
-    ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
+  } else if (book.ageRecommendation || book.age_recommendation) {
+    // Support both field naming conventions
+    const ageRecommendation = book.ageRecommendation || book.age_recommendation || '';
+    ikLine = `Geeignet ab ${ageRecommendation} Jahren`;
+    
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.text(ikLine, 22, yPos);
