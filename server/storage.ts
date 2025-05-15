@@ -142,19 +142,21 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
-      // Fallback to contributors
-      if (!authorValue && book.contributors && typeof book.contributors === 'object') {
-        if (!Array.isArray(book.contributors)) {
+      // Fallback to contributors if available
+      // We need to use any typing here since contributors isn't in the InsertBook type
+      const bookAny = book as any;
+      if (!authorValue && bookAny.contributors && typeof bookAny.contributors === 'object') {
+        if (!Array.isArray(bookAny.contributors)) {
           // New format: contributors as object with roles as keys
-          for (const role in book.contributors) {
-            if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
-              authorValue = book.contributors[role][0];
+          for (const role in bookAny.contributors) {
+            if (Array.isArray(bookAny.contributors[role]) && bookAny.contributors[role].length > 0) {
+              authorValue = bookAny.contributors[role][0];
               break;
             }
           }
-        } else if (book.contributors.length > 0) {
+        } else if (bookAny.contributors.length > 0) {
           // Old format: contributors as array of objects
-          const firstContributor = book.contributors[0];
+          const firstContributor = bookAny.contributors[0];
           if (firstContributor && firstContributor.name) {
             authorValue = firstContributor.name;
           }

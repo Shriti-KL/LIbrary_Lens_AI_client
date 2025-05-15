@@ -283,152 +283,129 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 5;
   }
   
-  // --- 4. Publication Information ---
-  yPos += 3; // Proper spacing before publication info, but not too much
+  // --- 4. Publication Information - Single Cohesive Paragraph ---
+  yPos += 3; // Small spacing before publication info
   
-  // Build bibliographic string following exact target format with proper punctuation
-  // [Title]: [Subtitle] / [Author] ; [Other Contributors]. – [Edition]. – [Place]: [Publisher], [Year]. – [Pages] pages: [Illustrations] ; [Dimensions]
+  // Build bibliographic string according to German cataloging standard format
+  // This should form a single, cohesive paragraph with proper punctuation
+  // Format: [Edition]. – [Place]: [Publisher], [Year]. – [Pages] : [Illustrations] ; [Dimensions]
   
-  // Create a clean single-line publication string with proper punctuation and spacing
-  let publicationInfo = '';
-  
-  // Trim all input values to avoid accidental double spaces
+  // Pre-process all values - trim and clean them
   const edition = book.edition ? book.edition.trim() : '';
   const location = (book.publicationPlace || book.location || '').trim();
   const publisher = (book.publisher || '').trim();
-  const year = book.publicationYear || book.publishedYear || '';
-  const pages = book.pageCount || '';
-  const illustrations = book.illustrations ? book.illustrations.trim() : '';
-  const dimensions = book.dimensions ? book.dimensions.trim() : '';
   
-  // Start with edition information if available
-  if (edition) {
-    publicationInfo += edition;
-  }
-  
-  // Add location and publisher with proper spacing and punctuation
-  if (location || publisher) {
-    // Add separator if we have previous content
-    if (publicationInfo) {
-      publicationInfo += '. – ';
-    }
-    
-    if (location && publisher) {
-      // Ensure proper spacing around the colon
-      publicationInfo += `${location.trim()}: ${publisher.trim()}`;
-    } else if (location) {
-      publicationInfo += location.trim();
-    } else if (publisher) {
-      publicationInfo += publisher.trim();
-    }
-    
-    // Add year with comma if we have location/publisher
-    if (year) {
-      // Ensure clean string representation of year with no decimal
-      let yearText = String(year).trim();
-      if (yearText.includes('.')) {
-        yearText = yearText.split('.')[0]; // Take only integer part
-      }
-      publicationInfo += `, ${yearText}`;
-    }
-  } else if (year) {
-    // Year standalone needs proper separator if something came before
-    if (publicationInfo) {
-      publicationInfo += '. – ';
-    }
-    // Ensure clean string representation of year
-    let yearText = String(year).trim();
+  // Handle year - ensure it's numeric and without decimal
+  let yearText = '';
+  if (book.publicationYear || book.publishedYear) {
+    const year = book.publicationYear || book.publishedYear;
+    yearText = String(year).trim();
     if (yearText.includes('.')) {
       yearText = yearText.split('.')[0]; // Take only integer part
     }
-    publicationInfo += yearText;
   }
   
-  // Add page count with proper separator
-  if (pages) {
-    if (publicationInfo) {
-      publicationInfo += '. – ';
-    }
-    
-    // Clean up pages value and ensure it's numeric
-    let pagesValue = String(pages).trim();
+  // Handle pages - clean and format
+  let pagesText = '';
+  if (book.pageCount) {
+    let pagesValue = String(book.pageCount).trim();
     if (pagesValue.includes('.')) {
-      pagesValue = pagesValue.split('.')[0]; // Take only integer part
+      pagesValue = pagesValue.split('.')[0]; // Take integer part
     }
     
-    // Check if it's a valid number
     const pagesNum = parseInt(pagesValue, 10);
     if (!isNaN(pagesNum)) {
-      publicationInfo += `${pagesNum} ${pagesNum === 1 ? 'Seite' : 'Seiten'}`;
+      pagesText = `${pagesNum} ${pagesNum === 1 ? 'Seite' : 'Seiten'}`;
+    } else if (!pagesValue.toLowerCase().includes('seite')) {
+      pagesText = `${pagesValue} Seiten`;
     } else {
-      // If not a valid number, use as is but ensure no double "Seiten"
-      if (!pagesValue.toLowerCase().includes('seite')) {
-        publicationInfo += `${pagesValue} Seiten`;
-      } else {
-        publicationInfo += pagesValue;
-      }
+      pagesText = pagesValue;
+    }
+  }
+  
+  // Other elements
+  const illustrations = book.illustrations ? book.illustrations.trim() : '';
+  const dimensions = book.dimensions ? book.dimensions.trim() : '';
+  
+  // Now construct the complete bibliographic string with proper spacing and punctuation
+  const bibliographicElements = [];
+  
+  // 1. Edition
+  if (edition) {
+    bibliographicElements.push(edition);
+  }
+  
+  // 2. Publication Info (Location, Publisher, Year)
+  let pubInfo = '';
+  if (location && publisher) {
+    pubInfo = `${location}: ${publisher}`;
+  } else if (location) {
+    pubInfo = location;
+  } else if (publisher) {
+    pubInfo = publisher;
+  }
+  
+  if (yearText && pubInfo) {
+    pubInfo += `, ${yearText}`;
+  } else if (yearText) {
+    pubInfo = yearText;
+  }
+  
+  if (pubInfo) {
+    bibliographicElements.push(pubInfo);
+  }
+  
+  // 3. Physical Description (Pages, Illustrations, Dimensions)
+  let physicalDesc = '';
+  if (pagesText) {
+    physicalDesc = pagesText;
+    
+    if (illustrations) {
+      physicalDesc += `: ${illustrations}`;
+    } else if (book.illustrator || 
+              (book.contributors && typeof book.contributors === 'object' && 
+               ((Array.isArray(book.contributors) && 
+                 book.contributors.some((c: any) => c.role?.toLowerCase().includes('illust'))) ||
+                (!Array.isArray(book.contributors) && book.contributors['Illustrator'])))) {
+      physicalDesc += `: Illustrationen`;
     }
     
-    // Add illustration info if available
-    if (illustrations) {
-      publicationInfo += `: ${illustrations.trim()}`;
-    } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
-      // Check if there are illustrators
-      let hasIllustrators = false;
-      
-      if (book.contributors) {
-        // Object format with roles as keys
-        if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
-          hasIllustrators = true;
-        }
-        // Array format with objects having role property
-        else if (Array.isArray(book.contributors)) {
-          hasIllustrators = book.contributors.some((c: any) => 
-            c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
-        }
-      }
-      
-      if (book.illustrator || hasIllustrators) {
-        publicationInfo += `: Illustrationen`;
-      }
+    if (dimensions) {
+      physicalDesc += ` ; ${dimensions}`;
     }
+  } else if (dimensions) {
+    physicalDesc = dimensions;
   }
   
-  // Add dimensions with proper semicolon separator
-  if (dimensions) {
-    if (publicationInfo) {
-      // Check if we already have illustrations (indicated by a colon)
-      if (publicationInfo.includes(':')) {
-        publicationInfo += ` ; ${dimensions.trim()}`;
-      } else if (pages) {
-        // If we have pages but no illustrations
-        publicationInfo += ` ; ${dimensions.trim()}`;
-      } else {
-        // If we have neither pages nor illustrations
-        publicationInfo += `. – ${dimensions.trim()}`;
-      }
-    } else {
-      publicationInfo += dimensions.trim();
-    }
+  if (physicalDesc) {
+    bibliographicElements.push(physicalDesc);
   }
   
-  // Adjust font size to match reference format
+  // Join all elements with proper separator
+  let publicationInfo = '';
+  for (let i = 0; i < bibliographicElements.length; i++) {
+    if (i > 0) {
+      publicationInfo += '. – ';  // Em dash with proper spacing
+    }
+    publicationInfo += bibliographicElements[i];
+  }
+  
+  // Set font and size for bibliographic info
   doc.setFontSize(10);
-  
-  // Ensure publication info text fits within page bounds but maintains continuous paragraph flow
-  // Use a narrower width to prevent text from going beyond page margins
-  const lineWidth = 150;
-  
-  // Use text wrapping that properly manages spaces at line breaks
-  // Trim the publication info to remove any trailing spaces that might cause line break issues
-  const pubLines = doc.splitTextToSize(publicationInfo.trim(), lineWidth);
-  
-  // Set the publication info lines
   doc.setFont("helvetica", "normal");
   
-  // Use smaller line spacing to ensure paragraph appears cohesive
-  const lineSpacing = 4.5;
+  // Use a narrower width to ensure text stays within margins
+  // This is critical for maintaining paragraph appearance
+  const lineWidth = 148;
   
+  // Split text with proper wrapping that maintains paragraph flow
+  const pubLines = doc.splitTextToSize(publicationInfo.trim(), lineWidth);
+  
+  // Use tight line spacing to ensure paragraph cohesion
+  // This is key to making it look like one continuous paragraph
+  const lineSpacing = 4;
+  
+  // Draw text lines with proper spacing
   for (let i = 0; i < pubLines.length; i++) {
     doc.text(pubLines[i], 22, yPos);
     yPos += lineSpacing;
