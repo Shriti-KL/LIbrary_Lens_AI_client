@@ -284,9 +284,9 @@ export default function Analyze() {
               <div className="flex justify-between items-center">
                 <div className="text-sm text-muted-foreground">
                   {apiKeysStatus?.hasKeys 
-                    ? t('apiKeysConfigured', 'API Keys configured') 
+                    ? t('apiKeysConfigured') || 'API Keys configured' 
                     : <span className="flex items-center text-amber-500">
-                        {t('apiKeysMissing', 'API Keys missing')}
+                        {t('apiKeysMissing') || 'API Keys missing'}
                       </span>
                   }
                 </div>
@@ -297,7 +297,7 @@ export default function Analyze() {
                   className="flex items-center gap-2"
                 >
                   <Key className="h-4 w-4" />
-                  {t('configureApiKeys', 'Configure API Keys')}
+                  {t('configureApiKeys') || 'Configure API Keys'}
                 </Button>
               </div>
               

@@ -82,7 +82,8 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
     }
   };
   
-  const allKeysProvided = !!openAIKey && !!googleBooksKey && !!googleCSEKey && !!googleCSEId;
+  // Only OpenAI and Google Books keys are required, CSE is optional
+  const allKeysProvided = !!openAIKey && !!googleBooksKey;
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -149,7 +150,7 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
               onChange={(e) => setGoogleCSEKey(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Required for cross-source verification.
+              Optional: Used for enhanced cross-source verification if provided.
             </p>
           </div>
           
@@ -162,7 +163,7 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
               onChange={(e) => setGoogleCSEId(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Setup instructions at{" "}
+              Optional: Used with CSE Key above. Setup at{" "}
               <a 
                 href="https://developers.google.com/custom-search/v1/introduction" 
                 target="_blank" 
