@@ -6,8 +6,17 @@
 import { Book, BookAnalysisRequest } from "@shared/schema";
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Function to create OpenAI client with session API key or fallback to environment
+function createOpenAIClient(apiKey?: string) {
+  // Use provided key or fall back to environment variable
+  const key = apiKey || process.env.OPENAI_API_KEY;
+  
+  if (!key) {
+    throw new Error("OpenAI API key is required but not provided");
+  }
+  
+  return new OpenAI({ apiKey: key });
+}
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const OPENAI_MODEL = "gpt-4o";
@@ -16,9 +25,12 @@ const OPENAI_MODEL = "gpt-4o";
  * Handle book cover analysis - Extract metadata from a book cover image
  * using DNB/German RDA cataloguing standards
  */
-export async function analyzeBookCover(image: string): Promise<any> {
+export async function analyzeBookCover(image: string, apiKey?: string): Promise<any> {
   try {
     console.log("[API] Analyzing book cover with OpenAI...");
+    
+    // Create OpenAI client with provided key or environment fallback
+    const openai = createOpenAIClient(apiKey);
     
     // Create the API request
     const response = await openai.chat.completions.create({

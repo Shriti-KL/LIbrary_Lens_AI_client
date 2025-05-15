@@ -16,16 +16,16 @@ const upload = multer({
 });
 
 // Interface for session with API keys
-declare global {
-  namespace Express {
-    interface Session {
-      apiKeys?: {
-        openai_api_key?: string;
-        google_books_api_key?: string;
-        google_cse_key?: string;
-        google_cse_id?: string;
-      };
-    }
+import { SessionData } from "express-session";
+
+declare module "express-session" {
+  interface SessionData {
+    apiKeys?: {
+      openai_api_key?: string;
+      google_books_api_key?: string;
+      google_cse_key?: string;
+      google_cse_id?: string;
+    };
   }
 }
 

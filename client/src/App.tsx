@@ -13,6 +13,7 @@ import BookDetail from "@/pages/book-detail";
 import AppLayout from "@/components/layouts/AppLayout";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ApiKeysProvider } from "@/hooks/use-api-keys";
 import { ProtectedRoute } from "./lib/protected-route";
 import { NavigationGuardProvider } from "./lib/navigation-guard";
 
@@ -35,16 +36,18 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider attribute="class">
-          <TooltipProvider>
-            <NavigationGuardProvider>
-              <AppLayout>
-                <Router />
-              </AppLayout>
-            </NavigationGuardProvider>
-            <Toaster />
-          </TooltipProvider>
-        </ThemeProvider>
+        <ApiKeysProvider>
+          <ThemeProvider attribute="class">
+            <TooltipProvider>
+              <NavigationGuardProvider>
+                <AppLayout>
+                  <Router />
+                </AppLayout>
+              </NavigationGuardProvider>
+              <Toaster />
+            </TooltipProvider>
+          </ThemeProvider>
+        </ApiKeysProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
