@@ -11,7 +11,8 @@ import { lookupBookByIsbn } from "./pythonIsbnService";
  * 3. Return error fields if both APIs fail
  */
 export async function processBookAnalysis(
-  analysisRequest: BookAnalysisRequest
+  analysisRequest: BookAnalysisRequest,
+  apiKeys?: any
 ): Promise<Partial<Book>> {
   // Create a unique ID for this analysis request for logging
   const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -154,7 +155,7 @@ export async function processBookAnalysis(
     );
     
     // Call OpenAI to enhance the metadata and generate summary, genres, themes
-    const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest);
+    const openAIResult = await processBookAnalysisWithOpenAI(openAiRequest, apiKeys?.openai_api_key);
     
     // Merge the results, prioritizing reliable data
     const mergedResult = {
@@ -259,7 +260,7 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
       } else {
         console.log(`[${lookupId}] DNB service didn't return valid data, falling back to Google Books API`);
         // Fallback to Google Books API
-        const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+        const googleBooksResult = await getCompleteBookByISBN(isbn, language, apiKeys?.google_books_api_key);
         
         if (googleBooksResult && googleBooksResult.title && (googleBooksResult.mainAuthor || googleBooksResult.author)) {
           console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.mainAuthor || googleBooksResult.author}`);
@@ -271,7 +272,7 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
     } catch (error: any) {
       console.log(`[${lookupId}] Error in ISBN service: ${error.message}, falling back to Google Books API`);
       // Fallback to Google Books API
-      const googleBooksResult = await getCompleteBookByISBN(isbn, language);
+      const googleBooksResult = await getCompleteBookByISBN(isbn, language, apiKeys?.google_books_api_key);
       
       if (googleBooksResult && googleBooksResult.title && (googleBooksResult.mainAuthor || googleBooksResult.author)) {
         console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.mainAuthor || googleBooksResult.author}`);
@@ -371,7 +372,7 @@ export async function getBookByISBNWithFallback(isbn: string, language: string =
 /**
  * Function to get book information by title and author with same verification approach as ISBN
  */
-export async function getBookByTitleAndAuthor(title: string, author: string = "", language: string = "de"): Promise<Partial<Book> | null> {
+export async function getBookByTitleAndAuthor(title: string, author: string = "", language: string = "de", apiKeys?: any): Promise<Partial<Book> | null> {
   const lookupId = `title_lookup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   console.log(`[${lookupId}] Looking up book by title/author: "${title}" by ${author || 'Unknown'}`);
   
@@ -388,7 +389,7 @@ export async function getBookByTitleAndAuthor(title: string, author: string = ""
       const query = `${title} ${author}`.trim();
       console.log(`[${lookupId}] Searching Google Books with query: "${query}"`);
       
-      const googleBooksResult = await getCompleteBookByISBN(query, language);
+      const googleBooksResult = await getCompleteBookByISBN(query, language, apiKeys?.google_books_api_key);
       
       if (googleBooksResult && googleBooksResult.title) {
         console.log(`[${lookupId}] Successfully retrieved book metadata from Google Books API: "${googleBooksResult.title}" by ${googleBooksResult.mainAuthor || googleBooksResult.author || 'Unknown'}`);
