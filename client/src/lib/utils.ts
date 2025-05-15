@@ -207,6 +207,8 @@ function normalizeBookData(book: Book): NormalizedBookData {
 
 // Format a single book for PDF export - returns the ending Y position
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
+  // Normalize book data to ensure consistent formatting
+  const normalizedBook = normalizeBookData(book);
   let yPos = startY;
   
   // --- 1. ASB Classification in top-right and top-left corner ---
@@ -217,13 +219,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.text("ASB:", 22, yPos);
   
   // Top-right classification number (ASB)
-  const asbNumber = book.classificationNumber || book.ASB || "";
+  const asbNumber = normalizedBook.catalogNumber;
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
   // Second line - additional classifications under ASB
   yPos += 7;
   // Include DNB number as additional classification if available
-  let addClassText = book.additionalClassifications || "";
+  let addClassText = normalizedBook.secondaryClassification;
   if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
     addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
   }
@@ -233,7 +235,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 2. Author's name in bold ---
   // Format author's name to "LastName, FirstName:" as shown in the target format
-  let authorFormatted = book.mainAuthor || book.author || "";
+  let authorFormatted = normalizedBook.mainAuthor;
   if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
     const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
@@ -707,6 +709,9 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
 
 // Format a book entry for a grid layout with smaller dimensions
 function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
+  // Normalize book data to ensure consistent formatting
+  const normalizedBook = normalizeBookData(book);
+  
   // Define font sizes with fewer variations for consistency
   const titleFontSize = 9;      // For titles and author names
   const contentFontSize = 8;    // For publication info and ISBN
@@ -751,22 +756,20 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.text("ASB:", x + margins.left, currentY);
   
   // ASB number right
-  const asbNumber = book.catalogNumber || "";
-  if (asbNumber) {
-    doc.text(asbNumber, x + width - margins.right, currentY, { align: 'right' });
+  if (normalizedBook.catalogNumber) {
+    doc.text(normalizedBook.catalogNumber, x + width - margins.right, currentY, { align: 'right' });
   }
   
   // Secondary classification under ASB
   currentY += lineHeight.title;
-  const secondaryCode = book.secondaryClassification || "";
-  if (secondaryCode) {
-    doc.text(secondaryCode, x + margins.left, currentY);
+  if (normalizedBook.secondaryClassification) {
+    doc.text(normalizedBook.secondaryClassification, x + margins.left, currentY);
   }
   
   currentY += lineHeight.title + 1; // Add 1mm extra space between classifications and author
   
   // --- 2. Author's Name ---
-  let authorFormatted = book.mainAuthor || book.author || "";
+  let authorFormatted = normalizedBook.mainAuthor;
   if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
     const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
@@ -784,7 +787,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFont("helvetica", "normal");
   
   // Format title with limited length
-  let titleText = book.title || "";
+  let titleText = normalizedBook.title;
   if (titleText.length > 40) {
     titleText = titleText.substring(0, 37) + "...";
   }
@@ -803,13 +806,13 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   let pubInfo = "";
   
   // Edition
-  if (book.edition) {
-    pubInfo += book.edition;
+  if (normalizedBook.edition) {
+    pubInfo += normalizedBook.edition;
   }
   
   // Location and publisher
-  const location = book.publicationPlace || book.location || "";
-  const publisher = book.publisher || "";
+  const location = normalizedBook.publicationPlace;
+  const publisher = normalizedBook.publisher;
   
   if (location || publisher) {
     if (pubInfo) {
@@ -820,25 +823,25 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   // Year
-  const year = book.publicationYear || book.publishedYear;
+  const year = normalizedBook.publicationYear;
   if (year) {
     pubInfo += pubInfo ? `, ${year}` : `${year}`;
   }
   
   // Pages
-  const pages = book.pageCount;
+  const pages = normalizedBook.pageCount;
   if (pages) {
     pubInfo += pubInfo ? `. – ${pages} S.` : `${pages} S.`;
   }
   
   // Illustrations
-  if (book.illustrations) {
-    pubInfo += `: ${book.illustrations}`;
+  if (normalizedBook.illustrations) {
+    pubInfo += `: ${normalizedBook.illustrations}`;
   }
   
   // Dimensions
-  if (book.dimensions) {
-    pubInfo += ` ; ${book.dimensions}`;
+  if (normalizedBook.dimensions) {
+    pubInfo += ` ; ${normalizedBook.dimensions}`;
   }
   
   // Format publication info for display
@@ -853,14 +856,14 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   // --- 5. ISBN and Price ---
-  if (book.isbn) {
+  if (normalizedBook.isbn) {
     currentY += 1; // Small gap before ISBN
     
-    let isbnText = `ISBN ${formatISBN(book.isbn)}`;
+    let isbnText = `ISBN ${formatISBN(normalizedBook.isbn)}`;
     
-    // Add price if available (simplified)
-    if (book.price) {
-      let priceText = book.price.toString();
+    // Add price if available 
+    if (normalizedBook.price) {
+      let priceText = normalizedBook.price.toString();
       if (priceText.length > 25) {
         priceText = priceText.substring(0, 22) + "...";
       }
@@ -874,16 +877,16 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   // --- 6. Summary and Review ---
-  if (book.summary || book.review) {
+  if (normalizedBook.summary || normalizedBook.review) {
     currentY += 1; // Small gap before summary
     doc.setFontSize(summaryFontSize);
     doc.setFont("helvetica", "normal");
     
     // Process summary and review text
     let summaryText = '';
-    if (book.summary) summaryText = book.summary;
-    if (book.summary && book.review) summaryText += ' | ';
-    if (book.review) summaryText += book.review;
+    if (normalizedBook.summary) summaryText = normalizedBook.summary;
+    if (normalizedBook.summary && normalizedBook.review) summaryText += ' | ';
+    if (normalizedBook.review) summaryText += normalizedBook.review;
     
     // Clean up metadata patterns
     const metadataPatterns = [
@@ -935,8 +938,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFontSize(footerFontSize);
   doc.setFont("helvetica", "normal");
   
-  if (asbNumber && asbNumber.toString().trim() !== "") {
-    doc.text(asbNumber.toString(), x + width/2, currentY, { align: 'center' });
+  if (normalizedBook.catalogNumber) {
+    doc.text(normalizedBook.catalogNumber, x + width/2, currentY, { align: 'center' });
     currentY += lineHeight.footer;
   }
   
