@@ -647,7 +647,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   const gridFontSize = 9; // Smaller font for grid layout
   const startY = y;
   let currentY = startY + 5;
-  const spaceNeededForFooter = 30; // Space needed for barcode and footer text
+  const spaceNeededForFooter = 15; // Space needed for footer text (reduced since barcode was removed)
   
   // Draw a thin border around the entire cell
   doc.setDrawColor(0);
