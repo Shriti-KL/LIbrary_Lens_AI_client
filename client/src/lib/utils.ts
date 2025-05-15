@@ -343,19 +343,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Add price if available (with comma, not period, for decimal values in German format)
     if (book.price) {
-      // Format price with comma for decimal separator (German format)
-      let formattedPrice = "";
-      
-      if (typeof book.price === 'number') {
-        formattedPrice = book.price.toString().replace('.', ',');
-      } else if (typeof book.price === 'string') {
-        formattedPrice = book.price.replace('.', ',');
-      } else {
-        // Handle other potential types safely
-        formattedPrice = String(book.price).replace('.', ',');
-      }
-      
-      isbnLine += `: EUR ${formattedPrice}`;
+      // Price is a string in the schema, so no need for complex type handling
+      const priceText = String(book.price).replace('.', ',');
+      isbnLine += `: EUR ${priceText}`;
     }
     
     doc.setFont("helvetica", "normal");
@@ -606,9 +596,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   currentY += 8;
   
   // --- Author's name in bold ---
-  let authorFormatted = book.author;
-  if (book.author && book.author.includes(" ") && !book.author.includes(",")) {
-    const nameParts = book.author.split(" ");
+  let authorFormatted = book.mainAuthor || book.author || "";
+  if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
+    const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
     const firstName = nameParts.join(" ");
     authorFormatted = `${lastName}, ${firstName}`;
@@ -643,12 +633,24 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // --- Publication info - condensed ---
   let pubInfo = "";
   
-  // Add components only if they exist
+  // Add components only if they exist, using the new field names with fallbacks
   if (book.edition) pubInfo += book.edition;
-  if (book.location) pubInfo += pubInfo.length > 0 ? ` - ${book.location}` : book.location;
+  
+  // Use publicationPlace first, with location as fallback
+  const location = book.publicationPlace || book.location;
+  if (location) pubInfo += pubInfo.length > 0 ? ` – ${location}` : location;
+  
   if (book.publisher) pubInfo += pubInfo.length > 0 ? `: ${book.publisher}` : book.publisher;
-  if (book.publishedYear) pubInfo += pubInfo.length > 0 ? `, ${book.publishedYear}` : `${book.publishedYear}`;
-  if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` - ${book.pageCount} S.` : `${book.pageCount} S.`;
+  
+  // Use publicationYear first, with publishedYear as fallback
+  const year = book.publicationYear || book.publishedYear;
+  if (year) pubInfo += pubInfo.length > 0 ? `, ${year}` : `${year}`;
+  
+  if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
+  
+  // Add illustrations info if available
+  if (book.illustrations) pubInfo += pubInfo.length > 0 ? `: ${book.illustrations}` : book.illustrations;
+  
   if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
   
   if (pubInfo.length > 0) {
@@ -808,7 +810,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
 }
 
 // Export multiple books to a single PDF with the specified format from the image
-export function exportMultipleBooksToSinglePDF(books: Book[]): void {
+export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
   
   // Create a new PDF with standard A4 size (German DIN A4)
@@ -871,16 +873,20 @@ export function exportMultipleBooksToSinglePDF(books: Book[]): void {
     }
   }
   
-  // Add page numbers
+  // Add page numbers with localized text depending on language
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
-    doc.text(`Seite ${i} von ${pageCount}`, pageWidth - margin, pageHeight - 5, { align: 'right' });
+    
+    // Use proper language for page numbers
+    const pageText = language === 'de' ? `Seite ${i} von ${pageCount}` : `Page ${i} of ${pageCount}`;
+    doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
   }
   
-  // Generate a timestamped filename
+  // Generate a timestamped filename with language-appropriate naming
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-  doc.save(`Buchkatalog_${timestamp}.pdf`);
+  const filename = language === 'de' ? `Buchkatalog_${timestamp}.pdf` : `BookCatalog_${timestamp}.pdf`;
+  doc.save(filename);
 }
