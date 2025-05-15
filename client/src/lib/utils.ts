@@ -255,8 +255,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Split the title text for proper wrapping
-  const titleLines = doc.splitTextToSize(titleText, 155);
+  // Split the title text for proper wrapping with narrower width for better margins
+  const titleLines = doc.splitTextToSize(titleText, 150);
   
   // Set the title lines
   for (let i = 0; i < titleLines.length; i++) {
@@ -265,7 +265,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 4. Publication Information ---
-  yPos += 2; // Extra space before publication info
+  yPos += 3; // Proper spacing before publication info, but not too much
   
   // Build full publication string following the exact target format
   let publicationInfo = '';
@@ -295,10 +295,22 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     publicationInfo += '. – ';
   }
   
-  // Add year
+  // Add year - add it only if we have location/publisher or at least something before
   const year = book.publicationYear || book.publishedYear;
+  
   if (year) {
-    publicationInfo += `, ${year}`;
+    // Only add the comma if we already have location/publisher info
+    if (publicationInfo && (location || publisher)) {
+      publicationInfo += `, ${year}`;
+    } 
+    // Otherwise, add it directly if we have edition info
+    else if (publicationInfo) {
+      publicationInfo += `. – ${year}`;
+    }
+    // Or as the first element if nothing else
+    else {
+      publicationInfo += `${year}`;
+    }
   }
   
   // Add physical description - pages
@@ -351,8 +363,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Split the publication info text for proper wrapping
-  const pubLines = doc.splitTextToSize(publicationInfo, 165);
+  // Adjust font size to match reference format
+  doc.setFontSize(10);
+  
+  // Split the publication info text for proper wrapping with better margins
+  const pubLines = doc.splitTextToSize(publicationInfo, 150);
   
   // Set the publication info lines
   doc.setFont("helvetica", "normal");
@@ -360,6 +375,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.text(pubLines[i], 22, yPos);
     yPos += 5;
   }
+  
+  // Reset font size
+  doc.setFontSize(11);
   
   // --- 5. ISBN and Price information ---
   if (book.isbn) {
@@ -375,8 +393,26 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Add price if available (with comma, not period, for decimal values in German format)
     if (book.price && !isbnLine.includes("EUR")) {
       // Convert price to string and format for German display (comma instead of decimal point)
-      const priceText = String(book.price).replace('.', ',');
-      isbnLine += `: EUR ${priceText}`;
+      let priceText = String(book.price);
+      
+      // Make sure we have proper decimal formatting
+      if (priceText.includes('.')) {
+        // Split by decimal point to handle the decimal places properly
+        const [whole, decimal] = priceText.split('.');
+        
+        // Format with exactly 2 decimal places
+        if (decimal && decimal.length === 1) {
+          priceText = `${whole},${decimal}0`;
+        } else if (decimal) {
+          priceText = `${whole},${decimal.substring(0, 2)}`;
+        } else {
+          priceText = `${whole},00`;
+        }
+      } else {
+        priceText += ',00';
+      }
+      
+      isbnLine += ` : EUR ${priceText}`;
     }
     
     doc.setFont("helvetica", "normal");
@@ -394,13 +430,20 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
+    
     if (book.summary) {
+      // Take the summary as is or trim if too long
       summaryText = book.summary;
     }
+    
+    // Add separator between summary and review
     if (book.summary && book.review) {
+      // Make sure there's proper spacing around the separator
       summaryText += ' | ';
     }
+    
     if (book.review) {
+      // Add the review text
       summaryText += book.review;
     }
     
