@@ -715,8 +715,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // Truncate and format the title to fit
   let titleText = book.title || "";
-  if (titleText.length > 50) { // Further reduced to ensure it fits
-    titleText = titleText.substring(0, 47) + "...";
+  if (titleText.length > 40) { // Further reduced to ensure it fits
+    titleText = titleText.substring(0, 37) + "...";
   }
   
   // Add author after title (only if not already shown above)
@@ -725,8 +725,11 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     titleText += ` / ${authorToShow}`;
   }
   
+  // Format the title text properly without extra spacing
+  const titleFormatted = titleText.replace(/\s+/g, " ").trim();
+  
   // Split for wrapping with reduced width
-  const titleLines = doc.splitTextToSize(titleText, width - 10);
+  const titleLines = doc.splitTextToSize(titleFormatted, width - 10);
   for (let i = 0; i < Math.min(titleLines.length, 2); i++) { // Limit to 2 lines to save space
     doc.text(titleLines[i], x + 5, currentY);
     currentY += 4;
@@ -735,6 +738,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   currentY += 2;
   
   // --- Publication info - condensed ---
+  // Use a smaller font for publication info to save space
+  doc.setFontSize(gridFontSize - 1);
+  
   let pubInfo = "";
   
   // Add components only if they exist, using the new field names with fallbacks
@@ -752,41 +758,68 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
   
-  // Add illustrations info if available
-  if (book.illustrations) pubInfo += pubInfo.length > 0 ? `: ${book.illustrations}` : book.illustrations;
-  
+  // Add dimensions directly after page count
   if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
   
+  // Add illustrations info if available - keep it very short
+  if (book.illustrations) {
+    // Truncate illustrations text if too long
+    const illText = book.illustrations.length > 20 ? book.illustrations.substring(0, 17) + "..." : book.illustrations;
+    pubInfo += pubInfo.length > 0 ? `: ${illText}` : illText;
+  }
+  
   if (pubInfo.length > 0) {
-    const pubLines = doc.splitTextToSize(pubInfo, width - 10);
+    // Format the publication info properly without extra spacing
+    const pubInfoFormatted = pubInfo.replace(/\s+/g, " ").trim();
+    
+    const pubLines = doc.splitTextToSize(pubInfoFormatted, width - 10);
     for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
       doc.text(pubLines[i], x + 5, currentY);
-      currentY += 4;
+      currentY += 3.5; // Slightly reduced line spacing
     }
   }
+  
+  // Reset font size
+  doc.setFontSize(gridFontSize);
   
   // --- ISBN and price - condensed ---
   if (book.isbn) {
     currentY += 2;
+    // Use smaller font for ISBN info
+    doc.setFontSize(gridFontSize - 1);
+    
     let isbnText = `ISBN ${formatISBN(book.isbn)}`;
     
-    // Add binding type if available
+    // Add binding type if available (keep it short)
     if (book.binding) {
-      isbnText += ` - ${book.binding}`;
+      const bindingText = book.binding.length > 20 ? book.binding.substring(0, 17) + "..." : book.binding;
+      isbnText += ` - ${bindingText}`;
     }
     
-    // Add price if available
+    // Add price if available (simplified)
     if (book.price) {
-      isbnText += ` : EUR ${book.price.toString().replace('.', ',')}`;
+      // Simplify price display
+      let priceText = book.price.toString();
+      if (priceText.length > 25) {
+        priceText = priceText.substring(0, 22) + "...";
+      }
+      isbnText += ` : ${priceText}`;
     }
     
-    doc.text(doc.splitTextToSize(isbnText, width - 10)[0], x + 5, currentY);
-    currentY += 5;
+    // Format the ISBN text properly without extra spacing
+    const isbnFormatted = isbnText.replace(/\s+/g, " ").trim();
+    
+    doc.text(doc.splitTextToSize(isbnFormatted, width - 10)[0], x + 5, currentY);
+    currentY += 4;
+    
+    // Reset font size
+    doc.setFontSize(gridFontSize);
   }
   
   // --- Summary and Review - ensure full content appears ---
   if (book.summary || book.review) {
-    doc.setFontSize(gridFontSize - 1);
+    // Use even smaller font for summary to maximize content display
+    doc.setFontSize(gridFontSize - 2);
     
     // Combine summary and review with the | separator
     let summaryText = '';
@@ -800,7 +833,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
       summaryText += book.review;
     }
     
-    // Remove metadata-like patterns
+    // Remove metadata-like patterns to save space
     const metadataPatterns = [
       /\*\*Titel:\*\*.*\n?/i,
       /\*\*Autor(?:in)?:\*\*.*\n?/i,
@@ -821,13 +854,15 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     
     // Remove any extra whitespace that might remain
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    // Normalize spacing
+    summaryText = summaryText.replace(/\s+/g, " ").trim();
     
-    // For multiple book PDF, we need to limit text to fit in the cell
-    // Use the space needed for footer (declared at function level)
+    // For multiple book PDF, limit text to fit in the cell
     
     // Calculate available space for summary text
     const availableHeight = (y + height - spaceNeededForFooter) - currentY;
-    const lineHeight = 3;
+    // Use smaller line height to fit more text
+    const lineHeight = 2.5;
     
     // Break into lines with proper wrapping
     const summaryLines = doc.splitTextToSize(summaryText, width - 10);
@@ -851,6 +886,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
       doc.text("...", x + 5, currentY);
       currentY += lineHeight;
     }
+    
+    // Reset font size to normal
+    doc.setFontSize(gridFontSize);
   }
   
   // --- IK category and ID-B number ---
