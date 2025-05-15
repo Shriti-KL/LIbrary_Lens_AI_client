@@ -15,9 +15,79 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// Interface for session with API keys
+declare global {
+  namespace Express {
+    interface Session {
+      apiKeys?: {
+        openai_api_key?: string;
+        google_books_api_key?: string;
+        google_cse_key?: string;
+        google_cse_id?: string;
+      };
+    }
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+
+  // API Keys session endpoint
+  app.post("/api/session/api-keys", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const { openai_api_key, google_books_api_key, google_cse_key, google_cse_id } = req.body;
+      
+      // Store in session
+      if (!req.session.apiKeys) {
+        req.session.apiKeys = {};
+      }
+      
+      if (openai_api_key) req.session.apiKeys.openai_api_key = openai_api_key;
+      if (google_books_api_key) req.session.apiKeys.google_books_api_key = google_books_api_key;
+      if (google_cse_key) req.session.apiKeys.google_cse_key = google_cse_key;
+      if (google_cse_id) req.session.apiKeys.google_cse_id = google_cse_id;
+      
+      // Save session
+      req.session.save((err) => {
+        if (err) {
+          console.error("Error saving API keys to session:", err);
+          return res.status(500).json({ message: "Failed to save API keys" });
+        }
+        
+        return res.status(200).json({ message: "API keys saved successfully" });
+      });
+    } catch (error) {
+      console.error("Error handling API keys:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get API key status - lets client know if keys are needed
+  app.get("/api/session/api-keys/status", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Check if keys are in session
+    const hasKeys = req.session.apiKeys && (
+      req.session.apiKeys.openai_api_key &&
+      req.session.apiKeys.google_books_api_key &&
+      req.session.apiKeys.google_cse_key &&
+      req.session.apiKeys.google_cse_id
+    );
+
+    return res.status(200).json({ 
+      hasKeys: !!hasKeys,
+      hasOpenAI: !!req.session.apiKeys?.openai_api_key,
+      hasGoogleBooks: !!req.session.apiKeys?.google_books_api_key,
+      hasGoogleCSE: !!(req.session.apiKeys?.google_cse_key && req.session.apiKeys?.google_cse_id)
+    });
+  });
 
   // Book analysis endpoint - simplified to only handle three paths:
   // 1. ISBN -> verification flow
