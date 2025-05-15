@@ -199,7 +199,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   yPos += 6; // Space after author name
   
-  // --- 3. Book title and publication info ---
+  // --- 3. Bibliographic Information (as a single continuous block) ---
   doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
@@ -219,10 +219,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Format the title line with subtitle if present
-  let titleText = titleFull;
+  // Build complete bibliographic line according to the template:
+  // [Title]: [Subtitle] / [Author] ; [Other Contributors]. – [Edition]. –[Place]: [Publisher], [Year]. – [Pages] pages: [Illustrations] ; [Format in cm]
+  
+  // Start with title and subtitle
+  let bibliographicLine = titleFull;
   if (subtitle) {
-    titleText = `${titleFull}: ${subtitle}`;
+    bibliographicLine += `: ${subtitle}`;
   }
   
   // Add statement of responsibility
