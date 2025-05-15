@@ -253,8 +253,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
-  let titleFull = book.title || "";
-  let subtitle = book.subtitle || '';
+  let titleFull = normalizedBook.title;
+  let subtitle = normalizedBook.subtitle;
   
   // If subtitle is not available but title contains a separator, extract it
   if (!subtitle) {
@@ -280,28 +280,28 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   let otherContributors = "";
   
   // Use statement of responsibility if available, otherwise build from author/contributors
-  if (book.statementOfResponsibility) {
-    authorText = book.statementOfResponsibility;
+  if (normalizedBook.statementOfResponsibility) {
+    authorText = normalizedBook.statementOfResponsibility;
   } else {
-    authorText = book.mainAuthor || book.author || "";
+    authorText = normalizedBook.mainAuthor;
     
     // Process contributors if available
-    if (book.contributors && (typeof book.contributors === 'object')) {
+    if (normalizedBook.contributors && (typeof normalizedBook.contributors === 'object')) {
       const contributorsList = [];
       
       // Handle new format (object with role keys)
-      if (!Array.isArray(book.contributors)) {
-        for (const role in book.contributors) {
-          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
-            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+      if (!Array.isArray(normalizedBook.contributors)) {
+        for (const role in normalizedBook.contributors) {
+          if (Array.isArray(normalizedBook.contributors[role]) && normalizedBook.contributors[role].length > 0) {
+            contributorsList.push(`${normalizedBook.contributors[role].join(", ")} (${role})`);
           }
         }
       } 
       // Handle old format (array of objects)
-      else if (book.contributors.length > 0) {
-        book.contributors
-          .filter((c: any) => c.name && c.role)
-          .forEach((c: any) => {
+      else if (normalizedBook.contributors.length > 0) {
+        (normalizedBook.contributors as any[])
+          .filter(c => c.name && c.role)
+          .forEach(c => {
             contributorsList.push(`${c.name} (${c.role})`);
           });
       }
@@ -315,7 +315,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Add author and contributors to title text
   if (authorText) {
     titleText += ` / ${authorText}`;
-    if (otherContributors && !book.statementOfResponsibility) {
+    if (otherContributors && !normalizedBook.statementOfResponsibility) {
       titleText += ` ; ${otherContributors}`;
     }
   } else if (otherContributors) {
@@ -335,13 +335,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   yPos += 2; // Extra space before publication info
   
   // Simplified publication info construction following German cataloging standards
-  const edition = book.edition || '';
-  const location = book.publicationPlace || book.location || '';
-  const publisher = book.publisher || '';
-  const year = book.publicationYear || book.publishedYear || '';
-  const pages = book.pageCount || '';
-  const illustrations = book.illustrations || '';
-  const dimensions = book.dimensions || '';
+  const edition = normalizedBook.edition;
+  const location = normalizedBook.publicationPlace;
+  const publisher = normalizedBook.publisher;
+  const year = normalizedBook.publicationYear || '';
+  const pages = normalizedBook.pageCount || '';
+  const illustrations = normalizedBook.illustrations;
+  const dimensions = normalizedBook.dimensions;
   
   // Format edition properly if needed
   let editionText = edition;
@@ -385,11 +385,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   let hasIllustrations = illustrations;
   
   // Check for illustrators in contributors if illustrations field is empty
-  if (!hasIllustrations && book.contributors) {
-    if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
+  if (!hasIllustrations && normalizedBook.contributors) {
+    if (!Array.isArray(normalizedBook.contributors) && normalizedBook.contributors['Illustrator']) {
       hasIllustrations = 'Illustrationen';
-    } else if (Array.isArray(book.contributors)) {
-      const hasIllustrator = book.contributors.some((c: any) => 
+    } else if (Array.isArray(normalizedBook.contributors)) {
+      const hasIllustrator = (normalizedBook.contributors as any[]).some(c => 
         c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
       if (hasIllustrator) {
         hasIllustrations = 'Illustrationen';
@@ -417,15 +417,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 5. ISBN and Price information ---
-  if (book.isbn) {
+  if (normalizedBook.isbn) {
     yPos += 2; // Extra small space before ISBN line
     
-    let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
+    let isbnLine = `ISBN ${formatISBN(normalizedBook.isbn)}`;
     
     // Add binding type if available (ensure it's in German)
-    if (book.binding) {
+    if (normalizedBook.binding) {
       // Map common English binding types to German
-      let bindingGerman = book.binding;
+      let bindingGerman = normalizedBook.binding;
       
       // Only do the mapping if the binding doesn't already appear to be in German
       if (!bindingGerman.toLowerCase().includes("einband") && 
@@ -459,9 +459,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     // Process price information if available
-    if (book.price) {
+    if (normalizedBook.price) {
       // The price field might contain a complete price string already
-      let priceText = book.price;
+      let priceText = normalizedBook.price;
       
       // If the price is just a number, format it properly
       if (/^\d+(\.\d+)?$/.test(priceText)) {
@@ -489,7 +489,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 6. Book summary/description and critical review ---
-  if (book.summary || book.review) {
+  if (normalizedBook.summary || normalizedBook.review) {
     yPos += 2;
     
     // Set text style for summary text
@@ -498,14 +498,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
-    if (book.summary) {
-      summaryText = book.summary;
+    if (normalizedBook.summary) {
+      summaryText = normalizedBook.summary;
     }
-    if (book.summary && book.review) {
+    if (normalizedBook.summary && normalizedBook.review) {
       summaryText += ' | ';
     }
-    if (book.review) {
-      summaryText += book.review;
+    if (normalizedBook.review) {
+      summaryText += normalizedBook.review;
     }
     
     // Clean up the text by removing any metadata patterns
