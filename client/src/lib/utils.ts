@@ -227,10 +227,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Add statement of responsibility
   if (book.statementOfResponsibility) {
-    titleText += ` / ${book.statementOfResponsibility}`;
+    // Ensure proper formatting with the slash separator
+    let stmtResp = book.statementOfResponsibility.trim();
+    // If statement doesn't already start with "by" or similar, keep it as is
+    titleText += ` / ${stmtResp}`;
   } else {
     // Use authors and contributors to construct statement of responsibility
     let authorName = book.mainAuthor || book.author || "";
+    if (authorName) authorName = authorName.trim();
     
     // Check for contributors
     let otherContributors = "";
@@ -240,7 +244,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
         const contributorsList = [];
         for (const role in book.contributors) {
           if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
-            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+            // Join names with comma and add role in parentheses
+            contributorsList.push(`${book.contributors[role].map(s => s.trim()).join(", ")} (${role})`);
           }
         }
         if (contributorsList.length > 0) {
@@ -251,7 +256,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       else if (book.contributors.length > 0) {
         const contributorsList = book.contributors
           .filter((c: any) => c.name && c.role)
-          .map((c: any) => `${c.name} (${c.role})`)
+          .map((c: any) => `${c.name.trim()} (${c.role.trim()})`)
           .join(" ; ");
         
         if (contributorsList) {
@@ -262,7 +267,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Add author and contributors to title text with proper spacing
     if (authorName) {
-      titleText += ` / ${authorName.trim()}${otherContributors}`;
+      titleText += ` / ${authorName}${otherContributors}`;
     } else if (otherContributors) {
       titleText += ` / ${otherContributors.trim()}`;
     }
@@ -309,23 +314,34 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     if (location && publisher) {
-      publicationInfo += `${location}: ${publisher}`;
+      // Ensure proper spacing around the colon
+      publicationInfo += `${location.trim()}: ${publisher.trim()}`;
     } else if (location) {
-      publicationInfo += location;
+      publicationInfo += location.trim();
     } else if (publisher) {
-      publicationInfo += publisher;
+      publicationInfo += publisher.trim();
     }
     
     // Add year with comma if we have location/publisher
     if (year) {
-      publicationInfo += `, ${year}`;
+      // Ensure clean string representation of year with no decimal
+      let yearText = String(year).trim();
+      if (yearText.includes('.')) {
+        yearText = yearText.split('.')[0]; // Take only integer part
+      }
+      publicationInfo += `, ${yearText}`;
     }
   } else if (year) {
     // Year standalone needs proper separator if something came before
     if (publicationInfo) {
       publicationInfo += '. – ';
     }
-    publicationInfo += `${year}`;
+    // Ensure clean string representation of year
+    let yearText = String(year).trim();
+    if (yearText.includes('.')) {
+      yearText = yearText.split('.')[0]; // Take only integer part
+    }
+    publicationInfo += yearText;
   }
   
   // Add page count with proper separator
@@ -333,11 +349,29 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     if (publicationInfo) {
       publicationInfo += '. – ';
     }
-    publicationInfo += `${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+    
+    // Clean up pages value and ensure it's numeric
+    let pagesValue = String(pages).trim();
+    if (pagesValue.includes('.')) {
+      pagesValue = pagesValue.split('.')[0]; // Take only integer part
+    }
+    
+    // Check if it's a valid number
+    const pagesNum = parseInt(pagesValue, 10);
+    if (!isNaN(pagesNum)) {
+      publicationInfo += `${pagesNum} ${pagesNum === 1 ? 'Seite' : 'Seiten'}`;
+    } else {
+      // If not a valid number, use as is but ensure no double "Seiten"
+      if (!pagesValue.toLowerCase().includes('seite')) {
+        publicationInfo += `${pagesValue} Seiten`;
+      } else {
+        publicationInfo += pagesValue;
+      }
+    }
     
     // Add illustration info if available
     if (illustrations) {
-      publicationInfo += `: ${illustrations}`;
+      publicationInfo += `: ${illustrations.trim()}`;
     } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
       // Check if there are illustrators
       let hasIllustrators = false;
@@ -365,16 +399,16 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     if (publicationInfo) {
       // Check if we already have illustrations (indicated by a colon)
       if (publicationInfo.includes(':')) {
-        publicationInfo += ` ; ${dimensions}`;
+        publicationInfo += ` ; ${dimensions.trim()}`;
       } else if (pages) {
         // If we have pages but no illustrations
-        publicationInfo += ` ; ${dimensions}`;
+        publicationInfo += ` ; ${dimensions.trim()}`;
       } else {
         // If we have neither pages nor illustrations
-        publicationInfo += `. – ${dimensions}`;
+        publicationInfo += `. – ${dimensions.trim()}`;
       }
     } else {
-      publicationInfo += dimensions;
+      publicationInfo += dimensions.trim();
     }
   }
   
@@ -415,7 +449,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     // Add price if available (with comma, not period, for decimal values in German format)
-    if (book.price && !isbnLine.includes("EUR")) {
+    // Check if the price is already in string format and contains "EUR" - don't add it again
+    if (book.price && typeof book.price === 'string' && book.price.includes('EUR')) {
+      // Price is already formatted, use as is but ensure no duplication
+      if (!isbnLine.includes("EUR")) {
+        isbnLine += ` : ${book.price.trim()}`;
+      }
+    } 
+    // Handle numeric price or string price that doesn't contain EUR yet
+    else if (book.price && !isbnLine.includes("EUR")) {
       // Convert price to string and format for German display (comma instead of decimal point)
       let priceText = String(book.price);
       
@@ -432,11 +474,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
         } else {
           priceText = `${whole},00`;
         }
-      } else {
+      } else if (!priceText.includes(',') && !isNaN(Number(priceText))) {
         priceText += ',00';
       }
       
-      isbnLine += ` : EUR ${priceText}`;
+      isbnLine += ` : EUR ${priceText.trim()}`;
     }
     
     doc.setFont("helvetica", "normal");
