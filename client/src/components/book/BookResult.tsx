@@ -388,9 +388,20 @@ export default function BookResult({
                   }
                 }
                 
+                // Get translated field label
+                let displayLabel = key;
+                
+                // Handle special cases
+                if (key === 'classificationNumber') {
+                  displayLabel = 'ASB-Nummer';
+                } else {
+                  // Try to get a translation from the translations file
+                  displayLabel = t(key) !== key ? t(key) : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                }
+                
                 return (
                   <div key={key} className="pb-2 border-b border-neutral-200 last:border-b-0">
-                    <h4 className="text-sm font-medium text-primary-dark/70 capitalize">{key}:</h4>
+                    <h4 className="text-sm font-medium text-primary-dark/70 capitalize">{displayLabel}:</h4>
                     {renderedValue}
                   </div>
                 );
