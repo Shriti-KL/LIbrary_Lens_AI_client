@@ -108,6 +108,7 @@ export class DatabaseStorage implements IStorage {
         interest_category as "interestCategory",
         age_recommendation as "ageRecommendation",
         classification_number as "classificationNumber",
+        secondary_classification as "secondaryClassification",
         additional_classifications as "additionalClassifications",
         idb_initials as "idbInitials",
         idb_sequence_number as "idbSequenceNumber",
@@ -289,6 +290,7 @@ export class DatabaseStorage implements IStorage {
     if ('interestCategory' in updates) dbUpdates['interest_category'] = updates.interestCategory;
     if ('ageRecommendation' in updates) dbUpdates['age_recommendation'] = updates.ageRecommendation;
     if ('classificationNumber' in updates) dbUpdates['classification_number'] = updates.classificationNumber;
+    if ('secondaryClassification' in updates) dbUpdates['secondary_classification'] = updates.secondaryClassification;
     if ('additionalClassifications' in updates) dbUpdates['additional_classifications'] = updates.additionalClassifications;
     
     // ID-Besprechung specific fields (ekz fields)
