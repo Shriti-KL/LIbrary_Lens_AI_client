@@ -68,12 +68,30 @@ export default function BatchBookSlideshow({
   };
   
   const fieldDisplayOrder = [
-    'title', 'subtitle', 'author', 'mainAuthor', 'additionalAuthors', 
-    'authorStatement', 'contributors', 'edition', 'publicationPlace',
-    'publisher', 'publicationYear', 'pageCount', 'illustrations',
-    'dimensions', 'isbn', 'binding', 'price', 'language',
-    'interestCategory', 'classificationNumber', 'additionalClassification',
-    'summary', 'review', 'genres', 'reviewerName'
+    'classificationNumber', // ASB number
+    'additionalClassificationNumbers', // Additional classification numbers
+    'title',
+    'subtitle',
+    'author',
+    'mainAuthor',
+    'additionalAuthors',
+    'statementOfResponsibility', // other contributors (statement of responsibility)
+    'edition',
+    'publicationPlace',
+    'publisher',
+    'publicationYear',
+    'pageCount', // Number of pages
+    'illustrations',
+    'dimensions',
+    'isbn',
+    'binding',
+    'price',
+    'summary',
+    'review',
+    'genres',
+    'reviewerName', // name of reviewer
+    'interestCategory', // IK (Interest Categories)
+    'id' // ID
   ];
   
   return (
@@ -139,23 +157,7 @@ export default function BatchBookSlideshow({
             
             <CardContent className="pt-6 pb-4 px-6 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
-                {/* Book Classifications */}
-                {(book.interestCategory || book.classificationNumber) && (
-                  <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {book.interestCategory && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                        <h5 className="text-sm font-medium text-blue-700 mb-1">{t('interestCategory')}</h5>
-                        <p className="text-blue-800">{book.interestCategory}</p>
-                      </div>
-                    )}
-                    {book.classificationNumber && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-                        <h5 className="text-sm font-medium text-amber-700 mb-1">{t('classificationNumber')}</h5>
-                        <p className="text-amber-800">{book.classificationNumber}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Show no special display for classifications anymore, to maintain consistency */}
                 
                 {/* Book Details List */}
                 <div className="space-y-4">
@@ -163,8 +165,8 @@ export default function BatchBookSlideshow({
                     const value = book[field as keyof typeof book];
                     if (!value && value !== 0) return null;
                     
-                    // Skip fields that are already shown above
-                    if (['title', 'subtitle', 'interestCategory', 'classificationNumber'].includes(field)) {
+                    // Skip fields only for title and subtitle since they're shown in the header
+                    if (['title', 'subtitle'].includes(field)) {
                       return null;
                     }
                     
