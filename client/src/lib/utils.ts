@@ -189,8 +189,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.text("ASB: " + asbNumber, 22, yPos);
   
   // Add the secondary classification on the next line if available
-  // Check both camelCase and snake_case versions of the field
-  const secondaryClass = book.secondaryClassification || book.secondary_classification;
+  // Check both camelCase and snake_case versions of the field and log all book properties to help diagnose
+  console.log("PDF DEBUG - Full book object:", Object.keys(book));
+  
+  // Force cast to 'any' to handle potential snake_case property access
+  const bookAny = book as any;
+  const secondaryClass = book.secondaryClassification || bookAny.secondary_classification;
   console.log("PDF DEBUG - Secondary Classification:", secondaryClass);
   
   if (secondaryClass) {
