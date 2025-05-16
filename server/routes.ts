@@ -502,27 +502,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error("Invalid ISBN format");
           }
           
-          // Use simpler approach with direct Google Books API call
-          // Get book data from Google Books API
+          // Use axios for HTTP requests which is more reliable in Node.js
+          const axios = require('axios');
           const googleBooksApiKey = apiKeys.google_books_api_key || '';
-          const response = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=isbn:${standardizedIsbn}&langRestrict=de&key=${googleBooksApiKey}`
-          );
           
-          if (!response.ok) {
-            throw new Error(`Google Books API error: ${response.status}`);
-          }
+          // Fetch book data from Google Books API
+          const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${standardizedIsbn}&langRestrict=de&key=${googleBooksApiKey}`;
+          console.log(`Fetching from Google Books API: ${url}`);
           
-          const data = await response.json();
+          const response = await axios.get(url);
+          const bookData = response.data;
           
-          if (!data.items || data.items.length === 0) {
+          console.log(`Google Books API response status: ${response.status}`);
+          
+          if (!bookData || !bookData.items || bookData.items.length === 0) {
             throw new Error(`No book found with ISBN: ${standardizedIsbn}`);
           }
           
-          const bookInfo = data.items[0].volumeInfo;
+          const bookInfo = bookData.items[0].volumeInfo;
           
           // Map the Google Books data to our book schema
-          const bookData = {
+          const bookRecord = {
             isbn: standardizedIsbn,
             title: bookInfo.title || "Unknown Title",
             subtitle: bookInfo.subtitle || null,
