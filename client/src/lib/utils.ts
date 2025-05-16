@@ -189,8 +189,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   
-  // Setting text rendering mode is not supported in this version of jsPDF
-  // We'll use other methods to ensure consistent spacing
+  // Apply text rendering settings for improved character spacing
+  (doc as any).setTextRenderingMode("fill");
   
   // Get the title and subtitle if available
   let titleFull = book.title || "";
@@ -778,7 +778,8 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     unit: 'mm',
     format: 'a4',
     compress: true,
-    putOnlyUsedFonts: true
+    putOnlyUsedFonts: true,
+    hotfixes: ["px_scaling"] // Important: This fixes character spacing issues
   });
   
   // Configure language-specific text
@@ -918,7 +919,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFontSize(gridFontSize - 1);
   doc.setFont("helvetica", "normal");
   
-  // Use consistent font settings to improve character spacing
+  // Apply text rendering mode for better character spacing
+  (doc as any).setTextRenderingMode("fill");
   
   let pubInfo = "";
   
