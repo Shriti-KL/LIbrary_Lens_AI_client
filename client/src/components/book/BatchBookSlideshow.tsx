@@ -163,12 +163,14 @@ export default function BatchBookSlideshow({
                 <div className="space-y-4">
                   {fieldDisplayOrder.map(field => {
                     const value = book[field as keyof typeof book];
-                    if (!value && value !== 0) return null;
                     
                     // Skip fields only for title and subtitle since they're shown in the header
                     if (['title', 'subtitle'].includes(field)) {
                       return null;
                     }
+                    
+                    // Always display the field label, even if value is empty
+                    // This ensures all required fields are visible
                     
                     return (
                       <div key={field} className="border-b border-gray-100 pb-3 last:border-0">
@@ -177,15 +179,21 @@ export default function BatchBookSlideshow({
                         </h4>
                         <div className="text-neutral-800 whitespace-pre-wrap">
                           {(() => {
+                            // When value is undefined/null, show placeholder text
+                            if (value === undefined || value === null) {
+                              return <span className="text-gray-400 italic">Nicht angegeben</span>;
+                            }
+                            
                             // Format based on field type
                             if (field === 'additionalAuthors' && Array.isArray(value)) {
-                              return value.join(', ');
+                              return value.length > 0 ? value.join(', ') : <span className="text-gray-400 italic">Keine</span>;
                             } else if (field === 'genres' && Array.isArray(value)) {
-                              return value.join(', ');
+                              return value.length > 0 ? value.join(', ') : <span className="text-gray-400 italic">Keine</span>;
                             } else if (field === 'contributors' && typeof value === 'object' && value !== null) {
-                              return Object.entries(value)
-                                .map(([role, names]) => `${role}: ${Array.isArray(names) ? names.join(', ') : names}`)
-                                .join('\n');
+                              const entries = Object.entries(value);
+                              return entries.length > 0 ? 
+                                entries.map(([role, names]) => `${role}: ${Array.isArray(names) ? names.join(', ') : names}`).join('\n') :
+                                <span className="text-gray-400 italic">Keine</span>;
                             } else if (typeof value === 'object' && value !== null) {
                               return JSON.stringify(value, null, 2);
                             } else {
