@@ -41,30 +41,49 @@ export default function Batch() {
     error?: string;
   }>>([]);
   
-  // Batch processing mutation
+  // Batch processing mutations
   const batchMutation = useMutation({
-    mutationFn: async (files: File[]) => {
-      // Create FormData for batch upload
-      const formData = new FormData();
-      
-      // Add all files to FormData
-      files.forEach(file => {
-        formData.append(`coverImages`, file);
-      });
-      
-      // Initialize batch results (all at once to avoid multiple state updates)
-      const initialBatchResults = files.map((file, index) => ({
-        id: `batch-${Date.now()}-${index}`,
-        name: file.name,
-        status: 'pending' as const,
-        progress: 0
-      }));
-      
-      setBatchResults(initialBatchResults);
-      
-      // Make API request using the standardized apiRequest utility
-      const response = await apiRequest('POST', '/api/books/batch', formData);
-      return await response.json();
+    mutationFn: async (payload: { type: 'files', files: File[] } | { type: 'isbns', isbns: string[] }) => {
+      if (payload.type === 'files') {
+        // Create FormData for batch upload
+        const formData = new FormData();
+        
+        // Add all files to FormData
+        payload.files.forEach(file => {
+          formData.append(`coverImages`, file);
+        });
+        
+        // Initialize batch results (all at once to avoid multiple state updates)
+        const initialBatchResults = payload.files.map((file, index) => ({
+          id: `batch-${Date.now()}-${index}`,
+          name: file.name,
+          status: 'pending' as const,
+          progress: 0
+        }));
+        
+        setBatchResults(initialBatchResults);
+        
+        // Make API request using the standardized apiRequest utility
+        const response = await apiRequest('POST', '/api/books/batch', formData);
+        return await response.json();
+      } else {
+        // For ISBNs batch processing
+        // Initialize batch results for ISBNs (all at once to avoid multiple state updates)
+        const initialBatchResults = payload.isbns.map((isbn, index) => ({
+          id: `batch-${Date.now()}-${index}`,
+          name: isbn, // Use ISBN as the name
+          status: 'pending' as const,
+          progress: 0
+        }));
+        
+        setBatchResults(initialBatchResults);
+        
+        // Make API request with JSON body for ISBNs
+        const response = await apiRequest('POST', '/api/books/batch-isbn', {
+          isbns: payload.isbns
+        });
+        return await response.json();
+      }
     },
     onMutate: () => {
       // Update all batch items to processing status
@@ -171,13 +190,22 @@ export default function Batch() {
     }
   });
   
-  // Handle batch submission
+  // Handle batch submission for files
   const handleBatchSubmit = (files: File[]) => {
     // Reset batch results
     setBatchResults([]);
     
     // Process the batch
-    batchMutation.mutate(files);
+    batchMutation.mutate({ type: 'files', files });
+  };
+  
+  // Handle batch submission for ISBNs
+  const handleBatchISBNSubmit = (isbns: string[]) => {
+    // Reset batch results
+    setBatchResults([]);
+    
+    // Process the batch of ISBNs
+    batchMutation.mutate({ type: 'isbns', isbns });
   };
   
   return (
@@ -193,6 +221,7 @@ export default function Batch() {
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 mb-8">
         <BatchUpload 
           onSubmit={handleBatchSubmit}
+          onSubmitISBNs={handleBatchISBNSubmit}
           isProcessing={batchMutation.isPending}
         />
       </div>

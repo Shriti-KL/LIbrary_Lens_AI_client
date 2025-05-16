@@ -383,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Batch upload endpoint
+  // Batch upload endpoint for book covers
   app.post("/api/books/batch", upload.array("coverImages", 10), async (req: Request, res: Response) => {
     try {
       if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
@@ -435,22 +435,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ 
             success: true, 
             book: savedBook,
-            originalName: file.originalname
+            filename: file.originalname
           });
         } catch (fileError: any) {
           console.error(`Error processing file ${file.originalname}:`, fileError);
           results.push({ 
             success: false, 
             error: `Error processing file: ${fileError.message}`,
-            originalName: file.originalname 
+            filename: file.originalname,
+            status: 'error'
           });
         }
       }
       
-      res.status(200).json({ results });
+      const processed = {
+        success: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        total: results.length
+      };
+      
+      res.status(200).json({ results, processed });
     } catch (error: any) {
       console.error("Error in batch upload:", error);
       res.status(500).json({ error: "Error processing batch upload" });
+    }
+  });
+  
+  // Batch processing endpoint for ISBNs
+  app.post("/api/books/batch-isbn", async (req: Request, res: Response) => {
+    try {
+      const { isbns } = req.body;
+      
+      if (!isbns || !Array.isArray(isbns) || isbns.length === 0) {
+        return res.status(400).json({ error: "No ISBNs provided" });
+      }
+      
+      const results = [];
+      
+      // Get session API keys
+      const apiKeys = (req.session as SessionData).apiKeys || {};
+      
+      // Check if API keys are available
+      if (!apiKeys || !apiKeys.openai_api_key || !apiKeys.google_books_api_key) {
+        return res.status(400).json({ 
+          error: "API keys required", 
+          message: "Please provide API keys in your account settings before analyzing books." 
+        });
+      }
+      
+      // Process each ISBN
+      for (let i = 0; i < isbns.length; i++) {
+        const isbn = isbns[i];
+        
+        try {
+          // Standardize ISBN (remove hyphens, etc.)
+          const standardizedIsbn = isbn.replace(/[-\s]/g, '');
+          
+          // Verify book data using ISBN
+          const bookData = await verifyBookByIsbn(standardizedIsbn, apiKeys);
+          
+          if (req.isAuthenticated()) {
+            bookData.userId = req.user.id;
+          }
+          
+          const savedBook = await storage.createBook(bookData as any);
+          results.push({ 
+            success: true, 
+            book: savedBook,
+            filename: isbn, // Use ISBN as filename for frontend matching
+            status: 'success'
+          });
+        } catch (isbnError: any) {
+          console.error(`Error processing ISBN ${isbn}:`, isbnError);
+          results.push({ 
+            success: false, 
+            error: `Error processing ISBN: ${isbnError.message}`,
+            filename: isbn,
+            status: 'error'
+          });
+        }
+      }
+      
+      const processed = {
+        success: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        total: results.length
+      };
+      
+      res.status(200).json({ results, processed });
+    } catch (error: any) {
+      console.error("Error in batch ISBN processing:", error);
+      res.status(500).json({ error: "Error processing batch ISBNs" });
     }
   });
 

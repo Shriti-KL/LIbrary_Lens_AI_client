@@ -8,26 +8,61 @@ import {
   CardHeader 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Barcode } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
 interface BatchUploadProps {
   onSubmit: (files: File[]) => void;
+  onSubmitISBNs?: (isbns: string[]) => void;  
   isProcessing: boolean;
 }
 
-export default function BatchUpload({ onSubmit, isProcessing }: BatchUploadProps) {
+export default function BatchUpload({ onSubmit, onSubmitISBNs, isProcessing }: BatchUploadProps) {
   const { t } = useLanguage();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isbns, setIsbns] = useState<string>('');
+  const [batchMode, setBatchMode] = useState<'covers' | 'isbns'>('covers');
   
   // Handle file selection
   const handleFilesSelect = (files: File[]) => {
     setSelectedFiles(files);
   };
   
+  // Handle ISBN input change
+  const handleIsbnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIsbns(e.target.value);
+  };
+  
+  // Process ISBNs from text input - handles comma, space, or newline separation
+  const processISBNs = (): string[] => {
+    if (!isbns.trim()) return [];
+    
+    // Split by commas, spaces, and newlines
+    return isbns
+      .split(/[\s,\n]+/)
+      .map(isbn => isbn.trim())
+      .filter(isbn => isbn.length > 0)
+      .map(isbn => isbn.replace(/-/g, '')); // Remove hyphens for standardization
+  };
+  
   // Submit the batch
   const processBatch = () => {
-    if (selectedFiles.length === 0) return;
-    onSubmit(selectedFiles);
+    if (batchMode === 'covers' && selectedFiles.length === 0) return;
+    if (batchMode === 'isbns') {
+      const isbnList = processISBNs();
+      if (isbnList.length === 0) return;
+      
+      if (onSubmitISBNs) {
+        onSubmitISBNs(isbnList);
+        return;
+      }
+    }
+    
+    // Default to file processing if ISBN processing not provided
+    if (selectedFiles.length > 0) {
+      onSubmit(selectedFiles);
+    }
   };
   
   return (
@@ -37,36 +72,87 @@ export default function BatchUpload({ onSubmit, isProcessing }: BatchUploadProps
           {t('batchProcessing')}
         </h3>
         <p className="text-sm text-neutral-500">
-          Upload multiple book covers for batch analysis
+          {batchMode === 'covers' 
+            ? 'Upload multiple book covers for batch analysis'
+            : 'Enter multiple ISBNs for batch processing'
+          }
         </p>
       </CardHeader>
       
       <CardContent>
-        <MultiFileUpload 
-          onFilesSelect={handleFilesSelect}
-          acceptedFileTypes="image/*"
-          maxSize={10 * 1024 * 1024}
-          className="mb-6"
-          dropzoneText="Drag and drop multiple book covers here"
-          fileTypeText="PNG, JPG, GIF up to 10MB each"
-          isLoading={isProcessing}
-        />
-        
-        {selectedFiles.length > 0 && (
-          <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
-            <BookOpen className="h-5 w-5 mr-2 mt-0.5" />
-            <div>
-              <p className="font-medium">{selectedFiles.length} files selected</p>
-              <p className="text-sm">Click process to analyze these book covers</p>
+        <Tabs 
+          defaultValue="covers" 
+          className="w-full" 
+          onValueChange={(value) => setBatchMode(value as 'covers' | 'isbns')}
+        >
+          <TabsList className="mb-4 w-full grid grid-cols-2">
+            <TabsTrigger value="covers" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Book Covers
+            </TabsTrigger>
+            <TabsTrigger value="isbns" className="flex items-center gap-2">
+              <Barcode className="h-4 w-4" />
+              ISBNs
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="covers">
+            <MultiFileUpload 
+              onFilesSelect={handleFilesSelect}
+              acceptedFileTypes="image/*"
+              maxSize={10 * 1024 * 1024}
+              className="mb-6"
+              dropzoneText="Drag and drop multiple book covers here"
+              fileTypeText="PNG, JPG, GIF up to 10MB each"
+              isLoading={isProcessing}
+            />
+            
+            {selectedFiles.length > 0 && (
+              <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
+                <BookOpen className="h-5 w-5 mr-2 mt-0.5" />
+                <div>
+                  <p className="font-medium">{selectedFiles.length} files selected</p>
+                  <p className="text-sm">Click process to analyze these book covers</p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="isbns">
+            <div className="space-y-4">
+              <div>
+                <Textarea
+                  placeholder="Enter multiple ISBNs separated by commas, spaces, or new lines"
+                  value={isbns}
+                  onChange={handleIsbnChange}
+                  rows={8}
+                  className="font-mono resize-y"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Example: 9783740824235, 9783103977042, 9783947857272
+                </p>
+              </div>
+              
+              {processISBNs().length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
+                  <Barcode className="h-5 w-5 mr-2 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{processISBNs().length} ISBNs detected</p>
+                    <p className="text-sm">Click process to analyze these books by ISBN</p>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
       
       <CardFooter className="bg-blue-50/50 justify-end border-t border-blue-100">
         <Button
           onClick={processBatch}
-          disabled={selectedFiles.length === 0 || isProcessing}
+          disabled={(batchMode === 'covers' && selectedFiles.length === 0) || 
+                   (batchMode === 'isbns' && processISBNs().length === 0) || 
+                   isProcessing}
         >
           {isProcessing ? t('processing') : t('batchProcessing')}
         </Button>
