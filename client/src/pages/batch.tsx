@@ -210,9 +210,9 @@ export default function Batch() {
           
           <CardContent>
             <BatchUpload 
-              onUpload={handleAddISBNs}
-              isLoading={isUploading || batchMutation.isPending}
-              uploadType="isbn"
+              onSubmit={() => {}}
+              onSubmitISBNs={handleAddISBNs}
+              isProcessing={isUploading || batchMutation.isPending}
             />
           </CardContent>
         </Card>
