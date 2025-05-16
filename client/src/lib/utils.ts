@@ -459,23 +459,33 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Add physical description - pages
+  // ===== Physical description section =====
+  // Format: [Number of Pages] Seiten : [Illustrations] ; [Format in cm]
+  
+  // Add physical description separator if we have publication info
+  if (publicationInfo) {
+    publicationInfo += `. – `;
+  }
+  
+  // Debug physical metadata fields
+  console.log("PDF Debug - Physical metadata:", {
+    pageCount: book.pageCount,
+    illustrations: book.illustrations,
+    dimensions: book.dimensions
+  });
+  
+  // Add page count
   const pages = book.pageCount || '';
   if (pages) {
-    publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
-  } else if (publicationInfo) {
-    // Only add this separator if we have content and will add more information after
-    if (book.illustrations || book.illustrator || 
-        (book.contributors && typeof book.contributors === 'object' && 
-         ((Array.isArray(book.contributors) && book.contributors.length > 0) || 
-          (!Array.isArray(book.contributors) && Object.keys(book.contributors).length > 0)))) {
-      publicationInfo += `. – `;
-    }
+    publicationInfo += `${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+  } else {
+    // If no page count, still add a placeholder to maintain format
+    publicationInfo += `Seiten`;
   }
   
   // Add illustration information if available
   if (book.illustrations) {
-    publicationInfo += `: ${book.illustrations}`;
+    publicationInfo += ` : ${book.illustrations}`;
   } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
     // Check if there are illustrators in contributors
     let hasIllustrators = false;
@@ -493,12 +503,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
     
     if (book.illustrator || hasIllustrators) {
-      publicationInfo += `: Illustrationen`;
+      publicationInfo += ` : Illustrationen`;
     }
-  } else {
-    // Default to "keine Illustrationen" if specifically requested to show this info
-    // Leave blank by default unless explicitly requested to show "keine Illustrationen"
-    // publicationInfo += `: keine Illustrationen`;
   }
   
   // Add dimensions if available
