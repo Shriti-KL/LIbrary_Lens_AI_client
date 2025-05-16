@@ -253,10 +253,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
+  // Use same smaller font size for all metadata sections
+  doc.setFontSize(9);
+  
   // Split the title text for proper wrapping
   const titleLines = doc.splitTextToSize(titleText, 155);
   
-  // Set the title lines
+  // Set the title lines - all titles and metadata in smaller font size
   for (let i = 0; i < titleLines.length; i++) {
     doc.text(titleLines[i], 22, yPos);
     yPos += 5;
@@ -343,15 +346,29 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     publicationInfo += ` ; ${book.dimensions}`;
   }
   
-  // Split the publication info text for proper wrapping
-  const pubLines = doc.splitTextToSize(publicationInfo, 165);
-  
-  // Set the publication info lines
+  // Set the publication info as a single continuous line (no line breaks)
   doc.setFont("helvetica", "normal");
-  for (let i = 0; i < pubLines.length; i++) {
-    doc.text(pubLines[i], 22, yPos);
-    yPos += 5;
+  
+  // Keep font size consistent with title metadata
+  doc.setFontSize(9);
+  
+  // Calculate max width for text
+  const maxWidth = 170;
+  
+  // If publication info is too long, abbreviate with ellipsis
+  if (doc.getTextWidth(publicationInfo) > maxWidth) {
+    // Find a good cutoff point to add ellipsis
+    let cutPoint = Math.floor(publicationInfo.length * (maxWidth / doc.getTextWidth(publicationInfo)));
+    // Back up to avoid cutting in the middle of a word
+    while (cutPoint > 0 && publicationInfo[cutPoint] !== ' ') {
+      cutPoint--;
+    }
+    publicationInfo = publicationInfo.substring(0, cutPoint) + '...';
   }
+  
+  // Display publication info as a single continuous line
+  doc.text(publicationInfo, 22, yPos);
+  yPos += 5;
   
   // --- 5. ISBN and Price information ---
   if (book.isbn) {
