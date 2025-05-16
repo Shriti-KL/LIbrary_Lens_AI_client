@@ -805,25 +805,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 5;
   }
   
-  // --- 10. Footer (no barcode) ---
+  // --- 10. Footer (only ekz-Informationsdienst text, no barcode or redundant ASB) ---
   yPos += 10;
   
-  // Add the classification number (no barcode)
-  const startX = doc.internal.pageSize.width / 2;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  
-  // Add ASB number if available
-  if (asbNumber && asbNumber.trim() !== "") {
-    doc.text(asbNumber, startX, yPos, { align: 'center' });
-    yPos += 5;
-  }
-  
   // Add ekz-Informationsdienst text
-  yPos += 3;
+  const startX = doc.internal.pageSize.width / 2;
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+  doc.text("ekz-Informationsdienst", startX, yPos, { align: 'center' });
   
   return yPos + 10; // Return the final Y position with some extra space
 }
