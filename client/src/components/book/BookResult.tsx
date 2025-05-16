@@ -13,9 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Download, Save } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import BookItem from './BookItem';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
-import { formatISBN } from '@/lib/utils';
 
 interface BookResultProps {
   book: Partial<Book>;
@@ -37,8 +35,6 @@ export default function BookResult({
   loadingSteps
 }: BookResultProps) {
   const { t } = useLanguage();
-
-  // Export functionality moved to multi-book export in archives page
 
   // If still loading, show loading state
   if (isLoading && loadingSteps) {
@@ -178,7 +174,7 @@ export default function BookResult({
     );
   }
 
-  // Book result display
+  // Book result display - Simple list of all data
   return (
     <Card className="shadow-sm border border-neutral-200">
       <CardHeader className="pb-2">
@@ -199,23 +195,23 @@ export default function BookResult({
 
       <CardContent className="px-6 pt-5 pb-6">
         <div className="grid grid-cols-1 gap-8">
-          {/* Book cover and metadata */}
-          <div className="flex flex-col sm:flex-row gap-8">
-            <div className="sm:w-1/3">
+          {/* Book cover at the top */}
+          <div className="flex justify-center">
+            <div className="w-[200px]">
               {book.coverImageUrl ? (
                 <img 
                   src={book.coverImageUrl} 
                   alt={`${book.title} cover`} 
-                  className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
+                  className="object-cover w-full rounded-lg shadow-md border border-neutral-200" 
                 />
               ) : (book as any).coverImageData ? (
                 <img 
                   src={(book as any).coverImageData} 
                   alt={`${book.title} cover`} 
-                  className="object-cover w-full h-64 rounded-lg shadow-md border border-neutral-200" 
+                  className="object-cover w-full rounded-lg shadow-md border border-neutral-200" 
                 />
               ) : (
-                <div className="w-full h-64">
+                <div className="w-full">
                   <BookCoverPlaceholder 
                     title={book.title || ''} 
                     author={book.author || ''}
@@ -223,381 +219,70 @@ export default function BookResult({
                 </div>
               )}
             </div>
-            
-            <div className="sm:w-2/3">
-              <h3 className="text-xl font-serif font-semibold text-primary-dark">{book.title}</h3>
-              <p className="text-lg text-neutral-700 mt-1 font-medium">{book.author}</p>
-              
-              {/* Book Details Section */}
-              <div className="mt-5">
-                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('bookDetails')}</h4>
-                <div className="grid grid-cols-2 gap-5 bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                  {/* Basic Information */}
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('isbn')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.isbn ? formatISBN(book.isbn) : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('pages')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.pageCount || 'N/A'}</p>
-                  </div>
-                  
-                  {/* Publication Information */}
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('published')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.publishedYear || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('publisher')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.publisher || 'N/A'}</p>
-                  </div>
-                  
-                  {/* Edition and Location */}
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('edition')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.edition || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('location')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.location || 'N/A'}</p>
-                  </div>
-                  
-                  {/* Physical Characteristics */}
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('dimensions')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.dimensions || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-primary-dark/70">{t('binding')}</h4>
-                    <p className="mt-1 text-sm text-neutral-700">{book.binding || 'N/A'}</p>
-                  </div>
-                  
-                  {/* Enhanced Debug section with all metadata */}
-                  <div className="col-span-2 mt-3 pt-3 border-t border-neutral-200">
-                    <details>
-                      <summary className="flex items-center gap-2 cursor-pointer text-xs text-neutral-500 font-mono">
-                        <span className="text-red-500">[DEBUG]</span> Complete Book Metadata
-                      </summary>
-                      <div className="mt-2 overflow-auto max-h-[500px] p-2 bg-neutral-100 rounded text-xs font-mono">
-                        <div className="mb-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-                            <h5 className="font-bold">Source Data Summary:</h5>
-                          </div>
-                          <div className="pl-5 text-xs">
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                              <div><span className="font-semibold">Google Books:</span> {book.isbn ? 'Data received' : 'No data'}</div>
-                              <div><span className="font-semibold">DNB:</span> {book.verification?.sources?.includes('DNB') ? 'Data received' : 'No data'}</div>
-                              <div><span className="font-semibold">OpenAI:</span> {book.summary ? 'Data received' : 'No data'}</div>
-                              <div><span className="font-semibold">Google Custom Search:</span> {book.verification?.sources?.includes('Google Search') ? 'Data received' : 'No data'}</div>
-                              <div><span className="font-semibold">Goodreads:</span> {book.verification?.sources?.includes('Goodreads') ? 'Data received' : 'No data'}</div>
-                              <div><span className="font-semibold">Verification Status:</span> {book.verification?.status || 'N/A'}</div>
-                              <div><span className="font-semibold">Verification Confidence:</span> {book.verification?.confidence || 'N/A'}</div>
-                              <div><span className="font-semibold">ISBN:</span> {book.isbn || 'N/A'}</div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="tabs mb-2">
-                          <div className="flex border-b border-neutral-300 mb-3">
-                            <div className="flex space-x-1">
-                              <div className="px-3 py-1 bg-primary-light/20 text-primary-dark rounded-t-lg border-t border-l border-r border-neutral-300 font-medium">
-                                Processed Book Data
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-6">
-                          {/* STEP 1: Google Books Data */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-blue-50 p-2 rounded border border-blue-200">
-                              <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 1: Google Books Data</h5>
-                            </div>
-                            <div className="pl-5 text-xs mb-2">
-                              <p>Basic metadata retrieved from Google Books API</p>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify({
-                                id: book.id,
-                                googleBooksId: book.googleBooksId,
-                                title: book.title,
-                                subtitle: book.subtitle,
-                                author: book.author,
-                                mainAuthor: book.mainAuthor,
-                                isbn: book.isbn,
-                                publisher: book.publisher,
-                                publicationYear: book.publicationYear || book.publishedYear,
-                                publicationPlace: book.publicationPlace || book.location,
-                                pageCount: book.pageCount,
-                                categories: book.categories,
-                                language: book.language,
-                                coverImageUrl: book.coverImageUrl,
-                                dimensions: book.dimensions,
-                                binding: book.binding,
-                                price: book.price,
-                                edition: book.edition,
-                                industryIdentifiers: book.industryIdentifiers,
-                                printType: book.printType,
-                                maturityRating: book.maturityRating
-                              }, null, 2)}
-                            </pre>
-                          </div>
-                          
-                          {/* STEP 2: DNB Data */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-yellow-50 p-2 rounded border border-yellow-200">
-                              <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 2: DNB Data (German National Library)</h5>
-                            </div>
-                            <div className="pl-5 text-xs mb-2">
-                              <p>Metadata from German National Library (if available)</p>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify({
-                                title: book.title,
-                                subtitle: book.subtitle,
-                                mainAuthor: book.mainAuthor,
-                                statementOfResponsibility: book.statementOfResponsibility,
-                                edition: book.edition,
-                                publicationPlace: book.publicationPlace,
-                                publisher: book.publisher,
-                                publicationYear: book.publicationYear,
-                                pageCount: book.pageCount,
-                                dimensions: book.dimensions,
-                                binding: book.binding,
-                                price: book.price,
-                                language: book.language,
-                                illustrations: book.illustrations,
-                                dnbNumber: book.dnbNumber,
-                                contributors: book.contributors,
-                                isbn: book.isbn
-                              }, null, 2)}
-                            </pre>
-                          </div>
-
-                          {/* STEP 3: Google Custom Search Data */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-purple-50 p-2 rounded border border-purple-200">
-                              <div className="h-3 w-3 bg-purple-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 3: Google Custom Search & Goodreads</h5>
-                            </div>
-                            <div className="pl-5 text-xs mb-2">
-                              <p>Validation data from online book sources</p>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify({
-                                // Google Custom Search
-                                verification: book.verification,
-                                // Additional fields that might come from external sources
-                                rating: book.rating,
-                                reviews: book.reviews,
-                                source: book.verification?.sources
-                              }, null, 2)}
-                            </pre>
-                          </div>
-                          
-                          {/* STEP 4: OpenAI Enhanced Data */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-emerald-50 p-2 rounded border border-emerald-200">
-                              <div className="h-3 w-3 bg-emerald-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 4: OpenAI Enhanced Data</h5>
-                            </div>
-                            <div className="pl-5 text-xs mb-2">
-                              <p>AI-generated content for summary & critical review</p>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify({
-                                summary: book.summary,
-                                review: book.review
-                              }, null, 2)}
-                            </pre>
-                          </div>
-
-                          {/* STEP 5: New Library-Specific Fields Added Today */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-amber-50 p-2 rounded border border-amber-200">
-                              <div className="h-3 w-3 bg-amber-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 5: New Library-Specific Fields (Added Today)</h5>
-                            </div>
-                            <div className="pl-5 text-xs mb-2">
-                              <p>Fields added for DNB/German RDA cataloguing standards</p>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify({
-                                // Library-specific classification
-                                interestCategory: book.interestCategory,
-                                classificationNumber: book.classificationNumber, 
-                                additionalClassifications: book.additionalClassifications,
-                                ageRecommendation: book.ageRecommendation,
-                                
-                                // ID-Besprechung fields
-                                idbInitials: book.idbInitials,
-                                idbSequenceNumber: book.idbSequenceNumber,
-                                idbYear: book.idbYear,
-                                
-                                // Reviewer information
-                                reviewerName: book.reviewerName
-                              }, null, 2)}
-                            </pre>
-                          </div>
-                          
-                          {/* STEP 6: Final Merged Data */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-1 bg-neutral-100 p-2 rounded border border-neutral-300">
-                              <div className="h-3 w-3 bg-neutral-500 rounded-full"></div>
-                              <h5 className="font-bold">Step 6: Complete Merged Book Data</h5>
-                            </div>
-                            <pre className="text-neutral-700 p-2 border border-neutral-300 rounded bg-white">
-                              {JSON.stringify(book, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 text-xs text-neutral-500">
-                          <p>This debug view shows the detailed multi-source verification process across all APIs. It includes all new fields added today for DNB/German RDA cataloguing standards, and the final merged data combining information from all sources.</p>
-                          <p className="mt-1">Verification flow: Google Books → DNB → Google CSE → Goodreads → OpenAI (for summary & review only)</p>
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Contributors section (illustrators, editors, etc.) */}
-              <div className="mt-5">
-                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('contributors')}</h4>
-                <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                  {book.contributors && Array.isArray(book.contributors) && book.contributors.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {book.contributors.map((contributor: any, index: number) => (
-                        <div key={index} className="flex items-center">
-                          <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full mr-2">
-                            {contributor.role}
-                          </span>
-                          <span className="text-sm text-neutral-700">{contributor.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-neutral-600 italic">No contributor information available</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="mt-5">
-                <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('genres')}</h4>
-                <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                  <div className="flex flex-wrap gap-2">
-                    {Array.isArray(book.genres) && book.genres.length > 0 ? (
-                      book.genres.map((genre, index) => (
-                        <Badge key={index} variant="outline" className="bg-primary-light/20 text-primary-dark border-primary/30 px-3 py-1 font-medium">
-                          {genre}
-                        </Badge>
-                      ))
-                    ) : (
-                      <p className="text-sm text-neutral-600 italic">No genres identified</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {book.readingLevel && (
-                <div className="mt-5">
-                  <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('readingLevel')}</h4>
-                  <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                    <div className="flex items-center">
-                      <div className="w-full bg-primary/10 rounded-full h-2.5">
-                        <div 
-                          className="bg-secondary-light h-2.5 rounded-full" 
-                          style={{ 
-                            width: book.metadata && typeof book.metadata === 'object' && 'readingLevelScore' in book.metadata 
-                              ? `${(book.metadata.readingLevelScore as number) * 10}%` 
-                              : '50%'
-                          }}
-                        ></div>
-                      </div>
-                      <span className="ml-3 text-sm font-medium text-neutral-700">{book.readingLevel}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
           
-          {/* Book Summary and Critical Review */}
-          {(book.summary || book.review) && (
-            <div>
-              <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('aiSummary')}</h4>
-              <div className="text-sm text-neutral-700 leading-relaxed bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
-                {/* Combined Summary and Review with | separator */}
-                <p>
-                  {book.summary || ''}
-                  {book.summary && book.review && ' | '}
-                  {book.review || ''}
-                </p>
-              </div>
-            </div>
-          )}
-          
-          {/* Themes */}
-          {Array.isArray(book.themes) && book.themes.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('majorThemes')}</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {book.themes.map((theme, index) => (
-                  <div key={index} className="bg-accent/10 p-4 rounded-lg border border-accent/30 shadow-sm">
-                    <h5 className="font-medium text-secondary-dark">
-                      {typeof theme === 'object' && theme !== null && 
-                       Object.prototype.hasOwnProperty.call(theme, 'theme')
-                        ? (theme as any).theme
-                        : typeof theme === 'string' ? theme : `Theme ${index + 1}`}
-                    </h5>
-                    <p className="mt-2 text-sm text-neutral-700 leading-relaxed">
-                      {typeof theme === 'object' && theme !== null && 
-                       Object.prototype.hasOwnProperty.call(theme, 'description')
-                        ? (theme as any).description
-                        : ''}
-                    </p>
+          {/* Data displayed as a simple list */}
+          <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80 overflow-auto max-h-[500px]">
+            <div className="space-y-2">
+              {/* Display all fields in the desired format */}
+              {Object.entries(book).map(([key, value]) => {
+                // Skip coverImageData which can be very long
+                if (key === 'coverImageData') return null;
+                
+                // Handle different types of values
+                let displayValue = null;
+                
+                if (value === null || value === undefined) {
+                  displayValue = <span className="text-neutral-500">null</span>;
+                } else if (Array.isArray(value)) {
+                  if (value.length === 0) {
+                    displayValue = <span className="text-neutral-500">[]</span>;
+                  } else {
+                    displayValue = (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {value.map((item, idx) => (
+                          <Badge key={idx} className="bg-secondary/10 hover:bg-secondary/20 text-secondary-dark">
+                            {String(item)}
+                          </Badge>
+                        ))}
+                      </div>
+                    );
+                  }
+                } else if (typeof value === 'object') {
+                  displayValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(value, null, 2)}</pre>;
+                } else {
+                  displayValue = <p className="text-sm text-neutral-700 mt-1 whitespace-pre-line">{String(value)}</p>;
+                }
+                
+                return (
+                  <div key={key} className="pb-2 border-b border-neutral-200 last:border-b-0">
+                    <h4 className="text-sm font-medium text-primary-dark/70 capitalize">{key}:</h4>
+                    {displayValue}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-          
-          {/* Catalog Entry */}
-          {book.catalogEntry && (
-            <div>
-              <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('catalogEntry')}</h4>
-              <div className="p-5 bg-primary/5 rounded-lg font-mono text-sm whitespace-pre-wrap border border-primary/10 shadow-sm">
-                {book.catalogEntry}
-              </div>
-            </div>
-          )}
-          
-          {/* Similar Books */}
-          {Array.isArray(book.similarBooks) && book.similarBooks.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-primary-dark/80 uppercase tracking-wider mb-3">{t('similarBooks')}</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                {book.similarBooks.map((similarBook, index) => (
-                  <BookItem key={index} book={similarBook} />
-                ))}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </CardContent>
       
-      <CardFooter className="bg-primary/5 justify-end border-t border-primary/10 py-4 px-6">
-        <Button 
-          onClick={() => onSave(book)}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5"
-        >
-          <Save className="h-4 w-4" />
-          {t('saveToArchive')}
-        </Button>
+      <Separator className="m-0" />
+      
+      <CardFooter className="px-6 py-4">
+        <div className="flex justify-between w-full">
+          <div>
+            <Button onClick={() => exportBookToPDF(book as Book)} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              {t('exportPdf')}
+            </Button>
+          </div>
+          <div>
+            <Button onClick={() => onSave(book)} variant="default" className="flex items-center gap-2">
+              <Save className="h-4 w-4" />
+              {t('saveToArchive')}
+            </Button>
+          </div>
+        </div>
       </CardFooter>
     </Card>
   );
