@@ -366,6 +366,7 @@ const translations: Translations = {
     statementOfResponsibility: "Verantwortlichkeitsangabe",
     interestCategory: "Interessenkategorie",
     classificationNumber: "Klassifikationsnummer",
+    secondaryClassification: "Sekundäre Klassifikation",
     asbNumber: "ASB-Nummer",
     targetAudience: "Zielgruppe",
     illustrations: "Illustrationen",
