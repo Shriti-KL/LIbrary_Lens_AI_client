@@ -189,8 +189,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   
-  // Apply text rendering settings for improved character spacing
-  (doc as any).setTextRenderingMode("fill");
+  // Using PDF properties for consistent text rendering
+  // This approach is more compatible with all versions of jsPDF
+  try {
+    (doc as any).setTextRenderingMode("fill");
+  } catch (e) {
+    // Fallback if the method is not supported
+    console.log("Advanced text rendering not supported, using standard rendering");
+  }
   
   // Get the title and subtitle if available
   let titleFull = book.title || "";
@@ -778,8 +784,8 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     unit: 'mm',
     format: 'a4',
     compress: true,
-    putOnlyUsedFonts: true,
-    hotfixes: ["px_scaling"] // Important: This fixes character spacing issues
+    putOnlyUsedFonts: true
+    // Removed problematic hotfixes setting while keeping text formatting improvements
   });
   
   // Configure language-specific text
@@ -919,8 +925,14 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFontSize(gridFontSize - 1);
   doc.setFont("helvetica", "normal");
   
-  // Apply text rendering mode for better character spacing
-  (doc as any).setTextRenderingMode("fill");
+  // Using PDF properties for consistent text rendering
+  // This approach is more compatible with all versions of jsPDF
+  try {
+    (doc as any).setTextRenderingMode("fill");
+  } catch (e) {
+    // Fallback if the method is not supported
+    console.log("Advanced text rendering not supported, using standard rendering");
+  }
   
   let pubInfo = "";
   
@@ -1134,8 +1146,8 @@ export function exportMultipleBooksToSinglePDF(books: Book[], language: string =
     unit: 'mm',
     format: 'a4',
     compress: true,
-    putOnlyUsedFonts: true,
-    hotfixes: ["px_scaling"] // Use px_scaling hotfix for better text spacing
+    putOnlyUsedFonts: true
+    // Removed problematic hotfixes setting while keeping text formatting improvements
   });
   
   // Set font baseline - keeping this consistent throughout the document
