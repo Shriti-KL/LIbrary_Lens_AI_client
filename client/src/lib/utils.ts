@@ -326,77 +326,70 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // In German RDA formatting, title and statement of responsibility appear on separate lines
   // but Statement of Responsibility and Publication Info should each be on a single continuous line
   
-  // First line: Title (and subtitle)
-  let titleDisplay = titleFull;
+  // ===== First line: Title with subtitle and authors according to the new format =====
+  // Format: [Title] : [Subtitle] / [Author], [additionalAuthors] ; [statementOfResponsibility]
+  
+  // Start with title
+  let titleWithMetadata = titleFull;
+  
+  // Add subtitle if present
   if (subtitle) {
-    titleDisplay = `${titleFull} : ${subtitle}`; 
+    titleWithMetadata += ` : ${subtitle}`; 
   }
   
-  // Display title with proper font size
+  // Add authors section
+  let authorSection = "";
+  const mainAuthorName = book.mainAuthor || book.author || "";
+  let additionalAuthorsText = "";
+  
+  // Process additional authors if they exist
+  if (book.additionalAuthors && Array.isArray(book.additionalAuthors) && book.additionalAuthors.length > 0) {
+    additionalAuthorsText = `, ${book.additionalAuthors.join(", ")}`;
+    console.log("Found additional authors:", book.additionalAuthors);
+  }
+  
+  // Process statement of responsibility
+  const statementOfResp = book.statementOfResponsibility || "";
+  
+  // Combine author components
+  if (mainAuthorName) {
+    authorSection = ` / ${mainAuthorName}${additionalAuthorsText}`;
+    if (statementOfResp) {
+      authorSection += ` ; ${statementOfResp}`;
+    }
+  } else if (statementOfResp) {
+    authorSection = ` / ${statementOfResp}`;
+  }
+  
+  // Combine title and author information
+  titleWithMetadata += authorSection;
+  
+  // Debug output
+  console.log("PDF Metadata - Author information:", {
+    mainAuthor: mainAuthorName,
+    additionalAuthors: book.additionalAuthors,
+    statementOfResponsibility: statementOfResp,
+    finalAuthorSection: authorSection
+  });
+  
+  // Display title and authors as a single continuous line
+  // If it's too long for a single line, truncate with ellipsis
+  const titleMaxWidth = 170;
+  if (doc.getTextWidth(titleWithMetadata) > titleMaxWidth) {
+    // Find a good cutting point
+    const approximateLength = Math.floor(titleWithMetadata.length * (titleMaxWidth / doc.getTextWidth(titleWithMetadata)));
+    let cutPoint = approximateLength - 3; // Leave room for ellipsis
+    // Back up to the nearest space
+    while (cutPoint > 0 && titleWithMetadata[cutPoint] !== ' ') {
+      cutPoint--;
+    }
+    titleWithMetadata = titleWithMetadata.substring(0, cutPoint) + '...';
+  }
+  
+  // Set font size and display the title line
   doc.setFontSize(9);
-  doc.text(titleDisplay, 22, yPos);
+  doc.text(titleWithMetadata, 22, yPos);
   yPos += 5;
-  
-  // Second line: Statement of Responsibility (without line breaks)
-  // In German RDA format, this always starts with a slash
-  let responsibilityStatement = "";
-  if (book.statementOfResponsibility) {
-    responsibilityStatement = `/ ${book.statementOfResponsibility}`;
-  } else {
-    const displayAuthor = book.mainAuthor || book.author || "";
-    
-    // Format contributors
-    let displayContributors = "";
-    if (book.contributors && (typeof book.contributors === 'object')) {
-      if (!Array.isArray(book.contributors)) {
-        // New format with role keys
-        const contributorsList = [];
-        for (const role in book.contributors) {
-          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
-            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
-          }
-        }
-        if (contributorsList.length > 0) {
-          displayContributors = ` ; ${contributorsList.join(" ; ")}`;
-        }
-      } else if (book.contributors.length > 0) {
-        // Old format with objects
-        const contributorsList = book.contributors
-          .filter((c: any) => c.name && c.role)
-          .map((c: any) => `${c.name} (${c.role})`)
-          .join(" ; ");
-        
-        if (contributorsList) {
-          displayContributors = ` ; ${contributorsList}`;
-        }
-      }
-    }
-    
-    // Format statement of responsibility
-    if (displayAuthor) {
-      responsibilityStatement = `/ ${displayAuthor}${displayContributors}`;
-    } else if (displayContributors) {
-      responsibilityStatement = `/ ${displayContributors}`;
-    }
-  }
-  
-  // Display statement of responsibility as a single continuous line
-  if (responsibilityStatement) {
-    // If it's too long for a single line, truncate with ellipsis
-    const maxWidth = 170;
-    if (doc.getTextWidth(responsibilityStatement) > maxWidth) {
-      // Find a good cutting point
-      const approximateLength = Math.floor(responsibilityStatement.length * (maxWidth / doc.getTextWidth(responsibilityStatement)));
-      let cutPoint = approximateLength - 3; // Leave room for ellipsis
-      // Back up to the nearest space
-      while (cutPoint > 0 && responsibilityStatement[cutPoint] !== ' ') {
-        cutPoint--;
-      }
-      responsibilityStatement = responsibilityStatement.substring(0, cutPoint) + '...';
-    }
-    doc.text(responsibilityStatement, 22, yPos);
-    yPos += 5;
-  }
   
   // --- 4. Publication Information ---
   yPos += 2; // Extra space before publication info
@@ -536,11 +529,11 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
   
   // Check if it's too long for a single line and truncate if needed
-  const maxWidth = 170;
-  if (doc.getTextWidth(publicationInfo) > maxWidth) {
+  const pubInfoMaxWidth = 170;
+  if (doc.getTextWidth(publicationInfo) > pubInfoMaxWidth) {
     // Find a good cutting point that preserves the most important information
     // (beginning is typically more important in publication info)
-    const approximateLength = Math.floor(publicationInfo.length * (maxWidth / doc.getTextWidth(publicationInfo)));
+    const approximateLength = Math.floor(publicationInfo.length * (pubInfoMaxWidth / doc.getTextWidth(publicationInfo)));
     let cutPoint = approximateLength - 3; // Leave room for ellipsis
     
     // Try to cut at a natural break point if possible
