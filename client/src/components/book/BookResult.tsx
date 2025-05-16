@@ -186,6 +186,7 @@ export default function BookResult({
   // The ordered list of fields we want to display
   const orderedFields = [
     'classificationNumber', // ASB number
+    'secondaryClassification', // Secondary classification
     'additionalClassificationNumbers', // Additional classification numbers
     'title',
     'subtitle',
