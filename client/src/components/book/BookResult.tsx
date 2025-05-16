@@ -225,11 +225,20 @@ export default function BookResult({
     ...remainingFields
   ];
 
-  // Function to handle input change
+  // Function to handle input change with data type conversion
   const handleInputChange = (key: string, value: any) => {
+    // Convert certain fields to their proper types
+    let processedValue = value;
+    
+    // Convert number fields
+    if (['publicationYear', 'pageCount', 'id'].includes(key) && value !== null && value !== '') {
+      processedValue = Number(value);
+    }
+    
+    // Update the edited book
     setEditedBook(prev => ({
       ...prev,
-      [key]: value
+      [key]: processedValue
     }));
   };
 
