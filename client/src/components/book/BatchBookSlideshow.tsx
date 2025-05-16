@@ -172,7 +172,9 @@ export default function BatchBookSlideshow({
                           {t(field)}
                         </h4>
                         <div className="text-neutral-800 whitespace-pre-wrap">
-                          {formatFieldValue(field, value)}
+                          {typeof value === 'object' ? JSON.stringify(value) : 
+                           field === 'additionalAuthors' && Array.isArray(value) ? value.join(', ') : 
+                           String(value)}
                         </div>
                       </div>
                     );

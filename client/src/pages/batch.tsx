@@ -302,6 +302,14 @@ export default function Batch() {
     }
   };
   
+  // Helper method to count items in various states
+  const getItemCount = (status: 'pending' | 'processing' | 'complete' | 'error' | 'saved') => {
+    if (status === 'saved') {
+      return batchResults.filter(item => item.saved).length;
+    }
+    return batchResults.filter(item => item.status === status).length;
+  };
+  
   return (
     <div className="max-w-7xl mx-auto pb-12">
       {/* Page Title */}
@@ -320,13 +328,13 @@ export default function Batch() {
         />
       </div>
       
-      {/* Batch Results */}
-      {batchResults.length > 0 && (
-        <Card>
+      {/* Processing Status */}
+      {batchResults.length > 0 && batchResults.some(item => item.status === 'pending' || item.status === 'processing') && (
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-xl font-serif">{t('results')}</CardTitle>
+            <CardTitle className="text-xl font-serif">{t('processingStatus')}</CardTitle>
             <CardDescription>
-              {t('batchProcessing')} results for {batchResults.length} items
+              {t('processingItems', { count: getItemCount('pending') + getItemCount('processing') })}
             </CardDescription>
           </CardHeader>
           
@@ -335,43 +343,18 @@ export default function Batch() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('title')}</TableHead>
+                    <TableHead>{t('item')}</TableHead>
                     <TableHead>{t('status')}</TableHead>
                     <TableHead>{t('progress')}</TableHead>
-                    <TableHead>{t('actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Show a message when all books are processed and saved */}
-                  {batchResults.length > 0 && 
-                   batchResults.filter(item => !item.saved || item.status === 'error').length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-6">
-                        <div className="flex flex-col items-center gap-2">
-                          <Check className="h-10 w-10 text-green-500 p-2 bg-green-50 rounded-full" />
-                          <h3 className="text-lg font-medium">{t('allBooksSaved')}</h3>
-                          <p className="text-sm text-gray-500">
-                            {t('allBooksHaveBeenSavedToLibrary')}
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => setLocation('/archives')}
-                          >
-                            {t('viewArchives')}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                
-                  {/* Only show items that haven't been saved yet or are in error state */}
-                  {batchResults.filter(item => !item.saved || item.status === 'error').map((item) => (
-                    <>
+                  {batchResults
+                    .filter(item => item.status === 'pending' || item.status === 'processing')
+                    .map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
-                          {item.result?.title || item.name}
+                          {item.name}
                         </TableCell>
                         <TableCell>
                           {item.status === 'pending' && (
@@ -380,16 +363,6 @@ export default function Batch() {
                           {item.status === 'processing' && (
                             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                               {t('processing')}
-                            </Badge>
-                          )}
-                          {item.status === 'complete' && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800">
-                              {t('complete')}
-                            </Badge>
-                          )}
-                          {item.status === 'error' && (
-                            <Badge variant="destructive">
-                              {t('error')}
                             </Badge>
                           )}
                         </TableCell>
@@ -401,133 +374,114 @@ export default function Batch() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {/* For successfully processed items that haven't been saved */}
-                            {item.status === 'complete' && !item.saved && !item.editing && (
-                              <>
-                                {/* View/Edit button */}
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
-                                  onClick={() => handleEditBook(item.id, true)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  {t('viewEdit')}
-                                </Button>
-                                
-                                {/* Save button */}
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  onClick={() => item.result && handleSaveBook(item.result)}
-                                  disabled={saveBookMutation.isPending}
-                                >
-                                  <Save className="h-4 w-4" />
-                                  {t('save')}
-                                </Button>
-                              </>
-                            )}
-                            
-                            {/* For already saved items */}
-                            {item.status === 'complete' && item.saved && item.result?.id && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
-                                onClick={() => {
-                                  // Just navigate to the book details page without saving other books
-                                  if (item.result && item.result.id) {
-                                    // Use direct navigation to prevent any unintended side effects
-                                    window.location.href = `/archives?view=${item.result.id}`;
-                                  }
-                                }}
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                                {t('viewDetails')}
-                              </Button>
-                            )}
-                            
-                            {/* For error items */}
-                            {item.status === 'error' && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => {
-                                  // Show detailed error
-                                  toast({
-                                    title: t('error'),
-                                    description: item.error || t('unknownError'),
-                                    variant: 'destructive'
-                                  });
-                                }}
-                              >
-                                {t('viewError')}
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
                       </TableRow>
-                      
-                      {/* Book Editor Row - Shown when editing a book */}
-                      {item.editing && item.status === 'complete' && !item.saved && item.result && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-2">
-                            <BatchBookEditor 
-                              book={item.result}
-                              onSave={(updatedBook) => {
-                                // Update the book data in state
-                                handleUpdateBookData(item.id, updatedBook);
-                                // Close the editor
-                                handleEditBook(item.id, false);
-                                // Save to database if user chose to save
-                                handleSaveBook(updatedBook);
-                              }}
-                              onCancel={() => handleEditBook(item.id, false)}
-                            />
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  ))}
+                    ))}
                 </TableBody>
               </Table>
             </div>
-            
-            {/* Processing Info */}
-            {batchMutation.isPending && (
-              <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-md flex items-start">
-                <BookOpen className="h-5 w-5 mr-2 mt-0.5" />
-                <div>
-                  <p className="font-medium">{t('processing')} {t('batchProcessing')}</p>
-                  <p className="text-sm">{t('loading')}</p>
-                </div>
-              </div>
-            )}
-            
-            {/* Error Info */}
-            {batchMutation.isError && (
-              <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md flex items-start">
-                <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
-                <div>
-                  <p className="font-medium">{t('error')} {t('batchProcessing')}</p>
-                  <p className="text-sm">{batchMutation.error.message}</p>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
+      
+      {/* Error items */}
+      {batchResults.length > 0 && batchResults.some(item => item.status === 'error') && (
+        <Card className="mb-8 border-red-100">
+          <CardHeader className="bg-red-50/50 border-b border-red-100">
+            <CardTitle className="text-xl font-serif text-red-800">{t('errors')}</CardTitle>
+            <CardDescription className="text-red-700">
+              {t('errorItems', { count: getItemCount('error') })}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="pt-4">
+            <div className="border border-red-100 rounded-md overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-red-50/50">
+                    <TableHead>{t('item')}</TableHead>
+                    <TableHead>{t('error')}</TableHead>
+                    <TableHead>{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {batchResults
+                    .filter(item => item.status === 'error')
+                    .map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {item.name}
+                        </TableCell>
+                        <TableCell className="text-red-600 text-sm">
+                          {item.error ? (item.error.length > 50 ? item.error.substring(0, 50) + "..." : item.error) : t('unknownError')}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              toast({
+                                title: 'Error Details',
+                                description: item.error || t('unknownError'),
+                                variant: 'destructive'
+                              });
+                            }}
+                          >
+                            {t('viewError')}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Success Message - When all books are saved */}
+      {batchResults.length > 0 && 
+       batchResults.filter(item => !item.saved || item.status === 'error').length === 0 && (
+        <Card className="mb-8 border-green-100 bg-green-50/50">
+          <CardContent className="text-center py-8">
+            <div className="flex flex-col items-center gap-3">
+              <Check className="h-12 w-12 text-green-500 p-2 bg-green-100 rounded-full" />
+              <h3 className="text-xl font-medium text-green-800">{t('allBooksSaved')}</h3>
+              <p className="text-sm text-green-700">
+                {t('allBooksHaveBeenSavedToLibrary')}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => setLocation('/archives')}
+              >
+                {t('viewArchives')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Book Slideshow for Completed Items */}
+      <BatchBookSlideshow
+        items={batchResults}
+        onSave={handleSaveBook}
+        onEdit={handleEditBook}
+        onUpdateBook={handleUpdateBookData}
+        onViewDetails={(book) => {
+          if (book && book.id) {
+            window.location.href = `/archives?view=${book.id}`;
+          }
+        }}
+      />
       
       {/* Empty State */}
       {!batchMutation.isPending && batchResults.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="bg-primary/10 rounded-full p-3">
-              <BookOpen className="h-10 w-10 text-primary" />
+              <BookOpen className="h-8 w-8 text-primary" />
             </div>
             <h3 className="mt-4 text-lg font-medium text-neutral-800">
               {t('batchProcessing')}
