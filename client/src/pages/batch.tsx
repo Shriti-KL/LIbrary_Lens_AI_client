@@ -80,8 +80,13 @@ export default function Batch() {
         
         // Make API request with JSON body for ISBNs
         try {
-          const response = await apiRequest('POST', '/api/books/batch-isbn', {
-            isbns: payload.isbns
+          const response = await fetch('/api/books/batch-isbn', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ isbns: payload.isbns }),
+            credentials: 'include'
           });
           return await response.json();
         } catch (error) {

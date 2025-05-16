@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { insertBookSchema } from "@shared/schema";
 import { analyzeBookCover } from "./services/openai";
 import { verifyBookByIsbn } from "./services/verificationService";
-import { searchBooks } from "./services/googleBooks";
+import { searchBooks, getCompleteBookByISBN } from "./services/googleBooks";
 import { processBookAnalysis } from "./services/openai";
 
 // Configure multer for in-memory storage
@@ -496,35 +496,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Standardize ISBN (remove hyphens, etc.)
           const standardizedIsbn = isbn.replace(/[-\s]/g, '');
-          console.log(`Standardized ISBN: ${standardizedIsbn}`);
+          console.log(`Processing ISBN: ${standardizedIsbn}`);
           
           if (!standardizedIsbn || standardizedIsbn.length < 10) {
             throw new Error("Invalid ISBN format");
           }
           
-          // Verify book data using ISBN
-          const bookData = await getCompleteBookByISBN(standardizedIsbn, 'de', apiKeys.google_books_api_key);
+          // Use simpler approach with direct Google Books API call
+          // Get book data from Google Books API
+          const googleBooksApiKey = apiKeys.google_books_api_key || '';
+          const response = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=isbn:${standardizedIsbn}&langRestrict=de&key=${googleBooksApiKey}`
+          );
           
-          if (!bookData || !bookData.title) {
+          if (!response.ok) {
+            throw new Error(`Google Books API error: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (!data.items || data.items.length === 0) {
             throw new Error(`No book found with ISBN: ${standardizedIsbn}`);
           }
+          
+          const bookInfo = data.items[0].volumeInfo;
+          
+          // Map the Google Books data to our book schema
+          const bookData = {
+            isbn: standardizedIsbn,
+            title: bookInfo.title || "Unknown Title",
+            subtitle: bookInfo.subtitle || null,
+            author: bookInfo.authors ? bookInfo.authors[0] : "Unknown Author",
+            mainAuthor: bookInfo.authors ? bookInfo.authors[0] : "Unknown Author",
+            additionalAuthors: bookInfo.authors ? bookInfo.authors.slice(1) : [],
+            publisher: bookInfo.publisher || null,
+            publicationYear: bookInfo.publishedDate ? parseInt(bookInfo.publishedDate.substring(0, 4)) : null,
+            publicationDate: bookInfo.publishedDate || null,
+            description: bookInfo.description || null,
+            pageCount: bookInfo.pageCount || null,
+            language: bookInfo.language || "de",
+            preview: bookInfo.previewLink || null,
+            genres: bookInfo.categories || [],
+            verification: {
+              status: "verified",
+              confidence: 0.8,
+              sources: ["Google Books API"],
+              message: "Data verified through Google Books API"
+            }
+          };
           
           // Add user ID if authenticated
           if (req.isAuthenticated()) {
             bookData.userId = req.user.id;
           }
           
-          // Set basic verification info
-          bookData.verification = {
-            status: "verified",
-            confidence: 0.8,
-            sources: ["Google Books API"],
-            message: "Data verified through Google Books API"
-          };
-          
           // Save to database
           const savedBook = await storage.createBook(bookData as any);
-          console.log(`Successfully saved book with ISBN ${standardizedIsbn}: "${bookData.title}"`);
+          console.log(`Successfully saved book: "${bookData.title}" with ISBN ${standardizedIsbn}`);
           
           results.push({ 
             success: true, 
