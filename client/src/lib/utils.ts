@@ -1111,21 +1111,29 @@ export function exportMultipleBooksToSinglePDF(books: Book[], language: string =
   // Page dimensions
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 10;
+  
+  // Use ratio-based sizing for consistent formatting
+  // Define margin as a percentage of page width for consistency
+  const marginRatio = 0.05; // 5% of page width
+  const margin = pageWidth * marginRatio;
   
   // Grid dimensions - Adjust to provide more space for content
   const gridColumns = 2;
   // Reduce to 1 row per page after the first page to allow more space for content
   const gridRows = 1;
-  const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
-  // Increase the cell height to accommodate more text, especially for summaries
-  // Use 140mm height per cell for even more space
-  const cellHeight = 140; // Fixed height in mm to ensure enough space for summary
   
-  // First page layout - two correction boxes at the top
-  const boxWidth = 80;
-  const boxHeight = 70;
-  const boxY = 20;
+  // Calculate cell width and height based on ratios of the page dimensions
+  const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
+  // Cell height based on a percentage of page height instead of fixed mm
+  const cellHeightRatio = 0.60; // 60% of page height
+  const cellHeight = pageHeight * cellHeightRatio;
+  
+  // First page layout - two correction boxes calculated as ratio of page
+  const boxWidthRatio = 0.35; // 35% of page width
+  const boxHeightRatio = 0.25; // 25% of page height
+  const boxWidth = pageWidth * boxWidthRatio;
+  const boxHeight = pageHeight * boxHeightRatio;
+  const boxY = pageHeight * 0.07; // 7% from top
   
   // Draw the two correction boxes
   drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2, boxY, boxWidth, boxHeight);
