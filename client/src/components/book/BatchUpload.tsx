@@ -13,26 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 
 interface BatchUploadProps {
-  onUpload?: (isbns: string[]) => void;  // Make this optional
-  onSubmit?: (files: File[]) => void;     // Make this optional
+  onSubmit: (files: File[]) => void;
   onSubmitISBNs?: (isbns: string[]) => void;  
-  isProcessing?: boolean;
-  isLoading?: boolean;
-  uploadType?: string;
+  isProcessing: boolean;
 }
 
-export default function BatchUpload({ 
-  onSubmit, 
-  onSubmitISBNs, 
-  onUpload,
-  isProcessing = false,
-  isLoading = false,
-  uploadType 
-}: BatchUploadProps) {
+export default function BatchUpload({ onSubmit, onSubmitISBNs, isProcessing }: BatchUploadProps) {
   const { t } = useLanguage();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isbns, setIsbns] = useState<string>('');
-  const [batchMode, setBatchMode] = useState<'covers' | 'isbns'>(uploadType === 'isbn' ? 'isbns' : 'covers');
+  const [batchMode, setBatchMode] = useState<'covers' | 'isbns'>('covers');
   
   // Handle file selection
   const handleFilesSelect = (files: File[]) => {
@@ -63,24 +53,17 @@ export default function BatchUpload({
       const isbnList = processISBNs();
       if (isbnList.length === 0) return;
       
-      // Try each possible callback for ISBN processing
       if (onSubmitISBNs) {
         onSubmitISBNs(isbnList);
-        return;
-      } else if (onUpload) {
-        onUpload(isbnList);
         return;
       }
     }
     
     // Default to file processing if ISBN processing not provided
-    if (selectedFiles.length > 0 && onSubmit) {
+    if (selectedFiles.length > 0) {
       onSubmit(selectedFiles);
     }
   };
-  
-  // Determine if processing based on either prop
-  const isActive = isProcessing || isLoading;
   
   return (
     <Card>
@@ -98,7 +81,7 @@ export default function BatchUpload({
       
       <CardContent>
         <Tabs 
-          defaultValue={uploadType === 'isbn' ? 'isbns' : 'covers'} 
+          defaultValue="covers" 
           className="w-full" 
           onValueChange={(value) => setBatchMode(value as 'covers' | 'isbns')}
         >
@@ -121,7 +104,7 @@ export default function BatchUpload({
               className="mb-6"
               dropzoneText="Drag and drop multiple book covers here"
               fileTypeText="PNG, JPG, GIF up to 10MB each"
-              isLoading={isActive}
+              isLoading={isProcessing}
             />
             
             {selectedFiles.length > 0 && (
@@ -169,9 +152,9 @@ export default function BatchUpload({
           onClick={processBatch}
           disabled={(batchMode === 'covers' && selectedFiles.length === 0) || 
                    (batchMode === 'isbns' && processISBNs().length === 0) || 
-                   isActive}
+                   isProcessing}
         >
-          {isActive ? t('processing') : t('batchProcessing')}
+          {isProcessing ? t('processing') : t('batchProcessing')}
         </Button>
       </CardFooter>
     </Card>
