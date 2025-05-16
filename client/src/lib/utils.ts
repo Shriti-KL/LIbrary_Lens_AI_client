@@ -1,59 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Book } from '@shared/schema';
-
-// Font management and PDF styling constants
-const PDFStyles = {
-  fonts: {
-    normal: 'helvetica',
-    bold: 'helvetica-bold',
-    italic: 'helvetica-oblique'
-  },
-  fontSize: {
-    title: 12,
-    subtitle: 11,
-    body: 10,
-    small: 8,
-    footer: 7
-  },
-  spacing: {
-    afterTitle: 10,
-    afterAuthor: 8,
-    betweenLines: 6,
-    afterSection: 15,
-    margin: {
-      top: 40,
-      bottom: 40,
-      left: 40,
-      right: 40
-    }
-  },
-  colors: {
-    text: { r: 0, g: 0, b: 0 },
-    heading: { r: 0, g: 0, b: 0 }
-  }
-};
-
-// Helper function to set consistent font styling
-function setFontStyle(doc: jsPDF, style: 'normal' | 'bold' | 'italic', size: number) {
-  doc.setFont(PDFStyles.fonts.normal, style);
-  doc.setFontSize(size);
-}
-
-// Helper function to calculate text height with proper line spacing
-function calculateTextHeight(doc: jsPDF, text: string, fontSize: number, lineSpacing: number): number {
-  const lines = doc.splitTextToSize(text, doc.internal.pageSize.width - PDFStyles.spacing.margin.left - PDFStyles.spacing.margin.right);
-  return lines.length * (fontSize * lineSpacing);
-}
-
-// Helper function to check if text will overflow current page
-function willTextOverflow(doc: jsPDF, text: string, currentY: number, fontSize: number, lineSpacing: number): boolean {
-  const textHeight = calculateTextHeight(doc, text, fontSize, lineSpacing);
-  const availableSpace = doc.internal.pageSize.height - currentY - PDFStyles.spacing.margin.bottom;
-  return textHeight > availableSpace;
-}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -124,34 +70,34 @@ export function formatFileSize(bytes: number): string {
 // Format ISBN with proper hyphens
 export function formatISBN(isbn: string | null): string {
   if (!isbn) return '';
-
+  
   // Remove all non-digit and non-X characters (ISBN-10 can end with X)
   const cleanISBN = isbn.replace(/[^\dX]/gi, '');
-
+  
   // If it's not a valid length for ISBN-10 or ISBN-13, return as is
   if (cleanISBN.length !== 10 && cleanISBN.length !== 13) {
     return isbn;
   }
-
+  
   // Format ISBN-10: e.g., 1-234-56789-X
   if (cleanISBN.length === 10) {
     return `${cleanISBN.substring(0, 1)}-${cleanISBN.substring(1, 4)}-${cleanISBN.substring(4, 9)}-${cleanISBN.substring(9, 10)}`;
   }
-
+  
   // Format ISBN-13: e.g., 978-3-16-148410-0
   // Common prefixes for ISBN-13 (978 or 979)
   const prefix = cleanISBN.substring(0, 3);
   // Next section is typically the language/country group (1-5 digits)
   // For standard formatting, let's use common group lengths
-
+  
   // Examples of group lengths for major languages:
   // English (0, 1): 978-0-... or 978-1-...
   // German (3): 978-3-...
   // French (2): 978-2-...
-
+  
   // Use a simplified approach that works for most common ISBNs
   let formattedISBN: string;
-
+  
   if (cleanISBN.startsWith('978') || cleanISBN.startsWith('979')) {
     // Check for common language groups
     if (cleanISBN.startsWith('9780') || cleanISBN.startsWith('9781')) {
@@ -168,7 +114,7 @@ export function formatISBN(isbn: string | null): string {
     // Fall back to a generic chunking if the ISBN-13 doesn't start with 978 or 979
     formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 6)}-${cleanISBN.substring(6, 9)}-${cleanISBN.substring(9, 12)}-${cleanISBN.substring(12, 13)}`;
   }
-
+  
   return formattedISBN;
 }
 
@@ -178,18 +124,10 @@ export function cleanISBNForSearch(isbn: string | null): string {
   return isbn.replace(/[^\dX]/gi, '');
 }
 
-// Helper function to normalize German text spacing
-function normalizeGermanText(text: string): string {
-  return text
-    .replace(/\s+/g, ' ')  // normalize multiple spaces
-    .replace(/ !/g, '!')   // remove space before exclamation mark
-    .replace(/ \?/g, '?')  // remove space before question mark
-    .replace(/ :/g, ':')   // remove space before colon
-    .replace(/ ;/g, ';')   // remove space before semicolon
-    .trim();
-}
-
 // Generate a PDF export for a book
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Book } from '@shared/schema';
 
 // Define an interface for the book metadata for better type safety
 interface BookMetadata {
@@ -202,233 +140,448 @@ interface BookMetadata {
   [key: string]: any; // Allow for other dynamic properties
 }
 
-// Preprocessed book data for PDF generation with consistent fields
-interface NormalizedBookData {
-  id: number | null;
-  isbn: string;
-  title: string;
-  subtitle: string;
-  author: string;
-  mainAuthor: string;
-  statementOfResponsibility: string;
-  contributors: { [role: string]: string[] } | any[];
-  edition: string;
-  publicationPlace: string;
-  publisher: string;
-  publicationYear: number | null;
-  pageCount: number | null;
-  illustrations: string;
-  dimensions: string;
-  binding: string;
-  price: string;
-  catalogNumber: string; // ASB number
-  secondaryClassification: string;
-  interestCategory: string;
-  summary: string;
-  review: string;
-  genres: string[];
-  themes: string[];
-  language: string;
-  reviewerName?: string; // Reviewer who created the critical review
-  ageRecommendation?: string; // Age recommendation for the book
-  dnbNumber?: string; // DNB catalog number
-}
-
-/**
- * Normalize book data to ensure consistent formatting in PDF exports
- * This helps prevent issues with missing or inconsistent data formats
- */
-function normalizeBookData(book: Book): NormalizedBookData {
-  return {
-    id: book.id || null,
-    isbn: book.isbn || '',
-    title: book.title || '',
-    subtitle: book.subtitle || '',
-    author: book.author || '',
-    mainAuthor: book.mainAuthor || book.author || '',
-    statementOfResponsibility: book.statementOfResponsibility || '',
-    contributors: book.contributors || [],
-    edition: book.edition || '',
-    publicationPlace: book.publicationPlace || book.location || '',
-    publisher: book.publisher || '',
-    publicationYear: book.publicationYear || book.publishedYear || null,
-    pageCount: book.pageCount || null,
-    illustrations: book.illustrations || '',
-    dimensions: book.dimensions || '',
-    binding: book.binding || '',
-    price: book.price || '',
-    catalogNumber: book.catalogNumber || book.classificationNumber || '',
-    secondaryClassification: book.secondaryClassification || book.additionalClassifications || '',
-    interestCategory: book.interestCategory || '',
-    summary: book.summary || '',
-    review: book.review || '',
-    genres: Array.isArray(book.genres) ? book.genres : [],
-    themes: Array.isArray(book.themes) 
-      ? (book.themes as any[]).map(t => typeof t === 'string' ? t : (t && t.name) ? t.name : '')
-      : [],
-    language: book.language || 'de',
-    reviewerName: book.reviewerName || book.reviewer_name || '',
-    ageRecommendation: book.ageRecommendation || '',
-    dnbNumber: book.dnbNumber || ''
-  };
-}
-
-// Format a single book entry with improved spacing and font management
-function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = PDFStyles.spacing.margin.top): number {
-  let currentY = startY;
-  const pageWidth = doc.internal.pageSize.width;
-  const contentWidth = pageWidth - PDFStyles.spacing.margin.left - PDFStyles.spacing.margin.right;
-
-  // --- 1. ASB Classification ---
-  setFontStyle(doc, 'bold', PDFStyles.fontSize.subtitle);
-  doc.text("ASB:", PDFStyles.spacing.margin.left, currentY);
-
-  if (book.catalogNumber) {
-    doc.text(book.catalogNumber, pageWidth - PDFStyles.spacing.margin.right, currentY, { align: 'right' });
+// Format a single book for PDF export - returns the ending Y position
+export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
+  let yPos = startY;
+  
+  // --- 1. ASB Classification in top-right and top-left corner ---
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  
+  // Top-left ASB label
+  doc.text("ASB:", 22, yPos);
+  
+  // Top-right classification number (ASB)
+  const asbNumber = book.classificationNumber || book.ASB || "";
+  doc.text(asbNumber, 190, yPos, { align: 'right' });
+  
+  // Second line - additional classifications under ASB
+  yPos += 7;
+  // Include DNB number as additional classification if available
+  let addClassText = book.additionalClassifications || "";
+  if (book.dnbNumber && !addClassText.includes(book.dnbNumber)) {
+    addClassText = addClassText ? `${addClassText}, ${book.dnbNumber}` : book.dnbNumber;
   }
-  currentY += PDFStyles.spacing.betweenLines;
-
-  // --- 2. Author's Name ---
-  let authorFormatted = book.mainAuthor || book.author;
-  if (authorFormatted && !authorFormatted.includes(",")) {
+  doc.text(addClassText, 22, yPos);
+  
+  yPos += 15; // Space after classifications
+  
+  // --- 2. Author's name in bold ---
+  // Format author's name to "LastName, FirstName:" as shown in the target format
+  let authorFormatted = book.mainAuthor || book.author || "";
+  if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
     const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
     const firstName = nameParts.join(" ");
     authorFormatted = `${lastName}, ${firstName}`;
   }
-
-  if (authorFormatted) {
-    setFontStyle(doc, 'bold', PDFStyles.fontSize.body);
-    doc.text(authorFormatted + ":", PDFStyles.spacing.margin.left, currentY);
-    currentY += PDFStyles.spacing.afterAuthor;
-  }
-
-  // --- 3. Title and Subtitle ---
-  setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
-  let titleText = normalizeGermanText(book.title || '');
-  if (book.subtitle) {
-    titleText += `: ${normalizeGermanText(book.subtitle)}`;
-  }
-
-  // Improve text wrapping with proper width calculation
-  const titleLines = doc.splitTextToSize(titleText, contentWidth - 5); // Reduce width slightly to prevent overflow
-
-  if (willTextOverflow(doc, titleText, currentY, PDFStyles.fontSize.body, 1.2)) {
-    doc.addPage();
-    currentY = PDFStyles.spacing.margin.top;
-  }
-
-  // Add proper line spacing for German typography
-  const germanLineSpacing = PDFStyles.spacing.betweenLines * 1.2;
-  titleLines.forEach((line: string) => {
-    doc.text(normalizeGermanText(line), PDFStyles.spacing.margin.left, currentY);
-    currentY += germanLineSpacing;
-  });
-  currentY += PDFStyles.spacing.afterTitle;
-
-  // --- 4. Publication Information ---
-  const pubInfo = [
-    book.edition,
-    `${book.publicationPlace || ''}: ${book.publisher || ''}`,
-    book.publicationYear,
-    book.pageCount ? `${book.pageCount} S.` : null,
-    book.dimensions
-  ].filter(Boolean).join('. ');
-
-  if (pubInfo) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
-    const pubLines = doc.splitTextToSize(pubInfo, contentWidth);
-    pubLines.forEach((line: string) => {
-      doc.text(line, PDFStyles.spacing.margin.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines;
-    });
-    currentY += PDFStyles.spacing.afterSection;
-  }
-
-  // --- 5. ISBN and Price ---
-  if (book.isbn) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
-    let isbnText = `ISBN ${book.isbn}`;
-    if (book.price) {
-      isbnText += ` : ${book.price}`;
+  
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold"); 
+  doc.text(authorFormatted + ":", 22, yPos);
+  
+  yPos += 6; // Space after author name
+  
+  // --- 3. Book title and publication info ---
+  doc.setFont("helvetica", "normal");
+  
+  // Get the title and subtitle if available
+  let titleFull = book.title || "";
+  let subtitle = book.subtitle || '';
+  
+  // If subtitle is not available but title contains a separator, extract it
+  if (!subtitle) {
+    if (titleFull.includes(" - ")) {
+      const titleParts = titleFull.split(" - ");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(" - ").trim();
+    } else if (titleFull.includes(":")) {
+      const titleParts = titleFull.split(":");
+      titleFull = titleParts[0].trim();
+      subtitle = titleParts.slice(1).join(":").trim();
     }
-    doc.text(isbnText, PDFStyles.spacing.margin.left, currentY);
-    currentY += PDFStyles.spacing.afterSection;
   }
-
-  // --- 6. Summary and Review ---
-  if (book.summary || book.review) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
-    let summaryText = '';
-    if (book.summary) summaryText = normalizeGermanText(book.summary);
-    if (book.summary && book.review) summaryText += ' | ';
-    if (book.review) summaryText += normalizeGermanText(book.review);
-
-    // Calculate available space before footer
-    const footerSpace = 40; // Increased space reserved for footer
-    const availableHeight = doc.internal.pageSize.height - currentY - footerSpace - PDFStyles.spacing.margin.bottom;
-
-    // If not enough space, start new page
-    if (availableHeight < 60) { // Increased minimum space needed for summary
-      doc.addPage();
-      currentY = PDFStyles.spacing.margin.top;
-    }
-
-    // Improved text wrapping with proper continuation indicators
-    const maxContentWidth = contentWidth - 10; // Reduce width to prevent overflow
-    const summaryLines = doc.splitTextToSize(summaryText, maxContentWidth);
-    const summaryLineHeight = PDFStyles.spacing.betweenLines * 0.85;
-
-    // Check if summary needs multiple pages with proper continuation
-    let remainingLines = [...summaryLines];
-    let pageNum = 1;
+  
+  // Format the title line with subtitle if present
+  let titleText = titleFull;
+  if (subtitle) {
+    titleText = `${titleFull}: ${subtitle}`;
+  }
+  
+  // Add statement of responsibility
+  if (book.statementOfResponsibility) {
+    titleText += ` / ${book.statementOfResponsibility}`;
+  } else {
+    // Use authors and contributors to construct statement of responsibility
+    let authorName = book.mainAuthor || book.author || "";
     
-    while (remainingLines.length > 0) {
-      // Calculate how many lines can fit on current page (with room for continuation indicator)
-      const maxLinesPerPage = Math.floor((doc.internal.pageSize.height - currentY - footerSpace - PDFStyles.spacing.margin.bottom) / summaryLineHeight);
-      
-      // Reserve space for continuation indicator if needed
-      const availableLines = remainingLines.length > maxLinesPerPage ? maxLinesPerPage - 1 : maxLinesPerPage;
-      
-      // Get lines for this page
-      const linesToRender = remainingLines.slice(0, availableLines);
-      
-      // Render summary text lines
-      linesToRender.forEach(line => {
-        doc.text(line, PDFStyles.spacing.margin.left, currentY);
-        currentY += summaryLineHeight;
-      });
-
-      // Remove rendered lines from remaining
-      remainingLines = remainingLines.slice(availableLines);
-      
-      // If more lines remain, add continuation indicator and new page
-      if (remainingLines.length > 0) {
-        // Add German-style continuation indicator
-        setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
-        doc.text("(Fortsetzung folgt...)", PDFStyles.spacing.margin.left + maxContentWidth - 50, currentY);
+    // Check for contributors
+    let otherContributors = "";
+    if (book.contributors && (typeof book.contributors === 'object')) {
+      // If contributors is an object with role keys (new format)
+      if (!Array.isArray(book.contributors)) {
+        const contributorsList = [];
+        for (const role in book.contributors) {
+          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+          }
+        }
+        if (contributorsList.length > 0) {
+          otherContributors = ` ; ${contributorsList.join(" ; ")}`;
+        }
+      } 
+      // If contributors is an array of objects with name and role (old format)
+      else if (book.contributors.length > 0) {
+        const contributorsList = book.contributors
+          .filter((c: any) => c.name && c.role)
+          .map((c: any) => `${c.name} (${c.role})`)
+          .join(" ; ");
         
-        doc.addPage();
-        currentY = PDFStyles.spacing.margin.top;
-        pageNum++;
-        
-        // Add continuation header on new page
-        setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
-        doc.text(`(Fortsetzung von Seite ${pageNum-1})`, PDFStyles.spacing.margin.left, currentY);
-        currentY += summaryLineHeight * 1.5;
-        
-        // Reset font for remaining text
-        setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
+        if (contributorsList) {
+          otherContributors = ` ; ${contributorsList}`;
+        }
       }
     }
+    
+    // Add author and contributors to title text
+    if (authorName) {
+      titleText += ` / ${authorName}${otherContributors}`;
+    } else if (otherContributors) {
+      titleText += ` /${otherContributors}`;
+    }
   }
-
-  // --- 7. Footer ---
-  const footerY = doc.internal.pageSize.height - PDFStyles.spacing.margin.bottom;
-  setFontStyle(doc, 'normal', PDFStyles.fontSize.footer);
-  doc.text('ekz-Informationsdienst', pageWidth / 2, footerY, { align: 'center' });
-
-  return currentY;
+  
+  // Split the title text for proper wrapping
+  const titleLines = doc.splitTextToSize(titleText, 155);
+  
+  // Set the title lines
+  for (let i = 0; i < titleLines.length; i++) {
+    doc.text(titleLines[i], 22, yPos);
+    yPos += 5;
+  }
+  
+  // --- 4. Publication Information ---
+  yPos += 2; // Extra space before publication info
+  
+  // Build full publication string following the exact target format
+  let publicationInfo = '';
+  
+  // Start with edition information
+  if (book.edition) {
+    // Make sure edition is properly formatted as "Auflage" instead of just numbers
+    let editionText = book.edition;
+    
+    // If the edition doesn't include the word "Auflage", add it appropriately
+    if (!editionText.toLowerCase().includes("auflage")) {
+      // Check if it starts with a number
+      const match = editionText.match(/^(\d+)(?:\.)?/);
+      if (match) {
+        const num = match[1];
+        editionText = `${num}. Auflage`;
+      }
+    }
+    
+    publicationInfo += `${editionText}`;
+  }
+  
+  // Add location and publisher 
+  const location = book.publicationPlace || book.location || '';
+  const publisher = book.publisher || '';
+  
+  if (publicationInfo) {
+    publicationInfo += `. – ${location}: ${publisher}`;
+  } else {
+    publicationInfo += `${location}: ${publisher}`;
+  }
+  
+  // Add year
+  const year = book.publicationYear || book.publishedYear;
+  if (year) {
+    publicationInfo += `, ${year}`;
+  }
+  
+  // Add physical description - pages
+  const pages = book.pageCount || '';
+  if (pages) {
+    publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
+  } else {
+    publicationInfo += `. – `;
+  }
+  
+  // Add illustration information if available
+  if (book.illustrations) {
+    publicationInfo += `: ${book.illustrations}`;
+  } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
+    // Check if there are illustrators in contributors
+    let hasIllustrators = false;
+    
+    if (book.contributors) {
+      // New format - object with roles as keys
+      if (!Array.isArray(book.contributors) && book.contributors['Illustrator']) {
+        hasIllustrators = true;
+      }
+      // Old format - array of objects with name and role
+      else if (Array.isArray(book.contributors)) {
+        hasIllustrators = book.contributors.some((c: any) => 
+          c.role?.toLowerCase() === 'illustrator' || c.role?.toLowerCase().includes('illust'));
+      }
+    }
+    
+    if (book.illustrator || hasIllustrators) {
+      publicationInfo += `: Illustrationen`;
+    }
+  } else {
+    // Default to "keine Illustrationen" if specifically requested to show this info
+    // Leave blank by default unless explicitly requested to show "keine Illustrationen"
+    // publicationInfo += `: keine Illustrationen`;
+  }
+  
+  // Add dimensions if available
+  if (book.dimensions) {
+    publicationInfo += ` ; ${book.dimensions}`;
+  }
+  
+  // Split the publication info text for proper wrapping
+  const pubLines = doc.splitTextToSize(publicationInfo, 165);
+  
+  // Set the publication info lines
+  doc.setFont("helvetica", "normal");
+  for (let i = 0; i < pubLines.length; i++) {
+    doc.text(pubLines[i], 22, yPos);
+    yPos += 5;
+  }
+  
+  // --- 5. ISBN and Price information ---
+  if (book.isbn) {
+    yPos += 2; // Extra small space before ISBN line
+    
+    let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
+    
+    // Add binding type if available (ensure it's in German)
+    if (book.binding) {
+      // Map common English binding types to German
+      let bindingGerman = book.binding;
+      
+      // Only do the mapping if the binding doesn't already appear to be in German
+      if (!bindingGerman.toLowerCase().includes("einband") && 
+          !bindingGerman.toLowerCase().includes("gebunden") && 
+          !bindingGerman.toLowerCase().includes("broschiert") &&
+          !bindingGerman.toLowerCase().includes("taschenbuch")) {
+        
+        // Mapping of English binding types to German
+        const bindingMap: Record<string, string> = {
+          "hardcover": "Festeinband",
+          "hardback": "Festeinband", 
+          "paperback": "Broschiert",
+          "softcover": "Broschiert",
+          "ebook": "E-Book",
+          "audio": "Hörbuch",
+          "spiral": "Spiralbindung",
+          "leather": "Ledereinband",
+          "boardbook": "Pappband"
+        };
+        
+        // Check if we have a mapping for this binding type (case insensitive)
+        for (const [eng, ger] of Object.entries(bindingMap)) {
+          if (bindingGerman.toLowerCase().includes(eng.toLowerCase())) {
+            bindingGerman = ger;
+            break;
+          }
+        }
+      }
+      
+      isbnLine += ` ${bindingGerman}`;
+    }
+    
+    // Process price information if available
+    if (book.price) {
+      // The price field might contain a complete price string already
+      let priceText = book.price;
+      
+      // If the price is just a number, format it properly
+      if (/^\d+(\.\d+)?$/.test(priceText)) {
+        // Format as German price with comma
+        priceText = priceText.replace('.', ',');
+        priceText = `EUR ${priceText}`;
+      } else if (!priceText.includes("EUR") && !priceText.includes("€")) {
+        // If it doesn't contain currency info, add EUR
+        priceText = `EUR ${priceText}`;
+      }
+      
+      // Remove "paperback" or other English terms that might be incorrectly included
+      priceText = priceText.replace(/paperback|hardcover|softcover/gi, "").trim();
+      
+      // Clean up any duplicate spaces or commas
+      priceText = priceText.replace(/\s{2,}/g, " ").replace(/,,/g, ",").trim();
+      
+      // Add to the ISBN line with proper delimiter
+      isbnLine += `: ${priceText}`;
+    }
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(isbnLine, 22, yPos);
+    yPos += 7;
+  }
+  
+  // --- 6. Book summary/description and critical review ---
+  if (book.summary || book.review) {
+    yPos += 2;
+    
+    // Set text style for summary text
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    
+    // Combine summary and review with the | separator exactly as in target format
+    let summaryText = '';
+    if (book.summary) {
+      summaryText = book.summary;
+    }
+    if (book.summary && book.review) {
+      summaryText += ' | ';
+    }
+    if (book.review) {
+      summaryText += book.review;
+    }
+    
+    // Clean up the text by removing any metadata patterns
+    const metadataPatterns = [
+      // Markdown style metadata
+      /\*\*Titel:\*\*.*\n?/i,
+      /\*\*Autor(?:in)?:\*\*.*\n?/i,
+      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
+      /\*\*ISBN:\*\*.*\n?/i,
+      /\*\*Verlag:\*\*.*\n?/i,
+      
+      // Plain text style metadata
+      /Titel:.*\n?/i,
+      /Autor(?:in)?:.*\n?/i,
+      /Erscheinungsjahr:.*\n?/i,
+      /ISBN:.*\n?/i,
+      /Verlag:.*\n?/i,
+      
+      // Preview and version texts
+      /preview.*?[\d\.]+.*?\n?/i,
+      /version.*?[\d\.]+.*?\n?/i,
+      /^\s*v[\d\.]+\s*$/im,
+      
+      // Other metadata that shouldn't be in the final text
+      /^generated by:.*$/im,
+      /^powered by:.*$/im,
+      /^AI generated.*$/im
+    ];
+    
+    // Apply all patterns
+    metadataPatterns.forEach(pattern => {
+      summaryText = summaryText.replace(pattern, '');
+    });
+    
+    // Remove any extra whitespace and multiple newlines
+    summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    
+    // Split the text for proper wrapping 
+    const summaryLines = doc.splitTextToSize(summaryText, 160);
+    
+    // Create content for each line with justified text
+    for (let i = 0; i < summaryLines.length; i++) {
+      doc.text(summaryLines[i], 22, yPos, { 
+        align: 'justify',
+        maxWidth: 160,
+      });
+      yPos += 4.5; // Slightly reduce line spacing to fit more text
+    }
+    
+    // Add a small space after the summary
+    yPos += 2;
+  }
+  
+  // --- 7. Reviewer name in bottom right ---
+  yPos += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  
+  // Use reviewer name if available, with multiple fallbacks
+  if (book.reviewerName) {
+    doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+  } else if (book.reviewer_name) {
+    // Alternative field name
+    doc.text(book.reviewer_name, 190, yPos, { align: 'right' });
+  } else if (book.user && typeof book.user === 'object' && book.user.fullName) {
+    // Fallback to user's full name if available
+    doc.text(book.user.fullName, 190, yPos, { align: 'right' });
+  } else if (book.userId) {
+    // If only user ID is available, we show a placeholder
+    // In a real implementation, we would fetch user details from the database
+    doc.text(`ID: ${book.userId}`, 190, yPos, { align: 'right' });
+  }
+  
+  // --- 8. Interest category (IK) and Age recommendation on bottom left ---
+  yPos += 10;
+  
+  // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
+  let ikLine = '';
+  
+  if (book.interestCategory) {
+    ikLine = `IK: ${book.interestCategory}`;
+    
+    // Add age recommendation if available
+    if (book.ageRecommendation) {
+      ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
+    }
+    
+    doc.setFont("helvetica", "bold");
+    doc.text(ikLine, 22, yPos);
+    yPos += 5;
+  } else if (book.ageRecommendation) {
+    ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
+    doc.setFont("helvetica", "bold");
+    doc.text(ikLine, 22, yPos);
+    yPos += 5;
+  }
+  
+  // --- 9. ID-B information in format: ID-[Initials] [Number]/[Year] ---
+  let idBLine = '';
+  
+  // Support multiple field naming conventions for these fields
+  const initials = book.idbInitials || book.idb_initials || '';
+  const sequenceNumber = book.idbSequenceNumber || book.idb_sequence_number || '';
+  const idbYear = book.idbYear || book.idb_year || '';
+  
+  // If we have at least initials and one other field, show the ID-B line
+  if (initials && (sequenceNumber || idbYear)) {
+    idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
+    doc.setFont("helvetica", "normal");
+    doc.text(idBLine, 22, yPos);
+    yPos += 5;
+  }
+  
+  // Legacy format support - if an ID-B number is provided directly
+  else if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, 22, yPos);
+    yPos += 5;
+  }
+  
+  // --- 10. Footer (no barcode) ---
+  yPos += 10;
+  
+  // Add the classification number (no barcode)
+  const startX = doc.internal.pageSize.width / 2;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  
+  // Add ASB number if available
+  if (asbNumber && asbNumber.trim() !== "") {
+    doc.text(asbNumber, startX, yPos, { align: 'center' });
+    yPos += 5;
+  }
+  
+  // Add ekz-Informationsdienst text
+  yPos += 3;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("ekz-Informationsdienst", doc.internal.pageSize.width / 2, yPos, { align: 'center' });
+  
+  return yPos + 10; // Return the final Y position with some extra space
 }
 
 // Export a single book to PDF
@@ -437,34 +590,25 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
-    compress: true // Use compression for smaller file size
   });
-
-  // Normalize book data to ensure consistent formatting
-  const normalizedBook = normalizeBookData(book);
-
+  
   // Configure language-specific text
-  const bookLanguage = normalizedBook.language || language;
-
-  // Format book entry with normalized data
+  const bookLanguage = book.language || language;
+  
+  // Modify any labels or text based on the book's language
+  // Note: The formatBookEntryForPDF function already handles German formatting
+  // with commas for decimal points, "Seiten" instead of "pages", etc.
+  
+  // Format book entry
   formatBookEntryForPDF(doc, book);
-
+  
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
-  const safeFilename = (normalizedBook.title || 'book').replace(/[/\\?%*:|"<>]/g, '-').trim();
-
+  const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+  
   // Set the correct filename prefix based on language
   const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
-  const timestamp = new Date().toISOString().substring(0, 10);
-
-  // Limit filename length to prevent excessively long filenames
-  const maxLength = 50;
-  const truncatedFilename = safeFilename.length > maxLength ? 
-    safeFilename.substring(0, maxLength) + '...' : 
-    safeFilename;
-
-  // Use simplified filename with timestamp for better organization
-  doc.save(`${truncatedFilename || `${filenamePrefix}_${timestamp}`}.pdf`);
+  doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
@@ -472,256 +616,384 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
   // Format the date exactly as in the sample image: YYYY-MM-DD HH:MM Uhr
   const date = new Date();
   const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} Uhr`;
-
+  
   // Draw box border - use thicker border as shown in sample
   doc.setDrawColor(0);
   doc.setLineWidth(0.7);
   doc.rect(x, y, width, height);
-
+  
   // Add correction title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.text("Korrektur:", x + width/2, y + 15, { align: "center" });
-
+  
   // Add edition info - exactly as in the sample
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Basis-Ausgabe (Edition 10.000)", x + width/2, y + 25, { align: "center" });
-
+  
   // Add number of books - exactly as in the sample
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("24 Titel", x + width/2, y + 40, { align: "center" });
-
+  
   // Add date and time - exactly as in the sample
   doc.text(formattedDate, x + width/2, y + 50, { align: "center" });
 }
 
-// Format a book entry for grid layout with improved spacing and consistency
-function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): void {
-  const cellPadding = {
-    left: 12,    // Increased padding for better readability
-    right: 12,
-    top: 12,
-    bottom: 15   // Increased bottom padding for footer
-  };
-
-  const contentWidth = width - cellPadding.left - cellPadding.right;
-  let currentY = y + cellPadding.top;
-
-  // Draw cell border with rounded corners
+// Format a book entry for a grid layout with smaller dimensions
+function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
+  const originalFontSize = 11;
+  const gridFontSize = 9; // Smaller font for grid layout
+  const startY = y;
+  let currentY = startY + 5;
+  const spaceNeededForFooter = 15; // Space needed for footer text (reduced since barcode was removed)
+  
+  // Draw a thin border around the entire cell
   doc.setDrawColor(0);
   doc.setLineWidth(0.3);
-  doc.roundedRect(x, y, width, height, 3, 3); // Added rounded corners
-
-  // --- 1. ASB Classification ---
-  setFontStyle(doc, 'bold', PDFStyles.fontSize.small);
-  doc.text("ASB:", x + cellPadding.left, currentY);
-
-  if (book.catalogNumber) {
-    doc.text(book.catalogNumber, x + width - cellPadding.right, currentY, { align: 'right' });
+  doc.rect(x, y, width, height);
+  
+  // --- ASB Classification in top corners ---
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(gridFontSize);
+  
+  // ASB label left
+  doc.text("ASB:", x + 5, currentY);
+  
+  // ASB number right
+  const asbNumber = book.catalogNumber || "";
+  if (asbNumber) {
+    doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
   }
-  currentY += PDFStyles.spacing.betweenLines * 1.2; // Increased spacing after ASB
-
-  // --- 2. Author ---
-  let authorFormatted = book.mainAuthor || book.author;
-  if (authorFormatted && !authorFormatted.includes(",")) {
+  
+  // Secondary classification under ASB
+  currentY += 5;
+  const secondaryCode = book.secondaryClassification || "";
+  if (secondaryCode) {
+    doc.text(secondaryCode, x + 5, currentY);
+  }
+  
+  currentY += 8;
+  
+  // --- Author's name in bold ---
+  let authorFormatted = book.mainAuthor || book.author || "";
+  if (authorFormatted && authorFormatted.includes(" ") && !authorFormatted.includes(",")) {
     const nameParts = authorFormatted.split(" ");
     const lastName = nameParts.pop();
     const firstName = nameParts.join(" ");
     authorFormatted = `${lastName}, ${firstName}`;
   }
-
-  if (authorFormatted) {
-    setFontStyle(doc, 'bold', PDFStyles.fontSize.small);
-    doc.text(normalizeGermanText(authorFormatted + ":"), x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines * 1.2;
+  
+  doc.setFont("helvetica", "bold");
+  doc.text(authorFormatted + ":", x + 5, currentY);
+  
+  currentY += 5;
+  
+  // --- Book title ---
+  doc.setFont("helvetica", "normal");
+  
+  // Truncate and format the title to fit
+  let titleText = book.title || "";
+  if (titleText.length > 40) { // Further reduced to ensure it fits
+    titleText = titleText.substring(0, 37) + "...";
   }
-
-  // --- 3. Title ---
-  setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
-  let titleText = normalizeGermanText(book.title || '');
-  if (book.subtitle) {
-    titleText += `: ${normalizeGermanText(book.subtitle)}`;
+  
+  // Add author after title (only if not already shown above)
+  const authorToShow = book.author || "";
+  if (authorToShow && authorToShow !== authorFormatted) {
+    titleText += ` / ${authorToShow}`;
   }
-
-  const titleLines = doc.splitTextToSize(titleText, contentWidth - 2);
-  titleLines.slice(0, 2).forEach((line: string) => { // Limit to 2 lines
-    doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines * 1.1;
-  });
-  currentY += PDFStyles.spacing.betweenLines * 0.5; // Add space after title
-
-  // --- 4. Publication Info ---
-  const pubInfo = [
-    book.edition && normalizeGermanText(book.edition),
-    book.publicationPlace && book.publisher && 
-      `${normalizeGermanText(book.publicationPlace)}: ${normalizeGermanText(book.publisher)}`,
-    book.publicationYear,
-    book.pageCount ? `${book.pageCount} S.` : null,
-    book.dimensions && normalizeGermanText(book.dimensions)
-  ].filter(Boolean).join('. ');
-
-  if (pubInfo) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
-    const pubLines = doc.splitTextToSize(pubInfo, contentWidth - 2);
-    pubLines.slice(0, 2).forEach((line: string) => { // Limit to 2 lines
-      doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines;
-    });
-    currentY += PDFStyles.spacing.betweenLines * 0.5;
+  
+  // Format the title text properly without extra spacing
+  const titleFormatted = titleText.replace(/\s+/g, " ").trim();
+  
+  // Split for wrapping with reduced width
+  const titleLines = doc.splitTextToSize(titleFormatted, width - 10);
+  for (let i = 0; i < Math.min(titleLines.length, 2); i++) { // Limit to 2 lines to save space
+    doc.text(titleLines[i], x + 5, currentY);
+    currentY += 4;
   }
-
-  // --- 5. ISBN ---
+  
+  currentY += 2;
+  
+  // --- Publication info - condensed ---
+  // Use a smaller font for publication info to save space
+  doc.setFontSize(gridFontSize - 1);
+  
+  let pubInfo = "";
+  
+  // Add components only if they exist, using the new field names with fallbacks
+  if (book.edition) pubInfo += book.edition;
+  
+  // Use publicationPlace first, with location as fallback
+  const location = book.publicationPlace || book.location;
+  if (location) pubInfo += pubInfo.length > 0 ? ` – ${location}` : location;
+  
+  if (book.publisher) pubInfo += pubInfo.length > 0 ? `: ${book.publisher}` : book.publisher;
+  
+  // Use publicationYear first, with publishedYear as fallback
+  const year = book.publicationYear || book.publishedYear;
+  if (year) pubInfo += pubInfo.length > 0 ? `, ${year}` : `${year}`;
+  
+  if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
+  
+  // Add dimensions directly after page count
+  if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
+  
+  // Add illustrations info if available - keep it very short
+  if (book.illustrations) {
+    // Truncate illustrations text if too long
+    const illText = book.illustrations.length > 20 ? book.illustrations.substring(0, 17) + "..." : book.illustrations;
+    pubInfo += pubInfo.length > 0 ? `: ${illText}` : illText;
+  }
+  
+  if (pubInfo.length > 0) {
+    // Format the publication info properly without extra spacing
+    const pubInfoFormatted = pubInfo.replace(/\s+/g, " ").trim();
+    
+    const pubLines = doc.splitTextToSize(pubInfoFormatted, width - 10);
+    for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
+      doc.text(pubLines[i], x + 5, currentY);
+      currentY += 3.5; // Slightly reduced line spacing
+    }
+  }
+  
+  // Reset font size
+  doc.setFontSize(gridFontSize);
+  
+  // --- ISBN and price - condensed ---
   if (book.isbn) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
+    currentY += 2;
+    // Use smaller font for ISBN info
+    doc.setFontSize(gridFontSize - 1);
+    
     let isbnText = `ISBN ${formatISBN(book.isbn)}`;
+    
+    // Add binding type if available (keep it short)
+    if (book.binding) {
+      const bindingText = book.binding.length > 20 ? book.binding.substring(0, 17) + "..." : book.binding;
+      isbnText += ` - ${bindingText}`;
+    }
+    
+    // Add price if available (simplified)
     if (book.price) {
-      isbnText += ` : ${book.price}`;
+      // Simplify price display
+      let priceText = book.price.toString();
+      if (priceText.length > 25) {
+        priceText = priceText.substring(0, 22) + "...";
+      }
+      isbnText += ` : ${priceText}`;
     }
-    const isbnLine = doc.splitTextToSize(isbnText, contentWidth - 2)[0];
-    doc.text(normalizeGermanText(isbnLine), x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines * 1.2;
+    
+    // Format the ISBN text properly without extra spacing
+    const isbnFormatted = isbnText.replace(/\s+/g, " ").trim();
+    
+    doc.text(doc.splitTextToSize(isbnFormatted, width - 10)[0], x + 5, currentY);
+    currentY += 4;
+    
+    // Reset font size
+    doc.setFontSize(gridFontSize);
   }
-
-  // --- 6. Summary ---
+  
+  // --- Summary and Review - ensure full content appears ---
   if (book.summary || book.review) {
-    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
-
+    // Use even smaller font for summary to maximize content display
+    doc.setFontSize(gridFontSize - 2);
+    
+    // Combine summary and review with the | separator
     let summaryText = '';
-    if (book.summary) summaryText = normalizeGermanText(book.summary);
-    if (book.summary && book.review) summaryText += ' | ';
-    if (book.review) summaryText += normalizeGermanText(book.review);
-
-    // Calculate available height for summary with proper spacing for footer
-    const footerSpace = 25; // Increased space for footer
-    const availableHeight = y + height - footerSpace - currentY;
-    const maxLines = Math.floor(availableHeight / (PDFStyles.spacing.betweenLines * 0.9));
-
-    const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 2);
-    const visibleLines = summaryLines.slice(0, maxLines - 1);
-
-    visibleLines.forEach((line: string) => {
-      doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines * 0.9;
-    });
-
-    // Add continuation indicator if text was truncated
-    if (summaryLines.length > maxLines - 1) {
-      setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
-      doc.text("(Fortsetzung folgt...)", x + cellPadding.left, currentY);
+    if (book.summary) {
+      summaryText = book.summary;
     }
+    if (book.summary && book.review) {
+      summaryText += ' | ';
+    }
+    if (book.review) {
+      summaryText += book.review;
+    }
+    
+    // Remove metadata-like patterns to save space
+    const metadataPatterns = [
+      /\*\*Titel:\*\*.*\n?/i,
+      /\*\*Autor(?:in)?:\*\*.*\n?/i,
+      /\*\*Erscheinungsjahr:\*\*.*\n?/i,
+      /\*\*ISBN:\*\*.*\n?/i,
+      /\*\*Verlag:\*\*.*\n?/i,
+      /Titel:.*\n?/i,
+      /Autor(?:in)?:.*\n?/i,
+      /Erscheinungsjahr:.*\n?/i,
+      /ISBN:.*\n?/i,
+      /Verlag:.*\n?/i
+    ];
+    
+    // Apply all patterns
+    metadataPatterns.forEach(pattern => {
+      summaryText = summaryText.replace(pattern, '');
+    });
+    
+    // Remove any extra whitespace that might remain
+    summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    // Normalize spacing
+    summaryText = summaryText.replace(/\s+/g, " ").trim();
+    
+    // For multiple book PDF, limit text to fit in the cell
+    
+    // Calculate available space for summary text
+    const availableHeight = (y + height - spaceNeededForFooter) - currentY;
+    // Use smaller line height to fit more text
+    const lineHeight = 2.5;
+    
+    // Break into lines with proper wrapping
+    const summaryLines = doc.splitTextToSize(summaryText, width - 10);
+    
+    // Calculate how many lines we can fit in the available space
+    const maxLinesToShow = Math.floor(availableHeight / lineHeight);
+    
+    // Set font for summary text - normal weight
+    doc.setFont("helvetica", "normal");
+    
+    // Show only the lines that will fit
+    const linesToShow = Math.min(summaryLines.length, maxLinesToShow);
+    
+    for (let i = 0; i < linesToShow; i++) {
+      doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
+      currentY += lineHeight; // Reduced line spacing to fit more text
+    }
+    
+    // Add ellipsis if we couldn't show all lines
+    if (summaryLines.length > linesToShow) {
+      doc.text("...", x + 5, currentY);
+      currentY += lineHeight;
+    }
+    
+    // Reset font size to normal
+    doc.setFontSize(gridFontSize);
   }
-
-  // --- 7. Footer ---
-  const footerY = y + height - cellPadding.bottom;
-  setFontStyle(doc, 'normal', PDFStyles.fontSize.footer);
-  doc.text('ekz-Informationsdienst', x + width/2, footerY, { align: 'center' });
+  
+  // --- IK category and ID-B number ---
+  // Calculate where the remaining footer content should go
+  // We need to leave space for barcode (approx 20mm) and other footer elements
+  
+  // For multiple book PDF, we need to be strict about fixed cell height
+  // Ensure we don't overflow by adjusting current position if needed
+  if (currentY > y + height - spaceNeededForFooter) {
+    // We've gone too far - adjust position
+    currentY = y + height - spaceNeededForFooter;
+  }
+  
+  // Interest category if available
+  if (book.interestCategory) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(gridFontSize - 1);
+    doc.text(book.interestCategory, x + 5, currentY);
+    currentY += 4;
+  }
+  
+  // ID-B number if available
+  if (book.idBNumber) {
+    doc.setFont("helvetica", "normal");
+    doc.text(book.idBNumber, x + 5, currentY);
+  }
+  
+  // --- Footer (no barcode) ---
+  // Position the footer at the bottom
+  currentY = y + height - 8;
+  
+  // Add ASB number
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  if (asbNumber && asbNumber.toString().trim() !== "") {
+    doc.text(asbNumber.toString(), x + width/2, currentY, { align: 'center' });
+    currentY += 4;
+  }
+  
+  // Add ekz footer text
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.text("ekz-Informationsdienst", x + width/2, currentY, { align: 'center' });
+  
+  return height; // Return the fixed height we used
 }
 
 // Export multiple books to a single PDF with the specified format from the image
 export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
-
+  
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
-    compress: true // Use compression for smaller file size
   });
-
-  // Page dimensions (standard A4)
+  
+  // Page dimensions
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 10; // Margin around the page edges
-
-  // Grid layout configuration - consistent across all pages
-  const gridColumns = 2; // Two columns per page
-  const gridRows = 1;    // One row per page after the first page
-
-  // Calculate cell dimensions with precise margins
-  const horizontalGap = 10;  // Space between columns
-  const cellWidth = (pageWidth - (2 * margin) - horizontalGap) / gridColumns;
-  const cellHeight = 140;    // Fixed height for all book entries
-
+  const margin = 10;
+  
+  // Grid dimensions - Adjust to provide more space for content
+  const gridColumns = 2;
+  // Reduce to 1 row per page after the first page to allow more space for content
+  const gridRows = 1;
+  const cellWidth = (pageWidth - (margin * 3)) / gridColumns; // 2 columns with margins
+  // Increase the cell height to accommodate more text, especially for summaries
+  // Use 140mm height per cell for even more space
+  const cellHeight = 140; // Fixed height in mm to ensure enough space for summary
+  
   // First page layout - two correction boxes at the top
   const boxWidth = 80;
   const boxHeight = 70;
   const boxY = 20;
-  const boxGap = 20;
-
-  // Calculate precise positions for correction boxes
-  const firstBoxX = (pageWidth - (2 * boxWidth) - boxGap) / 2;
-  const secondBoxX = firstBoxX + boxWidth + boxGap;
-
-  // Draw the two correction boxes with consistent positioning
-  drawCorrectionBox(doc, firstBoxX, boxY, boxWidth, boxHeight);
-  drawCorrectionBox(doc, secondBoxX, boxY, boxWidth, boxHeight);
-
-  // Track books processed
+  
+  // Draw the two correction boxes
+  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2, boxY, boxWidth, boxHeight);
+  drawCorrectionBox(doc, (pageWidth - 2 * boxWidth - 20) / 2 + boxWidth + 20, boxY, boxWidth, boxHeight);
+  
   let currentBook = 0;
-
-  // First page layout - two books in the bottom half with precise positioning
-  const firstPageBookY = boxY + boxHeight + 20; // Position books below correction boxes
-
+  
+  // First page - two books in the bottom half
   if (currentBook < books.length) {
     // First book - bottom left
-    formatBookEntryForGrid(doc, books[currentBook], margin, firstPageBookY, cellWidth, cellHeight);
+    formatBookEntryForGrid(doc, books[currentBook], margin, boxY + boxHeight + 20, cellWidth, cellHeight);
     currentBook++;
-
+    
     if (currentBook < books.length) {
-      // Second book - bottom right with precise positioning
-      const secondBookX = margin + cellWidth + horizontalGap;
-      formatBookEntryForGrid(doc, books[currentBook], secondBookX, firstPageBookY, cellWidth, cellHeight);
+      // Second book - bottom right
+      formatBookEntryForGrid(doc, books[currentBook], margin + cellWidth + margin/2, boxY + boxHeight + 20, cellWidth, cellHeight);
       currentBook++;
     }
   }
-
-  // Process remaining books on subsequent pages with consistent layout
+  
+  // Process remaining books in 2x2 grid on subsequent pages
   while (currentBook < books.length) {
-    // Create a new page for next set of books
+    // Add a new page
     doc.addPage();
-
-    // Process books in grid layout with precise positioning
+    
     for (let row = 0; row < gridRows && currentBook < books.length; row++) {
       for (let col = 0; col < gridColumns && currentBook < books.length; col++) {
-        // Calculate exact position for each cell
-        const x = margin + (col * (cellWidth + horizontalGap));
-        const y = margin + (row * (cellHeight + margin));
-
-        // Add book to grid with consistent dimensions
+        const x = margin + (col * (cellWidth + margin/2));
+        const y = margin + (row * (cellHeight + margin/2));
+        
         formatBookEntryForGrid(doc, books[currentBook], x, y, cellWidth, cellHeight);
         currentBook++;
       }
     }
   }
-
-  // Add page numbers with consistent positioning and formatting
+  
+  // Add page numbers with localized text depending on language
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
-
-    // Localized page number text
+    
+    // Use proper language for page numbers
     const pageText = language === 'de' ? `Seite ${i} von ${pageCount}` : `Page ${i} of ${pageCount}`;
-
-    // Position consistently at bottom right
     doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
   }
-
-  // Generate timestamped filename with book count
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 10);
-  const bookCount = books.length;
-
-  // Create language-specific, informative filenames
-  let filename = '';
-  if (language === 'de') {
-    filename = `Buchkatalog_${bookCount}_Einträge_${timestamp}.pdf`;
-  } else {
-    filename = `BookCatalog_${bookCount}_entries_${timestamp}.pdf`;
-  }
-
-  // Save file with compression enabled
+  
+  // Generate a timestamped filename with language-appropriate naming
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  const filename = language === 'de' ? `Buchkatalog_${timestamp}.pdf` : `BookCatalog_${timestamp}.pdf`;
   doc.save(filename);
 }
