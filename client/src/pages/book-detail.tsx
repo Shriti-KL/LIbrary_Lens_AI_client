@@ -365,6 +365,17 @@ export default function BookDetail() {
                       placeholder="e.g. München, Berlin"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">{t('classificationNumber')}</label>
+                    <Input 
+                      name="classificationNumber"
+                      value={editedBook.classificationNumber || ''}
+                      onChange={handleInputChange}
+                      className="w-full"
+                      placeholder="ASB classification number"
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -447,9 +458,9 @@ export default function BookDetail() {
                 {/* ASB Classification and catalog numbers at top */}
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex flex-col items-start">
-                    {book.secondaryClassification && (
+                    {book.classificationNumber && (
                       <span className="text-sm font-bold">
-                        ASB: {book.secondaryClassification}
+                        ASB: {book.classificationNumber}
                       </span>
                     )}
                   </div>
