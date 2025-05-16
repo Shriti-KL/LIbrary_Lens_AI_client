@@ -184,7 +184,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   yPos += 6; // Space after author name
   
   // --- 3. Book title and publication info ---
-  doc.setFontSize(9.5);
+  // Use consistent smaller font size for all metadata (9pt is ekz standard)
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
@@ -207,15 +208,16 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Format the title line with subtitle if present following the exact ekz format
   let titleText = titleFull;
   if (subtitle) {
-    titleText = `${titleFull} : ${subtitle}`;  // Use space colon space format exactly
+    titleText = `${titleFull} : ${subtitle}`;  // Use space colon space format exactly as per German standards
   }
   
-  // Add statement of responsibility
+  // Add statement of responsibility to titleText for compatibility
+  // but we'll display it separately below for better formatting
   if (book.statementOfResponsibility) {
     titleText += ` / ${book.statementOfResponsibility}`;
   } else {
     // Use authors and contributors to construct statement of responsibility
-    let authorName = book.mainAuthor || book.author || "";
+    const authorName = book.mainAuthor || book.author || "";
     
     // Check for contributors
     let otherContributors = "";
@@ -256,12 +258,60 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Use same smaller font size for all metadata sections
   doc.setFontSize(9);
   
-  // Split the title text for proper wrapping
-  const titleLines = doc.splitTextToSize(titleText, 155);
+  // Create a specialized format for title and statement of responsibility
+  // First line is just the title (and subtitle if available)
+  let titleOnly = titleFull;
+  if (subtitle) {
+    titleOnly = `${titleFull} : ${subtitle}`; 
+  }
   
-  // Set the title lines - all titles and metadata in smaller font size
-  for (let i = 0; i < titleLines.length; i++) {
-    doc.text(titleLines[i], 22, yPos);
+  // Display title on its own line, full width
+  doc.text(titleOnly, 22, yPos);
+  yPos += 5;
+  
+  // Extract the author name and contributors again for statement of responsibility
+  const displayAuthor = book.mainAuthor || book.author || "";
+  
+  // Check for contributors
+  let displayContributors = "";
+  if (book.contributors && (typeof book.contributors === 'object')) {
+    // If contributors is an object with role keys (new format)
+    if (!Array.isArray(book.contributors)) {
+      const contributorsList = [];
+      for (const role in book.contributors) {
+        if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+          contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+        }
+      }
+      if (contributorsList.length > 0) {
+        displayContributors = ` ; ${contributorsList.join(" ; ")}`;
+      }
+    } 
+    // If contributors is an array of objects with name and role (old format)
+    else if (book.contributors.length > 0) {
+      const contributorsList = book.contributors
+        .filter((c: any) => c.name && c.role)
+        .map((c: any) => `${c.name} (${c.role})`)
+        .join(" ; ");
+      
+      if (contributorsList) {
+        displayContributors = ` ; ${contributorsList}`;
+      }
+    }
+  }
+  
+  // Statement of responsibility on its own line
+  let responsibilityStatement = "";
+  if (book.statementOfResponsibility) {
+    responsibilityStatement = `/ ${book.statementOfResponsibility}`;
+  } else if (displayAuthor) {
+    responsibilityStatement = `/ ${displayAuthor}${displayContributors}`;
+  } else if (displayContributors) {
+    responsibilityStatement = `/${displayContributors}`;
+  }
+  
+  if (responsibilityStatement) {
+    doc.text(responsibilityStatement, 22, yPos);
     yPos += 5;
   }
   
@@ -346,29 +396,47 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     publicationInfo += ` ; ${book.dimensions}`;
   }
   
-  // Set the publication info as a single continuous line (no line breaks)
+  // Keep publication info styling consistent with statement of responsibility
   doc.setFont("helvetica", "normal");
-  
-  // Keep font size consistent with title metadata
   doc.setFontSize(9);
   
-  // Calculate max width for text
-  const maxWidth = 170;
+  // Normalize publication info formatting for German RDA standards
+  publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
   
-  // If publication info is too long, abbreviate with ellipsis
-  if (doc.getTextWidth(publicationInfo) > maxWidth) {
-    // Find a good cutoff point to add ellipsis
-    let cutPoint = Math.floor(publicationInfo.length * (maxWidth / doc.getTextWidth(publicationInfo)));
-    // Back up to avoid cutting in the middle of a word
-    while (cutPoint > 0 && publicationInfo[cutPoint] !== ' ') {
-      cutPoint--;
+  // Calculate available width
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 22;
+  const maxWidth = pageWidth - (2 * margin);
+  
+  // Check if publication info will fit on a single line
+  if (doc.getTextWidth(publicationInfo) <= maxWidth) {
+    // Display as a single continuous line without line breaks
+    doc.text(publicationInfo, margin, yPos);
+    yPos += 5;
+  } else {
+    // For longer content, split at appropriate points to maintain readability
+    // Use proper splitting at punctuation marks
+    const splitPoints = [' – ', '. – ', ': ', ' ; '];
+    let parts = [publicationInfo];
+    
+    // Try to split at natural separator points
+    for (const point of splitPoints) {
+      if (parts[parts.length-1].includes(point)) {
+        const lastPart = parts.pop() || "";
+        const splitIndex = lastPart.lastIndexOf(point);
+        parts.push(lastPart.substring(0, splitIndex + point.length));
+        parts.push(lastPart.substring(splitIndex + point.length));
+        break;
+      }
     }
-    publicationInfo = publicationInfo.substring(0, cutPoint) + '...';
+    
+    // Display each part with proper indentation
+    for (let i = 0; i < parts.length; i++) {
+      const x = i === 0 ? margin : margin + 5; // Indent continuation lines
+      doc.text(parts[i], x, yPos);
+      yPos += 5;
+    }
   }
-  
-  // Display publication info as a single continuous line
-  doc.text(publicationInfo, 22, yPos);
-  yPos += 5;
   
   // --- 5. ISBN and Price information ---
   if (book.isbn) {
