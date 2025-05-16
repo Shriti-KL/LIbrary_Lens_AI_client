@@ -184,6 +184,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   
+  // Debug classification fields
+  console.log("PDF Debug - Classification fields:", {
+    classificationNumber: book.classificationNumber,
+    secondaryClassification: book.secondaryClassification,
+    rawBook: book
+  });
+
   // Format and display ASB classification as "ASB: [classificationNumber]"
   const asbNumber = book.classificationNumber || book.ASB || "";
   doc.text("ASB: " + asbNumber, 22, yPos);
@@ -192,6 +199,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.secondaryClassification) {
     yPos += 5;
     doc.text(book.secondaryClassification, 22, yPos);
+    console.log("Adding secondary classification to PDF:", book.secondaryClassification);
   }
   
   // Second line - additional classifications under ASB
