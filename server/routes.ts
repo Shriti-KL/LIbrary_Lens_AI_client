@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Using complete verification for ISBN: ${standardizedIsbn}`);
           
           // This uses the same verification process as single book analysis
-          const verifiedBook = await verifyBookByIsbn(standardizedIsbn, 'de', apiKeys);
+          const verifiedBook = await verifyBookByIsbn(standardizedIsbn, apiKeys);
           
           if (!verifiedBook || !verifiedBook.title) {
             throw new Error(`No book found or verification failed for ISBN: ${standardizedIsbn}`);
