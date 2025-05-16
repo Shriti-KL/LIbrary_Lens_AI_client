@@ -833,13 +833,19 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Modify any labels or text based on the book's language
-  // Note: The formatBookEntryForPDF function already handles German formatting
-  // with commas for decimal points, "Seiten" instead of "pages", etc.
-  
-  // Set consistent font settings for the entire document
+  // Reset any document formatting from previous uses
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9); // Base font size for consistent spacing
+  
+  // Ensure the PDF has data for the classification number
+  if (!book.classificationNumber && book.secondaryClassification) {
+    book.classificationNumber = book.secondaryClassification;
+  }
+  
+  // Make sure reviewer name is available 
+  if (!book.reviewerName && book.userId) {
+    book.reviewerName = "Ref-" + book.userId;
+  }
   
   // Format book entry
   formatBookEntryForPDF(doc, book);
