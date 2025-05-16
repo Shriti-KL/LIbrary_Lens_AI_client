@@ -90,6 +90,7 @@ export const bookAnalysisSchema = z.object({
   interestCategory: z.string().nullable().optional(), // IK Category
   ageRecommendation: z.string().nullable().optional(), // Age suitability
   classificationNumber: z.string().nullable().optional(), // ASB classification number
+  secondaryClassification: z.string().nullable().optional(), // Secondary ASB classification
   additionalClassifications: z.string().nullable().optional(), // Any additional classification numbers
   
   // ID-Besprechung specific fields (ekz fields)
