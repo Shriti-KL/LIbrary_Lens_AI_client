@@ -189,6 +189,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.text("ASB: " + asbNumber, 22, yPos);
   
   // Add the secondary classification on the next line if available
+  console.log("PDF DEBUG - Secondary Classification:", book.secondaryClassification);
   if (book.secondaryClassification) {
     yPos += 5;
     doc.text(book.secondaryClassification, 22, yPos);
