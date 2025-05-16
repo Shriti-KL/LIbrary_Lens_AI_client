@@ -839,10 +839,9 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   
-  // Ensure the PDF has data for the classification number
-  if (!book.classificationNumber && book.secondaryClassification) {
-    book.classificationNumber = book.secondaryClassification;
-  }
+  // Ensure we don't lose the secondary classification when generating PDFs
+  // Removed the logic that would replace classificationNumber with secondaryClassification
+  // This ensures both fields are displayed separately
   
   // Make sure reviewer name is available 
   if (!book.reviewerName && book.userId) {

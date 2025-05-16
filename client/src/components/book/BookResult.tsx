@@ -311,7 +311,7 @@ export default function BookResult({
             <div className="space-y-2">
               {finalOrderedFields.map(key => {
                 // For essential fields, always show them even if they don't exist in the book object
-                const essentialFields = ['reviewerName', 'interestCategory', 'id', 'classificationNumber'];
+                const essentialFields = ['reviewerName', 'interestCategory', 'id', 'classificationNumber', 'secondaryClassification'];
                 const shouldDisplay = key in book || essentialFields.includes(key);
                 
                 if (!shouldDisplay) return null;
