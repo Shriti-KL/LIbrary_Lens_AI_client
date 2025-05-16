@@ -531,11 +531,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Book verification complete for "${verifiedBook.title}" with ISBN ${standardizedIsbn}`);
           
+          // Import price formatting utility
+          const { formatPriceForDb } = await import('../client/src/lib/utils');
+          
           // Create the book record using the fully verified and enriched data
           const newBook: any = {
             ...verifiedBook,
             // Ensure ISBN is standardized
-            isbn: standardizedIsbn
+            isbn: standardizedIsbn,
+            // Clean the price field to only keep EUR (DE) value
+            price: verifiedBook.price ? formatPriceForDb(verifiedBook.price) : null
           };
           
           // Add user ID if authenticated
