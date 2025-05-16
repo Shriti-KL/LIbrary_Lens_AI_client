@@ -185,8 +185,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 3. Book title and publication info ---
   // Use consistent smaller font size for all metadata (9pt is ekz standard)
+  // Important: Using consistent font settings is critical for proper spacing
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
+  
+  // Apply text rendering settings for improved character spacing
+  (doc as any).setTextRenderingMode("fill");
   
   // Get the title and subtitle if available
   let titleFull = book.title || "";
@@ -785,6 +789,10 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Note: The formatBookEntryForPDF function already handles German formatting
   // with commas for decimal points, "Seiten" instead of "pages", etc.
   
+  // Set consistent font settings for the entire document
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9); // Base font size for consistent spacing
+  
   // Format book entry
   formatBookEntryForPDF(doc, book);
   
@@ -907,8 +915,12 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   currentY += 2;
   
   // --- Publication info - condensed ---
-  // Use a smaller font for publication info to save space
+  // Use consistent font settings to prevent spacing issues
   doc.setFontSize(gridFontSize - 1);
+  doc.setFont("helvetica", "normal");
+  
+  // Apply text rendering mode for better character spacing
+  (doc as any).setTextRenderingMode("fill");
   
   let pubInfo = "";
   
@@ -928,7 +940,13 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   if (book.pageCount) pubInfo += pubInfo.length > 0 ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
   
   // Add dimensions directly after page count
-  if (book.dimensions) pubInfo += pubInfo.length > 0 ? ` ; ${book.dimensions}` : book.dimensions;
+  if (book.dimensions) {
+    // Clean up dimensions string
+    let dimensions = book.dimensions.trim();
+    if (dimensions && dimensions !== '-' && dimensions.toLowerCase() !== 'keine angabe') {
+      pubInfo += pubInfo.length > 0 ? ` ; ${dimensions}` : dimensions;
+    }
+  }
   
   // Add illustrations info if available - keep it very short
   if (book.illustrations) {
@@ -938,10 +956,11 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   if (pubInfo.length > 0) {
-    // Format the publication info properly without extra spacing
-    const pubInfoFormatted = pubInfo.replace(/\s+/g, " ").trim();
+    // Normalize and standardize spaces to ensure consistent rendering
+    const pubInfoNormalized = pubInfo.replace(/\s+/g, " ").trim();
     
-    const pubLines = doc.splitTextToSize(pubInfoFormatted, width - 10);
+    // Use a rendering approach that maintains consistent character spacing
+    const pubLines = doc.splitTextToSize(pubInfoNormalized, width - 10);
     for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
       doc.text(pubLines[i], x + 5, currentY);
       currentY += 3.5; // Slightly reduced line spacing
