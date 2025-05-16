@@ -362,23 +362,57 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const publisher = book.publisher || '';
   
   if (publicationInfo) {
-    publicationInfo += `. – ${location}: ${publisher}`;
+    // Only add location and publisher if they exist
+    if (location || publisher) {
+      publicationInfo += `. – `;
+      
+      if (location) {
+        publicationInfo += `${location}`;
+      }
+      
+      if (location && publisher) {
+        publicationInfo += `: `;
+      }
+      
+      if (publisher) {
+        publicationInfo += `${publisher}`;
+      }
+    }
   } else {
-    publicationInfo += `${location}: ${publisher}`;
+    // Starting with location/publisher
+    if (location) {
+      publicationInfo += `${location}`;
+      if (publisher) {
+        publicationInfo += `: ${publisher}`;
+      }
+    } else if (publisher) {
+      publicationInfo += `${publisher}`;
+    }
   }
   
   // Add year
   const year = book.publicationYear || book.publishedYear;
   if (year) {
-    publicationInfo += `, ${year}`;
+    // Only add comma if we have content already
+    if (publicationInfo && (location || publisher)) {
+      publicationInfo += `, ${year}`;
+    } else {
+      publicationInfo += `${year}`;
+    }
   }
   
   // Add physical description - pages
   const pages = book.pageCount || '';
   if (pages) {
     publicationInfo += `. – ${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
-  } else {
-    publicationInfo += `. – `;
+  } else if (publicationInfo) {
+    // Only add this separator if we have content and will add more information after
+    if (book.illustrations || book.illustrator || 
+        (book.contributors && typeof book.contributors === 'object' && 
+         ((Array.isArray(book.contributors) && book.contributors.length > 0) || 
+          (!Array.isArray(book.contributors) && Object.keys(book.contributors).length > 0)))) {
+      publicationInfo += `. – `;
+    }
   }
   
   // Add illustration information if available
@@ -411,7 +445,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Add dimensions if available
   if (book.dimensions) {
-    publicationInfo += ` ; ${book.dimensions}`;
+    // Clean up dimensions string if needed
+    let dimensions = book.dimensions.trim();
+    // Check if dimensions contains valid information before adding
+    if (dimensions && dimensions !== '-' && dimensions.toLowerCase() !== 'keine angabe') {
+      publicationInfo += ` ; ${dimensions}`;
+    }
   }
   
   // Keep publication info styling consistent with statement of responsibility
