@@ -258,59 +258,77 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Use same smaller font size for all metadata sections
   doc.setFontSize(9);
   
-  // Create a specialized format for title and statement of responsibility
-  // First line is just the title (and subtitle if available)
-  let titleOnly = titleFull;
+  // In German RDA formatting, title and statement of responsibility appear on separate lines
+  // but Statement of Responsibility and Publication Info should each be on a single continuous line
+  
+  // First line: Title (and subtitle)
+  let titleDisplay = titleFull;
   if (subtitle) {
-    titleOnly = `${titleFull} : ${subtitle}`; 
+    titleDisplay = `${titleFull} : ${subtitle}`; 
   }
   
-  // Display title on its own line, full width
-  doc.text(titleOnly, 22, yPos);
+  // Display title with proper font size
+  doc.setFontSize(9);
+  doc.text(titleDisplay, 22, yPos);
   yPos += 5;
   
-  // Extract the author name and contributors again for statement of responsibility
-  const displayAuthor = book.mainAuthor || book.author || "";
-  
-  // Check for contributors
-  let displayContributors = "";
-  if (book.contributors && (typeof book.contributors === 'object')) {
-    // If contributors is an object with role keys (new format)
-    if (!Array.isArray(book.contributors)) {
-      const contributorsList = [];
-      for (const role in book.contributors) {
-        if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
-          contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
-        }
-      }
-      if (contributorsList.length > 0) {
-        displayContributors = ` ; ${contributorsList.join(" ; ")}`;
-      }
-    } 
-    // If contributors is an array of objects with name and role (old format)
-    else if (book.contributors.length > 0) {
-      const contributorsList = book.contributors
-        .filter((c: any) => c.name && c.role)
-        .map((c: any) => `${c.name} (${c.role})`)
-        .join(" ; ");
-      
-      if (contributorsList) {
-        displayContributors = ` ; ${contributorsList}`;
-      }
-    }
-  }
-  
-  // Statement of responsibility on its own line
+  // Second line: Statement of Responsibility (without line breaks)
+  // In German RDA format, this always starts with a slash
   let responsibilityStatement = "";
   if (book.statementOfResponsibility) {
     responsibilityStatement = `/ ${book.statementOfResponsibility}`;
-  } else if (displayAuthor) {
-    responsibilityStatement = `/ ${displayAuthor}${displayContributors}`;
-  } else if (displayContributors) {
-    responsibilityStatement = `/${displayContributors}`;
+  } else {
+    const displayAuthor = book.mainAuthor || book.author || "";
+    
+    // Format contributors
+    let displayContributors = "";
+    if (book.contributors && (typeof book.contributors === 'object')) {
+      if (!Array.isArray(book.contributors)) {
+        // New format with role keys
+        const contributorsList = [];
+        for (const role in book.contributors) {
+          if (Array.isArray(book.contributors[role]) && book.contributors[role].length > 0) {
+            contributorsList.push(`${book.contributors[role].join(", ")} (${role})`);
+          }
+        }
+        if (contributorsList.length > 0) {
+          displayContributors = ` ; ${contributorsList.join(" ; ")}`;
+        }
+      } else if (book.contributors.length > 0) {
+        // Old format with objects
+        const contributorsList = book.contributors
+          .filter((c: any) => c.name && c.role)
+          .map((c: any) => `${c.name} (${c.role})`)
+          .join(" ; ");
+        
+        if (contributorsList) {
+          displayContributors = ` ; ${contributorsList}`;
+        }
+      }
+    }
+    
+    // Format statement of responsibility
+    if (displayAuthor) {
+      responsibilityStatement = `/ ${displayAuthor}${displayContributors}`;
+    } else if (displayContributors) {
+      responsibilityStatement = `/ ${displayContributors}`;
+    }
   }
   
+  // Display statement of responsibility as a single continuous line
   if (responsibilityStatement) {
+    // If it's too long for a single line, truncate with ellipsis
+    const maxWidth = 170;
+    if (doc.getTextWidth(responsibilityStatement) > maxWidth) {
+      // Find a good cutting point
+      const approximateLength = Math.floor(responsibilityStatement.length * (maxWidth / doc.getTextWidth(responsibilityStatement)));
+      let cutPoint = approximateLength - 3; // Leave room for ellipsis
+      // Back up to the nearest space
+      while (cutPoint > 0 && responsibilityStatement[cutPoint] !== ' ') {
+        cutPoint--;
+      }
+      responsibilityStatement = responsibilityStatement.substring(0, cutPoint) + '...';
+    }
     doc.text(responsibilityStatement, 22, yPos);
     yPos += 5;
   }
@@ -403,40 +421,52 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Normalize publication info formatting for German RDA standards
   publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
   
-  // Calculate available width
-  const pageWidth = doc.internal.pageSize.width;
-  const margin = 22;
-  const maxWidth = pageWidth - (2 * margin);
+  // Keep the same formatting as the statement of responsibility
+  // Display publication info as a single continuous line without line breaks
   
-  // Check if publication info will fit on a single line
-  if (doc.getTextWidth(publicationInfo) <= maxWidth) {
-    // Display as a single continuous line without line breaks
-    doc.text(publicationInfo, margin, yPos);
-    yPos += 5;
-  } else {
-    // For longer content, split at appropriate points to maintain readability
-    // Use proper splitting at punctuation marks
-    const splitPoints = [' – ', '. – ', ': ', ' ; '];
-    let parts = [publicationInfo];
+  // Prepare publication info with proper German RDA formatting
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  
+  // Normalize spaces and remove extra whitespace
+  publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
+  
+  // Check if it's too long for a single line and truncate if needed
+  const maxWidth = 170;
+  if (doc.getTextWidth(publicationInfo) > maxWidth) {
+    // Find a good cutting point that preserves the most important information
+    // (beginning is typically more important in publication info)
+    const approximateLength = Math.floor(publicationInfo.length * (maxWidth / doc.getTextWidth(publicationInfo)));
+    let cutPoint = approximateLength - 3; // Leave room for ellipsis
     
-    // Try to split at natural separator points
-    for (const point of splitPoints) {
-      if (parts[parts.length-1].includes(point)) {
-        const lastPart = parts.pop() || "";
-        const splitIndex = lastPart.lastIndexOf(point);
-        parts.push(lastPart.substring(0, splitIndex + point.length));
-        parts.push(lastPart.substring(splitIndex + point.length));
+    // Try to cut at a natural break point if possible
+    const naturalBreakPoints = ['. – ', ' – ', ': ', ' ; '];
+    let foundNaturalBreak = false;
+    
+    // Look for natural break points near the approximate length
+    for (const breakPoint of naturalBreakPoints) {
+      const lastOccurrence = publicationInfo.lastIndexOf(breakPoint, approximateLength);
+      if (lastOccurrence > 0 && lastOccurrence < approximateLength) {
+        cutPoint = lastOccurrence;
+        foundNaturalBreak = true;
         break;
       }
     }
     
-    // Display each part with proper indentation
-    for (let i = 0; i < parts.length; i++) {
-      const x = i === 0 ? margin : margin + 5; // Indent continuation lines
-      doc.text(parts[i], x, yPos);
-      yPos += 5;
+    // If no natural break was found, back up to the nearest space
+    if (!foundNaturalBreak) {
+      while (cutPoint > 0 && publicationInfo[cutPoint] !== ' ') {
+        cutPoint--;
+      }
     }
+    
+    // Truncate and add ellipsis
+    publicationInfo = publicationInfo.substring(0, cutPoint) + '...';
   }
+  
+  // Display the publication info as a single line
+  doc.text(publicationInfo, 22, yPos);
+  yPos += 5;
   
   // --- 5. ISBN and Price information ---
   if (book.isbn) {
