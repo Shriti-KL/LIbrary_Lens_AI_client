@@ -463,6 +463,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Batch processing endpoint for ISBNs
   app.post("/api/books/batch-isbn", async (req: Request, res: Response) => {
+    // Check if user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
     try {
       const { isbns } = req.body;
       

@@ -79,10 +79,28 @@ export default function Batch() {
         setBatchResults(initialBatchResults);
         
         // Make API request with JSON body for ISBNs
-        const response = await apiRequest('POST', '/api/books/batch-isbn', {
-          isbns: payload.isbns
-        });
-        return await response.json();
+        try {
+          const response = await apiRequest('POST', '/api/books/batch-isbn', {
+            isbns: payload.isbns
+          });
+          return await response.json();
+        } catch (error) {
+          console.error("Error processing batch ISBNs:", error);
+          // Return a standardized error response
+          return {
+            results: payload.isbns.map(isbn => ({
+              success: false,
+              error: "Server error processing ISBN batch",
+              filename: isbn,
+              status: 'error'
+            })),
+            processed: {
+              success: 0,
+              failed: payload.isbns.length,
+              total: payload.isbns.length
+            }
+          };
+        }
       }
     },
     onMutate: () => {
