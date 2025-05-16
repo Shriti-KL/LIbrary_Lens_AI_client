@@ -66,7 +66,8 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
     'isbn', 'language', 'pageCount', 'summary', 'review', 'publicationPlace', 
     'edition', 'dimensions', 'binding', 'price', 'classificationNumber',
     'additionalClassifications', 'interestCategory', 'statementOfResponsibility', 
-    'illustrations', 'reviewerName'
+    'illustrations', 'reviewerName', 'idbInitials', 'idbSequenceNumber', 'idbYear',
+    'idBNumber', 'idb_initials', 'idb_sequence_number', 'idb_year'
   ];
   
   // Render a field editor

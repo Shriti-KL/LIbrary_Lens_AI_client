@@ -91,6 +91,14 @@ export default function BatchBookSlideshow({
     'genres',
     'reviewerName', // name of reviewer
     'interestCategory', // IK (Interest Categories)
+    // ID-related fields
+    'idbInitials',
+    'idbSequenceNumber',
+    'idbYear',
+    'idBNumber',
+    'idb_initials',
+    'idb_sequence_number',
+    'idb_year',
     'id' // ID
   ];
   
