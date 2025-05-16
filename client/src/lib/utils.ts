@@ -180,17 +180,13 @@ interface BookMetadata {
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
   
-  // --- 1. ASB Classification in top-right and top-left corner ---
+  // --- 1. ASB Classification at the top-left corner ---
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   
-  // Top-left ASB label
-  doc.text("ASB:", 22, yPos);
-  
-  // Top-right classification number (ASB) - proper font and alignment
+  // Format and display ASB classification as "ASB: [classificationNumber]"
   const asbNumber = book.classificationNumber || book.ASB || "";
-  // Make sure to use the right alignment to position it at the right edge
-  doc.text(asbNumber, 190, yPos, { align: 'right' });
+  doc.text("ASB: " + asbNumber, 22, yPos);
   
   // Add the secondary classification on the next line if available
   if (book.secondaryClassification) {
@@ -912,14 +908,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFont("helvetica", "bold");
   doc.setFontSize(gridFontSize);
   
-  // ASB label left
-  doc.text("ASB:", x + 5, currentY);
-  
-  // ASB number right
-  const asbNumber = book.catalogNumber || "";
-  if (asbNumber) {
-    doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
-  }
+  // Format ASB as "ASB: [number]"
+  const asbNumber = book.classificationNumber || book.ASB || book.catalogNumber || "";
+  doc.text("ASB: " + asbNumber, x + 5, currentY);
   
   // Secondary classification under ASB
   currentY += 5;
