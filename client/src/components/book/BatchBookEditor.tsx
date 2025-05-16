@@ -61,10 +61,20 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
   };
 
   // Define field groups according to importance
-  const primaryFields = ['title', 'subtitle', 'author', 'mainAuthor', 'additionalAuthors', 'publicationYear', 'publisher'];
+  const primaryFields = [
+    'title', 
+    'subtitle', 
+    'author', 
+    'mainAuthor', 
+    'additionalAuthors', 
+    'publicationYear', 
+    'publisher',
+    'classificationNumber', // ASB classification number moved to primary section
+    'secondaryClassification' // Secondary classification moved to primary section
+  ];
   const secondaryFields = [
     'isbn', 'language', 'pageCount', 'summary', 'review', 'publicationPlace', 
-    'edition', 'dimensions', 'binding', 'price', 'classificationNumber',
+    'edition', 'dimensions', 'binding', 'price',
     'additionalClassifications', 'interestCategory', 'statementOfResponsibility', 
     'illustrations', 'reviewerName', 'idbInitials', 'idbSequenceNumber', 'idbYear',
     'idBNumber', 'idb_initials', 'idb_sequence_number', 'idb_year'

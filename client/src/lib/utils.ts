@@ -192,6 +192,12 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Make sure to use the right alignment to position it at the right edge
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
+  // Add the secondary classification on the next line if available
+  if (book.secondaryClassification) {
+    yPos += 5;
+    doc.text(book.secondaryClassification, 22, yPos);
+  }
+  
   // Second line - additional classifications under ASB
   yPos += 7;
   // Include DNB number as additional classification if available
