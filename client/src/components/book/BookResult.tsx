@@ -417,10 +417,7 @@ export default function BookResult({
       <CardFooter className="px-6 py-4">
         <div className="flex justify-between w-full">
           <div className="flex gap-2">
-            <Button onClick={() => {
-              console.log("Book data being sent to PDF export:", book);
-              exportBookToPDF(book as Book);
-            }} className="flex items-center gap-2">
+            <Button onClick={() => exportBookToPDF(book as Book)} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               {t('exportPdf')}
             </Button>

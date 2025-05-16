@@ -188,11 +188,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const asbNumber = book.classificationNumber || book.ASB || "";
   doc.text("ASB: " + asbNumber, 22, yPos);
   
-  // Check both camelCase and snake_case versions of the field
-  const secondaryClass = book.secondaryClassification; 
-  if (secondaryClass) {
+  // Add the secondary classification on the next line if available
+  if (book.secondaryClassification) {
     yPos += 5;
-    doc.text(secondaryClass, 22, yPos);
+    doc.text(book.secondaryClassification, 22, yPos);
   }
   
   // Second line - additional classifications under ASB
