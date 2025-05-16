@@ -825,11 +825,10 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
 
 // Format a book entry for a grid layout with smaller dimensions
 function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
-  const originalFontSize = 11;
-  const gridFontSize = 9; // Smaller font for grid layout
+  const gridFontSize = 9; // Consistent font size for better spacing
   const startY = y;
   let currentY = startY + 5;
-  const spaceNeededForFooter = 15; // Space needed for footer text (reduced since barcode was removed)
+  const spaceNeededForFooter = 15; // Space needed for footer text
   
   // Draw a thin border around the entire cell
   doc.setDrawColor(0);
@@ -837,6 +836,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.rect(x, y, width, height);
   
   // --- ASB Classification in top corners ---
+  // Important: We'll keep font settings consistent throughout to avoid spacing issues
   doc.setFont("helvetica", "bold");
   doc.setFontSize(gridFontSize);
   
@@ -867,8 +867,11 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
+  // Keep font size consistent, only change style
   doc.setFont("helvetica", "bold");
-  doc.text(authorFormatted + ":", x + 5, currentY);
+  // Normalize text to avoid spacing issues
+  const authorNormalized = (authorFormatted + ":").replace(/\s+/g, " ").trim();
+  doc.text(authorNormalized, x + 5, currentY);
   
   currentY += 5;
   
@@ -877,7 +880,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // Truncate and format the title to fit
   let titleText = book.title || "";
-  if (titleText.length > 40) { // Further reduced to ensure it fits
+  if (titleText.length > 40) { // Reasonable length limit
     titleText = titleText.substring(0, 37) + "...";
   }
   
@@ -887,11 +890,11 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     titleText += ` / ${authorToShow}`;
   }
   
-  // Format the title text properly without extra spacing
-  const titleFormatted = titleText.replace(/\s+/g, " ").trim();
+  // Normalize the text for consistent spacing
+  const titleNormalized = titleText.replace(/\s+/g, " ").trim();
   
   // Split for wrapping with reduced width
-  const titleLines = doc.splitTextToSize(titleFormatted, width - 10);
+  const titleLines = doc.splitTextToSize(titleNormalized, width - 10);
   for (let i = 0; i < Math.min(titleLines.length, 2); i++) { // Limit to 2 lines to save space
     doc.text(titleLines[i], x + 5, currentY);
     currentY += 4;
@@ -1103,10 +1106,19 @@ export function exportMultipleBooksToSinglePDF(books: Book[], language: string =
   if (!books || books.length === 0) return;
   
   // Create a new PDF with standard A4 size (German DIN A4)
+  // Use specific settings to ensure consistent text rendering
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
+    compress: true,
+    putOnlyUsedFonts: true,
+    hotfixes: ["px_scaling"] // Use px_scaling hotfix for better text spacing
   });
+  
+  // Set font baseline - keeping this consistent throughout the document
+  // is critical for consistent letter spacing
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9); // Base font size
   
   // Page dimensions
   const pageWidth = doc.internal.pageSize.width;
