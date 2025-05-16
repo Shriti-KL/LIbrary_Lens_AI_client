@@ -33,11 +33,11 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Handle numeric conversions for fields like publicationYear
-    if (name === 'publicationYear' && value) {
+    // Handle numeric conversions for fields like publicationYear and pageCount
+    if ((name === 'publicationYear' || name === 'pageCount') && value) {
       setEditedBook(prev => ({
         ...prev,
-        [name]: parseInt(value)
+        [name]: value === '' ? null : parseInt(value)
       }));
     } else {
       setEditedBook(prev => ({

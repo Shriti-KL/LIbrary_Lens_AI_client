@@ -238,7 +238,14 @@ export default function Batch() {
   // Add a mutation for saving a book
   const saveBookMutation = useMutation({
     mutationFn: async (book: Partial<Book>) => {
-      const response = await apiRequest('POST', '/api/books', book);
+      // Ensure numeric fields are correctly typed
+      const preparedBook = {
+        ...book,
+        pageCount: typeof book.pageCount === 'string' ? parseInt(book.pageCount as string) : book.pageCount,
+        publicationYear: typeof book.publicationYear === 'string' ? parseInt(book.publicationYear as string) : book.publicationYear
+      };
+      
+      const response = await apiRequest('POST', '/api/books', preparedBook);
       return await response.json();
     },
     onSuccess: (savedBook, variables) => {
@@ -260,9 +267,10 @@ export default function Batch() {
       queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
     },
     onError: (error) => {
+      console.error("Error saving book:", error);
       toast({
         title: 'Failed to Save Book',
-        description: error.message,
+        description: error.message || "Error saving book to database. Check numeric fields.",
         variant: 'destructive',
       });
     }
@@ -404,9 +412,10 @@ export default function Batch() {
                                 size="sm"
                                 className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
                                 onClick={() => {
-                                  // Navigate to the book details page in archives
+                                  // Just navigate to the book details page without saving other books
                                   if (item.result && item.result.id) {
-                                    setLocation(`/archives?view=${item.result.id}`);
+                                    // Use direct navigation to prevent any unintended side effects
+                                    window.location.href = `/archives?view=${item.result.id}`;
                                   }
                                 }}
                               >
