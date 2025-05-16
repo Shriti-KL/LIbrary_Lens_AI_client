@@ -489,18 +489,34 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Remove any extra whitespace and multiple newlines
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    // Normalize all spacing for consistent appearance
+    summaryText = summaryText.replace(/\s+/g, " ").trim();
     
-    // Split the text for proper wrapping 
+    // Split the text for proper wrapping with standard ekz width
     const summaryLines = doc.splitTextToSize(summaryText, 160);
     
-    // Create content for each line with justified text
-    for (let i = 0; i < summaryLines.length; i++) {
+    // Calculate available height to avoid overflow
+    const maxYPos = doc.internal.pageSize.height - 40; // Safe margin
+    const maxLines = Math.floor((maxYPos - yPos) / 4); // Using 4mm line height
+    const linesToShow = Math.min(summaryLines.length, maxLines);
+    
+    // Create content for each line with justified text - ekz standard format
+    for (let i = 0; i < linesToShow; i++) {
       doc.text(summaryLines[i], 22, yPos, { 
-        align: 'justify',
+        align: 'justify', // Use justified text alignment
         maxWidth: 160,
       });
-      yPos += 4.5; // Slightly reduce line spacing to fit more text
+      yPos += 4; // Reduced line spacing for more content
     }
+    
+    // Add ellipsis if we had to truncate
+    if (summaryLines.length > linesToShow) {
+      doc.text("...", 22, yPos);
+      yPos += 4;
+    }
+    
+    // Reset font size to default
+    doc.setFontSize(10);
     
     // Add a small space after the summary
     yPos += 2;
