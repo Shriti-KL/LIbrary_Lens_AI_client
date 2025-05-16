@@ -507,44 +507,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error("Invalid ISBN format");
           }
           
-          // Get book data from Google Books API
-          const googleBooksApiKey = apiKeys.google_books_api_key || '';
-          const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${standardizedIsbn}&langRestrict=de&key=${googleBooksApiKey}`;
-          console.log(`Fetching from Google Books API: ${url}`);
+          // Use our complete verification service instead of just Google Books
+          console.log(`Using complete verification for ISBN: ${standardizedIsbn}`);
           
-          const response = await axios.get(url);
-          const googleData = response.data;
+          // This uses the same verification process as single book analysis
+          const verifiedBook = await verifyBookByIsbn(standardizedIsbn, 'de', apiKeys);
           
-          console.log(`Google Books API response status: ${response.status}`);
-          
-          if (!googleData || !googleData.items || googleData.items.length === 0) {
-            throw new Error(`No book found with ISBN: ${standardizedIsbn}`);
+          if (!verifiedBook || !verifiedBook.title) {
+            throw new Error(`No book found or verification failed for ISBN: ${standardizedIsbn}`);
           }
           
-          const bookInfo = googleData.items[0].volumeInfo;
+          console.log(`Book verification complete for "${verifiedBook.title}" with ISBN ${standardizedIsbn}`);
           
-          // Create the book record to store in database
+          // Create the book record using the fully verified and enriched data
           const newBook: any = {
-            isbn: standardizedIsbn,
-            title: bookInfo.title || "Unknown Title",
-            subtitle: bookInfo.subtitle || null,
-            author: bookInfo.authors ? bookInfo.authors[0] : "Unknown Author",
-            mainAuthor: bookInfo.authors ? bookInfo.authors[0] : "Unknown Author",
-            additionalAuthors: bookInfo.authors ? bookInfo.authors.slice(1) : [],
-            publisher: bookInfo.publisher || null,
-            publicationYear: bookInfo.publishedDate ? parseInt(bookInfo.publishedDate.substring(0, 4)) : null,
-            publicationDate: bookInfo.publishedDate || null,
-            description: bookInfo.description || null,
-            pageCount: bookInfo.pageCount || null,
-            language: bookInfo.language || "de",
-            preview: bookInfo.previewLink || null,
-            genres: bookInfo.categories || [],
-            verification: {
-              status: "verified",
-              confidence: 0.8,
-              sources: ["Google Books API"],
-              message: "Data verified through Google Books API"
-            }
+            ...verifiedBook,
+            // Ensure ISBN is standardized
+            isbn: standardizedIsbn
           };
           
           // Add user ID if authenticated
