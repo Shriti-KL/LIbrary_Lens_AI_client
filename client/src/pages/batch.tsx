@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
 import BatchUpload from '@/components/book/BatchUpload';
 import BatchBookEditor from '@/components/book/BatchBookEditor';
+import BatchBookSlideshow from '@/components/book/BatchBookSlideshow';
 import { useLocation } from 'wouter';
 import { 
   Card, 
