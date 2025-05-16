@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
 import { exportBookToPDF } from '@/lib/utils';
@@ -11,9 +11,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save } from 'lucide-react';
+import { Download, Save, Edit, CheckCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import BookCoverPlaceholder from './BookCoverPlaceholder';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface BookResultProps {
   book: Partial<Book>;
@@ -35,6 +37,8 @@ export default function BookResult({
   loadingSteps
 }: BookResultProps) {
   const { t } = useLanguage();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedBook, setEditedBook] = useState<Partial<Book>>(book || {});
 
   // If still loading, show loading state
   if (isLoading && loadingSteps) {
@@ -216,6 +220,30 @@ export default function BookResult({
     ...remainingFields
   ];
 
+  // Function to handle input change
+  const handleInputChange = (key: string, value: any) => {
+    setEditedBook(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Function to save edited changes
+  const handleSaveEdits = () => {
+    // Save the edited book data
+    onSave(editedBook);
+    setIsEditing(false);
+  };
+
+  // Function to toggle edit mode
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // If we're exiting edit mode without saving, revert changes
+      setEditedBook(book || {});
+    } 
+    setIsEditing(!isEditing);
+  };
+
   // Book result display - Simple list of all data
   return (
     <Card className="shadow-sm border border-neutral-200">
@@ -263,7 +291,7 @@ export default function BookResult({
             </div>
           </div>
           
-          {/* Data displayed as a simple list in specified order - without scrollable container */}
+          {/* Data displayed as a simple list or edit form depending on mode */}
           <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
             <div className="space-y-2">
               {finalOrderedFields.map(key => {
@@ -273,32 +301,77 @@ export default function BookResult({
                 
                 if (!shouldDisplay) return null;
                 
-                // Get the value
-                const displayValue = key in book ? book[key as keyof typeof book] : null;
+                // Skip ID from editing, as it's a system field
+                const isEditable = key !== 'id';
                 
-                // Render the appropriate display for the value type
+                // Get the value (from the edited book when in edit mode)
+                const sourceObject = isEditing ? editedBook : book;
+                const displayValue = key in sourceObject ? sourceObject[key as keyof typeof sourceObject] : null;
+                
+                // Render edit fields or display values based on edit mode
                 let renderedValue = null;
                 
-                if (displayValue === null || displayValue === undefined) {
-                  renderedValue = <span className="text-neutral-500">null</span>;
-                } else if (Array.isArray(displayValue)) {
-                  if (displayValue.length === 0) {
-                    renderedValue = <span className="text-neutral-500">[]</span>;
-                  } else {
+                if (isEditing && isEditable) {
+                  // Render edit fields based on value type
+                  if (Array.isArray(displayValue)) {
+                    // For arrays, join with commas for editing
+                    const arrayValue = displayValue.join(', ');
                     renderedValue = (
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {displayValue.map((item, idx) => (
-                          <Badge key={idx} className="bg-secondary/10 hover:bg-secondary/20 text-secondary-dark">
-                            {String(item)}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Input
+                        value={arrayValue}
+                        onChange={(e) => handleInputChange(key, e.target.value.split(',').map(item => item.trim()))}
+                        className="mt-1"
+                        placeholder={`Enter ${key}`}
+                      />
+                    );
+                  } else if (typeof displayValue === 'object' && displayValue !== null) {
+                    // Complex objects aren't easily editable, show as JSON
+                    renderedValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(displayValue, null, 2)}</pre>;
+                  } else if (key === 'summary' || key === 'review') {
+                    // Use textarea for long text fields
+                    renderedValue = (
+                      <Textarea
+                        value={displayValue || ''}
+                        onChange={(e) => handleInputChange(key, e.target.value)}
+                        className="mt-1 h-24"
+                        placeholder={`Enter ${key}`}
+                      />
+                    );
+                  } else {
+                    // Use regular input for all other fields
+                    renderedValue = (
+                      <Input
+                        value={displayValue || ''}
+                        onChange={(e) => handleInputChange(key, e.target.value)}
+                        className="mt-1"
+                        placeholder={`Enter ${key}`}
+                        type={typeof displayValue === 'number' ? 'number' : 'text'}
+                      />
                     );
                   }
-                } else if (typeof displayValue === 'object') {
-                  renderedValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(displayValue, null, 2)}</pre>;
                 } else {
-                  renderedValue = <p className="text-sm text-neutral-700 mt-1 whitespace-pre-line">{String(displayValue)}</p>;
+                  // Non-edit mode display
+                  if (displayValue === null || displayValue === undefined) {
+                    renderedValue = <span className="text-neutral-500">null</span>;
+                  } else if (Array.isArray(displayValue)) {
+                    if (displayValue.length === 0) {
+                      renderedValue = <span className="text-neutral-500">[]</span>;
+                    } else {
+                      renderedValue = (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {displayValue.map((item, idx) => (
+                            <Badge key={idx} className="bg-secondary/10 hover:bg-secondary/20 text-secondary-dark">
+                              {String(item)}
+                            </Badge>
+                          ))}
+                        </div>
+                      );
+                    }
+                  } else if (typeof displayValue === 'object') {
+                    renderedValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(displayValue, null, 2)}</pre>;
+                  } else {
+                    renderedValue = <p className="text-sm text-neutral-700 mt-1 whitespace-pre-line">{String(displayValue)}</p>;
+                  }
                 }
                 
                 return (
@@ -317,17 +390,39 @@ export default function BookResult({
       
       <CardFooter className="px-6 py-4">
         <div className="flex justify-between w-full">
-          <div>
+          <div className="flex gap-2">
             <Button onClick={() => exportBookToPDF(book as Book)} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               {t('exportPdf')}
             </Button>
-          </div>
-          <div>
-            <Button onClick={() => onSave(book)} variant="default" className="flex items-center gap-2">
-              <Save className="h-4 w-4" />
-              {t('saveToArchive')}
+            
+            <Button onClick={toggleEditMode} variant="outline" className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  {t('cancel')}
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4" />
+                  {t('edit')}
+                </>
+              )}
             </Button>
+          </div>
+          
+          <div>
+            {isEditing ? (
+              <Button onClick={handleSaveEdits} variant="default" className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                {t('saveChanges')}
+              </Button>
+            ) : (
+              <Button onClick={() => onSave(book)} variant="default" className="flex items-center gap-2">
+                <Save className="h-4 w-4" />
+                {t('saveToArchive')}
+              </Button>
+            )}
           </div>
         </div>
       </CardFooter>
