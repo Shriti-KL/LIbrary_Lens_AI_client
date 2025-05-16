@@ -531,15 +531,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             newBook.userId = req.user.id;
           }
           
-          // Save to database
-          const savedBook = await storage.createBook(newBook);
-          console.log(`Successfully saved book: "${newBook.title}" with ISBN ${standardizedIsbn}`);
+          // Return the verified book data without saving to database
+          console.log(`Successfully verified book: "${newBook.title}" with ISBN ${standardizedIsbn}`);
           
           results.push({ 
             success: true, 
-            book: savedBook,
+            book: newBook,
             filename: isbn, // Use ISBN as filename for frontend matching
-            status: 'success'
+            status: 'success',
+            // Flag to indicate this book hasn't been saved yet
+            saved: false
           });
         } catch (isbnError: any) {
           console.error(`Error processing ISBN ${isbn}:`, isbnError.message || isbnError);

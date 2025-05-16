@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
@@ -24,12 +24,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, AlertCircle, ExternalLink } from 'lucide-react';
+import { BookOpen, AlertCircle, ExternalLink, Save, Edit, Check } from 'lucide-react';
 
 export default function Batch() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   
   // State for batch processing
   const [batchResults, setBatchResults] = useState<Array<{
@@ -39,6 +40,8 @@ export default function Batch() {
     progress: number;
     result?: Partial<Book>;
     error?: string;
+    saved?: boolean;
+    editing?: boolean;
   }>>([]);
   
   // Batch processing mutations
@@ -156,7 +159,7 @@ export default function Batch() {
           return prev.map(item => {
             // Find matching result by filename
             const matchingResult = data.results.find(
-              (r: { filename: string; status: string; book?: any; error?: string }) => 
+              (r: { filename: string; status: string; book?: any; error?: string; saved?: boolean }) => 
                 r.filename === item.name // Match on filename
             );
             
@@ -166,7 +169,8 @@ export default function Batch() {
                 status: matchingResult.status === 'success' ? 'complete' : 'error',
                 progress: 100,
                 result: matchingResult.book || {},
-                error: matchingResult.error
+                error: matchingResult.error,
+                saved: matchingResult.saved || false, // Track if the book has been saved to the database
               };
             }
             
@@ -183,12 +187,11 @@ export default function Batch() {
       
       toast({
         title: 'Batch Processing Complete',
-        description: `Processed ${data.processed?.success || 0} books successfully, ${data.processed?.failed || 0} failed.`,
+        description: `Processed ${data.processed?.success || 0} books successfully, ${data.processed?.failed || 0} failed. You can now review and save them.`,
       });
       
-      // Invalidate books query to refresh archives and recent books
-      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
+      // We don't automatically invalidate book queries anymore
+      // since we're not saving the books to the database yet
     },
     onError: (error) => {
       toast({
@@ -229,6 +232,62 @@ export default function Batch() {
     
     // Process the batch of ISBNs
     batchMutation.mutate({ type: 'isbns', isbns });
+  };
+  
+  // Add a mutation for saving a book
+  const saveBookMutation = useMutation({
+    mutationFn: async (book: Partial<Book>) => {
+      const response = await apiRequest('POST', '/api/books', book);
+      return await response.json();
+    },
+    onSuccess: (savedBook, variables) => {
+      // Update the batch results to mark this book as saved
+      setBatchResults(prev => prev.map(item => 
+        item.result && item.result.isbn === variables.isbn
+          ? { ...item, saved: true, result: savedBook }
+          : item
+      ));
+      
+      // Show success message
+      toast({
+        title: 'Book Saved',
+        description: `Successfully saved "${savedBook.title}" to your book archive.`,
+      });
+      
+      // Refresh book lists
+      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/recent'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to Save Book',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Handle editing a book in the batch results
+  const handleEditBook = (itemId: string, editing: boolean) => {
+    setBatchResults(prev => prev.map(item => 
+      item.id === itemId
+        ? { ...item, editing }
+        : item
+    ));
+  };
+  
+  // Handle updating a book's data
+  const handleUpdateBookData = (itemId: string, updatedData: Partial<Book>) => {
+    setBatchResults(prev => prev.map(item => 
+      item.id === itemId
+        ? { ...item, result: { ...item.result, ...updatedData } }
+        : item
+    ));
+  };
+  
+  // Handle saving a book to the database
+  const handleSaveBook = (book: Partial<Book>) => {
+    saveBookMutation.mutate(book);
   };
   
   return (
@@ -305,39 +364,70 @@ export default function Batch() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {item.status === 'complete' && item.result?.id && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
-                            onClick={() => {
-                              // Navigate to the book details page
-                              if (item.result?.id) {
+                        <div className="flex gap-2">
+                          {/* For successfully processed items that haven't been saved */}
+                          {item.status === 'complete' && !item.saved && (
+                            <>
+                              {/* View/Edit button */}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
+                                onClick={() => handleEditBook(item.id, true)}
+                              >
+                                <Edit className="h-4 w-4" />
+                                {t('viewEdit')}
+                              </Button>
+                              
+                              {/* Save button */}
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => handleSaveBook(item.result)}
+                                disabled={saveBookMutation.isPending}
+                              >
+                                <Save className="h-4 w-4" />
+                                {t('save')}
+                              </Button>
+                            </>
+                          )}
+                          
+                          {/* For already saved items */}
+                          {item.status === 'complete' && item.saved && item.result?.id && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
+                              onClick={() => {
+                                // Navigate to the book details page in archives
                                 setLocation(`/archives?view=${item.result.id}`);
-                              }
-                            }}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            {t('viewDetails')}
-                          </Button>
-                        )}
-                        {item.status === 'error' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              // Show detailed error
-                              toast({
-                                title: t('error'),
-                                description: item.error || t('unknownError'),
-                                variant: 'destructive'
-                              });
-                            }}
-                          >
-                            {t('viewError')}
-                          </Button>
-                        )}
+                              }}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              {t('viewDetails')}
+                            </Button>
+                          )}
+                          
+                          {/* For error items */}
+                          {item.status === 'error' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                // Show detailed error
+                                toast({
+                                  title: t('error'),
+                                  description: item.error || t('unknownError'),
+                                  variant: 'destructive'
+                                });
+                              }}
+                            >
+                              {t('viewError')}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
