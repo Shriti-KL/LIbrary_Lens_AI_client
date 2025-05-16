@@ -8,6 +8,7 @@ import { analyzeBookCover } from "./services/openai";
 import { verifyBookByIsbn } from "./services/verificationService";
 import { searchBooks, getCompleteBookByISBN } from "./services/googleBooks";
 import { processBookAnalysis } from "./services/openai";
+import axios from "axios";
 
 // Configure multer for in-memory storage
 const upload = multer({
@@ -461,8 +462,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Import axios at the top level
-  const axios = require('axios');
+  // Import axios and other modules at the top of the file with other imports
+  // Don't add this here
   
   // Batch processing endpoint for ISBNs
   app.post("/api/books/batch-isbn", async (req: Request, res: Response) => {
