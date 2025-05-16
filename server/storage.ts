@@ -71,6 +71,7 @@ export class DatabaseStorage implements IStorage {
         interest_category as "interestCategory",
         age_recommendation as "ageRecommendation",
         classification_number as "classificationNumber",
+        secondary_classification as "secondaryClassification",
         additional_classifications as "additionalClassifications",
         idb_initials as "idbInitials",
         idb_sequence_number as "idbSequenceNumber",
