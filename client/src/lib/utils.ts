@@ -1163,15 +1163,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // --- Footer (no barcode) ---
   // Position the footer at the bottom
-  currentY = y + height - 8;
-  
-  // Add ASB number
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  if (asbNumber && asbNumber.toString().trim() !== "") {
-    doc.text(asbNumber.toString(), x + width/2, currentY, { align: 'center' });
-    currentY += 4;
-  }
+  currentY = y + height - 4; // Adjusted to leave space just for ekz footer
   
   // Add ekz footer text
   doc.setFontSize(7);
