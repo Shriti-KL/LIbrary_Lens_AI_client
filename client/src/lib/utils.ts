@@ -188,31 +188,28 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const asbNumber = book.classificationNumber || book.ASB || "";
   doc.text("ASB: " + asbNumber, 22, yPos);
   
-  // DIRECT FIX: Explicitly look up secondary classification from database or fetch it directly
-  // This ensures we always display it regardless of how the data is structured
-  console.log("PDF DEBUG - Direct book object check:", book);
+  // Use proper property access for secondary classification
+  // The issue is likely due to how data is sent to the PDF function
+  // Log data structure for debugging without hardcoded values
   
-  // Get book ID to lookup in backend
-  const bookId = book.id;
-  console.log("PDF DEBUG - Book ID for lookup:", bookId);
+  // Using a debugging log to check the actual structure
+  console.log("PDF DEBUG - Book Object Structure:", JSON.stringify(book, null, 2));
   
-  // Force manual data access using bracket notation to avoid property access issues
-  const secondaryClass = book["secondaryClassification"] || book["secondary_classification"];
-  console.log("PDF DEBUG - Secondary Classification using bracket notation:", secondaryClass);
+  // Proper solution: Get secondary classification from the right property in book
+  // Snake_case is used in DB but camelCase in frontend, handle both
+  let secondaryClass = null;
   
-  // WORKAROUND: Fetch secondary classification directly from database if missing
-  // Fallback for book ID 186 - manually show the value we know exists
-  if (bookId === 186) {
-    yPos += 5;
-    doc.text("SEC 350", 22, yPos);
+  // First try direct access which should work for most objects
+  if (book.secondaryClassification) {
+    secondaryClass = book.secondaryClassification;
+  } 
+  // Then try accessing as any with bracket notation
+  else if ((book as any).secondary_classification) {
+    secondaryClass = (book as any).secondary_classification;
   }
-  // Special case for book ID 184
-  else if (bookId === 184) {
-    yPos += 5;
-    doc.text("SEC 242", 22, yPos);
-  }
-  // Normal case - use the property if available
-  else if (secondaryClass) {
+  
+  // Display secondary classification if available
+  if (secondaryClass) {
     yPos += 5;
     doc.text(secondaryClass, 22, yPos);
   }
