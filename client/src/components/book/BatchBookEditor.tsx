@@ -82,7 +82,16 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
   
   // Render a field editor
   const renderField = (fieldName: string) => {
-    if (!editedBook || !(fieldName in editedBook)) return null;
+    // Always allow ASB classification fields to be edited, even if they start empty
+    if (!editedBook) return null;
+    
+    // If field doesn't exist in object but is a classification field, initialize it
+    if (!(fieldName in editedBook) && 
+        (fieldName === 'classificationNumber' || fieldName === 'secondaryClassification')) {
+      editedBook[fieldName as keyof typeof editedBook] = '';
+    } else if (!(fieldName in editedBook)) {
+      return null;
+    }
     
     let value = editedBook[fieldName as keyof typeof editedBook] as string | number | null;
     if (value === null) value = '';

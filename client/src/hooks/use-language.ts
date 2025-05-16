@@ -18,6 +18,7 @@ const translations: Translations = {
     bookArchive: "Book Archive",
     batchProcessing: "Batch Processing",
     settings: "Settings",
+    secondaryClassification: "Secondary Classification",
     recentBooks: "Recent Books",
     uploadCover: "Upload Book Cover",
     uploadFile: "Upload a file",
