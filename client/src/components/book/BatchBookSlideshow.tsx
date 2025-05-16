@@ -69,9 +69,11 @@ export default function BatchBookSlideshow({
   
   const fieldDisplayOrder = [
     'title', 'subtitle', 'author', 'mainAuthor', 'additionalAuthors', 
-    'publisher', 'publicationYear', 'publicationPlace', 'pageCount', 
-    'isbn', 'edition', 'dimensions', 'price', 'binding', 'language',
-    'summary', 'review', 'interestCategory', 'classificationNumber'
+    'authorStatement', 'contributors', 'edition', 'publicationPlace',
+    'publisher', 'publicationYear', 'pageCount', 'illustrations',
+    'dimensions', 'isbn', 'binding', 'price', 'language',
+    'interestCategory', 'classificationNumber', 'additionalClassification',
+    'summary', 'review', 'genres', 'reviewerName'
   ];
   
   return (
@@ -172,9 +174,22 @@ export default function BatchBookSlideshow({
                           {t(field)}
                         </h4>
                         <div className="text-neutral-800 whitespace-pre-wrap">
-                          {typeof value === 'object' ? JSON.stringify(value) : 
-                           field === 'additionalAuthors' && Array.isArray(value) ? value.join(', ') : 
-                           String(value)}
+                          {(() => {
+                            // Format based on field type
+                            if (field === 'additionalAuthors' && Array.isArray(value)) {
+                              return value.join(', ');
+                            } else if (field === 'genres' && Array.isArray(value)) {
+                              return value.join(', ');
+                            } else if (field === 'contributors' && typeof value === 'object' && value !== null) {
+                              return Object.entries(value)
+                                .map(([role, names]) => `${role}: ${Array.isArray(names) ? names.join(', ') : names}`)
+                                .join('\n');
+                            } else if (typeof value === 'object' && value !== null) {
+                              return JSON.stringify(value, null, 2);
+                            } else {
+                              return String(value);
+                            }
+                          })()}
                         </div>
                       </div>
                     );

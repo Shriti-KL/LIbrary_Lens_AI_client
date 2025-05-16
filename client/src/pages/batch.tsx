@@ -334,7 +334,7 @@ export default function Batch() {
           <CardHeader>
             <CardTitle className="text-xl font-serif">{t('processingStatus')}</CardTitle>
             <CardDescription>
-              {t('processingItems', { count: getItemCount('pending') + getItemCount('processing') })}
+              {t('processingItems')}
             </CardDescription>
           </CardHeader>
           
@@ -389,7 +389,7 @@ export default function Batch() {
           <CardHeader className="bg-red-50/50 border-b border-red-100">
             <CardTitle className="text-xl font-serif text-red-800">{t('errors')}</CardTitle>
             <CardDescription className="text-red-700">
-              {t('errorItems', { count: getItemCount('error') })}
+              {t('errorItems')}
             </CardDescription>
           </CardHeader>
           
