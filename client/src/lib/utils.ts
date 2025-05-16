@@ -201,10 +201,18 @@ export function cleanISBNForSearch(isbn: string | null): string {
   return isbn.replace(/[^\dX]/gi, "");
 }
 
-// Generate a PDF export for a book
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { Book } from "@shared/schema";
+// Helper function to normalize German text spacing
+function normalizeGermanText(text: string): string {
+  return text
+    .replace(/\s+/g, " ") // normalize multiple spaces
+    .replace(/ !/g, "!") // remove space before exclamation mark
+    .replace(/ \?/g, "?") // remove space before question mark
+    .replace(/ :/g, ":") // remove space before colon
+    .replace(/ ;/g, ";") // remove space before semicolon
+    .trim();
+}
+
+// PDF export functionality
 
 // Define an interface for the book metadata for better type safety
 interface BookMetadata {
@@ -333,13 +341,14 @@ function formatBookEntryForPDF(
 
   // --- 3. Title and Subtitle ---
   setFontStyle(doc, "normal", PDFStyles.fontSize.body);
-  let titleText = book.title || "";
+  let titleText = normalizeGermanText(book.title || "");
   if (book.subtitle) {
-    titleText += `: ${book.subtitle}`;
+    titleText += `: ${normalizeGermanText(book.subtitle)}`;
   }
 
-  // Check for overflow and handle text wrapping
-  const titleLines = doc.splitTextToSize(titleText, contentWidth);
+  // Improve text wrapping with proper width calculation
+  const titleLines = doc.splitTextToSize(titleText, contentWidth - 5); // Reduce width slightly to prevent overflow
+
   if (
     willTextOverflow(doc, titleText, currentY, PDFStyles.fontSize.body, 1.2)
   ) {
@@ -347,9 +356,15 @@ function formatBookEntryForPDF(
     currentY = PDFStyles.spacing.margin.top;
   }
 
+  // Add proper line spacing for German typography
+  const germanLineSpacing = PDFStyles.spacing.betweenLines * 1.2;
   titleLines.forEach((line) => {
-    doc.text(line, PDFStyles.spacing.margin.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines;
+    doc.text(
+      normalizeGermanText(line),
+      PDFStyles.spacing.margin.left,
+      currentY,
+    );
+    currentY += germanLineSpacing;
   });
   currentY += PDFStyles.spacing.afterTitle;
 
@@ -389,29 +404,58 @@ function formatBookEntryForPDF(
   if (book.summary || book.review) {
     setFontStyle(doc, "normal", PDFStyles.fontSize.small);
     let summaryText = "";
-    if (book.summary) summaryText = book.summary;
+    if (book.summary) summaryText = normalizeGermanText(book.summary);
     if (book.summary && book.review) summaryText += " | ";
-    if (book.review) summaryText += book.review;
+    if (book.review) summaryText += normalizeGermanText(book.review);
 
-    // Check for overflow before adding summary
-    if (
-      willTextOverflow(
-        doc,
-        summaryText,
-        currentY,
-        PDFStyles.fontSize.small,
-        1.2,
-      )
-    ) {
+    // Calculate available space before footer
+    const footerSpace = 30; // Space reserved for footer
+    const availableHeight =
+      doc.internal.pageSize.height -
+      currentY -
+      footerSpace -
+      PDFStyles.spacing.margin.bottom;
+
+    // If not enough space, start new page
+    if (availableHeight < 50) {
+      // Minimum space needed for summary
       doc.addPage();
       currentY = PDFStyles.spacing.margin.top;
     }
 
-    const summaryLines = doc.splitTextToSize(summaryText, contentWidth);
-    summaryLines.forEach((line) => {
-      doc.text(line, PDFStyles.spacing.margin.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines * 0.8; // Slightly reduced spacing for summary
-    });
+    const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 5);
+    const summaryLineHeight = PDFStyles.spacing.betweenLines * 0.8;
+
+    // Check if summary needs multiple pages
+    let remainingLines = [...summaryLines];
+    while (remainingLines.length > 0) {
+      // Calculate how many lines can fit on current page
+      const availableLines = Math.floor(
+        (doc.internal.pageSize.height -
+          currentY -
+          footerSpace -
+          PDFStyles.spacing.margin.bottom) /
+          summaryLineHeight,
+      );
+
+      const linesToRender = remainingLines.slice(0, availableLines);
+      linesToRender.forEach((line) => {
+        doc.text(
+          normalizeGermanText(line),
+          PDFStyles.spacing.margin.left,
+          currentY,
+        );
+        currentY += summaryLineHeight;
+      });
+
+      remainingLines = remainingLines.slice(availableLines);
+
+      // If more lines remain, add new page
+      if (remainingLines.length > 0) {
+        doc.addPage();
+        currentY = PDFStyles.spacing.margin.top;
+      }
+    }
   }
 
   // --- 7. Footer ---
@@ -512,19 +556,19 @@ function formatBookEntryForGrid(
   height: number,
 ): void {
   const cellPadding = {
-    left: 8,
-    right: 8,
-    top: 8,
-    bottom: 8,
+    left: 12, // Increased padding for better readability
+    right: 12,
+    top: 12,
+    bottom: 15, // Increased bottom padding for footer
   };
 
   const contentWidth = width - cellPadding.left - cellPadding.right;
   let currentY = y + cellPadding.top;
 
-  // Draw cell border
+  // Draw cell border with rounded corners
   doc.setDrawColor(0);
   doc.setLineWidth(0.3);
-  doc.rect(x, y, width, height);
+  doc.roundedRect(x, y, width, height, 3, 3); // Added rounded corners
 
   // --- 1. ASB Classification ---
   setFontStyle(doc, "bold", PDFStyles.fontSize.small);
@@ -535,7 +579,7 @@ function formatBookEntryForGrid(
       align: "right",
     });
   }
-  currentY += PDFStyles.spacing.betweenLines;
+  currentY += PDFStyles.spacing.betweenLines * 1.2; // Increased spacing after ASB
 
   // --- 2. Author ---
   let authorFormatted = book.mainAuthor || book.author;
@@ -548,83 +592,93 @@ function formatBookEntryForGrid(
 
   if (authorFormatted) {
     setFontStyle(doc, "bold", PDFStyles.fontSize.small);
-    doc.text(authorFormatted + ":", x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines;
+    doc.text(
+      normalizeGermanText(authorFormatted + ":"),
+      x + cellPadding.left,
+      currentY,
+    );
+    currentY += PDFStyles.spacing.betweenLines * 1.2;
   }
 
   // --- 3. Title ---
   setFontStyle(doc, "normal", PDFStyles.fontSize.small);
-  let titleText = book.title || "";
+  let titleText = normalizeGermanText(book.title || "");
   if (book.subtitle) {
-    titleText += `: ${book.subtitle}`;
+    titleText += `: ${normalizeGermanText(book.subtitle)}`;
   }
 
-  const titleLines = doc.splitTextToSize(titleText, contentWidth);
+  const titleLines = doc.splitTextToSize(titleText, contentWidth - 2);
   titleLines.slice(0, 2).forEach((line) => {
     // Limit to 2 lines
-    doc.text(line, x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines;
+    doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
+    currentY += PDFStyles.spacing.betweenLines * 1.1;
   });
+  currentY += PDFStyles.spacing.betweenLines * 0.5; // Add space after title
 
   // --- 4. Publication Info ---
   const pubInfo = [
-    book.edition,
-    `${book.publicationPlace || ""}: ${book.publisher || ""}`,
+    book.edition && normalizeGermanText(book.edition),
+    book.publicationPlace &&
+      book.publisher &&
+      `${normalizeGermanText(book.publicationPlace)}: ${normalizeGermanText(book.publisher)}`,
     book.publicationYear,
     book.pageCount ? `${book.pageCount} S.` : null,
-    book.dimensions,
+    book.dimensions && normalizeGermanText(book.dimensions),
   ]
     .filter(Boolean)
     .join(". ");
 
   if (pubInfo) {
     setFontStyle(doc, "normal", PDFStyles.fontSize.small);
-    const pubLines = doc.splitTextToSize(pubInfo, contentWidth);
+    const pubLines = doc.splitTextToSize(pubInfo, contentWidth - 2);
     pubLines.slice(0, 2).forEach((line) => {
       // Limit to 2 lines
-      doc.text(line, x + cellPadding.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines * 0.8;
+      doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
+      currentY += PDFStyles.spacing.betweenLines;
     });
+    currentY += PDFStyles.spacing.betweenLines * 0.5;
   }
 
   // --- 5. ISBN ---
   if (book.isbn) {
-    currentY += PDFStyles.spacing.betweenLines * 0.5;
     setFontStyle(doc, "normal", PDFStyles.fontSize.small);
-    let isbnText = `ISBN ${book.isbn}`;
+    let isbnText = `ISBN ${formatISBN(book.isbn)}`;
     if (book.price) {
       isbnText += ` : ${book.price}`;
     }
-    const isbnLine = doc.splitTextToSize(isbnText, contentWidth)[0];
-    doc.text(isbnLine, x + cellPadding.left, currentY);
-    currentY += PDFStyles.spacing.betweenLines;
+    const isbnLine = doc.splitTextToSize(isbnText, contentWidth - 2)[0];
+    doc.text(normalizeGermanText(isbnLine), x + cellPadding.left, currentY);
+    currentY += PDFStyles.spacing.betweenLines * 1.2;
   }
 
   // --- 6. Summary ---
   if (book.summary || book.review) {
-    currentY += PDFStyles.spacing.betweenLines * 0.5;
     setFontStyle(doc, "normal", PDFStyles.fontSize.small);
 
     let summaryText = "";
-    if (book.summary) summaryText = book.summary;
+    if (book.summary) summaryText = normalizeGermanText(book.summary);
     if (book.summary && book.review) summaryText += " | ";
-    if (book.review) summaryText += book.review;
+    if (book.review) summaryText += normalizeGermanText(book.review);
 
-    // Calculate available height for summary
-    const availableHeight = y + height - cellPadding.bottom - currentY;
+    // Calculate available height for summary with proper spacing for footer
+    const footerSpace = 20;
+    const availableHeight = y + height - footerSpace - currentY;
     const maxLines = Math.floor(
-      availableHeight / (PDFStyles.spacing.betweenLines * 0.8),
+      availableHeight / (PDFStyles.spacing.betweenLines * 0.9),
     );
 
-    const summaryLines = doc.splitTextToSize(summaryText, contentWidth);
-    summaryLines.slice(0, maxLines - 1).forEach((line) => {
-      doc.text(line, x + cellPadding.left, currentY);
-      currentY += PDFStyles.spacing.betweenLines * 0.8;
+    const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 2);
+    const visibleLines = summaryLines.slice(0, maxLines - 1);
+
+    visibleLines.forEach((line) => {
+      doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
+      currentY += PDFStyles.spacing.betweenLines * 0.9;
     });
 
-    // Add ellipsis if text was truncated
+    // Add continuation indicator if text was truncated
     if (summaryLines.length > maxLines - 1) {
-      doc.text("...", x + cellPadding.left, currentY);
+      setFontStyle(doc, "italic", PDFStyles.fontSize.small);
+      doc.text("(Fortsetzung folgt...)", x + cellPadding.left, currentY);
     }
   }
 
