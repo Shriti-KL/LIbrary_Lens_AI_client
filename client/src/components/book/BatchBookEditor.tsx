@@ -70,11 +70,19 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
     'idBNumber', 'idb_initials', 'idb_sequence_number', 'idb_year'
   ];
   
+  // Always show important fields
+  const alwaysShowFields = ['reviewerName', 'interestCategory', 'idbInitials', 'idbSequenceNumber', 'idbYear', 'idBNumber'];
+  
   // Render a field editor
   const renderField = (fieldName: string) => {
-    if (!editedBook || !(fieldName in editedBook)) return null;
+    // Show the field either if it exists in the book OR it's in our alwaysShow list
+    if (!editedBook || (!(fieldName in editedBook) && !alwaysShowFields.includes(fieldName))) return null;
     
-    let value = editedBook[fieldName as keyof typeof editedBook] as string | number | null;
+    // Get value or empty string if not present
+    let value = (fieldName in editedBook) 
+      ? editedBook[fieldName as keyof typeof editedBook] as string | number | null 
+      : '';
+    
     if (value === null) value = '';
     
     // Use textarea for longer text fields
