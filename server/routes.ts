@@ -469,6 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const { isbns } = req.body;
+      console.log("Received batch ISBN request with ISBNs:", isbns);
       
       if (!isbns || !Array.isArray(isbns) || isbns.length === 0) {
         return res.status(400).json({ error: "No ISBNs provided" });
@@ -490,19 +491,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process each ISBN
       for (let i = 0; i < isbns.length; i++) {
         const isbn = isbns[i];
+        console.log(`Processing ISBN ${i+1}/${isbns.length}: ${isbn}`);
         
         try {
           // Standardize ISBN (remove hyphens, etc.)
           const standardizedIsbn = isbn.replace(/[-\s]/g, '');
+          console.log(`Standardized ISBN: ${standardizedIsbn}`);
+          
+          if (!standardizedIsbn || standardizedIsbn.length < 10) {
+            throw new Error("Invalid ISBN format");
+          }
           
           // Verify book data using ISBN
-          const bookData = await verifyBookByIsbn(standardizedIsbn, apiKeys);
+          const bookData = await getCompleteBookByISBN(standardizedIsbn, 'de', apiKeys.google_books_api_key);
           
+          if (!bookData || !bookData.title) {
+            throw new Error(`No book found with ISBN: ${standardizedIsbn}`);
+          }
+          
+          // Add user ID if authenticated
           if (req.isAuthenticated()) {
             bookData.userId = req.user.id;
           }
           
+          // Set basic verification info
+          bookData.verification = {
+            status: "verified",
+            confidence: 0.8,
+            sources: ["Google Books API"],
+            message: "Data verified through Google Books API"
+          };
+          
+          // Save to database
           const savedBook = await storage.createBook(bookData as any);
+          console.log(`Successfully saved book with ISBN ${standardizedIsbn}: "${bookData.title}"`);
+          
           results.push({ 
             success: true, 
             book: savedBook,
@@ -513,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Error processing ISBN ${isbn}:`, isbnError);
           results.push({ 
             success: false, 
-            error: `Error processing ISBN: ${isbnError.message}`,
+            error: `Error processing ISBN: ${isbnError.message || "Unknown error"}`,
             filename: isbn,
             status: 'error'
           });
@@ -526,10 +549,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total: results.length
       };
       
-      res.status(200).json({ results, processed });
+      console.log(`Batch ISBN processing complete: ${processed.success} successes, ${processed.failed} failures`);
+      return res.status(200).json({ results, processed });
     } catch (error: any) {
       console.error("Error in batch ISBN processing:", error);
-      res.status(500).json({ error: "Error processing batch ISBNs" });
+      return res.status(500).json({ 
+        error: "Error processing batch ISBNs", 
+        message: error.message || "Unknown error",
+        results: []
+      });
     }
   });
 
