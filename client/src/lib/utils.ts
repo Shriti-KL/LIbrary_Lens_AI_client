@@ -189,6 +189,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Top-right classification number (ASB) - proper font and alignment
   const asbNumber = book.classificationNumber || book.ASB || "";
+  // Make sure to use the right alignment to position it at the right edge
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
   // Second line - additional classifications under ASB
@@ -738,7 +739,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     yPos += 2;
   }
   
-  // --- 7. Reviewer name in bottom right ---
+  // --- 7. Reviewer name in bottom right (after the summary or review) ---
   yPos += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -758,7 +759,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.text(`ID: ${book.userId}`, 190, yPos, { align: 'right' });
   }
   
-  // --- 8. Interest category (IK) and Age recommendation on bottom left ---
+  // --- 8. Interest category (IK) on next line (left aligned) ---
   yPos += 10;
   
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
@@ -783,6 +784,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   }
   
   // --- 9. ID-B information in format: ID-[Initials] [Number]/[Year] ---
+  // This should appear on a new line after the Interest Category
   let idBLine = '';
   
   // Support multiple field naming conventions for these fields
@@ -797,7 +799,6 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.text(idBLine, 22, yPos);
     yPos += 5;
   }
-  
   // Legacy format support - if an ID-B number is provided directly
   else if (book.idBNumber) {
     doc.setFont("helvetica", "normal");
