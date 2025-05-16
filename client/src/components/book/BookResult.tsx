@@ -221,11 +221,49 @@ export default function BookResult({
             </div>
           </div>
           
-          {/* Data displayed as a simple list */}
+          {/* Data displayed as a simple list in specified order */}
           <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80 overflow-auto max-h-[500px]">
             <div className="space-y-2">
-              {/* Display all fields in the desired format */}
-              {Object.entries(book).map(([key, value]) => {
+              {/* Define the field order */}
+              {[
+                'classificationNumber', // ASB number
+                'additionalClassificationNumbers', // Additional classification numbers
+                'title',
+                'subtitle',
+                'author',
+                'mainAuthor',
+                'additionalAuthors',
+                'statementOfResponsibility', // other contributors
+                'edition',
+                'publicationPlace',
+                'publisher',
+                'publicationYear',
+                'pageCount', // Number of pages
+                'illustrations',
+                'dimensions',
+                'isbn',
+                'binding',
+                'price',
+                'summary',
+                'review',
+                'genres',
+                'reviewerName', // name of reviewer
+                'interestCategory', // IK
+                'id', // ID
+                // Add any remaining fields after the specified ones
+                ...Object.keys(book).filter(key => 
+                  !['classificationNumber', 'additionalClassificationNumbers', 'title', 'subtitle', 
+                    'author', 'mainAuthor', 'additionalAuthors', 'statementOfResponsibility', 
+                    'edition', 'publicationPlace', 'publisher', 'publicationYear', 'pageCount', 
+                    'illustrations', 'dimensions', 'isbn', 'binding', 'price', 'summary', 'review', 
+                    'genres', 'reviewerName', 'interestCategory', 'id', 'coverImageData'].includes(key)
+                )
+              ].map(key => {
+                // Skip if the key doesn't exist in the book object
+                if (!(key in book)) return null;
+                
+                const value = book[key as keyof typeof book];
+                
                 // Skip coverImageData which can be very long
                 if (key === 'coverImageData') return null;
                 
@@ -260,7 +298,7 @@ export default function BookResult({
                     {displayValue}
                   </div>
                 );
-              })}
+              }).filter(Boolean)}
             </div>
           </div>
         </div>
