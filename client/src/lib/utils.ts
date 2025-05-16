@@ -145,13 +145,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   let yPos = startY;
   
   // --- 1. ASB Classification in top-right and top-left corner ---
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   
   // Top-left ASB label
   doc.text("ASB:", 22, yPos);
   
-  // Top-right classification number (ASB)
+  // Top-right classification number (ASB) - proper font and alignment
   const asbNumber = book.classificationNumber || book.ASB || "";
   doc.text(asbNumber, 190, yPos, { align: 'right' });
   
@@ -176,13 +176,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
-  doc.setFontSize(11);
+  // Author name in bold with proper size
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold"); 
   doc.text(authorFormatted + ":", 22, yPos);
   
   yPos += 6; // Space after author name
   
   // --- 3. Book title and publication info ---
+  doc.setFontSize(9.5);
   doc.setFont("helvetica", "normal");
   
   // Get the title and subtitle if available
@@ -202,10 +204,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Format the title line with subtitle if present
+  // Format the title line with subtitle if present following the exact ekz format
   let titleText = titleFull;
   if (subtitle) {
-    titleText = `${titleFull}: ${subtitle}`;
+    titleText = `${titleFull} : ${subtitle}`;  // Use space colon space format exactly
   }
   
   // Add statement of responsibility
@@ -355,6 +357,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.isbn) {
     yPos += 2; // Extra small space before ISBN line
     
+    // Ensure we follow exact German cataloging format
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    
     let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
     
     // Add binding type if available (ensure it's in German)
@@ -390,7 +396,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
         }
       }
       
-      isbnLine += ` ${bindingGerman}`;
+      // Use proper German RDA format with dash
+      isbnLine += ` : ${bindingGerman}`; // Space colon space format
     }
     
     // Process price information if available
@@ -414,22 +421,27 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       // Clean up any duplicate spaces or commas
       priceText = priceText.replace(/\s{2,}/g, " ").replace(/,,/g, ",").trim();
       
-      // Add to the ISBN line with proper delimiter
-      isbnLine += `: ${priceText}`;
+      // Add to the ISBN line with proper delimiter according to German RDA
+      if (isbnLine.includes(" : ")) {
+        // If we already have a binding, use comma
+        isbnLine += ` : ${priceText}`;
+      } else {
+        // If no binding, use colon with spaces
+        isbnLine += ` : ${priceText}`;
+      }
     }
     
-    doc.setFont("helvetica", "normal");
     doc.text(isbnLine, 22, yPos);
-    yPos += 7;
+    yPos += 6; // Slightly less spacing
   }
   
   // --- 6. Book summary/description and critical review ---
   if (book.summary || book.review) {
     yPos += 2;
     
-    // Set text style for summary text
+    // Set text style for summary text in exact ekz style
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9); // Smaller font size for more content
     
     // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
