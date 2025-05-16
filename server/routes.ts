@@ -326,6 +326,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.userId = req.user.id;
       }
       
+      // Clean the price field to extract only EUR (DE) value
+      if (validatedData.price) {
+        const { formatPriceForDb } = await import('../client/src/lib/utils');
+        validatedData.price = formatPriceForDb(validatedData.price);
+      }
+      
       // Debug logging to see what's coming in
       console.log('Book save data:', JSON.stringify({
         title: validatedData.title,
@@ -344,6 +350,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number(req.params.id);
       const validatedData = insertBookSchema.partial().parse(req.body);
+      
+      // Clean the price field to extract only EUR (DE) value
+      if (validatedData.price) {
+        const { formatPriceForDb } = await import('../client/src/lib/utils');
+        validatedData.price = formatPriceForDb(validatedData.price);
+      }
       
       const updatedBook = await storage.updateBook(id, validatedData);
       if (!updatedBook) {

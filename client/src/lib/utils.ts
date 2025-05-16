@@ -50,6 +50,42 @@ export function parseErrorMessage(error: any): string {
   return 'An unknown error occurred';
 }
 
+/**
+ * Clean and format price text to only keep EUR (DE) value
+ * This function extracts the main German price from complex price strings
+ * Example: "Broschur : circa EUR 27.95 (DE), circa EUR 28.80 (AT)" -> "EUR 27.95"
+ */
+export function formatPriceForDb(priceText: string | null | undefined): string | null {
+  if (!priceText) return null;
+  
+  // Standardize price text
+  priceText = priceText.trim();
+  
+  // Check if it's already a clean price
+  if (/^EUR \d+([,.]\d+)?$/.test(priceText)) {
+    return priceText;
+  }
+  
+  // Try to extract the German price with country code (DE)
+  const deMatch = priceText.match(/EUR\s+\d+([,.]\d+)?\s*\(DE\)/i);
+  if (deMatch) {
+    // Extract just the EUR value from the match
+    const euroValue = deMatch[0].match(/EUR\s+\d+([,.]\d+)?/i);
+    if (euroValue) {
+      return euroValue[0].trim();
+    }
+  }
+  
+  // If no (DE) specific price, look for the first EUR price
+  const eurMatch = priceText.match(/EUR\s+\d+([,.]\d+)?/i);
+  if (eurMatch) {
+    return eurMatch[0].trim();
+  }
+  
+  // If no EUR price found, return the original text
+  return priceText;
+}
+
 // Extract file extension from filename
 export function getFileExtension(filename: string): string {
   return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2);
