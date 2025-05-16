@@ -341,7 +341,32 @@ export default function Batch() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {batchResults.map((item) => (
+                  {/* Show a message when all books are processed and saved */}
+                  {batchResults.length > 0 && 
+                   batchResults.filter(item => !item.saved || item.status === 'error').length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-6">
+                        <div className="flex flex-col items-center gap-2">
+                          <Check className="h-10 w-10 text-green-500 p-2 bg-green-50 rounded-full" />
+                          <h3 className="text-lg font-medium">{t('allBooksSaved')}</h3>
+                          <p className="text-sm text-gray-500">
+                            {t('allBooksHaveBeenSavedToLibrary')}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => setLocation('/archives')}
+                          >
+                            {t('viewArchives')}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                
+                  {/* Only show items that haven't been saved yet or are in error state */}
+                  {batchResults.filter(item => !item.saved || item.status === 'error').map((item) => (
                     <>
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
