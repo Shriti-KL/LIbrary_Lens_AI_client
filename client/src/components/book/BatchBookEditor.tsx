@@ -62,7 +62,12 @@ export default function BatchBookEditor({ book, onSave, onCancel }: BatchBookEdi
 
   // Define field groups according to importance
   const primaryFields = ['title', 'subtitle', 'author', 'mainAuthor', 'additionalAuthors', 'publicationYear', 'publisher'];
-  const secondaryFields = ['isbn', 'language', 'pageCount', 'summary', 'review', 'publicationPlace', 'edition', 'dimensions', 'price'];
+  const secondaryFields = [
+    'isbn', 'language', 'pageCount', 'summary', 'review', 'publicationPlace', 
+    'edition', 'dimensions', 'binding', 'price', 'classificationNumber',
+    'additionalClassifications', 'interestCategory', 'statementOfResponsibility', 
+    'illustrations', 'reviewerName'
+  ];
   
   // Render a field editor
   const renderField = (fieldName: string) => {
