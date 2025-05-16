@@ -769,9 +769,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 // Export a single book to PDF
 export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
+  // Add settings to ensure consistent text rendering
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
+    compress: true,
+    putOnlyUsedFonts: true,
+    hotfixes: ["px_scaling"] // Important: This fixes character spacing issues
   });
   
   // Configure language-specific text
