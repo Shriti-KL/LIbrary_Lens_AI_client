@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Book } from '@shared/schema';
 import BatchUpload from '@/components/book/BatchUpload';
+import BatchBookEditor from '@/components/book/BatchBookEditor';
 import { useLocation } from 'wouter';
 import { 
   Card, 
@@ -287,7 +288,9 @@ export default function Batch() {
   
   // Handle saving a book to the database
   const handleSaveBook = (book: Partial<Book>) => {
-    saveBookMutation.mutate(book);
+    if (book) {
+      saveBookMutation.mutate(book);
+    }
   };
   
   return (
@@ -331,105 +334,129 @@ export default function Batch() {
                 </TableHeader>
                 <TableBody>
                   {batchResults.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        {item.result?.title || item.name}
-                      </TableCell>
-                      <TableCell>
-                        {item.status === 'pending' && (
-                          <Badge variant="outline">{t('waiting')}</Badge>
-                        )}
-                        {item.status === 'processing' && (
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                            {t('processing')}
-                          </Badge>
-                        )}
-                        {item.status === 'complete' && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            {t('complete')}
-                          </Badge>
-                        )}
-                        {item.status === 'error' && (
-                          <Badge variant="destructive">
-                            {t('error')}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={item.progress} className="w-full h-2" />
-                          <span className="text-xs text-neutral-500 w-10">
-                            {item.progress}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          {/* For successfully processed items that haven't been saved */}
-                          {item.status === 'complete' && !item.saved && (
-                            <>
-                              {/* View/Edit button */}
+                    <>
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">
+                          {item.result?.title || item.name}
+                        </TableCell>
+                        <TableCell>
+                          {item.status === 'pending' && (
+                            <Badge variant="outline">{t('waiting')}</Badge>
+                          )}
+                          {item.status === 'processing' && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {t('processing')}
+                            </Badge>
+                          )}
+                          {item.status === 'complete' && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              {t('complete')}
+                            </Badge>
+                          )}
+                          {item.status === 'error' && (
+                            <Badge variant="destructive">
+                              {t('error')}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={item.progress} className="w-full h-2" />
+                            <span className="text-xs text-neutral-500 w-10">
+                              {item.progress}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {/* For successfully processed items that haven't been saved */}
+                            {item.status === 'complete' && !item.saved && !item.editing && (
+                              <>
+                                {/* View/Edit button */}
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
+                                  onClick={() => handleEditBook(item.id, true)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  {t('viewEdit')}
+                                </Button>
+                                
+                                {/* Save button */}
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  onClick={() => item.result && handleSaveBook(item.result)}
+                                  disabled={saveBookMutation.isPending}
+                                >
+                                  <Save className="h-4 w-4" />
+                                  {t('save')}
+                                </Button>
+                              </>
+                            )}
+                            
+                            {/* For already saved items */}
+                            {item.status === 'complete' && item.saved && item.result?.id && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
                                 className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
-                                onClick={() => handleEditBook(item.id, true)}
+                                onClick={() => {
+                                  // Navigate to the book details page in archives
+                                  if (item.result && item.result.id) {
+                                    setLocation(`/archives?view=${item.result.id}`);
+                                  }
+                                }}
                               >
-                                <Edit className="h-4 w-4" />
-                                {t('viewEdit')}
+                                <ExternalLink className="h-4 w-4" />
+                                {t('viewDetails')}
                               </Button>
-                              
-                              {/* Save button */}
+                            )}
+                            
+                            {/* For error items */}
+                            {item.status === 'error' && (
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                onClick={() => handleSaveBook(item.result)}
-                                disabled={saveBookMutation.isPending}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  // Show detailed error
+                                  toast({
+                                    title: t('error'),
+                                    description: item.error || t('unknownError'),
+                                    variant: 'destructive'
+                                  });
+                                }}
                               >
-                                <Save className="h-4 w-4" />
-                                {t('save')}
+                                {t('viewError')}
                               </Button>
-                            </>
-                          )}
-                          
-                          {/* For already saved items */}
-                          {item.status === 'complete' && item.saved && item.result?.id && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex items-center gap-1 text-primary hover:text-primary-dark hover:bg-primary/10"
-                              onClick={() => {
-                                // Navigate to the book details page in archives
-                                setLocation(`/archives?view=${item.result.id}`);
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Book Editor Row - Shown when editing a book */}
+                      {item.editing && item.status === 'complete' && !item.saved && item.result && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-2">
+                            <BatchBookEditor 
+                              book={item.result}
+                              onSave={(updatedBook) => {
+                                // Update the book data in state
+                                handleUpdateBookData(item.id, updatedBook);
+                                // Close the editor
+                                handleEditBook(item.id, false);
+                                // Save to database if user chose to save
+                                handleSaveBook(updatedBook);
                               }}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              {t('viewDetails')}
-                            </Button>
-                          )}
-                          
-                          {/* For error items */}
-                          {item.status === 'error' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => {
-                                // Show detailed error
-                                toast({
-                                  title: t('error'),
-                                  description: item.error || t('unknownError'),
-                                  variant: 'destructive'
-                                });
-                              }}
-                            >
-                              {t('viewError')}
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                              onCancel={() => handleEditBook(item.id, false)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))}
                 </TableBody>
               </Table>
