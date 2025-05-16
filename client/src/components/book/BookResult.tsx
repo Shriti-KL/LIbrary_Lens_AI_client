@@ -248,7 +248,7 @@ export default function BookResult({
                 'review',
                 'genres',
                 'reviewerName', // name of reviewer
-                'interestCategory', // IK
+                'interestCategory', // IK (Interest Categories)
                 'id', // ID
                 // Add any remaining fields after the specified ones
                 ...Object.keys(book).filter(key => 
@@ -256,7 +256,9 @@ export default function BookResult({
                     'author', 'mainAuthor', 'additionalAuthors', 'statementOfResponsibility', 
                     'edition', 'publicationPlace', 'publisher', 'publicationYear', 'pageCount', 
                     'illustrations', 'dimensions', 'isbn', 'binding', 'price', 'summary', 'review', 
-                    'genres', 'reviewerName', 'interestCategory', 'id', 'coverImageData'].includes(key)
+                    'genres', 'reviewerName', 'interestCategory', 'id', 'coverImageData',
+                    // Fields to keep in database but not display
+                    'publicationDate', 'coverImageUrl', 'preview'].includes(key)
                 )
               ].map(key => {
                 // Skip if the key doesn't exist in the book object
