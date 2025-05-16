@@ -39,6 +39,11 @@ export default function BookResult({
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedBook, setEditedBook] = useState<Partial<Book>>(book || {});
+  
+  // Update editedBook when book changes or edit mode is toggled on
+  React.useEffect(() => {
+    setEditedBook(book || {});
+  }, [book, isEditing]);
 
   // If still loading, show loading state
   if (isLoading && loadingSteps) {
