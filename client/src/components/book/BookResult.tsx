@@ -174,6 +174,48 @@ export default function BookResult({
     );
   }
 
+  // The ordered list of fields we want to display
+  const orderedFields = [
+    'classificationNumber', // ASB number
+    'additionalClassificationNumbers', // Additional classification numbers
+    'title',
+    'subtitle',
+    'author',
+    'mainAuthor',
+    'additionalAuthors',
+    'statementOfResponsibility', // other contributors
+    'edition',
+    'publicationPlace',
+    'publisher',
+    'publicationYear',
+    'pageCount', // Number of pages
+    'illustrations',
+    'dimensions',
+    'isbn',
+    'binding',
+    'price',
+    'summary',
+    'review',
+    'genres',
+    'reviewerName', // name of reviewer
+    'interestCategory', // IK (Interest Categories)
+    'id', // ID
+  ];
+
+  // Fields we want to hide from display
+  const fieldsToHide = ['publicationDate', 'coverImageUrl', 'preview', 'coverImageData'];
+  
+  // Get all remaining fields that aren't in orderedFields or fieldsToHide
+  const remainingFields = Object.keys(book).filter(key => 
+    !orderedFields.includes(key) && !fieldsToHide.includes(key)
+  );
+
+  // Final ordered fields, including essential fields that may not exist in the book object
+  const finalOrderedFields = [
+    ...orderedFields,
+    ...remainingFields
+  ];
+
   // Book result display - Simple list of all data
   return (
     <Card className="shadow-sm border border-neutral-200">
@@ -221,66 +263,31 @@ export default function BookResult({
             </div>
           </div>
           
-          {/* Data displayed as a simple list in specified order */}
-          <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80 overflow-auto max-h-[500px]">
+          {/* Data displayed as a simple list in specified order - without scrollable container */}
+          <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200/80">
             <div className="space-y-2">
-              {/* Define the field order */}
-              {[
-                'classificationNumber', // ASB number
-                'additionalClassificationNumbers', // Additional classification numbers
-                'title',
-                'subtitle',
-                'author',
-                'mainAuthor',
-                'additionalAuthors',
-                'statementOfResponsibility', // other contributors
-                'edition',
-                'publicationPlace',
-                'publisher',
-                'publicationYear',
-                'pageCount', // Number of pages
-                'illustrations',
-                'dimensions',
-                'isbn',
-                'binding',
-                'price',
-                'summary',
-                'review',
-                'genres',
-                'reviewerName', // name of reviewer
-                'interestCategory', // IK (Interest Categories)
-                'id', // ID
-                // Add any remaining fields after the specified ones
-                ...Object.keys(book).filter(key => 
-                  !['classificationNumber', 'additionalClassificationNumbers', 'title', 'subtitle', 
-                    'author', 'mainAuthor', 'additionalAuthors', 'statementOfResponsibility', 
-                    'edition', 'publicationPlace', 'publisher', 'publicationYear', 'pageCount', 
-                    'illustrations', 'dimensions', 'isbn', 'binding', 'price', 'summary', 'review', 
-                    'genres', 'reviewerName', 'interestCategory', 'id', 'coverImageData',
-                    // Fields to keep in database but not display
-                    'publicationDate', 'coverImageUrl', 'preview'].includes(key)
-                )
-              ].map(key => {
-                // Skip if the key doesn't exist in the book object
-                if (!(key in book)) return null;
+              {finalOrderedFields.map(key => {
+                // For essential fields, always show them even if they don't exist in the book object
+                const essentialFields = ['reviewerName', 'interestCategory', 'id', 'classificationNumber'];
+                const shouldDisplay = key in book || essentialFields.includes(key);
                 
-                const value = book[key as keyof typeof book];
+                if (!shouldDisplay) return null;
                 
-                // Skip coverImageData which can be very long
-                if (key === 'coverImageData') return null;
+                // Get the value
+                const displayValue = key in book ? book[key as keyof typeof book] : null;
                 
-                // Handle different types of values
-                let displayValue = null;
+                // Render the appropriate display for the value type
+                let renderedValue = null;
                 
-                if (value === null || value === undefined) {
-                  displayValue = <span className="text-neutral-500">null</span>;
-                } else if (Array.isArray(value)) {
-                  if (value.length === 0) {
-                    displayValue = <span className="text-neutral-500">[]</span>;
+                if (displayValue === null || displayValue === undefined) {
+                  renderedValue = <span className="text-neutral-500">null</span>;
+                } else if (Array.isArray(displayValue)) {
+                  if (displayValue.length === 0) {
+                    renderedValue = <span className="text-neutral-500">[]</span>;
                   } else {
-                    displayValue = (
+                    renderedValue = (
                       <div className="flex flex-wrap gap-1.5 mt-1">
-                        {value.map((item, idx) => (
+                        {displayValue.map((item, idx) => (
                           <Badge key={idx} className="bg-secondary/10 hover:bg-secondary/20 text-secondary-dark">
                             {String(item)}
                           </Badge>
@@ -288,19 +295,19 @@ export default function BookResult({
                       </div>
                     );
                   }
-                } else if (typeof value === 'object') {
-                  displayValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(value, null, 2)}</pre>;
+                } else if (typeof displayValue === 'object') {
+                  renderedValue = <pre className="text-xs text-neutral-700 mt-1 overflow-auto max-h-[100px]">{JSON.stringify(displayValue, null, 2)}</pre>;
                 } else {
-                  displayValue = <p className="text-sm text-neutral-700 mt-1 whitespace-pre-line">{String(value)}</p>;
+                  renderedValue = <p className="text-sm text-neutral-700 mt-1 whitespace-pre-line">{String(displayValue)}</p>;
                 }
                 
                 return (
                   <div key={key} className="pb-2 border-b border-neutral-200 last:border-b-0">
                     <h4 className="text-sm font-medium text-primary-dark/70 capitalize">{key}:</h4>
-                    {displayValue}
+                    {renderedValue}
                   </div>
                 );
-              }).filter(Boolean)}
+              })}
             </div>
           </div>
         </div>
