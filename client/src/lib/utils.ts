@@ -1,22 +1,22 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { Book } from "@shared/schema";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Book } from '@shared/schema';
 
 // Font management and PDF styling constants
 const PDFStyles = {
   fonts: {
-    normal: "helvetica",
-    bold: "helvetica-bold",
-    italic: "helvetica-oblique",
+    normal: 'helvetica',
+    bold: 'helvetica-bold',
+    italic: 'helvetica-oblique'
   },
   fontSize: {
     title: 12,
     subtitle: 11,
     body: 10,
     small: 8,
-    footer: 7,
+    footer: 7
   },
   spacing: {
     afterTitle: 10,
@@ -27,52 +27,31 @@ const PDFStyles = {
       top: 40,
       bottom: 40,
       left: 40,
-      right: 40,
-    },
+      right: 40
+    }
   },
   colors: {
-    text: [0, 0, 0],
-    heading: [0, 0, 0],
-  },
+    text: { r: 0, g: 0, b: 0 },
+    heading: { r: 0, g: 0, b: 0 }
+  }
 };
 
 // Helper function to set consistent font styling
-function setFontStyle(
-  doc: jsPDF,
-  style: "normal" | "bold" | "italic",
-  size: number,
-) {
+function setFontStyle(doc: jsPDF, style: 'normal' | 'bold' | 'italic', size: number) {
   doc.setFont(PDFStyles.fonts.normal, style);
   doc.setFontSize(size);
 }
 
 // Helper function to calculate text height with proper line spacing
-function calculateTextHeight(
-  doc: jsPDF,
-  text: string,
-  fontSize: number,
-  lineSpacing: number,
-): number {
-  const lines = doc.splitTextToSize(
-    text,
-    doc.internal.pageSize.width -
-      PDFStyles.spacing.margin.left -
-      PDFStyles.spacing.margin.right,
-  );
+function calculateTextHeight(doc: jsPDF, text: string, fontSize: number, lineSpacing: number): number {
+  const lines = doc.splitTextToSize(text, doc.internal.pageSize.width - PDFStyles.spacing.margin.left - PDFStyles.spacing.margin.right);
   return lines.length * (fontSize * lineSpacing);
 }
 
 // Helper function to check if text will overflow current page
-function willTextOverflow(
-  doc: jsPDF,
-  text: string,
-  currentY: number,
-  fontSize: number,
-  lineSpacing: number,
-): boolean {
+function willTextOverflow(doc: jsPDF, text: string, currentY: number, fontSize: number, lineSpacing: number): boolean {
   const textHeight = calculateTextHeight(doc, text, fontSize, lineSpacing);
-  const availableSpace =
-    doc.internal.pageSize.height - currentY - PDFStyles.spacing.margin.bottom;
+  const availableSpace = doc.internal.pageSize.height - currentY - PDFStyles.spacing.margin.bottom;
   return textHeight > availableSpace;
 }
 
@@ -84,9 +63,9 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | string | number): string {
   const d = new Date(date);
   return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 }
 
@@ -98,58 +77,56 @@ export async function fileToBase64(file: File): Promise<string> {
     reader.onload = () => {
       const result = reader.result as string;
       // Extract the base64 part without the data URL prefix
-      const base64 = result.split(",")[1];
+      const base64 = result.split(',')[1];
       resolve(base64);
     };
-    reader.onerror = (error) => reject(error);
+    reader.onerror = error => reject(error);
   });
 }
 
 // Truncate text with ellipsis
 export function truncateText(text: string, maxLength: number): string {
-  if (!text) return "";
+  if (!text) return '';
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
+  return text.substring(0, maxLength) + '...';
 }
 
 // Generate a random ID
 export function generateId(): string {
-  return (
-    Math.random().toString(36).substring(2, 15) +
-    Math.random().toString(36).substring(2, 15)
-  );
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
 }
 
 // Parse error message from API response
 export function parseErrorMessage(error: any): string {
-  if (typeof error === "string") return error;
+  if (typeof error === 'string') return error;
   if (error?.message) return error.message;
-  return "An unknown error occurred";
+  return 'An unknown error occurred';
 }
 
 // Extract file extension from filename
 export function getFileExtension(filename: string): string {
-  return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2);
+  return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2);
 }
 
 // Check if file is an image
 export function isImageFile(file: File): boolean {
-  return file.type.startsWith("image/");
+  return file.type.startsWith('image/');
 }
 
 // Format bytes to readable string (KB, MB)
 export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-  return (bytes / 1048576).toFixed(1) + " MB";
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 // Format ISBN with proper hyphens
 export function formatISBN(isbn: string | null): string {
-  if (!isbn) return "";
+  if (!isbn) return '';
 
   // Remove all non-digit and non-X characters (ISBN-10 can end with X)
-  const cleanISBN = isbn.replace(/[^\dX]/gi, "");
+  const cleanISBN = isbn.replace(/[^\dX]/gi, '');
 
   // If it's not a valid length for ISBN-10 or ISBN-13, return as is
   if (cleanISBN.length !== 10 && cleanISBN.length !== 13) {
@@ -175,12 +152,12 @@ export function formatISBN(isbn: string | null): string {
   // Use a simplified approach that works for most common ISBNs
   let formattedISBN: string;
 
-  if (cleanISBN.startsWith("978") || cleanISBN.startsWith("979")) {
+  if (cleanISBN.startsWith('978') || cleanISBN.startsWith('979')) {
     // Check for common language groups
-    if (cleanISBN.startsWith("9780") || cleanISBN.startsWith("9781")) {
+    if (cleanISBN.startsWith('9780') || cleanISBN.startsWith('9781')) {
       // English language books (usually 978-0 or 978-1)
       formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 4)}-${cleanISBN.substring(4, 8)}-${cleanISBN.substring(8, 12)}-${cleanISBN.substring(12, 13)}`;
-    } else if (cleanISBN.startsWith("9783")) {
+    } else if (cleanISBN.startsWith('9783')) {
       // German language books (usually 978-3)
       formattedISBN = `${cleanISBN.substring(0, 3)}-${cleanISBN.substring(3, 4)}-${cleanISBN.substring(4, 10)}-${cleanISBN.substring(10, 12)}-${cleanISBN.substring(12, 13)}`;
     } else {
@@ -197,22 +174,22 @@ export function formatISBN(isbn: string | null): string {
 
 // Remove hyphens and other non-alphanumeric characters from ISBN for searching
 export function cleanISBNForSearch(isbn: string | null): string {
-  if (!isbn) return "";
-  return isbn.replace(/[^\dX]/gi, "");
+  if (!isbn) return '';
+  return isbn.replace(/[^\dX]/gi, '');
 }
 
 // Helper function to normalize German text spacing
 function normalizeGermanText(text: string): string {
   return text
-    .replace(/\s+/g, " ") // normalize multiple spaces
-    .replace(/ !/g, "!") // remove space before exclamation mark
-    .replace(/ \?/g, "?") // remove space before question mark
-    .replace(/ :/g, ":") // remove space before colon
-    .replace(/ ;/g, ";") // remove space before semicolon
+    .replace(/\s+/g, ' ')  // normalize multiple spaces
+    .replace(/ !/g, '!')   // remove space before exclamation mark
+    .replace(/ \?/g, '?')  // remove space before question mark
+    .replace(/ :/g, ':')   // remove space before colon
+    .replace(/ ;/g, ';')   // remove space before semicolon
     .trim();
 }
 
-// PDF export functionality
+// Generate a PDF export for a book
 
 // Define an interface for the book metadata for better type safety
 interface BookMetadata {
@@ -264,63 +241,50 @@ interface NormalizedBookData {
 function normalizeBookData(book: Book): NormalizedBookData {
   return {
     id: book.id || null,
-    isbn: book.isbn || "",
-    title: book.title || "",
-    subtitle: book.subtitle || "",
-    author: book.author || "",
-    mainAuthor: book.mainAuthor || book.author || "",
-    statementOfResponsibility: book.statementOfResponsibility || "",
+    isbn: book.isbn || '',
+    title: book.title || '',
+    subtitle: book.subtitle || '',
+    author: book.author || '',
+    mainAuthor: book.mainAuthor || book.author || '',
+    statementOfResponsibility: book.statementOfResponsibility || '',
     contributors: book.contributors || [],
-    edition: book.edition || "",
-    publicationPlace: book.publicationPlace || book.location || "",
-    publisher: book.publisher || "",
+    edition: book.edition || '',
+    publicationPlace: book.publicationPlace || book.location || '',
+    publisher: book.publisher || '',
     publicationYear: book.publicationYear || book.publishedYear || null,
     pageCount: book.pageCount || null,
-    illustrations: book.illustrations || "",
-    dimensions: book.dimensions || "",
-    binding: book.binding || "",
-    price: book.price || "",
-    catalogNumber: book.catalogNumber || book.classificationNumber || "",
-    secondaryClassification:
-      book.secondaryClassification || book.additionalClassifications || "",
-    interestCategory: book.interestCategory || "",
-    summary: book.summary || "",
-    review: book.review || "",
+    illustrations: book.illustrations || '',
+    dimensions: book.dimensions || '',
+    binding: book.binding || '',
+    price: book.price || '',
+    catalogNumber: book.catalogNumber || book.classificationNumber || '',
+    secondaryClassification: book.secondaryClassification || book.additionalClassifications || '',
+    interestCategory: book.interestCategory || '',
+    summary: book.summary || '',
+    review: book.review || '',
     genres: Array.isArray(book.genres) ? book.genres : [],
-    themes: Array.isArray(book.themes)
-      ? (book.themes as any[]).map((t) =>
-          typeof t === "string" ? t : t && t.name ? t.name : "",
-        )
+    themes: Array.isArray(book.themes) 
+      ? (book.themes as any[]).map(t => typeof t === 'string' ? t : (t && t.name) ? t.name : '')
       : [],
-    language: book.language || "de",
-    reviewerName: book.reviewerName || book.reviewer_name || "",
-    ageRecommendation: book.ageRecommendation || "",
-    dnbNumber: book.dnbNumber || "",
+    language: book.language || 'de',
+    reviewerName: book.reviewerName || book.reviewer_name || '',
+    ageRecommendation: book.ageRecommendation || '',
+    dnbNumber: book.dnbNumber || ''
   };
 }
 
 // Format a single book entry with improved spacing and font management
-function formatBookEntryForPDF(
-  doc: jsPDF,
-  book: Book,
-  startY: number = PDFStyles.spacing.margin.top,
-): number {
+function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = PDFStyles.spacing.margin.top): number {
   let currentY = startY;
   const pageWidth = doc.internal.pageSize.width;
-  const contentWidth =
-    pageWidth - PDFStyles.spacing.margin.left - PDFStyles.spacing.margin.right;
+  const contentWidth = pageWidth - PDFStyles.spacing.margin.left - PDFStyles.spacing.margin.right;
 
   // --- 1. ASB Classification ---
-  setFontStyle(doc, "bold", PDFStyles.fontSize.subtitle);
+  setFontStyle(doc, 'bold', PDFStyles.fontSize.subtitle);
   doc.text("ASB:", PDFStyles.spacing.margin.left, currentY);
 
   if (book.catalogNumber) {
-    doc.text(
-      book.catalogNumber,
-      pageWidth - PDFStyles.spacing.margin.right,
-      currentY,
-      { align: "right" },
-    );
+    doc.text(book.catalogNumber, pageWidth - PDFStyles.spacing.margin.right, currentY, { align: 'right' });
   }
   currentY += PDFStyles.spacing.betweenLines;
 
@@ -334,14 +298,14 @@ function formatBookEntryForPDF(
   }
 
   if (authorFormatted) {
-    setFontStyle(doc, "bold", PDFStyles.fontSize.body);
+    setFontStyle(doc, 'bold', PDFStyles.fontSize.body);
     doc.text(authorFormatted + ":", PDFStyles.spacing.margin.left, currentY);
     currentY += PDFStyles.spacing.afterAuthor;
   }
 
   // --- 3. Title and Subtitle ---
-  setFontStyle(doc, "normal", PDFStyles.fontSize.body);
-  let titleText = normalizeGermanText(book.title || "");
+  setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
+  let titleText = normalizeGermanText(book.title || '');
   if (book.subtitle) {
     titleText += `: ${normalizeGermanText(book.subtitle)}`;
   }
@@ -349,21 +313,15 @@ function formatBookEntryForPDF(
   // Improve text wrapping with proper width calculation
   const titleLines = doc.splitTextToSize(titleText, contentWidth - 5); // Reduce width slightly to prevent overflow
 
-  if (
-    willTextOverflow(doc, titleText, currentY, PDFStyles.fontSize.body, 1.2)
-  ) {
+  if (willTextOverflow(doc, titleText, currentY, PDFStyles.fontSize.body, 1.2)) {
     doc.addPage();
     currentY = PDFStyles.spacing.margin.top;
   }
 
   // Add proper line spacing for German typography
   const germanLineSpacing = PDFStyles.spacing.betweenLines * 1.2;
-  titleLines.forEach((line) => {
-    doc.text(
-      normalizeGermanText(line),
-      PDFStyles.spacing.margin.left,
-      currentY,
-    );
+  titleLines.forEach((line: string) => {
+    doc.text(normalizeGermanText(line), PDFStyles.spacing.margin.left, currentY);
     currentY += germanLineSpacing;
   });
   currentY += PDFStyles.spacing.afterTitle;
@@ -371,18 +329,16 @@ function formatBookEntryForPDF(
   // --- 4. Publication Information ---
   const pubInfo = [
     book.edition,
-    `${book.publicationPlace || ""}: ${book.publisher || ""}`,
+    `${book.publicationPlace || ''}: ${book.publisher || ''}`,
     book.publicationYear,
     book.pageCount ? `${book.pageCount} S.` : null,
-    book.dimensions,
-  ]
-    .filter(Boolean)
-    .join(". ");
+    book.dimensions
+  ].filter(Boolean).join('. ');
 
   if (pubInfo) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.body);
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
     const pubLines = doc.splitTextToSize(pubInfo, contentWidth);
-    pubLines.forEach((line) => {
+    pubLines.forEach((line: string) => {
       doc.text(line, PDFStyles.spacing.margin.left, currentY);
       currentY += PDFStyles.spacing.betweenLines;
     });
@@ -391,7 +347,7 @@ function formatBookEntryForPDF(
 
   // --- 5. ISBN and Price ---
   if (book.isbn) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.body);
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.body);
     let isbnText = `ISBN ${book.isbn}`;
     if (book.price) {
       isbnText += ` : ${book.price}`;
@@ -402,80 +358,86 @@ function formatBookEntryForPDF(
 
   // --- 6. Summary and Review ---
   if (book.summary || book.review) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.small);
-    let summaryText = "";
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
+    let summaryText = '';
     if (book.summary) summaryText = normalizeGermanText(book.summary);
-    if (book.summary && book.review) summaryText += " | ";
+    if (book.summary && book.review) summaryText += ' | ';
     if (book.review) summaryText += normalizeGermanText(book.review);
 
     // Calculate available space before footer
-    const footerSpace = 30; // Space reserved for footer
-    const availableHeight =
-      doc.internal.pageSize.height -
-      currentY -
-      footerSpace -
-      PDFStyles.spacing.margin.bottom;
+    const footerSpace = 40; // Increased space reserved for footer
+    const availableHeight = doc.internal.pageSize.height - currentY - footerSpace - PDFStyles.spacing.margin.bottom;
 
     // If not enough space, start new page
-    if (availableHeight < 50) {
-      // Minimum space needed for summary
+    if (availableHeight < 60) { // Increased minimum space needed for summary
       doc.addPage();
       currentY = PDFStyles.spacing.margin.top;
     }
 
-    const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 5);
-    const summaryLineHeight = PDFStyles.spacing.betweenLines * 0.8;
+    // Improved text wrapping with proper continuation indicators
+    const maxContentWidth = contentWidth - 10; // Reduce width to prevent overflow
+    const summaryLines = doc.splitTextToSize(summaryText, maxContentWidth);
+    const summaryLineHeight = PDFStyles.spacing.betweenLines * 0.85;
 
-    // Check if summary needs multiple pages
+    // Check if summary needs multiple pages with proper continuation
     let remainingLines = [...summaryLines];
+    let pageNum = 1;
+    
     while (remainingLines.length > 0) {
-      // Calculate how many lines can fit on current page
-      const availableLines = Math.floor(
-        (doc.internal.pageSize.height -
-          currentY -
-          footerSpace -
-          PDFStyles.spacing.margin.bottom) /
-          summaryLineHeight,
-      );
-
+      // Calculate how many lines can fit on current page (with room for continuation indicator)
+      const maxLinesPerPage = Math.floor((doc.internal.pageSize.height - currentY - footerSpace - PDFStyles.spacing.margin.bottom) / summaryLineHeight);
+      
+      // Reserve space for continuation indicator if needed
+      const availableLines = remainingLines.length > maxLinesPerPage ? maxLinesPerPage - 1 : maxLinesPerPage;
+      
+      // Get lines for this page
       const linesToRender = remainingLines.slice(0, availableLines);
-      linesToRender.forEach((line) => {
-        doc.text(
-          normalizeGermanText(line),
-          PDFStyles.spacing.margin.left,
-          currentY,
-        );
+      
+      // Render summary text lines
+      linesToRender.forEach(line => {
+        doc.text(line, PDFStyles.spacing.margin.left, currentY);
         currentY += summaryLineHeight;
       });
 
+      // Remove rendered lines from remaining
       remainingLines = remainingLines.slice(availableLines);
-
-      // If more lines remain, add new page
+      
+      // If more lines remain, add continuation indicator and new page
       if (remainingLines.length > 0) {
+        // Add German-style continuation indicator
+        setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
+        doc.text("(Fortsetzung folgt...)", PDFStyles.spacing.margin.left + maxContentWidth - 50, currentY);
+        
         doc.addPage();
         currentY = PDFStyles.spacing.margin.top;
+        pageNum++;
+        
+        // Add continuation header on new page
+        setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
+        doc.text(`(Fortsetzung von Seite ${pageNum-1})`, PDFStyles.spacing.margin.left, currentY);
+        currentY += summaryLineHeight * 1.5;
+        
+        // Reset font for remaining text
+        setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
       }
     }
   }
 
   // --- 7. Footer ---
-  const footerY =
-    doc.internal.pageSize.height - PDFStyles.spacing.margin.bottom;
-  setFontStyle(doc, "normal", PDFStyles.fontSize.footer);
-  doc.text("ekz-Informationsdienst", pageWidth / 2, footerY, {
-    align: "center",
-  });
+  const footerY = doc.internal.pageSize.height - PDFStyles.spacing.margin.bottom;
+  setFontStyle(doc, 'normal', PDFStyles.fontSize.footer);
+  doc.text('ekz-Informationsdienst', pageWidth / 2, footerY, { align: 'center' });
 
   return currentY;
 }
 
 // Export a single book to PDF
-export function exportBookToPDF(book: Book, language: string = "de"): void {
+export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
-    unit: "mm",
-    format: "a4",
-    compress: true, // Use compression for smaller file size
+    unit: 'mm',
+    format: 'a4',
+    compress: true // Use compression for smaller file size
   });
 
   // Normalize book data to ensure consistent formatting
@@ -489,36 +451,27 @@ export function exportBookToPDF(book: Book, language: string = "de"): void {
 
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
-  const safeFilename = (normalizedBook.title || "book")
-    .replace(/[/\\?%*:|"<>]/g, "-")
-    .trim();
+  const safeFilename = (normalizedBook.title || 'book').replace(/[/\\?%*:|"<>]/g, '-').trim();
 
   // Set the correct filename prefix based on language
-  const filenamePrefix = bookLanguage === "de" ? "Buch" : "Book";
+  const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
   const timestamp = new Date().toISOString().substring(0, 10);
 
   // Limit filename length to prevent excessively long filenames
   const maxLength = 50;
-  const truncatedFilename =
-    safeFilename.length > maxLength
-      ? safeFilename.substring(0, maxLength) + "..."
-      : safeFilename;
+  const truncatedFilename = safeFilename.length > maxLength ? 
+    safeFilename.substring(0, maxLength) + '...' : 
+    safeFilename;
 
   // Use simplified filename with timestamp for better organization
   doc.save(`${truncatedFilename || `${filenamePrefix}_${timestamp}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
-function drawCorrectionBox(
-  doc: jsPDF,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): void {
+function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, height: number): void {
   // Format the date exactly as in the sample image: YYYY-MM-DD HH:MM Uhr
   const date = new Date();
-  const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} Uhr`;
+  const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} Uhr`;
 
   // Draw box border - use thicker border as shown in sample
   doc.setDrawColor(0);
@@ -528,38 +481,29 @@ function drawCorrectionBox(
   // Add correction title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("Korrektur:", x + width / 2, y + 15, { align: "center" });
+  doc.text("Korrektur:", x + width/2, y + 15, { align: "center" });
 
   // Add edition info - exactly as in the sample
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("Basis-Ausgabe (Edition 10.000)", x + width / 2, y + 25, {
-    align: "center",
-  });
+  doc.text("Basis-Ausgabe (Edition 10.000)", x + width/2, y + 25, { align: "center" });
 
   // Add number of books - exactly as in the sample
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("24 Titel", x + width / 2, y + 40, { align: "center" });
+  doc.text("24 Titel", x + width/2, y + 40, { align: "center" });
 
   // Add date and time - exactly as in the sample
-  doc.text(formattedDate, x + width / 2, y + 50, { align: "center" });
+  doc.text(formattedDate, x + width/2, y + 50, { align: "center" });
 }
 
 // Format a book entry for grid layout with improved spacing and consistency
-function formatBookEntryForGrid(
-  doc: jsPDF,
-  book: Book,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): void {
+function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): void {
   const cellPadding = {
-    left: 12, // Increased padding for better readability
+    left: 12,    // Increased padding for better readability
     right: 12,
     top: 12,
-    bottom: 15, // Increased bottom padding for footer
+    bottom: 15   // Increased bottom padding for footer
   };
 
   const contentWidth = width - cellPadding.left - cellPadding.right;
@@ -571,13 +515,11 @@ function formatBookEntryForGrid(
   doc.roundedRect(x, y, width, height, 3, 3); // Added rounded corners
 
   // --- 1. ASB Classification ---
-  setFontStyle(doc, "bold", PDFStyles.fontSize.small);
+  setFontStyle(doc, 'bold', PDFStyles.fontSize.small);
   doc.text("ASB:", x + cellPadding.left, currentY);
 
   if (book.catalogNumber) {
-    doc.text(book.catalogNumber, x + width - cellPadding.right, currentY, {
-      align: "right",
-    });
+    doc.text(book.catalogNumber, x + width - cellPadding.right, currentY, { align: 'right' });
   }
   currentY += PDFStyles.spacing.betweenLines * 1.2; // Increased spacing after ASB
 
@@ -591,25 +533,20 @@ function formatBookEntryForGrid(
   }
 
   if (authorFormatted) {
-    setFontStyle(doc, "bold", PDFStyles.fontSize.small);
-    doc.text(
-      normalizeGermanText(authorFormatted + ":"),
-      x + cellPadding.left,
-      currentY,
-    );
+    setFontStyle(doc, 'bold', PDFStyles.fontSize.small);
+    doc.text(normalizeGermanText(authorFormatted + ":"), x + cellPadding.left, currentY);
     currentY += PDFStyles.spacing.betweenLines * 1.2;
   }
 
   // --- 3. Title ---
-  setFontStyle(doc, "normal", PDFStyles.fontSize.small);
-  let titleText = normalizeGermanText(book.title || "");
+  setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
+  let titleText = normalizeGermanText(book.title || '');
   if (book.subtitle) {
     titleText += `: ${normalizeGermanText(book.subtitle)}`;
   }
 
   const titleLines = doc.splitTextToSize(titleText, contentWidth - 2);
-  titleLines.slice(0, 2).forEach((line) => {
-    // Limit to 2 lines
+  titleLines.slice(0, 2).forEach((line: string) => { // Limit to 2 lines
     doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
     currentY += PDFStyles.spacing.betweenLines * 1.1;
   });
@@ -618,21 +555,17 @@ function formatBookEntryForGrid(
   // --- 4. Publication Info ---
   const pubInfo = [
     book.edition && normalizeGermanText(book.edition),
-    book.publicationPlace &&
-      book.publisher &&
+    book.publicationPlace && book.publisher && 
       `${normalizeGermanText(book.publicationPlace)}: ${normalizeGermanText(book.publisher)}`,
     book.publicationYear,
     book.pageCount ? `${book.pageCount} S.` : null,
-    book.dimensions && normalizeGermanText(book.dimensions),
-  ]
-    .filter(Boolean)
-    .join(". ");
+    book.dimensions && normalizeGermanText(book.dimensions)
+  ].filter(Boolean).join('. ');
 
   if (pubInfo) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.small);
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
     const pubLines = doc.splitTextToSize(pubInfo, contentWidth - 2);
-    pubLines.slice(0, 2).forEach((line) => {
-      // Limit to 2 lines
+    pubLines.slice(0, 2).forEach((line: string) => { // Limit to 2 lines
       doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
       currentY += PDFStyles.spacing.betweenLines;
     });
@@ -641,7 +574,7 @@ function formatBookEntryForGrid(
 
   // --- 5. ISBN ---
   if (book.isbn) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.small);
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
     let isbnText = `ISBN ${formatISBN(book.isbn)}`;
     if (book.price) {
       isbnText += ` : ${book.price}`;
@@ -653,55 +586,48 @@ function formatBookEntryForGrid(
 
   // --- 6. Summary ---
   if (book.summary || book.review) {
-    setFontStyle(doc, "normal", PDFStyles.fontSize.small);
+    setFontStyle(doc, 'normal', PDFStyles.fontSize.small);
 
-    let summaryText = "";
+    let summaryText = '';
     if (book.summary) summaryText = normalizeGermanText(book.summary);
-    if (book.summary && book.review) summaryText += " | ";
+    if (book.summary && book.review) summaryText += ' | ';
     if (book.review) summaryText += normalizeGermanText(book.review);
 
     // Calculate available height for summary with proper spacing for footer
-    const footerSpace = 20;
+    const footerSpace = 25; // Increased space for footer
     const availableHeight = y + height - footerSpace - currentY;
-    const maxLines = Math.floor(
-      availableHeight / (PDFStyles.spacing.betweenLines * 0.9),
-    );
+    const maxLines = Math.floor(availableHeight / (PDFStyles.spacing.betweenLines * 0.9));
 
     const summaryLines = doc.splitTextToSize(summaryText, contentWidth - 2);
     const visibleLines = summaryLines.slice(0, maxLines - 1);
 
-    visibleLines.forEach((line) => {
+    visibleLines.forEach((line: string) => {
       doc.text(normalizeGermanText(line), x + cellPadding.left, currentY);
       currentY += PDFStyles.spacing.betweenLines * 0.9;
     });
 
     // Add continuation indicator if text was truncated
     if (summaryLines.length > maxLines - 1) {
-      setFontStyle(doc, "italic", PDFStyles.fontSize.small);
+      setFontStyle(doc, 'italic', PDFStyles.fontSize.small);
       doc.text("(Fortsetzung folgt...)", x + cellPadding.left, currentY);
     }
   }
 
   // --- 7. Footer ---
   const footerY = y + height - cellPadding.bottom;
-  setFontStyle(doc, "normal", PDFStyles.fontSize.footer);
-  doc.text("ekz-Informationsdienst", x + width / 2, footerY, {
-    align: "center",
-  });
+  setFontStyle(doc, 'normal', PDFStyles.fontSize.footer);
+  doc.text('ekz-Informationsdienst', x + width/2, footerY, { align: 'center' });
 }
 
 // Export multiple books to a single PDF with the specified format from the image
-export function exportMultipleBooksToSinglePDF(
-  books: Book[],
-  language: string = "de",
-): void {
+export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
 
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
-    unit: "mm",
-    format: "a4",
-    compress: true, // Use compression for smaller file size
+    unit: 'mm',
+    format: 'a4',
+    compress: true // Use compression for smaller file size
   });
 
   // Page dimensions (standard A4)
@@ -711,12 +637,12 @@ export function exportMultipleBooksToSinglePDF(
 
   // Grid layout configuration - consistent across all pages
   const gridColumns = 2; // Two columns per page
-  const gridRows = 1; // One row per page after the first page
+  const gridRows = 1;    // One row per page after the first page
 
   // Calculate cell dimensions with precise margins
-  const horizontalGap = 10; // Space between columns
-  const cellWidth = (pageWidth - 2 * margin - horizontalGap) / gridColumns;
-  const cellHeight = 140; // Fixed height for all book entries
+  const horizontalGap = 10;  // Space between columns
+  const cellWidth = (pageWidth - (2 * margin) - horizontalGap) / gridColumns;
+  const cellHeight = 140;    // Fixed height for all book entries
 
   // First page layout - two correction boxes at the top
   const boxWidth = 80;
@@ -725,7 +651,7 @@ export function exportMultipleBooksToSinglePDF(
   const boxGap = 20;
 
   // Calculate precise positions for correction boxes
-  const firstBoxX = (pageWidth - 2 * boxWidth - boxGap) / 2;
+  const firstBoxX = (pageWidth - (2 * boxWidth) - boxGap) / 2;
   const secondBoxX = firstBoxX + boxWidth + boxGap;
 
   // Draw the two correction boxes with consistent positioning
@@ -740,27 +666,13 @@ export function exportMultipleBooksToSinglePDF(
 
   if (currentBook < books.length) {
     // First book - bottom left
-    formatBookEntryForGrid(
-      doc,
-      books[currentBook],
-      margin,
-      firstPageBookY,
-      cellWidth,
-      cellHeight,
-    );
+    formatBookEntryForGrid(doc, books[currentBook], margin, firstPageBookY, cellWidth, cellHeight);
     currentBook++;
 
     if (currentBook < books.length) {
       // Second book - bottom right with precise positioning
       const secondBookX = margin + cellWidth + horizontalGap;
-      formatBookEntryForGrid(
-        doc,
-        books[currentBook],
-        secondBookX,
-        firstPageBookY,
-        cellWidth,
-        cellHeight,
-      );
+      formatBookEntryForGrid(doc, books[currentBook], secondBookX, firstPageBookY, cellWidth, cellHeight);
       currentBook++;
     }
   }
@@ -772,24 +684,13 @@ export function exportMultipleBooksToSinglePDF(
 
     // Process books in grid layout with precise positioning
     for (let row = 0; row < gridRows && currentBook < books.length; row++) {
-      for (
-        let col = 0;
-        col < gridColumns && currentBook < books.length;
-        col++
-      ) {
+      for (let col = 0; col < gridColumns && currentBook < books.length; col++) {
         // Calculate exact position for each cell
-        const x = margin + col * (cellWidth + horizontalGap);
-        const y = margin + row * (cellHeight + margin);
+        const x = margin + (col * (cellWidth + horizontalGap));
+        const y = margin + (row * (cellHeight + margin));
 
         // Add book to grid with consistent dimensions
-        formatBookEntryForGrid(
-          doc,
-          books[currentBook],
-          x,
-          y,
-          cellWidth,
-          cellHeight,
-        );
+        formatBookEntryForGrid(doc, books[currentBook], x, y, cellWidth, cellHeight);
         currentBook++;
       }
     }
@@ -803,25 +704,19 @@ export function exportMultipleBooksToSinglePDF(
     doc.setFontSize(9);
 
     // Localized page number text
-    const pageText =
-      language === "de"
-        ? `Seite ${i} von ${pageCount}`
-        : `Page ${i} of ${pageCount}`;
+    const pageText = language === 'de' ? `Seite ${i} von ${pageCount}` : `Page ${i} of ${pageCount}`;
 
     // Position consistently at bottom right
-    doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: "right" });
+    doc.text(pageText, pageWidth - margin, pageHeight - 5, { align: 'right' });
   }
 
   // Generate timestamped filename with book count
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-")
-    .substring(0, 10);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 10);
   const bookCount = books.length;
 
   // Create language-specific, informative filenames
-  let filename = "";
-  if (language === "de") {
+  let filename = '';
+  if (language === 'de') {
     filename = `Buchkatalog_${bookCount}_Einträge_${timestamp}.pdf`;
   } else {
     filename = `BookCatalog_${bookCount}_entries_${timestamp}.pdf`;
