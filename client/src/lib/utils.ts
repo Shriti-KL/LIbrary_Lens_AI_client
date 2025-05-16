@@ -825,11 +825,31 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
 
 // Format a book entry for a grid layout with smaller dimensions
 function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
-  const originalFontSize = 11;
-  const gridFontSize = 9; // Smaller font for grid layout
+  // Use ratios rather than fixed values for consistent formatting
+  const fontSizeRatio = 0.012; // Base font size as percentage of page height
+  const pageHeight = doc.internal.pageSize.height;
+  
+  // Calculate font sizes based on page dimensions
+  const gridFontSize = Math.round(pageHeight * fontSizeRatio * 10) / 10; // Round to 1 decimal
+  const smallerFontSize = gridFontSize - 1;
+  const footerFontSize = gridFontSize - 2;
+  
+  // Calculate spacing based on cell dimensions
+  const contentMarginRatio = 0.03; // 3% of cell width
+  const contentMargin = width * contentMarginRatio;
+  
+  // Calculate vertical spacing
+  const lineHeightRatio = 0.015; // 1.5% of page height
+  const standardLineHeight = pageHeight * lineHeightRatio;
+  const smallLineHeight = standardLineHeight * 0.8;
+  
+  // Footer space as percentage of cell height
+  const footerSpaceRatio = 0.1; // 10% of cell height
+  const spaceNeededForFooter = height * footerSpaceRatio;
+  
+  // Initialize position tracking
   const startY = y;
-  let currentY = startY + 5;
-  const spaceNeededForFooter = 15; // Space needed for footer text (reduced since barcode was removed)
+  let currentY = startY + standardLineHeight;
   
   // Draw a thin border around the entire cell
   doc.setDrawColor(0);
@@ -841,22 +861,22 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   doc.setFontSize(gridFontSize);
   
   // ASB label left
-  doc.text("ASB:", x + 5, currentY);
+  doc.text("ASB:", x + contentMargin, currentY);
   
   // ASB number right
   const asbNumber = book.catalogNumber || "";
   if (asbNumber) {
-    doc.text(asbNumber, x + width - 5, currentY, { align: 'right' });
+    doc.text(asbNumber, x + width - contentMargin, currentY, { align: 'right' });
   }
   
   // Secondary classification under ASB
-  currentY += 5;
+  currentY += standardLineHeight;
   const secondaryCode = book.secondaryClassification || "";
   if (secondaryCode) {
-    doc.text(secondaryCode, x + 5, currentY);
+    doc.text(secondaryCode, x + contentMargin, currentY);
   }
   
-  currentY += 8;
+  currentY += standardLineHeight * 1.2; // Slightly larger gap before author
   
   // --- Author's name in bold ---
   let authorFormatted = book.mainAuthor || book.author || "";
@@ -868,17 +888,21 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   doc.setFont("helvetica", "bold");
-  doc.text(authorFormatted + ":", x + 5, currentY);
+  doc.text(authorFormatted + ":", x + contentMargin, currentY);
   
-  currentY += 5;
+  currentY += standardLineHeight;
   
   // --- Book title ---
   doc.setFont("helvetica", "normal");
   
   // Truncate and format the title to fit
   let titleText = book.title || "";
-  if (titleText.length > 40) { // Further reduced to ensure it fits
-    titleText = titleText.substring(0, 37) + "...";
+  // Calculate max length based on average character width for current font size
+  const avgCharWidth = doc.getTextWidth("m");
+  const maxChars = Math.floor((width - 2 * contentMargin) / avgCharWidth);
+  
+  if (titleText.length > maxChars) {
+    titleText = titleText.substring(0, maxChars - 3) + "...";
   }
   
   // Add author after title (only if not already shown above)
@@ -890,18 +914,21 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // Format the title text properly without extra spacing
   const titleFormatted = titleText.replace(/\s+/g, " ").trim();
   
-  // Split for wrapping with reduced width
-  const titleLines = doc.splitTextToSize(titleFormatted, width - 10);
-  for (let i = 0; i < Math.min(titleLines.length, 2); i++) { // Limit to 2 lines to save space
-    doc.text(titleLines[i], x + 5, currentY);
-    currentY += 4;
+  // Split for wrapping with a width based on cell dimensions
+  const titleMaxWidth = width - (2 * contentMargin);
+  const titleLines = doc.splitTextToSize(titleFormatted, titleMaxWidth);
+  
+  // Limit to 2 lines for space efficiency
+  for (let i = 0; i < Math.min(titleLines.length, 2); i++) {
+    doc.text(titleLines[i], x + contentMargin, currentY);
+    currentY += standardLineHeight * 0.9; // Slightly tighter spacing for title lines
   }
   
-  currentY += 2;
+  currentY += standardLineHeight * 0.5; // Half-line space after title
   
   // --- Publication info - condensed ---
   // Use a smaller font for publication info to save space
-  doc.setFontSize(gridFontSize - 1);
+  doc.setFontSize(smallerFontSize);
   
   let pubInfo = "";
   
@@ -934,10 +961,13 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Format the publication info properly without extra spacing
     const pubInfoFormatted = pubInfo.replace(/\s+/g, " ").trim();
     
-    const pubLines = doc.splitTextToSize(pubInfoFormatted, width - 10);
+    // Use consistent width calculation based on cell dimensions
+    const pubMaxWidth = width - (2 * contentMargin);
+    const pubLines = doc.splitTextToSize(pubInfoFormatted, pubMaxWidth);
+    
     for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
-      doc.text(pubLines[i], x + 5, currentY);
-      currentY += 3.5; // Slightly reduced line spacing
+      doc.text(pubLines[i], x + contentMargin, currentY);
+      currentY += smallLineHeight; // Use ratio-based line height
     }
   }
   
@@ -946,24 +976,29 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // --- ISBN and price - condensed ---
   if (book.isbn) {
-    currentY += 2;
+    currentY += standardLineHeight * 0.5; // Half-line spacing before ISBN
     // Use smaller font for ISBN info
-    doc.setFontSize(gridFontSize - 1);
+    doc.setFontSize(smallerFontSize);
     
     let isbnText = `ISBN ${formatISBN(book.isbn)}`;
     
     // Add binding type if available (keep it short)
     if (book.binding) {
-      const bindingText = book.binding.length > 20 ? book.binding.substring(0, 17) + "..." : book.binding;
+      // Calculate max length based on available space
+      const maxBindingLength = Math.round((width - contentMargin * 2) / (avgCharWidth * 6));
+      const bindingText = book.binding.length > maxBindingLength ? 
+                        book.binding.substring(0, maxBindingLength - 3) + "..." : 
+                        book.binding;
       isbnText += ` - ${bindingText}`;
     }
     
     // Add price if available (simplified)
     if (book.price) {
-      // Simplify price display
+      // Calculate max length for price text
+      const maxPriceLength = Math.round((width - contentMargin * 2) / (avgCharWidth * 8));
       let priceText = book.price.toString();
-      if (priceText.length > 25) {
-        priceText = priceText.substring(0, 22) + "...";
+      if (priceText.length > maxPriceLength) {
+        priceText = priceText.substring(0, maxPriceLength - 3) + "...";
       }
       isbnText += ` : ${priceText}`;
     }
@@ -971,8 +1006,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Format the ISBN text properly without extra spacing
     const isbnFormatted = isbnText.replace(/\s+/g, " ").trim();
     
-    doc.text(doc.splitTextToSize(isbnFormatted, width - 10)[0], x + 5, currentY);
-    currentY += 4;
+    // Use consistent width calculation
+    doc.text(doc.splitTextToSize(isbnFormatted, width - (2 * contentMargin))[0], x + contentMargin, currentY);
+    currentY += standardLineHeight;
     
     // Reset font size
     doc.setFontSize(gridFontSize);
@@ -980,8 +1016,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   
   // --- Summary and Review - ensure full content appears ---
   if (book.summary || book.review) {
-    // Use even smaller font for summary to maximize content display
-    doc.setFontSize(gridFontSize - 2);
+    // Use the smaller font for summary to maximize content display
+    doc.setFontSize(footerFontSize + 0.5);
     
     // Combine summary and review with the | separator
     let summaryText = '';
@@ -1021,16 +1057,17 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     
     // For multiple book PDF, limit text to fit in the cell
     
-    // Calculate available space for summary text
+    // Calculate available space for summary text based on cell dimensions
     const availableHeight = (y + height - spaceNeededForFooter) - currentY;
-    // Use smaller line height to fit more text
-    const lineHeight = 2.5;
+    // Use consistent line height based on ratio
+    const summaryLineHeight = smallLineHeight * 0.9; // Even smaller line height for summary
     
-    // Break into lines with proper wrapping
-    const summaryLines = doc.splitTextToSize(summaryText, width - 10);
+    // Break into lines with proper wrapping using consistent margins
+    const summaryMaxWidth = width - (2 * contentMargin);
+    const summaryLines = doc.splitTextToSize(summaryText, summaryMaxWidth);
     
     // Calculate how many lines we can fit in the available space
-    const maxLinesToShow = Math.floor(availableHeight / lineHeight);
+    const maxLinesToShow = Math.floor(availableHeight / summaryLineHeight);
     
     // Set font for summary text - normal weight
     doc.setFont("helvetica", "normal");
@@ -1039,14 +1076,14 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     const linesToShow = Math.min(summaryLines.length, maxLinesToShow);
     
     for (let i = 0; i < linesToShow; i++) {
-      doc.text(summaryLines[i], x + 5, currentY, { align: 'justify' });
-      currentY += lineHeight; // Reduced line spacing to fit more text
+      doc.text(summaryLines[i], x + contentMargin, currentY, { align: 'justify' });
+      currentY += summaryLineHeight;
     }
     
     // Add ellipsis if we couldn't show all lines
     if (summaryLines.length > linesToShow) {
-      doc.text("...", x + 5, currentY);
-      currentY += lineHeight;
+      doc.text("...", x + contentMargin, currentY);
+      currentY += summaryLineHeight;
     }
     
     // Reset font size to normal
@@ -1054,10 +1091,9 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   }
   
   // --- IK category and ID-B number ---
-  // Calculate where the remaining footer content should go
-  // We need to leave space for barcode (approx 20mm) and other footer elements
+  // Calculate where the remaining footer content should go based on cell dimensions
   
-  // For multiple book PDF, we need to be strict about fixed cell height
+  // For multiple book PDF, ensure consistent footer positioning
   // Ensure we don't overflow by adjusting current position if needed
   if (currentY > y + height - spaceNeededForFooter) {
     // We've gone too far - adjust position
@@ -1067,31 +1103,31 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
   // Interest category if available
   if (book.interestCategory) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(gridFontSize - 1);
-    doc.text(book.interestCategory, x + 5, currentY);
-    currentY += 4;
+    doc.setFontSize(smallerFontSize);
+    doc.text(book.interestCategory, x + contentMargin, currentY);
+    currentY += standardLineHeight * 0.8;
   }
   
   // ID-B number if available
   if (book.idBNumber) {
     doc.setFont("helvetica", "normal");
-    doc.text(book.idBNumber, x + 5, currentY);
+    doc.text(book.idBNumber, x + contentMargin, currentY);
   }
   
   // --- Footer (no barcode) ---
-  // Position the footer at the bottom
-  currentY = y + height - 8;
+  // Position the footer at a fixed ratio from the bottom of the cell
+  currentY = y + height - (height * 0.05); // Position at 5% from bottom
   
   // Add ASB number
-  doc.setFontSize(7);
+  doc.setFontSize(footerFontSize);
   doc.setFont("helvetica", "normal");
   if (asbNumber && asbNumber.toString().trim() !== "") {
     doc.text(asbNumber.toString(), x + width/2, currentY, { align: 'center' });
-    currentY += 4;
+    currentY += standardLineHeight * 0.7;
   }
   
   // Add ekz footer text
-  doc.setFontSize(7);
+  doc.setFontSize(footerFontSize);
   doc.setFont("helvetica", "normal");
   doc.text("ekz-Informationsdienst", x + width/2, currentY, { align: 'center' });
   
