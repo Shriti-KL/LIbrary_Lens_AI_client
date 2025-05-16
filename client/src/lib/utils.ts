@@ -605,8 +605,24 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       // The price field might contain a complete price string already
       let priceText = book.price;
       
+      // Try to extract just the EUR (DE) price from complex price strings
+      const deMatch = priceText.match(/EUR\s+\d+([,.]\d+)?\s*\(DE\)/i);
+      if (deMatch) {
+        // Extract just the EUR value from the DE match
+        const euroValue = deMatch[0].match(/EUR\s+\d+([,.]\d+)?/i);
+        if (euroValue) {
+          priceText = euroValue[0].trim();
+        }
+      } 
+      // If no DE-specific price, look for the first EUR price
+      else if (priceText.includes("EUR")) {
+        const eurMatch = priceText.match(/EUR\s+\d+([,.]\d+)?/i);
+        if (eurMatch) {
+          priceText = eurMatch[0].trim();
+        }
+      }
       // If the price is just a number, format it properly
-      if (/^\d+(\.\d+)?$/.test(priceText)) {
+      else if (/^\d+(\.\d+)?$/.test(priceText)) {
         // Format as German price with comma
         priceText = priceText.replace('.', ',');
         priceText = `EUR ${priceText}`;
@@ -623,7 +639,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       
       // Add to the ISBN line with proper delimiter according to German RDA
       if (isbnLine.includes(" : ")) {
-        // If we already have a binding, use comma
+        // If we already have a binding, still use a colon (German RDA standard)
         isbnLine += ` : ${priceText}`;
       } else {
         // If no binding, use colon with spaces
