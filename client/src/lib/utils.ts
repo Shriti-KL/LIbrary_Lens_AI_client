@@ -231,25 +231,37 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
-  // Author name in bold with proper size
-  doc.setFontSize(10);
+  // Use smaller font size for all elements to ensure consistent spacing
+  doc.setFontSize(9); // Consistent smaller size for all text elements
   doc.setFont("helvetica", "bold"); 
+  
+  // Force text rendering mode for consistent character spacing
+  if ((doc as any).setCharSpace) {
+    try {
+      // Set character spacing to 0 to prevent expanded letter spacing
+      (doc as any).setCharSpace(0);
+    } catch (e) {
+      console.log("Character spacing not supported");
+    }
+  }
+  
+  // Add author name with normal letter spacing
   doc.text(authorFormatted + ":", 22, yPos);
   
-  yPos += 6; // Space after author name
+  yPos += 5; // Reduced spacing after author name
   
   // --- 3. Book title and publication info ---
-  // Use consistent smaller font size for all metadata (9pt is ekz standard)
-  // Important: Using consistent font settings is critical for proper spacing
-  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   
-  // Using PDF properties for consistent text rendering
-  // This approach is more compatible with all versions of jsPDF
+  // Force normal character spacing throughout
   try {
+    // Explicitly set normal rendering mode for consistent spacing
     (doc as any).setTextRenderingMode("fill");
+    // Ensure default character spacing (no expansion)
+    if ((doc as any).setCharSpace) {
+      (doc as any).setCharSpace(0);
+    }
   } catch (e) {
-    // Fallback if the method is not supported
     console.log("Advanced text rendering not supported, using standard rendering");
   }
   
@@ -320,22 +332,32 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Use same smaller font size for all metadata sections
-  doc.setFontSize(9);
+  // Use consistent smaller font size for all metadata sections
+  doc.setFontSize(8);
   
-  // In German RDA formatting, title and statement of responsibility appear on separate lines
-  // but Statement of Responsibility and Publication Info should each be on a single continuous line
+  // In German RDA formatting, we need to ensure consistent character spacing
+  // This special handling is critical to prevent expanded letter spacing in titles
   
   // ===== First line: Title with subtitle and authors according to the new format =====
   // Format: [Title] : [Subtitle] / [Author], [additionalAuthors] ; [statementOfResponsibility]
   
-  // Start with title
-  let titleWithMetadata = titleFull;
-  
-  // Add subtitle if present
+  // Render title and subtitle directly with consistent spacing
+  let titleWithSubtitle = titleFull;
   if (subtitle) {
-    titleWithMetadata += ` : ${subtitle}`; 
+    titleWithSubtitle += ` : ${subtitle}`;
   }
+  
+  // Manually split lines to ensure proper wrapping without spacing issues
+  const maxWidth = 160;
+  const titleLines = doc.splitTextToSize(titleWithSubtitle, maxWidth);
+  
+  // Debug title text
+  console.log("PDF Debug - Title text:", {
+    titleFull,
+    subtitle,
+    titleWithSubtitle,
+    lineCount: titleLines.length
+  });
   
   // Add authors section
   let authorSection = "";
