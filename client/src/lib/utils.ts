@@ -231,21 +231,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
-  // Use smaller font size for all elements to ensure consistent spacing
-  doc.setFontSize(9); // Consistent smaller size for all text elements
+  // Use even smaller font size for all elements to prevent spacing issues
+  doc.setFontSize(8); // Smaller font size for better spacing consistency
   doc.setFont("helvetica", "bold"); 
   
-  // Force text rendering mode for consistent character spacing
-  if ((doc as any).setCharSpace) {
-    try {
-      // Set character spacing to 0 to prevent expanded letter spacing
-      (doc as any).setCharSpace(0);
-    } catch (e) {
-      console.log("Character spacing not supported");
-    }
+  // Advanced PDF configuration to ensure consistent character spacing
+  try {
+    // Force normal character spacing for the entire document
+    (doc as any).internal.write(" Tf"); // Reset font mode completely
+  } catch (e) {
+    console.log("Advanced PDF configuration not supported");
   }
   
-  // Add author name with normal letter spacing
+  // Add author name with consistent letter spacing
   doc.text(authorFormatted + ":", 22, yPos);
   
   yPos += 5; // Reduced spacing after author name
@@ -288,10 +286,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     titleText = `${titleFull} : ${subtitle}`;  // Use space colon space format exactly as per German standards
   }
   
-  // Add statement of responsibility to titleText for compatibility
-  // but we'll display it separately below for better formatting
+  // Prepare statement of responsibility
+  let statementOfResp = "";
   if (book.statementOfResponsibility) {
-    titleText += ` / ${book.statementOfResponsibility}`;
+    statementOfResp = book.statementOfResponsibility;
   } else {
     // Use authors and contributors to construct statement of responsibility
     const authorName = book.mainAuthor || book.author || "";
@@ -324,97 +322,82 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       }
     }
     
-    // Add author and contributors to title text
+    // For illustrators specifically
+    if (book.illustrator && !otherContributors.includes(book.illustrator)) {
+      otherContributors = otherContributors 
+        ? `${otherContributors} ; ${book.illustrator} (Illustrator)` 
+        : ` ; ${book.illustrator} (Illustrator)`;
+    }
+    
+    // Add additional authors
+    let additionalAuthors = "";
+    if (book.additionalAuthors && Array.isArray(book.additionalAuthors) && book.additionalAuthors.length > 0) {
+      additionalAuthors = `, ${book.additionalAuthors.join(", ")}`;
+    }
+    
+    // Construct statement
     if (authorName) {
-      titleText += ` / ${authorName}${otherContributors}`;
+      statementOfResp = authorName;
+      if (additionalAuthors) {
+        statementOfResp += additionalAuthors;
+      }
+      if (otherContributors) {
+        statementOfResp += otherContributors;
+      }
     } else if (otherContributors) {
-      titleText += ` /${otherContributors}`;
+      statementOfResp = otherContributors.trimStart();
     }
   }
   
   // Use consistent smaller font size for all metadata sections
   doc.setFontSize(8);
   
-  // In German RDA formatting, we need to ensure consistent character spacing
-  // This special handling is critical to prevent expanded letter spacing in titles
-  
-  // ===== First line: Title with subtitle and authors according to the new format =====
-  // Format: [Title] : [Subtitle] / [Author], [additionalAuthors] ; [statementOfResponsibility]
-  
-  // Render title and subtitle directly with consistent spacing
-  let titleWithSubtitle = titleFull;
+  // Format title with subtitle
+  let displayTitle = titleFull;
   if (subtitle) {
-    titleWithSubtitle += ` : ${subtitle}`;
+    displayTitle += ` : ${subtitle}`;
   }
   
-  // Manually split lines to ensure proper wrapping without spacing issues
-  const maxWidth = 160;
-  const titleLines = doc.splitTextToSize(titleWithSubtitle, maxWidth);
+  // Ensure title fits on the page
+  const titleMaxWidth = 160;
+  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
   
   // Debug title text
   console.log("PDF Debug - Title text:", {
     titleFull,
     subtitle,
-    titleWithSubtitle,
+    displayTitle,
     lineCount: titleLines.length
   });
   
-  // Add authors section
-  let authorSection = "";
-  const mainAuthorName = book.mainAuthor || book.author || "";
-  let additionalAuthorsText = "";
-  
-  // Process additional authors if they exist
-  if (book.additionalAuthors && Array.isArray(book.additionalAuthors) && book.additionalAuthors.length > 0) {
-    additionalAuthorsText = `, ${book.additionalAuthors.join(", ")}`;
-    console.log("Found additional authors:", book.additionalAuthors);
+  // Render title lines
+  for (let i = 0; i < titleLines.length; i++) {
+    doc.text(titleLines[i], 22, yPos);
+    yPos += 4;
   }
   
-  // Process statement of responsibility
-  const statementOfResp = book.statementOfResponsibility || "";
-  
-  // Combine author components
-  if (mainAuthorName) {
-    authorSection = ` / ${mainAuthorName}${additionalAuthorsText}`;
-    if (statementOfResp) {
-      authorSection += ` ; ${statementOfResp}`;
+  // Render statement of responsibility if available
+  if (statementOfResp) {
+    const statementLine = `/ ${statementOfResp}`;
+    const statementLines = doc.splitTextToSize(statementLine, titleMaxWidth);
+    
+    for (let i = 0; i < statementLines.length; i++) {
+      doc.text(statementLines[i], 22, yPos);
+      yPos += 4;
     }
-  } else if (statementOfResp) {
-    authorSection = ` / ${statementOfResp}`;
   }
   
-  // Combine title and author information
-  titleWithMetadata += authorSection;
-  
-  // Debug output
+  // Debug output - additional author information
   console.log("PDF Metadata - Author information:", {
-    mainAuthor: mainAuthorName,
+    mainAuthor: book.mainAuthor || book.author,
     additionalAuthors: book.additionalAuthors,
-    statementOfResponsibility: statementOfResp,
-    finalAuthorSection: authorSection
+    statementOfResponsibility: book.statementOfResponsibility
   });
   
-  // Display title and authors as a single continuous line
-  // If it's too long for a single line, truncate with ellipsis
-  const titleMaxWidth = 170;
-  if (doc.getTextWidth(titleWithMetadata) > titleMaxWidth) {
-    // Find a good cutting point
-    const approximateLength = Math.floor(titleWithMetadata.length * (titleMaxWidth / doc.getTextWidth(titleWithMetadata)));
-    let cutPoint = approximateLength - 3; // Leave room for ellipsis
-    // Back up to the nearest space
-    while (cutPoint > 0 && titleWithMetadata[cutPoint] !== ' ') {
-      cutPoint--;
-    }
-    titleWithMetadata = titleWithMetadata.substring(0, cutPoint) + '...';
-  }
-  
-  // Set font size and display the title line
-  doc.setFontSize(9);
-  doc.text(titleWithMetadata, 22, yPos);
-  yPos += 5;
+  // Add more space after title/author section
+  yPos += 3;
   
   // --- 4. Publication Information ---
-  yPos += 2; // Extra space before publication info
   
   // Build full publication string following the exact target format
   let publicationInfo = '';
