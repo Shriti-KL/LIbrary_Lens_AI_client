@@ -671,20 +671,45 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // --- 6. Book summary/description and critical review ---
   if (book.summary || book.review) {
-    yPos += 2;
+    yPos += 4; // Add more spacing before summary section
     
-    // Set text style for summary text in exact ekz style
+    // Set text style for summary text in exact ekz style - use smaller font for better fit
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9); // Smaller font size for more content
+    doc.setFontSize(8); // Even smaller font size to prevent overflow issues
     
     // Combine summary and review with the | separator exactly as in target format
     let summaryText = '';
+    
     if (book.summary) {
-      summaryText = book.summary;
+      // Additional cleaning to avoid duplicate title/author info in summary
+      let cleanSummary = book.summary;
+      
+      // Remove title mentions at the beginning of summary
+      if (book.title && book.title.length > 3) {
+        const titleEscaped = book.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const titlePattern = new RegExp(`^["']?${titleEscaped}["']?\\s*(:|von|by|is|ist|-|–)\\s*`, 'i');
+        cleanSummary = cleanSummary.replace(titlePattern, '');
+      }
+      
+      // Remove author mentions at the beginning
+      if (book.author || book.mainAuthor) {
+        const authorName = (book.author || book.mainAuthor || '');
+        if (authorName.length > 3) {
+          const authorEscaped = authorName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const authorPattern = new RegExp(`^(by|von)\\s+${authorEscaped}\\s*(:|is|ist|-|–)\\s*`, 'i');
+          cleanSummary = cleanSummary.replace(authorPattern, '');
+        }
+      }
+      
+      summaryText = cleanSummary;
     }
+    
+    // Add separator between summary and review if both exist
     if (book.summary && book.review) {
       summaryText += ' | ';
     }
+    
+    // Add review if available
     if (book.review) {
       summaryText += book.review;
     }
@@ -723,34 +748,46 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Remove any extra whitespace and multiple newlines
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
+    
     // Normalize all spacing for consistent appearance
     summaryText = summaryText.replace(/\s+/g, " ").trim();
     
-    // Split the text for proper wrapping with standard ekz width
-    const summaryLines = doc.splitTextToSize(summaryText, 160);
+    // Remove bullet points at the beginning of the summary
+    summaryText = summaryText.replace(/^•\s+/g, '');
     
-    // Calculate available height to avoid overflow
-    const maxYPos = doc.internal.pageSize.height - 40; // Safe margin
-    const maxLines = Math.floor((maxYPos - yPos) / 4); // Using 4mm line height
+    // Format bullet points consistently throughout text
+    summaryText = summaryText.replace(/•\s+/g, '• ');
+    
+    // Debug the summary processing
+    console.log("PDF Summary - Processing:", {
+      originalLength: book.summary?.length || 0,
+      processedLength: summaryText.length
+    });
+    
+    // Split the text for proper wrapping with narrower width for better appearance
+    const summaryLines = doc.splitTextToSize(summaryText, 155);
+    
+    // Calculate available height with fixed line count to ensure consistency
+    const lineHeight = 3.5; // Reduced line height for smaller font
+    const maxLines = 28; // Allow slightly more lines with smaller font
     const linesToShow = Math.min(summaryLines.length, maxLines);
     
-    // Create content for each line with justified text - ekz standard format
+    // Create content for each line with consistent spacing - exact ekz standard format
     for (let i = 0; i < linesToShow; i++) {
-      doc.text(summaryLines[i], 22, yPos, { 
-        align: 'justify', // Use justified text alignment
-        maxWidth: 160,
-      });
-      yPos += 4; // Reduced line spacing for more content
+      // Use left-aligned text instead of justify to prevent inconsistent spacing issues
+      doc.text(summaryLines[i], 22, yPos);
+      yPos += lineHeight; // Use the consistent line height defined above
     }
     
-    // Add ellipsis if we had to truncate
+    // Add ellipsis if text was truncated
     if (summaryLines.length > linesToShow) {
+      doc.setFont("helvetica", "italic");
       doc.text("...", 22, yPos);
-      yPos += 4;
+      yPos += lineHeight;
     }
     
-    // Reset font size to default
-    doc.setFontSize(10);
+    // Reset font size to default for remaining content
+    doc.setFontSize(9);
     
     // Add a small space after the summary
     yPos += 2;
@@ -850,20 +887,33 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Reset any document formatting from previous uses
-  doc.setFontSize(10);
+  // Reset any document formatting from previous uses and enforce consistent settings
+  doc.setFontSize(9); // Set a smaller default font size for better spacing
   doc.setFont("helvetica", "normal");
   
   // Ensure we don't lose the secondary classification when generating PDFs
-  // Removed the logic that would replace classificationNumber with secondaryClassification
-  // This ensures both fields are displayed separately
+  // We keep secondary classification separate from primary classification
   
   // Make sure reviewer name is available 
   if (!book.reviewerName && book.userId) {
     book.reviewerName = "Ref-" + book.userId;
   }
   
-  // Format book entry
+  // Clean up summary to prevent duplicate title/author information
+  if (book.summary) {
+    // Remove instances where title appears at the beginning of summary
+    const titlePattern = new RegExp(`^(["']?${book.title}["']?\\s*(:|-|by|von|—|,|\\.|is|ist)\\s*)`, 'i');
+    book.summary = book.summary.replace(titlePattern, '');
+    
+    // Remove instances where "by [Author]" or "von [Author]" appears at the beginning
+    const authorPattern = new RegExp(`^(by|von)\\s+${book.author || book.mainAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
+    book.summary = book.summary.replace(authorPattern, '');
+    
+    // Normalize whitespace
+    book.summary = book.summary.replace(/\s+/g, ' ').trim();
+  }
+  
+  // Format book entry with consistent spacing
   formatBookEntryForPDF(doc, book);
   
   // Save the PDF with the book title as filename
