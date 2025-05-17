@@ -231,33 +231,42 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     authorFormatted = `${lastName}, ${firstName}`;
   }
   
-  // Use even smaller font size for all elements to prevent spacing issues
-  doc.setFontSize(8); // Smaller font size for better spacing consistency
-  doc.setFont("helvetica", "bold"); 
+  // Use consistent font size for author name
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
   
-  // Advanced PDF configuration to ensure consistent character spacing
-  try {
-    // Force normal character spacing for the entire document
-    (doc as any).internal.write(" Tf"); // Reset font mode completely
-  } catch (e) {
-    console.log("Advanced PDF configuration not supported");
+  // Calculate width to make sure text stays within boundaries
+  const authorWidth = doc.getTextWidth(authorFormatted + ":");
+  const maxWidth = 170;
+  
+  if (authorWidth > maxWidth) {
+    // Split if needed to ensure text stays within boundaries
+    const authorLines = doc.splitTextToSize(authorFormatted + ":", maxWidth);
+    doc.text(authorLines[0], 22, yPos);
+    yPos += 4;
+    if (authorLines.length > 1) {
+      doc.text(authorLines[1], 22, yPos);
+      yPos += 4;
+    }
+  } else {
+    // Otherwise, render on a single line
+    doc.text(authorFormatted + ":", 22, yPos);
+    yPos += 5;
   }
   
-  // Add author name with consistent letter spacing
-  doc.text(authorFormatted + ":", 22, yPos);
-  
-  yPos += 5; // Reduced spacing after author name
-  
   // --- 3. Book title and publication info ---
+  // Reset font settings for title section
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
   
-  // Force normal character spacing throughout
+  // Apply consistent character spacing settings for all text elements
   try {
-    // Explicitly set normal rendering mode for consistent spacing
+    // These settings help maintain consistent letter spacing
     (doc as any).setTextRenderingMode("fill");
-    // Ensure default character spacing (no expansion)
+    
+    // Use character spacing control if available (newer jsPDF versions)
     if ((doc as any).setCharSpace) {
-      (doc as any).setCharSpace(0);
+      (doc as any).setCharSpace(0); // Prevent letter-spacing expansion
     }
   } catch (e) {
     console.log("Advanced text rendering not supported, using standard rendering");
@@ -352,38 +361,63 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Use consistent smaller font size for all metadata sections
   doc.setFontSize(8);
   
-  // Format title with subtitle
+  // Format title with subtitle using properly scaled text
   let displayTitle = titleFull;
   if (subtitle) {
     displayTitle += ` : ${subtitle}`;
   }
   
-  // Ensure title fits on the page
-  const titleMaxWidth = 160;
-  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
+  // Control line width precisely to prevent overflow
+  const titleMaxWidth = 160;  // Max width allowed for text content
   
-  // Debug title text
-  console.log("PDF Debug - Title text:", {
+  // Add debugging for title processing
+  console.log("PDF Debug - Title processing:", {
     titleFull,
     subtitle,
     displayTitle,
-    lineCount: titleLines.length
+    originalWidth: doc.getTextWidth(displayTitle)
   });
   
-  // Render title lines
+  // Apply text scaling to help with proper spacing
+  try {
+    // Set horizontal scaling to 100% (normal)
+    (doc as any).internal.out("100 Tz");
+    // Ensure default character spacing
+    if ((doc as any).setCharSpace) {
+      (doc as any).setCharSpace(0);
+    }
+  } catch (e) {
+    console.log("Text scaling adjustment not supported");
+  }
+  
+  // Split lines with consistent spacing
+  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
+  
+  // Render title lines with controlled spacing
   for (let i = 0; i < titleLines.length; i++) {
     doc.text(titleLines[i], 22, yPos);
-    yPos += 4;
+    yPos += 4;  // Consistent line height for title
   }
+  
+  // Add small space after title before statement of responsibility
+  yPos += 1;
   
   // Render statement of responsibility if available
   if (statementOfResp) {
+    // Reset font settings to ensure consistency
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
+    // Format according to German RDA standards
     const statementLine = `/ ${statementOfResp}`;
+    
+    // Split statement text if it's too long
     const statementLines = doc.splitTextToSize(statementLine, titleMaxWidth);
     
+    // Render each line with consistent spacing
     for (let i = 0; i < statementLines.length; i++) {
       doc.text(statementLines[i], 22, yPos);
-      yPos += 4;
+      yPos += 4;  // Consistent line height
     }
   }
   
@@ -479,7 +513,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     dimensions: book.dimensions
   });
   
-  // Add page count
+  // Add page count with consistent formatting
   const pages = book.pageCount || '';
   if (pages) {
     publicationInfo += `${pages} ${pages === 1 ? 'Seite' : 'Seiten'}`;
@@ -488,7 +522,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     publicationInfo += `Seiten`;
   }
   
-  // Add illustration information if available
+  // Add illustration information if available - with proper spacing
   if (book.illustrations) {
     publicationInfo += ` : ${book.illustrations}`;
   } else if (book.illustrator || (book.contributors && typeof book.contributors === 'object')) {
@@ -512,7 +546,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Add dimensions if available
+  // Add dimensions with clean formatting
   if (book.dimensions) {
     // Clean up dimensions string if needed
     let dimensions = book.dimensions.trim();
@@ -520,6 +554,20 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     if (dimensions && dimensions !== '-' && dimensions.toLowerCase() !== 'keine angabe') {
       publicationInfo += ` ; ${dimensions}`;
     }
+  }
+  
+  // Apply character spacing consistency for physical description
+  try {
+    // Reset font settings to ensure uniform rendering
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    
+    // Ensure normal character spacing
+    if ((doc as any).setCharSpace) {
+      (doc as any).setCharSpace(0);
+    }
+  } catch (e) {
+    console.log("Character spacing adjustment not supported");
   }
   
   // Keep publication info styling consistent with statement of responsibility
@@ -880,24 +928,31 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 // Export a single book to PDF
 export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
-  // Add settings to ensure consistent text rendering
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
     compress: true,
-    putOnlyUsedFonts: true
-    // Removed problematic hotfixes setting while keeping text formatting improvements
+    putOnlyUsedFonts: true,
+    // Added text rendering options for better spacing consistency
+    hotfixes: ['px_scaling', 'px_scaling']
   });
   
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Reset any document formatting from previous uses and enforce consistent settings
-  doc.setFontSize(9); // Set a smaller default font size for better spacing
-  doc.setFont("helvetica", "normal");
+  // Advanced PDF configuration
+  try {
+    // Force consistent letter spacing for the entire document
+    (doc as any).internal.events.subscribe('putFont', function() {
+      (doc as any).internal.out(`1 Tr`); // Force consistent spacing
+    });
+  } catch (e) {
+    console.log("Advanced PDF font configuration not supported");
+  }
   
-  // Ensure we don't lose the secondary classification when generating PDFs
-  // We keep secondary classification separate from primary classification
+  // Set base font and size
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
   
   // Make sure reviewer name is available 
   if (!book.reviewerName && book.userId) {
@@ -907,16 +962,26 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Clean up summary to prevent duplicate title/author information
   if (book.summary) {
     // Remove instances where title appears at the beginning of summary
-    const titlePattern = new RegExp(`^(["']?${book.title}["']?\\s*(:|-|by|von|—|,|\\.|is|ist)\\s*)`, 'i');
-    book.summary = book.summary.replace(titlePattern, '');
+    if (book.title) {
+      const escapedTitle = book.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const titlePattern = new RegExp(`^(["']?${escapedTitle}["']?\\s*(:|-|by|von|—|,|\\.|is|ist)\\s*)`, 'i');
+      book.summary = book.summary.replace(titlePattern, '');
+    }
     
     // Remove instances where "by [Author]" or "von [Author]" appears at the beginning
-    const authorPattern = new RegExp(`^(by|von)\\s+${book.author || book.mainAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
-    book.summary = book.summary.replace(authorPattern, '');
+    if (book.author || book.mainAuthor) {
+      const author = book.author || book.mainAuthor;
+      const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
+      book.summary = book.summary.replace(authorPattern, '');
+    }
     
     // Normalize whitespace
     book.summary = book.summary.replace(/\s+/g, ' ').trim();
   }
+  
+  // Set initial state for each PDF generation
+  doc.setLineWidth(0.1);
   
   // Format book entry with consistent spacing
   formatBookEntryForPDF(doc, book);
