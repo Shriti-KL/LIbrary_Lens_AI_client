@@ -198,16 +198,10 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Add the secondary classification on the next line if available
   // Need to check both camelCase (for frontend objects) and snake_case (for direct database fields)
   const secondaryClass = book.secondaryClassification || book.secondary_classification;
-  console.log("Secondary classification check:", { 
-    camelCase: book.secondaryClassification,
-    snakeCase: book.secondary_classification,
-    secondaryClass
-  });
-
+  
   if (secondaryClass) {
     yPos += 5;
     doc.text(secondaryClass, 22, yPos);
-    console.log("Adding secondary classification to PDF:", secondaryClass);
   }
 
   // Second line - additional classifications under ASB
@@ -937,19 +931,28 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   doc.setLineWidth(0.1);
   doc.setTextColor(0, 0, 0);
 
-  // Create a simpler approach to fix letter spacing issues
+  // Apply precise text rendering settings to fix letter spacing and margins
   try {
-    // Direct method to set character and word spacing at document level before any text is drawn
-    // This avoids TypeScript errors while still addressing the letter spacing issue
+    // Direct method to set character and word spacing at document level
     const docInternal = doc.internal as any;
     if (docInternal && docInternal.out) {
-      docInternal.out("0 Tc"); // Set character spacing to 0 (normal)
-      docInternal.out("0 Tw"); // Set word spacing to 0 (normal)
-      docInternal.out("100 Tz"); // Set horizontal scaling to 100% (normal)
+      // Fix character spacing issues
+      docInternal.out("0 Tc"); // Character spacing = 0 (prevents expanded letters)
+      docInternal.out("0 Tw"); // Word spacing = 0 (prevents expanded words)
+      docInternal.out("100 Tz"); // Horizontal scaling = 100% (prevents stretched text)
+      
+      // Set text leading (line spacing) to a consistent value
+      docInternal.out("10 TL");
+      
+      // Ensure text rendering mode is set to fill (solid text)
+      docInternal.out("0 Tr");
+      
+      // Set the text rise to 0 (prevents vertical misalignment)
+      docInternal.out("0 Ts");
     }
   } catch (e) {
     // If this fails, silently continue - standard text will still render
-    console.log("Letter spacing optimization unavailable");
+    console.log("Letter spacing optimization unavailable:", e);
   }
 
   // Set base font and size
