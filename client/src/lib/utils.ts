@@ -399,7 +399,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // Render title lines with controlled spacing
   for (let i = 0; i < titleLines.length; i++) {
-    doc.text(titleLines[i], 22, yPos);
+    renderText(doc, titleLines[i], 22, yPos);
     yPos += 4;  // Consistent line height for title
   }
   
@@ -433,7 +433,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Render each line with consistent spacing
     for (let i = 0; i < statementLines.length; i++) {
-      doc.text(statementLines[i], 22, yPos);
+      renderText(doc, statementLines[i], 22, yPos);
       yPos += 4;  // Consistent line height
     }
   }
