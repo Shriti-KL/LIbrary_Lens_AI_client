@@ -378,17 +378,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     originalWidth: doc.getTextWidth(displayTitle)
   });
   
-  // Apply text scaling to help with proper spacing
-  try {
-    // Set horizontal scaling to 100% (normal)
-    (doc as any).internal.out("100 Tz");
-    // Ensure default character spacing
-    if ((doc as any).setCharSpace) {
-      (doc as any).setCharSpace(0);
-    }
-  } catch (e) {
-    console.log("Text scaling adjustment not supported");
-  }
+  // Fix for letter spacing in PDFs - remove completely to prevent errors
+  // and rely on the overridden text function below
   
   // Split lines with consistent spacing
   const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
@@ -940,30 +931,25 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Simplified approach for consistent typography with better error handling
-  // Apply standard text settings that work reliably across all PDF versions
+  // Use a simple, reliable approach for consistent letter spacing and typography
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setLineWidth(0.1);
+  doc.setTextColor(0, 0, 0);
   
-  // Use the safe built-in methods for text rendering
+  // Create a simpler approach to fix letter spacing issues
   try {
-    // Apply consistent spacing settings through the built-in API
-    // This avoids direct PDF command output which can be problematic
-    doc.setTextColor(0, 0, 0);
-    
-    // Set the text render mode to normal (fill)
-    if (typeof doc.setTextRenderingMode === 'function') {
-      doc.setTextRenderingMode('fill');
-    }
-    
-    // Use a consistent line height factor for all text
-    if (typeof doc.setLineHeightFactor === 'function') {
-      doc.setLineHeightFactor(1.1);
+    // Direct method to set character and word spacing at document level before any text is drawn
+    // This avoids TypeScript errors while still addressing the letter spacing issue
+    const docInternal = doc.internal as any;
+    if (docInternal && docInternal.out) {
+      docInternal.out("0 Tc"); // Set character spacing to 0 (normal)
+      docInternal.out("0 Tw"); // Set word spacing to 0 (normal)
+      docInternal.out("100 Tz"); // Set horizontal scaling to 100% (normal)
     }
   } catch (e) {
-    // Just log the error and continue - the basic text will still render
-    console.log("Enhanced text rendering not available - using standard rendering");
+    // If this fails, silently continue - standard text will still render
+    console.log("Letter spacing optimization unavailable");
   }
   
   // Set base font and size
