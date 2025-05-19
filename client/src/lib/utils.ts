@@ -750,7 +750,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Normalize spaces in the final ISBN line
     isbnLine = isbnLine.replace(/\s+/g, ' ').trim();
     
-    doc.text(isbnLine, 22, yPos);
+    doc.text(isbnLine, 22, yPos, { maxWidth: 170 });
     yPos += 6; // Slightly less spacing
   }
   
@@ -991,7 +991,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     idBLine = idBLine.replace(/\s+/g, ' ').trim();
     
     doc.setFont("helvetica", "normal");
-    doc.text(idBLine, 22, yPos);
+    doc.text(idBLine, 22, yPos, { maxWidth: 170 });
     yPos += 5;
   }
   // Legacy format support - if an ID-B number is provided directly
