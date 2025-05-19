@@ -234,8 +234,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   const maxWidth = 170;
 
   if (authorWidth > maxWidth) {
-    // Split if needed to ensure text stays within boundaries
-    const authorLines = doc.splitTextToSize(authorFormatted + ":", maxWidth);
+    // Split if needed to ensure text stays within boundaries - use narrower width to prevent excessive spacing
+    const authorLines = doc.splitTextToSize(authorFormatted + ":", maxWidth - 10);
     doc.text(authorLines[0], 22, yPos);
     yPos += 4;
     if (authorLines.length > 1) {
@@ -375,8 +375,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Fix for letter spacing in PDFs - remove completely to prevent errors
   // and rely on the overridden text function below
 
-  // Split lines with consistent spacing
-  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
+  // Use narrower width setting to prevent excessive word spacing
+  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth - 15);
 
   // Render title lines with controlled spacing
   for (let i = 0; i < titleLines.length; i++) {
@@ -396,8 +396,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Format according to German RDA standards
     const statementLine = `/ ${statementOfResp}`;
 
-    // Split statement text if it's too long
-    const statementLines = doc.splitTextToSize(statementLine, titleMaxWidth);
+    // Split statement text if it's too long - use narrower width to prevent excessive spacing
+    const statementLines = doc.splitTextToSize(statementLine, titleMaxWidth - 15);
 
     // Render each line with consistent spacing
     for (let i = 0; i < statementLines.length; i++) {
@@ -1155,8 +1155,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Normalize and standardize spaces to ensure consistent rendering
     const pubInfoNormalized = pubInfo.replace(/\s+/g, " ").trim();
 
-    // Use a rendering approach that maintains consistent character spacing
-    const pubLines = doc.splitTextToSize(pubInfoNormalized, width - 10);
+    // Use a tighter width to reduce the spacing between words
+    const pubLines = doc.splitTextToSize(pubInfoNormalized, width - 20);
     for (let i = 0; i < Math.min(pubLines.length, 2); i++) { // Limit to 2 lines
       doc.text(pubLines[i], x + 5, currentY);
       currentY += 3.5; // Slightly reduced line spacing
@@ -1193,7 +1193,8 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
     // Format the ISBN text properly without extra spacing
     const isbnFormatted = isbnText.replace(/\s+/g, " ").trim();
 
-    doc.text(doc.splitTextToSize(isbnFormatted, width - 10)[0], x + 5, currentY);
+    // Use tighter width to reduce word spacing on this line
+    doc.text(doc.splitTextToSize(isbnFormatted, width - 20)[0], x + 5, currentY);
     currentY += 4;
 
     // Reset font size
