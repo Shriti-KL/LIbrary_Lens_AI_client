@@ -1079,10 +1079,14 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     
     // Remove instances where "by [Author]" or "von [Author]" appears at the beginning
     if (book.author || book.mainAuthor) {
-      const author = book.author || book.mainAuthor;
-      const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
-      book.summary = book.summary.replace(authorPattern, '');
+      // Type assertion to help TypeScript understand this won't be null
+      const authorText: string = (book.author || book.mainAuthor || '') as string;
+      
+      if (authorText.length > 0) {
+        const escapedAuthor = authorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
+        book.summary = book.summary.replace(authorPattern, '');
+      }
     }
     
     // Normalize whitespace

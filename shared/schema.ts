@@ -25,6 +25,7 @@ export const books = pgTable("books", {
   isbn: text("isbn"),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
+  author: text("author").notNull(), // Author field (required in database)
   mainAuthor: text("main_author"), // The primary author according to DNB
   statementOfResponsibility: text("statement_of_responsibility"), // Complete statement including authors, illustrators, etc.
   edition: text("edition"), // Edition statement
@@ -74,6 +75,7 @@ export const bookAnalysisSchema = z.object({
   isbn: z.string().nullable().optional(),
   title: z.string().optional(),
   subtitle: z.string().nullable().optional(),
+  author: z.string().nullable().optional(), // Traditional author field (required in database)
   mainAuthor: z.string().nullable().optional(), // The primary author according to DNB
   statementOfResponsibility: z.string().nullable().optional(), // Complete statement including authors, illustrators, etc.
   edition: z.string().nullable().optional(), // Edition statement

@@ -332,9 +332,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.price = formatPriceForDb(validatedData.price);
       }
       
+      // Set authors properly to avoid database constraint violations
+      // The database requires a non-null author field
+      if (!validatedData.author) {
+        // Try to use mainAuthor, statementOfResponsibility, or reviewerName as fallbacks
+        if (validatedData.mainAuthor) {
+          validatedData.author = validatedData.mainAuthor;
+        } else if (validatedData.statementOfResponsibility) {
+          // Extract author name from statement of responsibility if possible
+          const match = validatedData.statementOfResponsibility.match(/^(.*?)(?:\s*[;:\/]|$)/);
+          validatedData.author = match ? match[1].trim() : validatedData.statementOfResponsibility;
+        } else if (validatedData.reviewerName) {
+          validatedData.author = `Verantwortlich: ${validatedData.reviewerName}`;
+        } else {
+          // Last resort - use "Unbekannt" (Unknown) as author for German standards
+          validatedData.author = "Unbekannt";
+        }
+      }
+      
       // Debug logging to see what's coming in
       console.log('Book save data:', JSON.stringify({
         title: validatedData.title,
+        author: validatedData.author,
         review: validatedData.review
       }));
       
@@ -355,6 +374,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.price) {
         const { formatPriceForDb } = await import('../client/src/lib/utils');
         validatedData.price = formatPriceForDb(validatedData.price);
+      }
+      
+      // For updates, only handle the author field if it's explicitly being set to null
+      // This prevents overwriting existing author data during partial updates
+      if (validatedData.author === null) {
+        // Try to use mainAuthor or other fields as fallbacks if they're in the update data
+        if (validatedData.mainAuthor) {
+          validatedData.author = validatedData.mainAuthor;
+        } else if (validatedData.statementOfResponsibility) {
+          // Extract author name from statement of responsibility if possible
+          const match = validatedData.statementOfResponsibility.match(/^(.*?)(?:\s*[;:\/]|$)/);
+          validatedData.author = match ? match[1].trim() : validatedData.statementOfResponsibility;
+        } else if (validatedData.reviewerName) {
+          validatedData.author = `Verantwortlich: ${validatedData.reviewerName}`;
+        } else {
+          // We're better off removing the author property entirely for partial updates
+          // rather than setting a placeholder, so the database keeps the existing value
+          delete validatedData.author;
+        }
       }
       
       const updatedBook = await storage.updateBook(id, validatedData);
