@@ -1151,8 +1151,53 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Set initial state for each PDF generation
   doc.setLineWidth(0.1);
   
-  // Format book entry with consistent spacing
-  formatBookEntryForPDF(doc, book);
+  // Format book entry with consistent spacing - pass through our existing function
+  let yPos = 20; // Start position
+  
+  // --- 1. ASB Classification at the top-left corner ---
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  
+  // Use the first classification number (ASB) if available
+  if (book.classificationNumber) {
+    const asbNumber = book.classificationNumber.trim();
+    doc.text("ASB: " + asbNumber, 22, yPos, { maxWidth: 170 });
+    yPos += 6; // Slightly less spacing
+    
+    // Add secondary classification if available on next line (with consistent spacing)
+    if (book.secondaryClassification) {
+      const secondaryNumber = book.secondaryClassification.trim();
+      doc.text(secondaryNumber, 22, yPos, { maxWidth: 170 });
+      yPos += 6;
+    }
+  }
+  
+  // --- 2. Book title and subtitle ---
+  yPos += 3; // Add some spacing before title section
+  
+  // Prepare title text
+  let displayTitle = book.title || '';
+  
+  // Add subtitle with proper separator if available
+  if (book.subtitle && book.subtitle.trim().length > 0) {
+    displayTitle += ` : ${book.subtitle.trim()}`;
+  }
+  
+  // Apply formatting to title section
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  
+  // Calculate max width for title to ensure it fits in the page
+  const titleMaxWidth = 160; // Slightly narrower than body text
+  
+  // Split title into lines if needed
+  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
+  
+  // Render title lines with controlled spacing
+  for (let i = 0; i < titleLines.length; i++) {
+    doc.text(titleLines[i], 22, yPos, { maxWidth: titleMaxWidth });
+    yPos += 4;  // Consistent line height for title
+  }
   
   // Save the PDF with the book title as filename
   // Remove any forbidden characters from filename
