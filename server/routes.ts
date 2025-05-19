@@ -589,6 +589,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             price: verifiedBook.price ? formatPriceForDb(verifiedBook.price) : null
           };
           
+          // Ensure author is never null to prevent database constraint violations
+          if (!newBook.author) {
+            // Try to use other author-related fields in this priority order
+            if (newBook.mainAuthor) {
+              newBook.author = newBook.mainAuthor;
+            } else if (newBook.statementOfResponsibility) {
+              const match = newBook.statementOfResponsibility.match(/^(.*?)(?:\s*[;:\/]|$)/);
+              newBook.author = match ? match[1].trim() : newBook.statementOfResponsibility;
+            } else if (newBook.reviewerName) {
+              newBook.author = `Verantwortlich: ${newBook.reviewerName}`;
+            } else {
+              // Last resort - use "Unbekannt" (Unknown) in German
+              newBook.author = "Unbekannt";
+            }
+          }
+          
           // Add user ID if authenticated
           if (req.isAuthenticated()) {
             newBook.userId = req.user.id;
