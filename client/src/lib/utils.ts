@@ -216,8 +216,8 @@ function patchPdfTextRendering(formatBookEntryForPDF: Function): Function {
   };
 }
 
-// Apply our patch to prevent text overflow
-const originalFormatBookEntryForPDF = function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
+// Define the actual formatting function
+export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
   
   // --- 1. ASB Classification at the top-left corner ---
@@ -1074,6 +1074,21 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     // Added text rendering options for better spacing consistency
     hotfixes: ['px_scaling', 'px_scaling']
   });
+  
+  // Create a wrapper for doc.text that always applies maxWidth
+  const originalText = doc.text;
+  doc.text = function(this: any, text: string | string[], x: number, y: number, options?: any): any {
+    // If options is not an object (might be a legacy 'align' string), convert it
+    if (typeof options !== 'object' || options === null) {
+      options = options ? { align: options } : {};
+    }
+    // Always add maxWidth if not specified
+    if (!options.maxWidth) {
+      options.maxWidth = 170; // Prevent text overflow
+    }
+    // Call the original function with enhanced options
+    return originalText.call(this, text, x, y, options);
+  };
   
   // Configure language-specific text
   const bookLanguage = book.language || language;
