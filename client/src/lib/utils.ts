@@ -926,7 +926,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Normalize spacing and render with consistent character spacing
   if (reviewerName) {
     reviewerName = reviewerName.replace(/\s+/g, ' ').trim();
-    doc.text(reviewerName, 190, yPos, { align: 'right' });
+    doc.text(reviewerName, 190, yPos, { align: 'right', maxWidth: 80 });
   }
   
   // --- 8. Interest category (IK) on next line (left aligned) ---
