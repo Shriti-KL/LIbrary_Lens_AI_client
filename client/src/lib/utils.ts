@@ -940,29 +940,30 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Advanced PDF configuration for consistent typography and paragraph spacing
+  // Simplified approach for consistent typography with better error handling
+  // Apply standard text settings that work reliably across all PDF versions
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setLineWidth(0.1);
+  
+  // Use the safe built-in methods for text rendering
   try {
-    // Apply standardized text settings for all renderings throughout the document
-    // This prevents font/spacing inconsistencies between paragraphs
-    doc.internal.events.subscribe('putFont', function() {
-      // Set uniform text rendering mode
-      doc.internal.out("0 Tr"); 
-      // Maintain consistent character spacing (no expanded text)
-      doc.internal.out("0 Tc");
-      // Keep word spacing consistent
-      doc.internal.out("0 Tw");
-      // Set horizontal scaling to 100% (normal)
-      doc.internal.out("100 Tz");
-    });
+    // Apply consistent spacing settings through the built-in API
+    // This avoids direct PDF command output which can be problematic
+    doc.setTextColor(0, 0, 0);
     
-    // Set the text rise to 0 (no superscript/subscript)
-    doc.internal.out("0 Ts");
+    // Set the text render mode to normal (fill)
+    if (typeof doc.setTextRenderingMode === 'function') {
+      doc.setTextRenderingMode('fill');
+    }
     
-    // Additional text state reset for better consistency
-    doc.internal.out("0 w"); // Line width
-    
+    // Use a consistent line height factor for all text
+    if (typeof doc.setLineHeightFactor === 'function') {
+      doc.setLineHeightFactor(1.1);
+    }
   } catch (e) {
-    console.log("Advanced PDF text configuration not supported - using fallback");
+    // Just log the error and continue - the basic text will still render
+    console.log("Enhanced text rendering not available - using standard rendering");
   }
   
   // Set base font and size
