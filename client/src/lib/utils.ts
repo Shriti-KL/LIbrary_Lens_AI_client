@@ -940,14 +940,29 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Advanced PDF configuration
+  // Advanced PDF configuration for consistent typography and paragraph spacing
   try {
-    // Force consistent letter spacing for the entire document
-    (doc as any).internal.events.subscribe('putFont', function() {
-      (doc as any).internal.out(`1 Tr`); // Force consistent spacing
+    // Apply standardized text settings for all renderings throughout the document
+    // This prevents font/spacing inconsistencies between paragraphs
+    doc.internal.events.subscribe('putFont', function() {
+      // Set uniform text rendering mode
+      doc.internal.out("0 Tr"); 
+      // Maintain consistent character spacing (no expanded text)
+      doc.internal.out("0 Tc");
+      // Keep word spacing consistent
+      doc.internal.out("0 Tw");
+      // Set horizontal scaling to 100% (normal)
+      doc.internal.out("100 Tz");
     });
+    
+    // Set the text rise to 0 (no superscript/subscript)
+    doc.internal.out("0 Ts");
+    
+    // Additional text state reset for better consistency
+    doc.internal.out("0 w"); // Line width
+    
   } catch (e) {
-    console.log("Advanced PDF font configuration not supported");
+    console.log("Advanced PDF text configuration not supported - using fallback");
   }
   
   // Set base font and size
