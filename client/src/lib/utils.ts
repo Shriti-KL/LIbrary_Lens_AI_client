@@ -177,6 +177,15 @@ interface BookMetadata {
 }
 
 // Format a single book for PDF export - returns the ending Y position
+// Helper function to consistently render text with maxWidth to prevent overflow
+function renderText(doc: jsPDF, text: string, x: number, y: number, options: any = {}): number {
+  // Always apply maxWidth unless explicitly disabled
+  const defaultOptions = { maxWidth: 170, ...options };
+  doc.text(text, x, y, defaultOptions);
+  // Return the y position for potential increment
+  return y;
+}
+
 export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
   
@@ -750,7 +759,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Normalize spaces in the final ISBN line
     isbnLine = isbnLine.replace(/\s+/g, ' ').trim();
     
-    doc.text(isbnLine, 22, yPos, { maxWidth: 170 });
+    renderText(doc, isbnLine, 22, yPos);
     yPos += 6; // Slightly less spacing
   }
   
