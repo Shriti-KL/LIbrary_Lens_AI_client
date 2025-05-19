@@ -901,40 +901,67 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   
-  // Use reviewer name if available, with multiple fallbacks
+  // Apply character spacing control for consistent text rendering
+  try {
+    (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+  } catch (e) {
+    // Silently continue if this fails
+  }
+  
+  // Prepare reviewer name with normalized spacing
+  let reviewerName = '';
   if (book.reviewerName) {
-    doc.text(book.reviewerName, 190, yPos, { align: 'right' });
+    reviewerName = book.reviewerName;
   } else if (book.reviewer_name) {
     // Alternative field name
-    doc.text(book.reviewer_name, 190, yPos, { align: 'right' });
+    reviewerName = book.reviewer_name;
   } else if (book.user && typeof book.user === 'object' && book.user.fullName) {
     // Fallback to user's full name if available
-    doc.text(book.user.fullName, 190, yPos, { align: 'right' });
+    reviewerName = book.user.fullName;
   } else if (book.userId) {
-    // If only user ID is available, we show a placeholder
-    // In a real implementation, we would fetch user details from the database
-    doc.text(`ID: ${book.userId}`, 190, yPos, { align: 'right' });
+    // If only user ID is available, use ID as fallback
+    reviewerName = `ID: ${book.userId}`;
+  }
+  
+  // Normalize spacing and render with consistent character spacing
+  if (reviewerName) {
+    reviewerName = reviewerName.replace(/\s+/g, ' ').trim();
+    doc.text(reviewerName, 190, yPos, { align: 'right' });
   }
   
   // --- 8. Interest category (IK) on next line (left aligned) ---
   yPos += 10;
   
+  // Apply character spacing control for consistent text rendering
+  try {
+    (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+  } catch (e) {
+    // Silently continue if this fails
+  }
+  
   // Interest category and age recommendation in target format: IK: [Categories]; suitable from age [Age]
   let ikLine = '';
   
   if (book.interestCategory) {
-    ikLine = `IK: ${book.interestCategory}`;
+    ikLine = `IK: ${book.interestCategory.trim()}`;
     
     // Add age recommendation if available
     if (book.ageRecommendation) {
-      ikLine += `; geeignet ab ${book.ageRecommendation} Jahren`;
+      ikLine += `; geeignet ab ${book.ageRecommendation.toString().trim()} Jahren`;
     }
+    
+    // Normalize spacing in the final IK line
+    ikLine = ikLine.replace(/\s+/g, ' ').trim();
     
     doc.setFont("helvetica", "bold");
     doc.text(ikLine, 22, yPos);
     yPos += 5;
   } else if (book.ageRecommendation) {
-    ikLine = `Geeignet ab ${book.ageRecommendation} Jahren`;
+    ikLine = `Geeignet ab ${book.ageRecommendation.toString().trim()} Jahren`;
+    
+    // Normalize spacing in the age recommendation
+    ikLine = ikLine.replace(/\s+/g, ' ').trim();
+    
     doc.setFont("helvetica", "bold");
     doc.text(ikLine, 22, yPos);
     yPos += 5;
@@ -944,6 +971,13 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // This should appear on a new line after the Interest Category
   let idBLine = '';
   
+  // Apply character spacing control for consistent text rendering
+  try {
+    (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+  } catch (e) {
+    // Silently continue if this fails
+  }
+  
   // Support multiple field naming conventions for these fields
   const initials = book.idbInitials || book.idb_initials || '';
   const sequenceNumber = book.idbSequenceNumber || book.idb_sequence_number || '';
@@ -951,20 +985,34 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   
   // If we have at least initials and one other field, show the ID-B line
   if (initials && (sequenceNumber || idbYear)) {
-    idBLine = `ID-${initials} ${sequenceNumber}/${idbYear}`;
+    idBLine = `ID-${initials.trim()} ${sequenceNumber.trim()}/${idbYear.trim()}`;
+    
+    // Normalize spacing in the ID-B line
+    idBLine = idBLine.replace(/\s+/g, ' ').trim();
+    
     doc.setFont("helvetica", "normal");
     doc.text(idBLine, 22, yPos);
     yPos += 5;
   }
   // Legacy format support - if an ID-B number is provided directly
   else if (book.idBNumber) {
+    // Normalize spacing in the ID-B number
+    const cleanIdB = String(book.idBNumber).replace(/\s+/g, ' ').trim();
+    
     doc.setFont("helvetica", "normal");
-    doc.text(book.idBNumber, 22, yPos);
+    doc.text(cleanIdB, 22, yPos);
     yPos += 5;
   }
   
   // --- 10. Footer (only ekz-Informationsdienst text, no barcode or redundant ASB) ---
   yPos += 10;
+  
+  // Reset character spacing for footer text
+  try {
+    (doc as any).internal.out("0 Tc"); // Normal character spacing
+  } catch (e) {
+    // Silently continue if this fails
+  }
   
   // Add ekz-Informationsdienst text
   const startX = doc.internal.pageSize.width / 2;
