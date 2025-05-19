@@ -361,11 +361,15 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   // Use consistent smaller font size for all metadata sections
   doc.setFontSize(8);
   
-  // Format title with subtitle using properly scaled text
+  // Format title with subtitle using consistent spacing for PDF output
   let displayTitle = titleFull;
   if (subtitle) {
-    displayTitle += ` : ${subtitle}`;
+    // Format with proper spacing for German RDA standards
+    displayTitle += ` : ${subtitle.trim()}`;
   }
+  
+  // Normalize spacing in title for consistent letter spacing in PDF
+  displayTitle = displayTitle.replace(/\s+/g, ' ').trim();
   
   // Control line width precisely to prevent overflow
   const titleMaxWidth = 160;  // Max width allowed for text content
@@ -399,8 +403,21 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     
+    // Normalize spacing in statement of responsibility
+    statementOfResp = statementOfResp.replace(/\s+/g, ' ').trim();
+    
     // Format according to German RDA standards
     const statementLine = `/ ${statementOfResp}`;
+    
+    // Apply character spacing fixes before rendering
+    try {
+      // Set character spacing to 0 (normal)
+      (doc as any).internal.out("0 Tc");
+      // Set word spacing to 0 (normal)
+      (doc as any).internal.out("0 Tw");
+    } catch (e) {
+      // Silently continue if this fails
+    }
     
     // Split statement text if it's too long
     const statementLines = doc.splitTextToSize(statementLine, titleMaxWidth);
@@ -790,17 +807,27 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       summaryText = summaryText.replace(pattern, '');
     });
     
-    // Remove any extra whitespace and multiple newlines
+    // Process text for consistent letter spacing in PDF output
+    // First, normalize newlines to standard format
+    summaryText = summaryText.replace(/\r\n|\r/g, '\n');
+    
+    // Replace multiple newlines with a single newline
     summaryText = summaryText.replace(/\n\s*\n/g, '\n').trim();
     
-    // Normalize all spacing for consistent appearance
-    summaryText = summaryText.replace(/\s+/g, " ").trim();
+    // Carefully normalize spacing without over-compressing
+    // This ensures consistent spacing for PDF rendering
+    summaryText = summaryText.replace(/[ \t]+/g, " ").trim();
     
-    // Remove bullet points at the beginning of the summary
-    summaryText = summaryText.replace(/^•\s+/g, '');
+    // Handle bullet points and formatting characters consistently
+    summaryText = summaryText.replace(/^[•\-*]\s+/g, ''); // Remove bullets at beginning
+    summaryText = summaryText.replace(/([•\-*])\s+/g, '$1 '); // Consistent spacing after bullets
     
-    // Format bullet points consistently throughout text
-    summaryText = summaryText.replace(/•\s+/g, '• ');
+    // Fix common spacing issues around punctuation
+    summaryText = summaryText.replace(/ ([.,:;!?])/g, '$1');  // Remove space before punctuation
+    summaryText = summaryText.replace(/([.,:;!?])(?=\S)/g, '$1 '); // Add space after punctuation
+    
+    // Normalize spacing around pipes (separator between summary and review)
+    summaryText = summaryText.replace(/\s*\|\s*/g, ' | ');
     
     // Debug the summary processing
     console.log("PDF Summary - Processing:", {
