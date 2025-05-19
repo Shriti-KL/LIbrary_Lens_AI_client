@@ -186,7 +186,38 @@ function renderText(doc: jsPDF, text: string, x: number, y: number, options: any
   return y;
 }
 
-export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
+// Function that updates doc.text in the existing PDF generation code to use maxWidth
+function patchPdfTextRendering(formatBookEntryForPDF: Function): Function {
+  return function(this: any, ...args: any[]) {
+    // Store the original text function
+    const originalText = args[0].text;
+    
+    // Replace it with our own implementation that always uses maxWidth
+    args[0].text = function(text: string, x: number, y: number, options?: any) {
+      // If options is not an object (might be a legacy 'align' string), convert it
+      if (typeof options !== 'object' || options === null) {
+        options = options ? { align: options } : {};
+      }
+      // Always add maxWidth if not already specified
+      if (!options.maxWidth) {
+        options.maxWidth = 170; // Prevent text overflow
+      }
+      // Call the original function with our enhanced options
+      return originalText.call(this, text, x, y, options);
+    };
+    
+    // Call the original function with our modified doc
+    const result = formatBookEntryForPDF.apply(this, args);
+    
+    // Restore the original function
+    args[0].text = originalText;
+    
+    return result;
+  };
+}
+
+// Apply our patch to prevent text overflow
+const originalFormatBookEntryForPDF = function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 20): number {
   let yPos = startY;
   
   // --- 1. ASB Classification at the top-left corner ---
@@ -887,7 +918,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     // Create content for each line with consistent spacing - exact ekz standard format
     for (let i = 0; i < linesToShow; i++) {
       // Use left-aligned text instead of justify to prevent inconsistent spacing issues
-      doc.text(summaryLines[i], 22, yPos);
+      renderText(doc, summaryLines[i], 22, yPos);
       yPos += lineHeight; // Use the consistent line height defined above
     }
     
