@@ -564,36 +564,32 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     }
   }
   
-  // Apply character spacing consistency for physical description
+  // Prepare publication info with proper formatting and consistent letter spacing
   try {
     // Reset font settings to ensure uniform rendering
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     
-    // Ensure normal character spacing
-    if ((doc as any).setCharSpace) {
-      (doc as any).setCharSpace(0);
-    }
+    // Apply direct character spacing control for consistent rendering
+    // This low-level approach ensures better letter spacing across PDF renderers
+    (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+    (doc as any).internal.out("0 Tw"); // Set word spacing to 0 (normal)
   } catch (e) {
     console.log("Character spacing adjustment not supported");
   }
   
-  // Keep publication info styling consistent with statement of responsibility
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  
-  // Normalize publication info formatting for German RDA standards
+  // Normalize publication info with a single, consistent approach
+  // This prevents double-normalization that could cause issues
   publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
   
-  // Keep the same formatting as the statement of responsibility
-  // Display publication info as a single continuous line without line breaks
-  
-  // Prepare publication info with proper German RDA formatting
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  
-  // Normalize spaces and remove extra whitespace
-  publicationInfo = publicationInfo.replace(/\s+/g, " ").trim();
+  // Fix spacing around punctuation to follow German RDA standards
+  // Ensure no space before punctuation and one space after
+  publicationInfo = publicationInfo
+    .replace(/ ([.:;,])/g, "$1")
+    .replace(/([.:;,])(?=\S)/g, "$1 ");
+    
+  // Fix spacing around em dashes for publishing standards
+  publicationInfo = publicationInfo.replace(/\s*–\s*/g, " – ");
   
   // Check if it's too long for a single line and truncate if needed
   const pubInfoMaxWidth = 170;
@@ -628,7 +624,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     publicationInfo = publicationInfo.substring(0, cutPoint) + '...';
   }
   
-  // Display the publication info as a single line
+  // Display the publication info as a single line with consistent spacing
+  try {
+    // Apply direct character spacing control before rendering
+    (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+  } catch (e) {
+    // Silently continue if this fails
+  }
+  
   doc.text(publicationInfo, 22, yPos);
   yPos += 5;
   
@@ -636,11 +639,19 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   if (book.isbn) {
     yPos += 2; // Extra small space before ISBN line
     
-    // Ensure we follow exact German cataloging format
+    // Ensure we follow exact German cataloging format with consistent spacing
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     
+    // Format ISBN with consistent spacing
     let isbnLine = `ISBN ${formatISBN(book.isbn)}`;
+    
+    // Apply consistent letter spacing for ISBN line
+    try {
+      (doc as any).internal.out("0 Tc"); // Reset character spacing
+    } catch (e) {
+      // Silently continue if this fails
+    }
     
     // Add binding type if available (ensure it's in German)
     if (book.binding) {
@@ -675,8 +686,8 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
         }
       }
       
-      // Use proper German RDA format with dash
-      isbnLine += ` : ${bindingGerman}`; // Space colon space format
+      // Use proper German RDA format with consistent spacing
+      isbnLine += ` : ${bindingGerman.trim()}`; // Space colon space format
     }
     
     // Process price information if available
@@ -713,18 +724,31 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
       // Remove "paperback" or other English terms that might be incorrectly included
       priceText = priceText.replace(/paperback|hardcover|softcover/gi, "").trim();
       
-      // Clean up any duplicate spaces or commas
+      // Normalize spaces in price text for consistent rendering
       priceText = priceText.replace(/\s{2,}/g, " ").replace(/,,/g, ",").trim();
+      
+      // Ensure consistent spacing between EUR and the amount
+      priceText = priceText.replace(/EUR\s*/i, "EUR ");
       
       // Add to the ISBN line with proper delimiter according to German RDA
       if (isbnLine.includes(" : ")) {
-        // If we already have a binding, still use a colon (German RDA standard)
-        isbnLine += ` : ${priceText}`;
+        // If we already have a binding, append price with consistent spacing
+        isbnLine += ` : ${priceText.trim()}`;
       } else {
-        // If no binding, use colon with spaces
-        isbnLine += ` : ${priceText}`;
+        // If no binding, use colon with consistent spacing
+        isbnLine += ` : ${priceText.trim()}`;
       }
     }
+    
+    // Apply character spacing control before rendering
+    try {
+      (doc as any).internal.out("0 Tc"); // Normal character spacing
+    } catch (e) {
+      // Silently continue if this fails
+    }
+    
+    // Normalize spaces in the final ISBN line
+    isbnLine = isbnLine.replace(/\s+/g, ' ').trim();
     
     doc.text(isbnLine, 22, yPos);
     yPos += 6; // Slightly less spacing
@@ -828,6 +852,14 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
     
     // Normalize spacing around pipes (separator between summary and review)
     summaryText = summaryText.replace(/\s*\|\s*/g, ' | ');
+    
+    // Apply direct character spacing control for consistent text rendering
+    try {
+      (doc as any).internal.out("0 Tc"); // Set character spacing to 0 (normal)
+      (doc as any).internal.out("0 Tw"); // Set word spacing to 0 (normal)
+    } catch (e) {
+      // Silently continue if this fails
+    }
     
     // Debug the summary processing
     console.log("PDF Summary - Processing:", {
