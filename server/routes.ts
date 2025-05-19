@@ -368,31 +368,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/books/:id", async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
+      // Create a partial schema for updates
       const validatedData = insertBookSchema.partial().parse(req.body);
       
       // Clean the price field to extract only EUR (DE) value
       if (validatedData.price) {
         const { formatPriceForDb } = await import('../client/src/lib/utils');
         validatedData.price = formatPriceForDb(validatedData.price);
-      }
-      
-      // For updates, only handle the author field if it's explicitly being set to null
-      // This prevents overwriting existing author data during partial updates
-      if (validatedData.author === null) {
-        // Try to use mainAuthor or other fields as fallbacks if they're in the update data
-        if (validatedData.mainAuthor) {
-          validatedData.author = validatedData.mainAuthor;
-        } else if (validatedData.statementOfResponsibility) {
-          // Extract author name from statement of responsibility if possible
-          const match = validatedData.statementOfResponsibility.match(/^(.*?)(?:\s*[;:\/]|$)/);
-          validatedData.author = match ? match[1].trim() : validatedData.statementOfResponsibility;
-        } else if (validatedData.reviewerName) {
-          validatedData.author = `Verantwortlich: ${validatedData.reviewerName}`;
-        } else {
-          // We're better off removing the author property entirely for partial updates
-          // rather than setting a placeholder, so the database keeps the existing value
-          delete validatedData.author;
-        }
       }
       
       const updatedBook = await storage.updateBook(id, validatedData);

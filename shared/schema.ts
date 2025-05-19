@@ -65,9 +65,22 @@ export const books = pgTable("books", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// For book insertion validation
-export const insertBookSchema = createInsertSchema(books)
+// Create the base schema without transformations
+const baseInsertBookSchema = createInsertSchema(books)
   .omit({ id: true, createdAt: true, updatedAt: true });
+
+// Add author fallback logic for validation
+export const insertBookSchema = baseInsertBookSchema.refine(
+  (data) => {
+    // If author is null or undefined, we'll return false to trigger the error message
+    // Otherwise return true to pass validation
+    return data.author !== null && data.author !== undefined;
+  },
+  {
+    message: "Author cannot be null",
+    path: ["author"]
+  }
+);
 
 // For book upload/analysis request - standardized to match DNB/German RDA cataloguing standards
 export const bookAnalysisSchema = z.object({
