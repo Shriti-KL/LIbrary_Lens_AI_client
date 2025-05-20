@@ -1065,57 +1065,155 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 
 // Export a single book to PDF - using fixed layout format
 export function exportBookToPDF(book: Book, language: string = 'de'): void {
-  // Create a new PDF with standard A4 size (German DIN A4)
+  // Create a new PDF with standard A4 size
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
     compress: true,
     putOnlyUsedFonts: true,
-    // Added text rendering options for better spacing consistency
     hotfixes: ['px_scaling']
   });
   
-  // Create a wrapper for doc.text that always applies maxWidth
-  const originalText = doc.text;
-  doc.text = function(this: any, text: string | string[], x: number, y: number, options?: any): any {
-    // If options is not an object (might be a legacy 'align' string), convert it
-    if (typeof options !== 'object' || options === null) {
-      options = options ? { align: options } : {};
-    }
-    // Always add maxWidth if not specified
-    if (!options.maxWidth) {
-      options.maxWidth = 170; // Prevent text overflow
-    }
-    // Call the original function with enhanced options
-    return originalText.call(this, text, x, y, options);
-  };
-  
-  // Configure language-specific text
-  const bookLanguage = book.language || language;
-  
-  // Define page dimensions and layout values
-  const width = doc.internal.pageSize.width;
-  const height = doc.internal.pageSize.height;
-  const margin = 50; // mm - match example format
-  const gap = 30; // mm - gap between columns
-  const colWidth = (width - 2 * margin - gap) / 2;
-  const columns = [margin, margin + colWidth + gap];
-  const rowHeight = (height - 2 * margin) / 2;
-  
-  // Set up text rendering - using Times Roman font to match example
+  // Set up the document with Times Roman font
+  doc.setFont("times", "normal");
   doc.setFontSize(9);
-  doc.setFont("times", "roman");
-  doc.setLineWidth(0.1);
   doc.setTextColor(0, 0, 0);
   
-  // Set base font and size
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  // Define page dimensions and layout based on example
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const margin = 20; // mm
+  const boxWidth = 170; // mm
+  const boxHeight = 120; // mm
+  const boxX = margin; 
+  const boxY = margin;
   
-  // Make sure reviewer name is available 
-  if (!book.reviewerName && book.userId) {
-    book.reviewerName = "Ref-" + book.userId;
+  // Draw border around the book entry
+  doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
+  
+  // Helper function to render text with proper spacing
+  function renderText(text: string, x: number, y: number, options: any = {}): number {
+    const fontSize = options.fontSize || 9;
+    const font = options.font || "times";
+    const style = options.style || "normal";
+    const maxWidth = options.maxWidth || boxWidth - 10;
+    const lineHeight = options.lineHeight || 4;
+    
+    doc.setFont(font, style);
+    doc.setFontSize(fontSize);
+    
+    // Split text into lines that fit within maxWidth
+    const lines = doc.splitTextToSize(text, maxWidth);
+    
+    // Render each line
+    for (let i = 0; i < lines.length; i++) {
+      doc.text(lines[i], x, y + (i * lineHeight));
+    }
+    
+    // Return the Y position after the text
+    return y + (lines.length * lineHeight);
   }
+  
+  // Starting position for the content
+  let currentY = boxY + 10;
+  const startX = boxX + 5;
+  
+  // Format the book data according to the example format
+  
+  // 1. Author name in bold
+  const author = book.author || book.mainAuthor || '';
+  if (author) {
+    currentY = renderText(`${author}:`, startX, currentY, { 
+      style: "bold",
+      lineHeight: 5
+    });
+  }
+  
+  // 2. Title information
+  let titleInfo = "";
+  if (book.title) {
+    titleInfo += book.title;
+    
+    if (book.subtitle) {
+      titleInfo += ` : ${book.subtitle}`;
+    }
+    
+    if (author) {
+      titleInfo += ` / ${author}`;
+    }
+    
+    // Add illustrator if available
+    if (book.illustrator) {
+      titleInfo += ` ; Illustrationen von ${book.illustrator}`;
+    } else if (book.additionalAuthors && book.additionalAuthors.length > 0) {
+      titleInfo += ` ; ${book.additionalAuthors.join(', ')}`;
+    }
+    titleInfo += ".";
+    
+    currentY = renderText(titleInfo, startX, currentY + 2, {
+      lineHeight: 4
+    });
+  }
+  
+  // 3. Edition, publisher and year
+  let editionInfo = "";
+  if (book.edition) {
+    editionInfo += `- ${book.edition}. - `;
+  } else {
+    editionInfo += "- ";
+  }
+  
+  if (book.publisher) {
+    editionInfo += `${book.publisher}`;
+  }
+  
+  if (book.publicationYear) {
+    editionInfo += `, ${book.publicationYear}`;
+  }
+  editionInfo += ".";
+  
+  currentY = renderText(editionInfo, startX, currentY + 2, {
+    lineHeight: 4
+  });
+  
+  // 4. Pages, illustrations, dimensions
+  let physicalInfo = "";
+  if (book.pageCount) {
+    physicalInfo += `${book.pageCount} Seiten`;
+  }
+  
+  // Add illustrations info if available
+  if (book.illustrations) {
+    physicalInfo += ` : ${book.illustrations}`;
+  } else {
+    physicalInfo += " : Illustrationen";
+  }
+  
+  if (book.dimensions) {
+    physicalInfo += ` ; ${book.dimensions}`;
+  }
+  
+  currentY = renderText(physicalInfo, startX, currentY + 2, {
+    lineHeight: 4
+  });
+  
+  // 5. ISBN, binding, price
+  let isbnInfo = "";
+  if (book.isbn) {
+    isbnInfo += `ISBN ${book.isbn}`;
+  }
+  
+  if (book.binding) {
+    isbnInfo += ` : ${book.binding}`;
+  }
+  
+  if (book.price) {
+    isbnInfo += ` : ${book.price}`;
+  }
+  
+  currentY = renderText(isbnInfo, startX, currentY + 2, {
+    lineHeight: 4
+  });
   
   // Clean up summary to prevent duplicate title/author information
   if (book.summary) {
