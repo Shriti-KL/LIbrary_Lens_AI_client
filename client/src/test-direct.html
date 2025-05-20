@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Direct PDF Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Direct PDF Generation Test</h1>
+  
+  <button onclick="window.location.href='/api/test-pdf'">
+    Generate Test PDF Directly
+  </button>
+  
+  <p>Click the button above to directly generate a test PDF using the Python script.</p>
+  <p>This uses the server-side endpoint that directly executes the Python script with test data.</p>
+  
+  <p>If the PDF generation is successful, your browser will download the PDF file.</p>
+  <p>If there's an error, you'll see it displayed in the browser.</p>
+  
+  <h2>Debugging Information</h2>
+  <pre id="debug">
+Server directory: /home/runner/workspace
+Python script path: python_services/libLensAI_PDFGen.py
+  </pre>
+</body>
+</html>
