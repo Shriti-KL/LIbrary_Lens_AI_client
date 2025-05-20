@@ -1088,6 +1088,9 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
   const boxX = margin; 
   const boxY = margin;
   
+  // Calculate maximum content height inside the box to prevent overflow
+  const maxContentHeight = boxHeight - 10; // 5mm margin at top and bottom
+  
   // Draw border around the book entry
   doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
   
@@ -1098,20 +1101,41 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const style = options.style || "normal";
     const maxWidth = options.maxWidth || boxWidth - 10;
     const lineHeight = options.lineHeight || 4;
+    const maxLines = options.maxLines || 100; // Default to a large number, but can be limited
     
     doc.setFont(font, style);
     doc.setFontSize(fontSize);
     
     // Split text into lines that fit within maxWidth
-    const lines = doc.splitTextToSize(text, maxWidth);
+    let lines = doc.splitTextToSize(text, maxWidth);
+    
+    // Check if rendering these lines would exceed the box height
+    // If we're getting close to the bottom of the box, truncate the text
+    const remainingHeight = boxY + boxHeight - y - 10; // Stay 10mm from bottom of box
+    const maxPossibleLines = Math.floor(remainingHeight / lineHeight);
+    
+    // Use the smaller of our maxLines parameter or what will actually fit
+    const linesToRender = Math.min(lines.length, maxLines, maxPossibleLines);
+    
+    // If we had to truncate, add ellipsis to the last line
+    if (linesToRender < lines.length) {
+      lines = lines.slice(0, linesToRender);
+      if (linesToRender > 0) {
+        // Trim the last line and add ellipsis if needed
+        let lastLine = lines[linesToRender - 1];
+        if (lastLine.length > 3) {
+          lines[linesToRender - 1] = lastLine.substring(0, lastLine.length - 3) + "...";
+        }
+      }
+    }
     
     // Render each line
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = 0; i < linesToRender; i++) {
       doc.text(lines[i], x, y + (i * lineHeight));
     }
     
     // Return the Y position after the text
-    return y + (lines.length * lineHeight);
+    return y + (linesToRender * lineHeight);
   }
   
   // Starting position for the content
@@ -1282,22 +1306,44 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const summaryParts = cleanSummary.split('|');
     cleanSummary = summaryParts[0].trim();
     
-    // Render the clean summary
-    currentY = renderText(cleanSummary, startX, currentY + 5, {
-      lineHeight: 4
+    // Limit summary length to avoid overflow
+    const truncatedSummary = cleanSummary.length > 1000 ? 
+      cleanSummary.substring(0, 997) + "..." : 
+      cleanSummary;
+      
+    // Render the clean summary with proper spacing and max lines
+    currentY = renderText(truncatedSummary, startX, currentY + 5, {
+      lineHeight: 4,
+      maxLines: 15 // Limit to a reasonable number of lines
     });
     
     // 9. Review (if present)
-    if (summaryParts.length > 1 && summaryParts[1].trim()) {
-      const review = summaryParts[1].trim();
-      currentY = renderText(review, startX, currentY + 5, {
-        lineHeight: 4
-      });
-    } else if (book.review) {
-      // Use separate review field if available
-      currentY = renderText(book.review, startX, currentY + 5, {
-        lineHeight: 4
-      });
+    // Check if we have room for the review
+    const remainingHeight = boxY + boxHeight - currentY - 15;
+    
+    if (remainingHeight > 20) { // Only add review if we have at least 20mm of space left
+      if (summaryParts.length > 1 && summaryParts[1].trim()) {
+        const review = summaryParts[1].trim();
+        // Limit review length to avoid overflow
+        const truncatedReview = review.length > 500 ? 
+          review.substring(0, 497) + "..." : 
+          review;
+        
+        currentY = renderText(truncatedReview, startX, currentY + 5, {
+          lineHeight: 4,
+          maxLines: 10 // Limit to a reasonable number of lines
+        });
+      } else if (book.review) {
+        // Use separate review field if available, but limit its length
+        const truncatedReview = book.review.length > 500 ? 
+          book.review.substring(0, 497) + "..." : 
+          book.review;
+          
+        currentY = renderText(truncatedReview, startX, currentY + 5, {
+          lineHeight: 4,
+          maxLines: 10 // Limit to a reasonable number of lines
+        });
+      }
     }
   }
   
