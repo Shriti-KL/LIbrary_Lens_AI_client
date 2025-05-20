@@ -75,11 +75,10 @@ function renderBookData(doc: jsPDF, book: Partial<Book>, boxX: number, boxY: num
   // 1. ASB classification (if available)
   paragraphs.push({ text: "ASB:", style: "bold" });
   
-  // 2. Author with colon
-  const author = book.author || book.mainAuthor || '';
-  if (author) {
-    paragraphs.push({ text: `${author}:`, style: "bold" });
-  }
+  // 2. Author with colon - ensure we always have an author entry
+  const author = book.author || book.mainAuthor || 'Unbekannt';
+  // Always include author line (required in the format)
+  paragraphs.push({ text: `${author}:`, style: "bold" });
   
   // 3. Title with author
   let titleText = "";

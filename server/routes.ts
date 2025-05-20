@@ -358,6 +358,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         review: validatedData.review
       }));
       
+      // Fix for database constraint: ensure author is not null
+      if (!validatedData.author) {
+        // Use fallbacks in order: mainAuthor, reviewer name, or "Unbekannt"
+        validatedData.author = validatedData.mainAuthor || 
+                               validatedData.reviewerName || 
+                               "Unbekannt";
+      }
+      
       const book = await storage.createBook(validatedData);
       res.status(201).json(book);
     } catch (error: any) {
