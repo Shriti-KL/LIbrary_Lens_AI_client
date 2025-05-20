@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
-import { exportBookToPDF } from '@/lib/utils';
+import { exportBookToPDF } from '@/lib/pdfUtils';
 import { 
   Card, 
   CardContent, 
