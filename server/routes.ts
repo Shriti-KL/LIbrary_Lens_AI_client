@@ -684,6 +684,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Error finding similar books" });
     }
   });
+  
+  // Python-based PDF generation endpoint
+  app.post("/api/books/export-pdf", async (req: Request, res: Response) => {
+    try {
+      const bookData = req.body;
+      if (!bookData) {
+        return res.status(400).json({ error: "Book data is required" });
+      }
+      
+      // Create a temporary directory for the PDF file
+      const { spawn } = require('child_process');
+      const path = require('path');
+      const fs = require('fs');
+      const os = require('os');
+      
+      // Create a unique temporary filename
+      const tempDir = os.tmpdir();
+      const outputPath = path.join(tempDir, `book_export_${Date.now()}.pdf`);
+      
+      // Prepare JSON data for Python script
+      const jsonString = JSON.stringify(bookData);
+      
+      console.log('Generating PDF using Python script...');
+      
+      // Spawn Python process to generate PDF
+      const pythonProcess = spawn('python', [
+        'python_services/libLensAI_PDFGen.py',
+        '--json', jsonString,
+        '--output', outputPath
+      ]);
+      
+      // Handle Python process events
+      let errorOutput = '';
+      
+      pythonProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+        console.error(`PDF Generation Error: ${data}`);
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.error(`Python process exited with code ${code}`);
+          console.error(`Error output: ${errorOutput}`);
+          return res.status(500).json({ error: "Failed to generate PDF" });
+        }
+        
+        // Check if the file exists
+        if (!fs.existsSync(outputPath)) {
+          return res.status(500).json({ error: "PDF file was not generated" });
+        }
+        
+        console.log(`PDF generated successfully at ${outputPath}`);
+        
+        // Send the PDF file
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(bookData.title || 'book')}.pdf"`);
+        
+        // Stream the file
+        const fileStream = fs.createReadStream(outputPath);
+        fileStream.pipe(res);
+        
+        // Clean up the file after sending
+        fileStream.on('close', () => {
+          fs.unlink(outputPath, (err) => {
+            if (err) console.error(`Failed to delete temporary PDF file: ${err}`);
+          });
+        });
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ error: "Failed to generate PDF" });
+    }
+  });
 
   // Create and return the HTTP server
   const httpServer = createServer(app);

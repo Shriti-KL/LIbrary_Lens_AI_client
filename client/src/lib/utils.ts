@@ -1063,8 +1063,9 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   return yPos + 10; // Return the final Y position with some extra space
 }
 
-// Export a single book to PDF
-export function exportBookToPDF(book: Book, language: string = 'de'): void {
+// Legacy function - maintaned for compatibility
+// Export a single book to PDF using the JS implementation
+export function exportBookToPDFLegacy(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
     unit: 'mm',
@@ -1521,6 +1522,52 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
 }
 
 // Export multiple books to a single PDF with the specified format from the image
+// Add the new Python-based PDF export function
+export async function exportBookToPDF(book: Book, language: string = 'de'): Promise<void> {
+  try {
+    // Make a POST request to the new Python PDF generation endpoint
+    const response = await fetch('/api/books/export-pdf', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(book),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error generating PDF: ${response.statusText}`);
+    }
+    
+    // Get the PDF as a blob
+    const blob = await response.blob();
+    
+    // Create a download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    // Format safe filename
+    const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+    const filenamePrefix = language === 'de' ? 'Buch' : 'Book';
+    
+    a.href = url;
+    a.download = `${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+  } catch (error) {
+    console.error('Error exporting PDF:', error);
+    alert('Failed to generate PDF. Please try again.');
+    
+    // Fallback to the legacy PDF generation method if Python version fails
+    console.log('Falling back to legacy PDF generation method...');
+    exportBookToPDFLegacy(book, language);
+  }
+}
+
 export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
   
