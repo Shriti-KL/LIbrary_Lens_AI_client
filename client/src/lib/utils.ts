@@ -1064,7 +1064,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
 }
 
 // Export a single book to PDF - using fixed layout format
-export function exportBookToPDF(book: Book, language: string = 'de'): void {
+export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): void {
   // Create a new PDF with standard A4 size
   const doc = new jsPDF({
     unit: 'mm',
@@ -1342,7 +1342,7 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
 }
 
 // Format a book entry for a grid layout with smaller dimensions
-function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
+function formatBookEntryForGrid(doc: jsPDF, book: Partial<Book>, x: number, y: number, width: number, height: number): number {
   const gridFontSize = 9; // Consistent font size for better spacing
   const startY = y;
   let currentY = startY + 5;
@@ -1624,7 +1624,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, wi
 }
 
 // Export multiple books to a single PDF with the specified format from the image
-export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
+export function exportMultipleBooksToSinglePDF(books: Partial<Book>[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
   
   // Create a new PDF with standard A4 size (German DIN A4)
