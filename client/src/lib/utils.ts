@@ -1101,37 +1101,23 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const style = options.style || "normal";
     const maxWidth = options.maxWidth || boxWidth - 10;
     const lineHeight = options.lineHeight || 4;
-    const maxLines = options.maxLines || 100; // Default to a large number, but can be limited
     
     doc.setFont(font, style);
     doc.setFontSize(fontSize);
     
     // Split text into lines that fit within maxWidth
-    let lines = doc.splitTextToSize(text, maxWidth);
+    // This ensures no text will overflow horizontally
+    const lines = doc.splitTextToSize(text, maxWidth);
     
-    // Check if rendering these lines would exceed the box height
-    // If we're getting close to the bottom of the box, truncate the text
+    // Check if we would exceed the box boundary
     const remainingHeight = boxY + boxHeight - y - 10; // Stay 10mm from bottom of box
     const maxPossibleLines = Math.floor(remainingHeight / lineHeight);
+    const linesToRender = Math.min(lines.length, maxPossibleLines);
     
-    // Use the smaller of our maxLines parameter or what will actually fit
-    const linesToRender = Math.min(lines.length, maxLines, maxPossibleLines);
-    
-    // If we had to truncate, add ellipsis to the last line
-    if (linesToRender < lines.length) {
-      lines = lines.slice(0, linesToRender);
-      if (linesToRender > 0) {
-        // Trim the last line and add ellipsis if needed
-        let lastLine = lines[linesToRender - 1];
-        if (lastLine.length > 3) {
-          lines[linesToRender - 1] = lastLine.substring(0, lastLine.length - 3) + "...";
-        }
-      }
-    }
-    
-    // Render each line
+    // Render each line with controlled spacing
     for (let i = 0; i < linesToRender; i++) {
-      doc.text(lines[i], x, y + (i * lineHeight));
+      // Use align: 'left' to prevent expanded letter-spacing
+      doc.text(lines[i], x, y + (i * lineHeight), { align: 'left' });
     }
     
     // Return the Y position after the text
@@ -1306,15 +1292,10 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const summaryParts = cleanSummary.split('|');
     cleanSummary = summaryParts[0].trim();
     
-    // Limit summary length to avoid overflow
-    const truncatedSummary = cleanSummary.length > 1000 ? 
-      cleanSummary.substring(0, 997) + "..." : 
-      cleanSummary;
-      
-    // Render the clean summary with proper spacing and max lines
-    currentY = renderText(truncatedSummary, startX, currentY + 5, {
+    // Render the summary with controlled word spacing to prevent overflow
+    currentY = renderText(cleanSummary, startX, currentY + 5, {
       lineHeight: 4,
-      maxLines: 15 // Limit to a reasonable number of lines
+      maxWidth: boxWidth - 10 // Ensure text stays within bounds
     });
     
     // 9. Review (if present)
@@ -1324,24 +1305,16 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     if (remainingHeight > 20) { // Only add review if we have at least 20mm of space left
       if (summaryParts.length > 1 && summaryParts[1].trim()) {
         const review = summaryParts[1].trim();
-        // Limit review length to avoid overflow
-        const truncatedReview = review.length > 500 ? 
-          review.substring(0, 497) + "..." : 
-          review;
         
-        currentY = renderText(truncatedReview, startX, currentY + 5, {
+        currentY = renderText(review, startX, currentY + 5, {
           lineHeight: 4,
-          maxLines: 10 // Limit to a reasonable number of lines
+          maxWidth: boxWidth - 10 // Ensure text stays within bounds
         });
       } else if (book.review) {
-        // Use separate review field if available, but limit its length
-        const truncatedReview = book.review.length > 500 ? 
-          book.review.substring(0, 497) + "..." : 
-          book.review;
-          
-        currentY = renderText(truncatedReview, startX, currentY + 5, {
+        // Use separate review field if available
+        currentY = renderText(book.review, startX, currentY + 5, {
           lineHeight: 4,
-          maxLines: 10 // Limit to a reasonable number of lines
+          maxWidth: boxWidth - 10 // Ensure text stays within bounds
         });
       }
     }
