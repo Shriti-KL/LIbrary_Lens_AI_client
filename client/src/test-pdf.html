@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test PDF Export</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0055cc;
+    }
+    #log {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      min-height: 200px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test PDF Export</h1>
+  <p>This page tests the Python-based PDF export functionality</p>
+  
+  <button id="exportBtn">Generate Test PDF</button>
+  <div id="log">Logs will appear here...</div>
+  
+  <script>
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      const logArea = document.getElementById('log');
+      logArea.textContent = 'Sending request to generate PDF...\n';
+      
+      // Sample book data matching our schema
+      const testBook = {
+        isbn: '9783736505780',
+        title: 'Test Book',
+        subtitle: 'A test subtitle',
+        author: 'Test Author',
+        publisher: 'Test Publisher',
+        publicationYear: 2025,
+        publicationPlace: 'Berlin',
+        pageCount: 100,
+        dimensions: '20 cm',
+        price: 'EUR 18.00',
+        language: 'de',
+        summary: 'This is a test summary for the PDF generation.',
+        review: '• This is a test review for PDF generation.'
+      };
+      
+      try {
+        logArea.textContent += `Sending test book: ${JSON.stringify(testBook, null, 2)}\n`;
+        
+        // Make request to the API
+        const response = await fetch('/api/books/export-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(testBook),
+        });
+        
+        if (!response.ok) {
+          let errorMessage = `Server returned ${response.status}: ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            errorMessage += `\nDetails: ${JSON.stringify(errorData, null, 2)}`;
+          } catch (e) {
+            // Ignore JSON parse error
+          }
+          throw new Error(errorMessage);
+        }
+        
+        // Get the PDF as a blob
+        const blob = await response.blob();
+        logArea.textContent += `Received PDF blob: ${blob.size} bytes, type: ${blob.type}\n`;
+        
+        // Create a download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `test_pdf_export.pdf`;
+        document.body.appendChild(a);
+        
+        logArea.textContent += 'Downloading PDF...\n';
+        a.click();
+        
+        // Clean up
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        logArea.textContent += 'PDF export completed successfully!\n';
+      } catch (error) {
+        logArea.textContent += `ERROR: ${error.message}\n`;
+        console.error('PDF export error:', error);
+      }
+    });
+  </script>
+</body>
+</html>
