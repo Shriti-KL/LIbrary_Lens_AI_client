@@ -1215,40 +1215,100 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     lineHeight: 4
   });
   
-  // Clean up summary to prevent duplicate title/author information
+  // 6. Interest category (IK), ASB, ID-B
+  let classificationLine = "";
+  
+  // Interest Category (IK)
+  if (book.interestCategory) {
+    classificationLine += `IK: ${book.interestCategory}`;
+  }
+  
+  // Add spacing before ASB if IK exists
+  if (book.interestCategory && book.classificationNumber) {
+    classificationLine += "   ";
+  }
+  
+  // ASB Classification Number
+  if (book.classificationNumber) {
+    classificationLine += `ASB: ${book.classificationNumber}`;
+  }
+  
+  // Add spacing before ID-B if either IK or ASB exists
+  if ((book.interestCategory || book.classificationNumber) && book.idb) {
+    classificationLine += "   ";
+  }
+  
+  // ID-B Number
+  if (book.idb) {
+    classificationLine += `ID-B: ${book.idb}`;
+  }
+  
+  if (classificationLine) {
+    currentY = renderText(classificationLine, startX, currentY + 3, {
+      lineHeight: 4
+    });
+  }
+  
+  // 7. Reviewer name
+  if (book.reviewerName) {
+    currentY = renderText(`${book.reviewerName}`, startX, currentY + 3, {
+      lineHeight: 4
+    });
+  }
+  
+  // 8. Process and clean up summary for better formatting
   if (book.summary) {
+    // Clean the summary to remove any metadata
+    let cleanSummary = book.summary.trim();
+    
     // Remove instances where title appears at the beginning of summary
     if (book.title) {
       const escapedTitle = book.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const titlePattern = new RegExp(`^(["']?${escapedTitle}["']?\\s*(:|-|by|von|—|,|\\.|is|ist)\\s*)`, 'i');
-      book.summary = book.summary.replace(titlePattern, '');
+      cleanSummary = cleanSummary.replace(titlePattern, '');
     }
     
     // Remove instances where "by [Author]" or "von [Author]" appears at the beginning
-    if (book.author || book.mainAuthor) {
-      // Type assertion to help TypeScript understand this won't be null
-      const authorText: string = (book.author || book.mainAuthor || '') as string;
-      
-      if (authorText.length > 0) {
-        const escapedAuthor = authorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
-        book.summary = book.summary.replace(authorPattern, '');
-      }
+    if (author && author.length > 0) {
+      const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
+      cleanSummary = cleanSummary.replace(authorPattern, '');
     }
     
     // Normalize whitespace
-    book.summary = book.summary.replace(/\s+/g, ' ').trim();
+    cleanSummary = cleanSummary.replace(/\s+/g, ' ').trim();
+    
+      // Split review and summary if they're in the same field (separated by |)
+    const summaryParts = cleanSummary.split('|');
+    cleanSummary = summaryParts[0].trim();
+    
+    // Render the clean summary
+    currentY = renderText(cleanSummary, startX, currentY + 5, {
+      lineHeight: 4
+    });
+    
+    // 9. Review (if present)
+    if (summaryParts.length > 1 && summaryParts[1].trim()) {
+      const review = summaryParts[1].trim();
+      currentY = renderText(review, startX, currentY + 5, {
+        lineHeight: 4
+      });
+    } else if (book.review) {
+      // Use separate review field if available
+      currentY = renderText(book.review, startX, currentY + 5, {
+        lineHeight: 4
+      });
+    }
   }
   
-  // Set initial state for each PDF generation
-  doc.setLineWidth(0.1);
+  // Footer with ekz attribution
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("ekz-Informationsdienst", pageWidth / 2, pageHeight - 20, { align: 'center' });
   
-  // Format book entry with consistent spacing - pass through our existing function
-  let yPos = 20; // Start position
-  
-  // --- 1. ASB Classification at the top-left corner ---
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
+  // Save PDF with filename based on book details
+  const fileName = `${book.title ? book.title.slice(0, 30).replace(/[/\\?%*:|"<>]/g, '-') : 'book'}_${book.isbn || 'unknown'}.pdf`;
+  doc.save(fileName);
   
   // Use the first classification number (ASB) if available
   if (book.classificationNumber) {
