@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Book } from '@shared/schema';
-import { exportBookToPDF } from '@/lib/pdfUtils';
+import { exportBookToPDF } from '@/lib/utils';
 import { 
   Card, 
   CardContent, 
@@ -417,21 +417,7 @@ export default function BookResult({
       <CardFooter className="px-6 py-4">
         <div className="flex justify-between w-full">
           <div className="flex gap-2">
-            <Button 
-              onClick={() => {
-                try {
-                  // Check for minimum required fields before PDF export
-                  if (!book.title && !book.author) {
-                    console.error("Cannot export PDF: Book is missing both title and author");
-                    return;
-                  }
-                  exportBookToPDF(book);
-                } catch (error) {
-                  console.error("PDF export error:", error);
-                }
-              }} 
-              className="flex items-center gap-2"
-            >
+            <Button onClick={() => exportBookToPDF(book as Book)} className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               {t('exportPdf')}
             </Button>

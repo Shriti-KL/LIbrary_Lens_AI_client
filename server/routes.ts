@@ -358,27 +358,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         review: validatedData.review
       }));
       
-      // Fix for database constraint: ensure author is not null
-      if (!validatedData.author) {
-        // Use fallbacks in order: mainAuthor, reviewer name, or "Unbekannt"
-        validatedData.author = validatedData.mainAuthor || 
-                               validatedData.reviewerName || 
-                               "Unbekannt";
-      }
-      
-      // Clean up data by removing extra spaces and normalizing text fields
-      if (validatedData.title) {
-        validatedData.title = validatedData.title.replace(/\s+/g, ' ').trim();
-      }
-      
-      if (validatedData.author) {
-        validatedData.author = validatedData.author.replace(/\s+/g, ' ').trim();
-      }
-      
-      if (validatedData.subtitle) {
-        validatedData.subtitle = validatedData.subtitle.replace(/\s+/g, ' ').trim();
-      }
-      
       const book = await storage.createBook(validatedData);
       res.status(201).json(book);
     } catch (error: any) {

@@ -1063,322 +1063,149 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   return yPos + 10; // Return the final Y position with some extra space
 }
 
-// Export book records to PDF in fixed layout format (2 columns x 1 row)
-export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): void {
-  // Create a new PDF document
+// Export a single book to PDF
+export function exportBookToPDF(book: Book, language: string = 'de'): void {
+  // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
-    compress: true
+    compress: true,
+    putOnlyUsedFonts: true,
+    // Added text rendering options for better spacing consistency
+    hotfixes: ['px_scaling', 'px_scaling']
   });
   
-  // Set up document constants
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const margin = 50;
-  const gap = 30;
-  
-  // Calculate column dimensions
-  const colWidth = (pageWidth - 2 * margin - gap) / 2;
-  
-  // Box dimensions
-  const boxWidth = colWidth;
-  const boxHeight = 200;
-  const boxX = margin;
-  const boxY = margin;
-  
-  // Draw border around the first book entry box
-  doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
-  
-  // Helper function to render text with proper spacing and line wrapping
-  function renderText(text: string, x: number, y: number, options: any = {}): number {
-    const fontSize = options.fontSize || 9;
-    const font = options.font || "times"; 
-    const style = options.style || "normal";
-    const maxWidth = options.maxWidth || boxWidth - 20;
-    const lineHeight = options.lineHeight || 5;
-    
-    // Set font properties
-    doc.setFont(font, style);
-    doc.setFontSize(fontSize);
-    
-    // Normalize whitespace
-    text = text.replace(/\s+/g, ' ').trim();
-    
-    // Split text into lines that fit within the specified width
-    const lines = doc.splitTextToSize(text, maxWidth);
-    
-    // Render each line with left alignment (as in the example)
-    for (let i = 0; i < lines.length; i++) {
-      doc.text(lines[i], x, y + (i * lineHeight), { align: 'left' });
+  // Create a wrapper for doc.text that always applies maxWidth
+  const originalText = doc.text;
+  doc.text = function(this: any, text: string | string[], x: number, y: number, options?: any): any {
+    // If options is not an object (might be a legacy 'align' string), convert it
+    if (typeof options !== 'object' || options === null) {
+      options = options ? { align: options } : {};
     }
-    
-    // Return the new Y position after rendering all lines
-    return y + (lines.length * lineHeight);
-  }
-  
-  // Starting position for content
-  const textMargin = 10; // Margin inside the box
-  let currentY = boxY + textMargin;
-  const startX = boxX + textMargin;
-  
-  // Render content according to the exact format in the example
-  
-  // 1. ASB classification (if available)
-  if (book.classificationNumber) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    currentY = renderText(`ASB:`, startX, currentY, {
-      font: "helvetica",
-      style: "bold"
-    });
-    currentY += 5; // Add space
-  }
-  const author = book.author || book.mainAuthor || '';
-  if (author) {
-    currentY = renderText(`${author}:`, startX, currentY, { 
-      style: "bold",
-      lineHeight: 5
-    });
-  }
-  
-  // 2. Title information
-  let titleInfo = "";
-  if (book.title) {
-    titleInfo += book.title;
-    
-    if (book.subtitle) {
-      titleInfo += ` : ${book.subtitle}`;
+    // Always add maxWidth if not specified
+    if (!options.maxWidth) {
+      options.maxWidth = 170; // Prevent text overflow
     }
-    
-    if (author) {
-      titleInfo += ` / ${author}`;
+    // Call the original function with enhanced options
+    return originalText.call(this, text, x, y, options);
+  };
+  
+  // Configure language-specific text
+  const bookLanguage = book.language || language;
+  
+  // Use a simple, reliable approach for consistent letter spacing and typography
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setLineWidth(0.1);
+  doc.setTextColor(0, 0, 0);
+  
+  // Create a simpler approach to fix letter spacing issues
+  try {
+    // Direct method to set character and word spacing at document level before any text is drawn
+    // This avoids TypeScript errors while still addressing the letter spacing issue
+    const docInternal = doc.internal as any;
+    if (docInternal && docInternal.out) {
+      docInternal.out("0 Tc"); // Set character spacing to 0 (normal)
+      docInternal.out("0 Tw"); // Set word spacing to 0 (normal)
+      docInternal.out("100 Tz"); // Set horizontal scaling to 100% (normal)
     }
-    
-    // Add illustrator if available
-    if (book.illustrator) {
-      titleInfo += ` ; Illustrationen von ${book.illustrator}`;
-    } else if (book.additionalAuthors && book.additionalAuthors.length > 0) {
-      titleInfo += ` ; ${book.additionalAuthors.join(', ')}`;
-    }
-    titleInfo += ".";
-    
-    currentY = renderText(titleInfo, startX, currentY + 2, {
-      lineHeight: 4
-    });
+  } catch (e) {
+    // If this fails, silently continue - standard text will still render
+    console.log("Letter spacing optimization unavailable");
   }
   
-  // 3. Edition, publisher and year
-  let editionInfo = "";
-  if (book.edition) {
-    editionInfo += `- ${book.edition}. - `;
-  } else {
-    editionInfo += "- ";
+  // Set base font and size
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  
+  // Make sure reviewer name is available 
+  if (!book.reviewerName && book.userId) {
+    book.reviewerName = "Ref-" + book.userId;
   }
   
-  if (book.publisher) {
-    editionInfo += `${book.publisher}`;
-  }
-  
-  if (book.publicationYear) {
-    editionInfo += `, ${book.publicationYear}`;
-  }
-  editionInfo += ".";
-  
-  currentY = renderText(editionInfo, startX, currentY + 2, {
-    lineHeight: 4
-  });
-  
-  // 4. Pages, illustrations, dimensions
-  let physicalInfo = "";
-  if (book.pageCount) {
-    physicalInfo += `${book.pageCount} Seiten`;
-  }
-  
-  // Add illustrations info if available
-  if (book.illustrations) {
-    physicalInfo += ` : ${book.illustrations}`;
-  } else {
-    physicalInfo += " : Illustrationen";
-  }
-  
-  if (book.dimensions) {
-    physicalInfo += ` ; ${book.dimensions}`;
-  }
-  
-  currentY = renderText(physicalInfo, startX, currentY + 2, {
-    lineHeight: 4
-  });
-  
-  // 5. ISBN, binding, price
-  let isbnInfo = "";
-  if (book.isbn) {
-    isbnInfo += `ISBN ${book.isbn}`;
-  }
-  
-  if (book.binding) {
-    isbnInfo += ` : ${book.binding}`;
-  }
-  
-  if (book.price) {
-    isbnInfo += ` : ${book.price}`;
-  }
-  
-  currentY = renderText(isbnInfo, startX, currentY + 2, {
-    lineHeight: 4
-  });
-  
-  // 6. Interest category (IK), ASB, ID-B
-  let classificationLine = "";
-  
-  // Interest Category (IK)
-  if (book.interestCategory) {
-    classificationLine += `IK: ${book.interestCategory}`;
-  }
-  
-  // Add spacing before ASB if IK exists
-  if (book.interestCategory && book.classificationNumber) {
-    classificationLine += "   ";
-  }
-  
-  // ASB Classification Number
-  if (book.classificationNumber) {
-    classificationLine += `ASB: ${book.classificationNumber}`;
-  }
-  
-  // Add spacing before ID-B if either IK or ASB exists
-  if ((book.interestCategory || book.classificationNumber) && book.idb) {
-    classificationLine += "   ";
-  }
-  
-  // ID-B Number
-  if (book.idb) {
-    classificationLine += `ID-B: ${book.idb}`;
-  }
-  
-  if (classificationLine) {
-    currentY = renderText(classificationLine, startX, currentY + 3, {
-      lineHeight: 4
-    });
-  }
-  
-  // 7. Reviewer name
-  if (book.reviewerName) {
-    currentY = renderText(`${book.reviewerName}`, startX, currentY + 3, {
-      lineHeight: 4
-    });
-  }
-  
-  // 8. Process and clean up summary for better formatting
+  // Clean up summary to prevent duplicate title/author information
   if (book.summary) {
-    // Clean the summary to remove any metadata
-    let cleanSummary = book.summary.trim();
-    
     // Remove instances where title appears at the beginning of summary
     if (book.title) {
       const escapedTitle = book.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const titlePattern = new RegExp(`^(["']?${escapedTitle}["']?\\s*(:|-|by|von|—|,|\\.|is|ist)\\s*)`, 'i');
-      cleanSummary = cleanSummary.replace(titlePattern, '');
+      book.summary = book.summary.replace(titlePattern, '');
     }
     
     // Remove instances where "by [Author]" or "von [Author]" appears at the beginning
-    if (author && author.length > 0) {
-      const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
-      cleanSummary = cleanSummary.replace(authorPattern, '');
+    if (book.author || book.mainAuthor) {
+      // Type assertion to help TypeScript understand this won't be null
+      const authorText: string = (book.author || book.mainAuthor || '') as string;
+      
+      if (authorText.length > 0) {
+        const escapedAuthor = authorText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const authorPattern = new RegExp(`^(by|von)\\s+${escapedAuthor}\\s*(:|-|—|,|\\.|is|ist)\\s*`, 'i');
+        book.summary = book.summary.replace(authorPattern, '');
+      }
     }
     
     // Normalize whitespace
-    cleanSummary = cleanSummary.replace(/\s+/g, ' ').trim();
+    book.summary = book.summary.replace(/\s+/g, ' ').trim();
+  }
+  
+  // Set initial state for each PDF generation
+  doc.setLineWidth(0.1);
+  
+  // Format book entry with consistent spacing - pass through our existing function
+  let yPos = 20; // Start position
+  
+  // --- 1. ASB Classification at the top-left corner ---
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  
+  // Use the first classification number (ASB) if available
+  if (book.classificationNumber) {
+    const asbNumber = book.classificationNumber.trim();
+    doc.text("ASB: " + asbNumber, 22, yPos, { maxWidth: 170 });
+    yPos += 6; // Slightly less spacing
     
-      // Split review and summary if they're in the same field (separated by |)
-    const summaryParts = cleanSummary.split('|');
-    cleanSummary = summaryParts[0].trim();
-    
-    // Render the summary with explicit spacing control to prevent word-spacing issues
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
-    
-    // Apply a more restrictive max width to ensure proper text wrapping
-    const textMaxWidth = boxWidth - 15; // Use a slightly smaller width for safety
-    
-    // Fix any spacing issues in the text before rendering
-    const normalizedSummary = cleanSummary.replace(/\s+/g, ' ').trim();
-    
-    // Set precise character and word spacing for consistent rendering
-    try {
-      // Reset any previous spacing settings
-      (doc as any).internal.out("0 Tc"); // Character spacing
-      (doc as any).internal.out("0 Tw"); // Word spacing
-    } catch (e) {
-      console.log("Advanced text rendering not supported, using standard rendering");
-    }
-    
-    // Use the advanced rendering method
-    currentY = renderText(normalizedSummary, startX, currentY + 5, {
-      lineHeight: 4,
-      maxWidth: textMaxWidth // Use the more restricted width
-    });
-    
-    // 9. Review (if present)
-    // Check if we have room for the review
-    const remainingHeight = boxY + boxHeight - currentY - 15;
-    
-    if (remainingHeight > 20) { // Only add review if we have at least 20mm of space left
-      if (summaryParts.length > 1 && summaryParts[1].trim()) {
-        // Get the review and normalize spacing
-        const review = summaryParts[1].trim().replace(/\s+/g, ' ');
-        
-        // Reset font and spacing for review
-        doc.setFont("times", "normal");
-        doc.setFontSize(9);
-        
-        // Apply spacing control for review
-        try {
-          (doc as any).internal.out("0 Tc"); // Character spacing reset
-          (doc as any).internal.out("0 Tw"); // Word spacing reset
-        } catch (e) {
-          console.log("Advanced text rendering not supported, using standard rendering");
-        }
-        
-        // Use smaller max width for review to ensure proper wrapping
-        currentY = renderText(review, startX, currentY + 5, {
-          lineHeight: 4,
-          maxWidth: boxWidth - 15 // More restricted width for safety
-        });
-      } else if (book.review) {
-        // Use separate review field if available
-        const normalizedReview = book.review.replace(/\s+/g, ' ').trim();
-        
-        // Reset font and spacing for review
-        doc.setFont("times", "normal");
-        doc.setFontSize(9);
-        
-        // Apply spacing control for review
-        try {
-          (doc as any).internal.out("0 Tc"); // Character spacing reset
-          (doc as any).internal.out("0 Tw"); // Word spacing reset
-        } catch (e) {
-          console.log("Advanced text rendering not supported, using standard rendering");
-        }
-        
-        // Use smaller max width for review to ensure proper wrapping
-        currentY = renderText(normalizedReview, startX, currentY + 5, {
-          lineHeight: 4,
-          maxWidth: boxWidth - 15 // More restricted width for safety
-        });
-      }
+    // Add secondary classification if available on next line (with consistent spacing)
+    if (book.secondaryClassification) {
+      const secondaryNumber = book.secondaryClassification.trim();
+      doc.text(secondaryNumber, 22, yPos, { maxWidth: 170 });
+      yPos += 6;
     }
   }
   
-  // Footer with ekz attribution
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text("ekz-Informationsdienst", pageWidth / 2, pageHeight - 20, { align: 'center' });
+  // --- 2. Book title and subtitle ---
+  yPos += 3; // Add some spacing before title section
   
-  // Save PDF with filename based on book details
-  const fileName = `${book.title ? book.title.slice(0, 30).replace(/[/\\?%*:|"<>]/g, '-') : 'book'}_${book.isbn || 'unknown'}.pdf`;
-  doc.save(fileName);
+  // Prepare title text
+  let displayTitle = book.title || '';
+  
+  // Add subtitle with proper separator if available
+  if (book.subtitle && book.subtitle.trim().length > 0) {
+    displayTitle += ` : ${book.subtitle.trim()}`;
+  }
+  
+  // Apply formatting to title section
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  
+  // Calculate max width for title to ensure it fits in the page
+  const titleMaxWidth = 160; // Slightly narrower than body text
+  
+  // Split title into lines if needed
+  const titleLines = doc.splitTextToSize(displayTitle, titleMaxWidth);
+  
+  // Render title lines with controlled spacing
+  for (let i = 0; i < titleLines.length; i++) {
+    doc.text(titleLines[i], 22, yPos, { maxWidth: titleMaxWidth });
+    yPos += 4;  // Consistent line height for title
+  }
+  
+  // Save the PDF with the book title as filename
+  // Remove any forbidden characters from filename
+  const safeFilename = (book.title || 'book').replace(/[/\\?%*:|"<>]/g, '-');
+  
+  // Set the correct filename prefix based on language
+  const filenamePrefix = bookLanguage === 'de' ? 'Buch' : 'Book';
+  doc.save(`${safeFilename || `${filenamePrefix}_${new Date().toISOString().substring(0, 10)}`}.pdf`);
 }
 
 // Draw a single box with correction info - used on the first page
@@ -1412,7 +1239,7 @@ function drawCorrectionBox(doc: jsPDF, x: number, y: number, width: number, heig
 }
 
 // Format a book entry for a grid layout with smaller dimensions
-function formatBookEntryForGrid(doc: jsPDF, book: Partial<Book>, x: number, y: number, width: number, height: number): number {
+function formatBookEntryForGrid(doc: jsPDF, book: Book, x: number, y: number, width: number, height: number): number {
   const gridFontSize = 9; // Consistent font size for better spacing
   const startY = y;
   let currentY = startY + 5;
@@ -1694,7 +1521,7 @@ function formatBookEntryForGrid(doc: jsPDF, book: Partial<Book>, x: number, y: n
 }
 
 // Export multiple books to a single PDF with the specified format from the image
-export function exportMultipleBooksToSinglePDF(books: Partial<Book>[], language: string = 'de'): void {
+export function exportMultipleBooksToSinglePDF(books: Book[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
   
   // Create a new PDF with standard A4 size (German DIN A4)
