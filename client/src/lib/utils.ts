@@ -1063,94 +1063,77 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   return yPos + 10; // Return the final Y position with some extra space
 }
 
-// Export a single book to PDF - using fixed layout format
+// Export book records to PDF in fixed layout format (2 columns x 1 row)
 export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): void {
-  // Create a new PDF with standard A4 size
+  // Create a new PDF document
   const doc = new jsPDF({
     unit: 'mm',
     format: 'a4',
-    compress: true,
-    putOnlyUsedFonts: true,
-    hotfixes: ['px_scaling']
+    compress: true
   });
   
-  // Set up the document with Times Roman font
-  doc.setFont("times", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(0, 0, 0);
-  
-  // Define page dimensions and layout based on example
+  // Set up document constants
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 20; // mm
-  const boxWidth = 170; // mm
-  const boxHeight = 120; // mm
-  const boxX = margin; 
+  const margin = 50;
+  const gap = 30;
+  
+  // Calculate column dimensions
+  const colWidth = (pageWidth - 2 * margin - gap) / 2;
+  
+  // Box dimensions
+  const boxWidth = colWidth;
+  const boxHeight = 200;
+  const boxX = margin;
   const boxY = margin;
   
-  // Calculate maximum content height inside the box to prevent overflow
-  const maxContentHeight = boxHeight - 10; // 5mm margin at top and bottom
-  
-  // Draw border around the book entry
+  // Draw border around the first book entry box
   doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
   
-  // Helper function to render text with proper spacing and formatting
+  // Helper function to render text with proper spacing and line wrapping
   function renderText(text: string, x: number, y: number, options: any = {}): number {
     const fontSize = options.fontSize || 9;
-    const font = options.font || "times";
+    const font = options.font || "times"; 
     const style = options.style || "normal";
-    const maxWidth = options.maxWidth || boxWidth - 10;
-    const lineHeight = options.lineHeight || 4;
+    const maxWidth = options.maxWidth || boxWidth - 20;
+    const lineHeight = options.lineHeight || 5;
     
+    // Set font properties
     doc.setFont(font, style);
     doc.setFontSize(fontSize);
     
-    // Fix word spacing problems by normalizing whitespace
-    // This removes excessive spaces that can cause text to overflow
+    // Normalize whitespace
     text = text.replace(/\s+/g, ' ').trim();
     
-    // Apply consistent character and word spacing
-    try {
-      // Reset any previous spacing settings
-      (doc as any).internal.out("0 Tc"); // Character spacing
-      (doc as any).internal.out("0 Tw"); // Word spacing
-    } catch (e) {
-      // Fallback if advanced text features aren't available
-      console.log("Advanced text rendering not supported, using standard rendering");
-    }
-    
-    // Split text into lines that fit within maxWidth
-    // This ensures no text will overflow horizontally
+    // Split text into lines that fit within the specified width
     const lines = doc.splitTextToSize(text, maxWidth);
     
-    // Check if we would exceed the box boundary
-    const remainingHeight = boxY + boxHeight - y - 10; // Stay 10mm from bottom of box
-    const maxPossibleLines = Math.floor(remainingHeight / lineHeight);
-    const linesToRender = Math.min(lines.length, maxPossibleLines);
-    
-    // Render each line individually to control spacing
-    for (let i = 0; i < linesToRender; i++) {
-      // Normalize line text again just to be sure
-      const lineText = lines[i].replace(/\s+/g, ' ').trim();
-      
-      // Use align: 'left' to prevent expanded letter-spacing and set fixed width
-      doc.text(lineText, x, y + (i * lineHeight), { 
-        align: 'left',
-        maxWidth: maxWidth
-      });
+    // Render each line with left alignment (as in the example)
+    for (let i = 0; i < lines.length; i++) {
+      doc.text(lines[i], x, y + (i * lineHeight), { align: 'left' });
     }
     
-    // Return the Y position after the text
-    return y + (linesToRender * lineHeight);
+    // Return the new Y position after rendering all lines
+    return y + (lines.length * lineHeight);
   }
   
-  // Starting position for the content
-  let currentY = boxY + 10;
-  const startX = boxX + 5;
+  // Starting position for content
+  const textMargin = 10; // Margin inside the box
+  let currentY = boxY + textMargin;
+  const startX = boxX + textMargin;
   
-  // Format the book data according to the example format
+  // Render content according to the exact format in the example
   
-  // 1. Author name in bold
+  // 1. ASB classification (if available)
+  if (book.classificationNumber) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    currentY = renderText(`ASB:`, startX, currentY, {
+      font: "helvetica",
+      style: "bold"
+    });
+    currentY += 5; // Add space
+  }
   const author = book.author || book.mainAuthor || '';
   if (author) {
     currentY = renderText(`${author}:`, startX, currentY, { 
