@@ -420,7 +420,12 @@ export default function BookResult({
             <Button 
               onClick={() => {
                 try {
-                  exportBookToPDF(book as Book);
+                  // Check for minimum required fields before PDF export
+                  if (!book.title && !book.author) {
+                    console.error("Cannot export PDF: Book is missing both title and author");
+                    return;
+                  }
+                  exportBookToPDF(book);
                 } catch (error) {
                   console.error("PDF export error:", error);
                 }
