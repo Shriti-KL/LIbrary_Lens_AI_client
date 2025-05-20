@@ -366,6 +366,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                "Unbekannt";
       }
       
+      // Clean up data by removing extra spaces and normalizing text fields
+      if (validatedData.title) {
+        validatedData.title = validatedData.title.replace(/\s+/g, ' ').trim();
+      }
+      
+      if (validatedData.author) {
+        validatedData.author = validatedData.author.replace(/\s+/g, ' ').trim();
+      }
+      
+      if (validatedData.subtitle) {
+        validatedData.subtitle = validatedData.subtitle.replace(/\s+/g, ' ').trim();
+      }
+      
       const book = await storage.createBook(validatedData);
       res.status(201).json(book);
     } catch (error: any) {
