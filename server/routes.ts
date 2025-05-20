@@ -685,10 +685,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Python-based PDF generation endpoint
+  // Python-based PDF generation endpoint using exec approach
   app.post("/api/books/export-pdf", async (req: Request, res: Response) => {
     try {
-      console.log("PDF Export: Starting PDF generation process");
+      console.log("PDF Export: Starting PDF generation process using exec approach");
       
       const bookData = req.body;
       if (!bookData) {
@@ -703,85 +703,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`  - ISBN: ${bookData.isbn || 'N/A'}`);
       console.log(`  - Fields present: ${Object.keys(bookData).join(', ')}`);
       
-      // Create a temporary directory for the PDF file
-      const { spawn } = require('child_process');
+      // Setup paths and commands
+      const { exec } = require('child_process');
       const path = require('path');
       const fs = require('fs');
       const os = require('os');
       
-      // Create a unique temporary filename
+      // Create a unique temporary filename for output
       const tempDir = os.tmpdir();
       const outputPath = path.join(tempDir, `book_export_${Date.now()}.pdf`);
       console.log(`PDF Export: Will save PDF to ${outputPath}`);
       
-      // Prepare JSON data for Python script
-      const jsonString = JSON.stringify(bookData);
+      // Create a temporary JSON file for the book data
+      const tempJsonPath = path.join(tempDir, `book_data_${Date.now()}.json`);
+      fs.writeFileSync(tempJsonPath, JSON.stringify(bookData, null, 2));
+      console.log(`PDF Export: Book data saved to temporary file ${tempJsonPath}`);
       
-      console.log('PDF Export: Spawning Python process for PDF generation...');
-      
-      // Add error handling for process creation
-      let pythonProcess;
-      try {
-        console.log(`PDF Export: Executing Python script at ${process.cwd()}/python_services/libLensAI_PDFGen.py`);
-        // Check if file exists before spawning
-        if (!fs.existsSync('python_services/libLensAI_PDFGen.py')) {
-          console.error(`PDF Export ERROR: Python script file not found at python_services/libLensAI_PDFGen.py`);
-          return res.status(500).json({ 
-            error: "Python script file not found",
-            details: "The PDF generation script could not be located" 
-          });
-        }
-        
-        // Spawn Python process to generate PDF
-        pythonProcess = spawn('python', [
-          'python_services/libLensAI_PDFGen.py',
-          '--json', jsonString,
-          '--output', outputPath
-        ]);
-        
-        // Check for process spawn errors
-        pythonProcess.on('error', (err: Error) => {
-          console.error(`PDF Export ERROR: Failed to spawn Python process: ${err.message}`);
-          return res.status(500).json({ 
-            error: "Failed to spawn Python process", 
-            details: err.message 
-          });
-        });
-      } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error(`PDF Export ERROR: Exception while spawning Python process: ${errorMessage}`);
+      // Check if Python script exists
+      const scriptPath = path.join(process.cwd(), 'python_services/libLensAI_PDFGen.py');
+      if (!fs.existsSync(scriptPath)) {
+        console.error(`PDF Export ERROR: Python script file not found at ${scriptPath}`);
         return res.status(500).json({ 
-          error: "Exception while spawning Python process", 
-          details: errorMessage 
+          error: "Python script file not found",
+          details: `The PDF generation script could not be located at ${scriptPath}` 
         });
       }
       
-      // Log Python process standard output for debugging
-      pythonProcess.stdout.on('data', (data: Buffer) => {
-        console.log(`PDF Python stdout: ${data.toString().trim()}`);
-      });
+      // Build the command to execute the Python script
+      const command = `python ${scriptPath} --json ${tempJsonPath} --output ${outputPath}`;
+      console.log(`PDF Export: Executing command: ${command}`);
       
-      // Handle Python process events
-      let errorOutput = '';
-      
-      pythonProcess.stderr.on('data', (data: Buffer) => {
-        errorOutput += data.toString();
-        console.error(`PDF Python stderr: ${data.toString().trim()}`);
-      });
-      
-      pythonProcess.on('close', (code: number) => {
-        console.log(`PDF Export: Python process exited with code ${code}`);
+      // Execute the Python script
+      exec(command, (error, stdout, stderr) => {
+        // Clean up the temporary JSON file
+        try {
+          fs.unlinkSync(tempJsonPath);
+          console.log(`PDF Export: Removed temporary JSON file ${tempJsonPath}`);
+        } catch (err) {
+          console.error(`PDF Export: Error removing temporary JSON file: ${err}`);
+        }
         
-        if (code !== 0) {
-          console.error(`PDF Export ERROR: Python process failed with code ${code}`);
-          console.error(`PDF Export ERROR details: ${errorOutput}`);
+        // Handle execution errors
+        if (error) {
+          console.error(`PDF Export ERROR: Failed to execute Python script: ${error.message}`);
           return res.status(500).json({ 
-            error: "Failed to generate PDF", 
-            details: errorOutput 
+            error: "Failed to execute Python script", 
+            details: error.message 
           });
         }
         
-        // Check if the file exists
+        // Log output
+        if (stdout) {
+          console.log(`PDF Python stdout: ${stdout.trim()}`);
+        }
+        
+        if (stderr) {
+          console.error(`PDF Python stderr: ${stderr.trim()}`);
+        }
+        
+        // Check if the PDF was generated
         if (!fs.existsSync(outputPath)) {
           console.error(`PDF Export ERROR: PDF file was not generated at ${outputPath}`);
           return res.status(500).json({ error: "PDF file was not generated" });
@@ -799,15 +779,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fileStream = fs.createReadStream(outputPath);
         fileStream.pipe(res);
         
-        // Log when stream ends
-        fileStream.on('end', () => {
-          console.log(`PDF Export: File streaming complete`);
-        });
-        
         // Clean up the file after sending
         fileStream.on('close', () => {
           console.log(`PDF Export: Cleaning up temporary file ${outputPath}`);
-          fs.unlink(outputPath, (err: NodeJS.ErrnoException | null) => {
+          fs.unlink(outputPath, (err) => {
             if (err) console.error(`PDF Export: Failed to delete temporary PDF file: ${err}`);
           });
         });
