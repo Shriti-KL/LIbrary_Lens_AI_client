@@ -1094,7 +1094,7 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
   // Draw border around the book entry
   doc.rect(boxX, boxY, boxWidth, boxHeight).stroke();
   
-  // Helper function to render text with proper spacing
+  // Helper function to render text with proper spacing and formatting
   function renderText(text: string, x: number, y: number, options: any = {}): number {
     const fontSize = options.fontSize || 9;
     const font = options.font || "times";
@@ -1105,6 +1105,20 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     doc.setFont(font, style);
     doc.setFontSize(fontSize);
     
+    // Fix word spacing problems by normalizing whitespace
+    // This removes excessive spaces that can cause text to overflow
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    // Apply consistent character and word spacing
+    try {
+      // Reset any previous spacing settings
+      (doc as any).internal.out("0 Tc"); // Character spacing
+      (doc as any).internal.out("0 Tw"); // Word spacing
+    } catch (e) {
+      // Fallback if advanced text features aren't available
+      console.log("Advanced text rendering not supported, using standard rendering");
+    }
+    
     // Split text into lines that fit within maxWidth
     // This ensures no text will overflow horizontally
     const lines = doc.splitTextToSize(text, maxWidth);
@@ -1114,10 +1128,16 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const maxPossibleLines = Math.floor(remainingHeight / lineHeight);
     const linesToRender = Math.min(lines.length, maxPossibleLines);
     
-    // Render each line with controlled spacing
+    // Render each line individually to control spacing
     for (let i = 0; i < linesToRender; i++) {
-      // Use align: 'left' to prevent expanded letter-spacing
-      doc.text(lines[i], x, y + (i * lineHeight), { align: 'left' });
+      // Normalize line text again just to be sure
+      const lineText = lines[i].replace(/\s+/g, ' ').trim();
+      
+      // Use align: 'left' to prevent expanded letter-spacing and set fixed width
+      doc.text(lineText, x, y + (i * lineHeight), { 
+        align: 'left',
+        maxWidth: maxWidth
+      });
     }
     
     // Return the Y position after the text
