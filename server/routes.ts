@@ -793,10 +793,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const outputPath = path.join(tempDir, `book_export_${Date.now()}.pdf`);
       console.log(`PDF Export: Will save PDF to ${outputPath}`);
       
-      // Create a temporary JSON file for the sanitized book data
+      // Validate data before writing to file
+      if (!sanitizedData.title || !sanitizedData.author) {
+        console.error('PDF Export ERROR: Missing required fields (title or author)');
+        return res.status(400).json({ 
+          error: "Invalid book data", 
+          details: "Book must have at least a title and author" 
+        });
+      }
+      
+      // Create a temporary JSON file for the sanitized book data with proper encoding
       const tempJsonPath = path.join(tempDir, `book_data_${Date.now()}.json`);
-      fs.writeFileSync(tempJsonPath, JSON.stringify(sanitizedData, null, 2));
-      console.log(`PDF Export: Sanitized book data saved to temporary file ${tempJsonPath}`);
+      try {
+        fs.writeFileSync(
+          tempJsonPath, 
+          JSON.stringify(sanitizedData, null, 2), 
+          { encoding: 'utf8' }
+        );
+        console.log(`PDF Export: Sanitized book data saved to temporary file ${tempJsonPath}`);
+      } catch (writeErr) {
+        console.error(`PDF Export ERROR: Failed to write JSON file: ${writeErr}`);
+        return res.status(500).json({ 
+          error: "Failed to prepare data for PDF generation", 
+          details: String(writeErr)
+        });
+      }
       
       // Check if Python script exists
       const scriptPath = path.join(process.cwd(), 'python_services/libLensAI_PDFGen.py');
