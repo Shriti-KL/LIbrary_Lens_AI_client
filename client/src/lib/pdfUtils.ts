@@ -5,6 +5,7 @@ import { Book } from "@shared/schema";
 /**
  * Creates a properly formatted PDF export for a book in the ekz-Informationsdienst format
  * with two columns per page layout as shown in the example.
+ * Implemented based on the fixed layout format from the Python code.
  */
 export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): void {
   // Create a new PDF document with A4 size
@@ -13,21 +14,22 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     format: 'a4'
   });
   
-  // Set up document constants
+  // Set up document constants based on Python implementation
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 15;
-  const gap = 15;
+  const margin = 20; // 2cm margin
+  const gap = 10;   // 1cm gap between columns
   
   // Calculate column dimensions
   const colWidth = (pageWidth - 2 * margin - gap) / 2;
-  const boxHeight = pageHeight - 2 * margin;
+  const rowHeight = (pageHeight - 2 * margin) / 2;
+  const boxHeight = rowHeight - 10;
   
-  // Box coordinates for first column
+  // Box coordinates for first column (first box)
   const leftBoxX = margin;
   const leftBoxY = margin;
   
-  // Box coordinates for second column
+  // Box coordinates for second column (second box)
   const rightBoxX = margin + colWidth + gap;
   const rightBoxY = margin;
   
@@ -41,12 +43,12 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
   doc.setFont("helvetica", "normal");
   
   // Add footer text to both columns
-  const footerY = pageHeight - margin - 5;
+  const footerY = margin + boxHeight - 5;
   doc.text(footerText, leftBoxX + (colWidth / 2), footerY, { align: 'center' });
   doc.text(footerText, rightBoxX + (colWidth / 2), footerY, { align: 'center' });
   
   // Start rendering book data in first column
-  renderBookData(doc, book, leftBoxX, leftBoxY, colWidth);
+  renderBookData(doc, book, leftBoxX, leftBoxY, colWidth, boxHeight);
   
   // Save the PDF
   const fileName = `${book.title ? book.title.slice(0, 30).replace(/[/\\?%*:|"<>]/g, '-') : 'book'}_${book.isbn || 'unknown'}.pdf`;
@@ -55,176 +57,167 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
 
 /**
  * Renders book data within the specified box area
+ * Based on the Python implementation for fixed layout formatting
  */
-function renderBookData(doc: jsPDF, book: Partial<Book>, boxX: number, boxY: number, boxWidth: number): void {
-  // Text margin inside the box
-  const textMargin = 10;
+function renderBookData(doc: jsPDF, book: Partial<Book>, boxX: number, boxY: number, boxWidth: number, boxHeight: number): void {
+  // Text margins and positioning based on Python implementation
+  const textMargin = 5; // 5mm margin inside the box
   const maxTextWidth = boxWidth - (textMargin * 2);
   
-  // Current Y position for content
-  let currentY = boxY + textMargin;
+  // Start text content at top of box with margin
+  const contentY = boxY + 10; // Start 10mm from top of box
+  let textY = contentY;
   const startX = boxX + textMargin;
   
+  // Create array of paragraphs to render (based on Python implementation)
+  const paragraphs: {text: string, style?: string}[] = [];
+  
   // 1. ASB classification (if available)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  currentY = renderText(doc, `ASB:`, startX, currentY, {
-    font: "helvetica",
-    style: "bold"
-  });
+  paragraphs.push({ text: "ASB:", style: "bold" });
   
-  if (book.classificationNumber) {
-    currentY = renderText(doc, book.classificationNumber, startX + 30, currentY - 5, {
-      font: "helvetica",
-      style: "normal"
-    });
-  }
-  
-  currentY += 10; // Add space after ASB
-  
-  // 2. Author name in bold 
+  // 2. Author with colon
   const author = book.author || book.mainAuthor || '';
   if (author) {
-    doc.setFont("times", "bold");
-    doc.setFontSize(9);
-    currentY = renderText(doc, `${author}:`, startX, currentY, {
-      style: "bold",
-      lineHeight: 5
-    });
-    currentY += 5; // Add space after author
+    paragraphs.push({ text: `${author}:`, style: "bold" });
   }
   
-  // 3. Title with proper spacing
+  // 3. Title with author
+  let titleText = "";
   if (book.title) {
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
+    titleText = `${book.title} / ${author}`;
     
-    // Format title line according to example
-    let titleLine = book.title;
-    
-    // Add author with proper spacing
-    if (author) {
-      titleLine += ` / ${author}`;
+    // Add illustrator if available (like in Python code)
+    if (book.illustrator) {
+      titleText += ` ; Illustrationen von ${book.illustrator}`;
+    } else if (book.additionalAuthors && book.additionalAuthors.length > 0) {
+      titleText += ` ; ${book.additionalAuthors.join(', ')}`;
     }
     
-    // Render title with proper spacing
-    currentY = renderText(doc, titleLine, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
-    currentY += 5; // Add space after title
+    titleText += ".";
+    paragraphs.push({ text: titleText });
   }
   
-  // 4. Publication info on one line
+  // 4. Edition, publisher, year info
   let pubInfo = "";
-  
-  // Format according to example in image
   if (book.edition) {
-    pubInfo += book.edition;
+    pubInfo += `- ${book.edition}`;
+  } else {
+    pubInfo += "-";
   }
   
-  // Add publication place with dash
+  // Publication place
   if (book.publicationPlace) {
-    pubInfo += pubInfo ? ` – ${book.publicationPlace}` : book.publicationPlace;
+    pubInfo += ` - ${book.publicationPlace}`;
   }
   
-  // Add publisher with colon
+  // Publisher and year
   if (book.publisher) {
-    pubInfo += pubInfo ? `: ${book.publisher}` : book.publisher;
+    pubInfo += `: ${book.publisher}`;
   }
   
-  // Add year with comma
   if (book.publicationYear) {
-    pubInfo += pubInfo ? `, ${book.publicationYear}` : book.publicationYear;
+    pubInfo += `, ${book.publicationYear}`;
   }
   
-  // Add page count with dash
+  pubInfo += ".";
+  paragraphs.push({ text: pubInfo });
+  
+  // 5. Physical description (pages, illustrations, dimensions)
+  let physicalInfo = "";
+  
+  // Pages
   if (book.pageCount) {
-    pubInfo += pubInfo ? ` – ${book.pageCount} S.` : `${book.pageCount} S.`;
+    physicalInfo += `${book.pageCount} S.`;
   }
   
-  // Add page dimensions and format
+  // Illustrations (using the exact format from Python)
+  if (book.illustrations) {
+    physicalInfo += ` : ${book.illustrations}`;
+  } else {
+    physicalInfo += " : Illustrationen";
+  }
+  
+  // Dimensions
   if (book.dimensions) {
-    pubInfo += pubInfo ? ` ; ${book.dimensions}` : book.dimensions;
+    physicalInfo += ` ; ${book.dimensions}`;
   }
   
-  // Render publication info
-  if (pubInfo) {
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
-    currentY = renderText(doc, pubInfo, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
-    currentY += 5; // Add space
-  }
+  paragraphs.push({ text: physicalInfo });
   
-  // 5. ISBN and price
+  // 6. ISBN and price
   if (book.isbn) {
     let isbnInfo = `ISBN ${book.isbn}`;
     
-    // Add price with colon
+    if (book.binding) {
+      isbnInfo += ` ${book.binding}`;
+    } else {
+      isbnInfo += ` Festeinb.`;
+    }
+    
     if (book.price) {
       isbnInfo += ` : ${book.price}`;
     }
     
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
-    currentY = renderText(doc, isbnInfo, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
-    currentY += 8; // Add more space before summary
+    paragraphs.push({ text: isbnInfo });
   }
   
-  // 6. Summary (main content)
-  if (book.summary) {
-    // Clean up and normalize summary text
-    const cleanSummary = book.summary.trim().replace(/\s+/g, ' ');
-    
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
-    currentY = renderText(doc, cleanSummary, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
-    currentY += 8; // Add space after summary
-  }
-  
-  // 7. Review (if available)
+  // 7. Review (in italics as in Python)
   if (book.review) {
-    // Format review with bullet point if needed
-    let reviewText = book.review.trim().replace(/\s+/g, ' ');
+    paragraphs.push({ text: book.review, style: "italic" });
+  }
+  
+  // 8. Reviewer name
+  if (book.reviewerName) {
+    paragraphs.push({ text: book.reviewerName });
+  }
+  
+  // 9. Interest/IK category
+  if (book.interestCategory) {
+    paragraphs.push({ text: `IK: ${book.interestCategory}` });
+  }
+  
+  // 10. Summary with header
+  if (book.summary) {
+    paragraphs.push({ 
+      text: `Zusammenfassung: ${book.summary}`, 
+      style: "bold" 
+    });
+  }
+  
+  // Render each paragraph
+  for (const p of paragraphs) {
+    // Check if we'd exceed the box boundary
+    if (textY + 12 > boxY + boxHeight - 5) break;
     
-    // Ensure review starts with bullet point
-    if (!reviewText.startsWith('•')) {
-      reviewText = '• ' + reviewText;
+    // Set style based on paragraph type
+    if (p.style === "bold") {
+      doc.setFont("times", "bold");
+    } else if (p.style === "italic") {
+      doc.setFont("times", "italic");
+    } else {
+      doc.setFont("times", "normal");
     }
     
-    doc.setFont("times", "normal");
     doc.setFontSize(9);
-    currentY = renderText(doc, reviewText, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
-    currentY += 5;
-  }
-  
-  // 8. IK classification (if available)
-  if (book.interestCategory) {
-    doc.setFont("times", "normal");
-    doc.setFontSize(9);
-    renderText(doc, `IK: ${book.interestCategory}`, startX, currentY, {
-      maxWidth: maxTextWidth,
-      lineHeight: 5
-    });
+    
+    // Render text with proper spacing
+    const lines = doc.splitTextToSize(p.text, maxTextWidth);
+    
+    for (let i = 0; i < lines.length; i++) {
+      doc.text(lines[i], startX, textY + (i * 4), { align: 'left' });
+    }
+    
+    // Update Y position for next paragraph
+    textY += (lines.length * 4) + 2; // Add a small gap between paragraphs
   }
 }
 
 /**
- * Helper function to render text with proper spacing and line wrapping
+ * This function was used in the previous implementation but is no longer needed
+ * since we're using a different rendering approach based on the Python code.
+ * Keeping it as a reference for the changes needed.
  */
-function renderText(
+function renderText_OLD(
   doc: jsPDF, 
   text: string, 
   x: number, 
@@ -259,6 +252,7 @@ function renderText(
 
 /**
  * Export multiple books to a single PDF in the two-column layout
+ * Based on the Python implementation's fixed layout format
  */
 export function exportMultipleBooksToSinglePDF(books: Partial<Book>[], language: string = 'de'): void {
   if (!books || books.length === 0) return;
@@ -269,15 +263,16 @@ export function exportMultipleBooksToSinglePDF(books: Partial<Book>[], language:
     format: 'a4'
   });
   
-  // Set up document constants
+  // Set up document constants based on Python implementation
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  const margin = 15;
-  const gap = 15;
+  const margin = 20; // 2cm margin
+  const gap = 10;   // 1cm gap
   
   // Calculate column dimensions
   const colWidth = (pageWidth - 2 * margin - gap) / 2;
-  const boxHeight = pageHeight - 2 * margin;
+  const rowHeight = (pageHeight - 2 * margin) / 2;
+  const boxHeight = rowHeight - 10;
   
   // Two books per page (2 columns × 1 row)
   const booksPerPage = 2;
@@ -300,13 +295,13 @@ export function exportMultipleBooksToSinglePDF(books: Partial<Book>[], language:
     doc.rect(boxX, boxY, colWidth, boxHeight).stroke();
     
     // Add footer
-    const footerY = pageHeight - margin - 5;
+    const footerY = margin + boxHeight - 5;
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text("ekz-Informationsdienst", boxX + (colWidth / 2), footerY, { align: 'center' });
     
     // Render book data inside the box
-    renderBookData(doc, book, boxX, boxY, colWidth);
+    renderBookData(doc, book, boxX, boxY, colWidth, boxHeight);
   });
   
   // Save the PDF
