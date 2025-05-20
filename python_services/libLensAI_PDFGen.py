@@ -20,7 +20,7 @@ def load_data(json_string):
         print(f"Error parsing JSON: {e}")
         return None
 
-# Styles
+# Enhanced styles for better text wrapping and handling long words
 styles = getSampleStyleSheet()
 body_style = ParagraphStyle(
     'body',
@@ -28,6 +28,13 @@ body_style = ParagraphStyle(
     fontSize=9,
     leading=12,
     alignment=TA_LEFT,
+    firstLineIndent=0,
+    leftIndent=0,
+    rightIndent=0,
+    wordWrap='CJK', # Better handling of long words
+    allowWidows=0,  # Prevent single lines at bottom of paragraph
+    allowOrphans=0, # Prevent single lines at top of paragraph
+    splitLongWords=1 # Allow long words to break across lines
 )
 summary_style = ParagraphStyle(
     'summary',
@@ -37,6 +44,13 @@ summary_style = ParagraphStyle(
     alignment=TA_LEFT,
     spaceBefore=6,
     spaceAfter=6,
+    firstLineIndent=0,
+    leftIndent=0,
+    rightIndent=0,
+    wordWrap='CJK', # Better handling of long words
+    allowWidows=0,  # Prevent single lines at bottom of paragraph
+    allowOrphans=0, # Prevent single lines at top of paragraph
+    splitLongWords=1 # Allow long words to break across lines
 )
 
 # Fixed height box rendering function
