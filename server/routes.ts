@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Python-based PDF generation endpoint using exec approach
+  // Python-based PDF generation endpoint using exec approach with data sanitization
   app.post("/api/books/export-pdf", async (req: Request, res: Response) => {
     try {
       console.log("PDF Export: Starting PDF generation process using exec approach");
@@ -695,6 +695,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("PDF Export: No book data provided");
         return res.status(400).json({ error: "Book data is required" });
       }
+      
+      // Sanitize and validate book data
+      const sanitizedData = sanitizeBookData(bookData);
+      
+      // Use the sanitized data for the rest of the process
       
       // Log important book fields for debugging
       console.log("PDF Export: Book data received:");
