@@ -1312,10 +1312,29 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     const summaryParts = cleanSummary.split('|');
     cleanSummary = summaryParts[0].trim();
     
-    // Render the summary with controlled word spacing to prevent overflow
-    currentY = renderText(cleanSummary, startX, currentY + 5, {
+    // Render the summary with explicit spacing control to prevent word-spacing issues
+    doc.setFont("times", "normal");
+    doc.setFontSize(9);
+    
+    // Apply a more restrictive max width to ensure proper text wrapping
+    const textMaxWidth = boxWidth - 15; // Use a slightly smaller width for safety
+    
+    // Fix any spacing issues in the text before rendering
+    const normalizedSummary = cleanSummary.replace(/\s+/g, ' ').trim();
+    
+    // Set precise character and word spacing for consistent rendering
+    try {
+      // Reset any previous spacing settings
+      (doc as any).internal.out("0 Tc"); // Character spacing
+      (doc as any).internal.out("0 Tw"); // Word spacing
+    } catch (e) {
+      console.log("Advanced text rendering not supported, using standard rendering");
+    }
+    
+    // Use the advanced rendering method
+    currentY = renderText(normalizedSummary, startX, currentY + 5, {
       lineHeight: 4,
-      maxWidth: boxWidth - 10 // Ensure text stays within bounds
+      maxWidth: textMaxWidth // Use the more restricted width
     });
     
     // 9. Review (if present)
@@ -1324,17 +1343,46 @@ export function exportBookToPDF(book: Partial<Book>, language: string = 'de'): v
     
     if (remainingHeight > 20) { // Only add review if we have at least 20mm of space left
       if (summaryParts.length > 1 && summaryParts[1].trim()) {
-        const review = summaryParts[1].trim();
+        // Get the review and normalize spacing
+        const review = summaryParts[1].trim().replace(/\s+/g, ' ');
         
+        // Reset font and spacing for review
+        doc.setFont("times", "normal");
+        doc.setFontSize(9);
+        
+        // Apply spacing control for review
+        try {
+          (doc as any).internal.out("0 Tc"); // Character spacing reset
+          (doc as any).internal.out("0 Tw"); // Word spacing reset
+        } catch (e) {
+          console.log("Advanced text rendering not supported, using standard rendering");
+        }
+        
+        // Use smaller max width for review to ensure proper wrapping
         currentY = renderText(review, startX, currentY + 5, {
           lineHeight: 4,
-          maxWidth: boxWidth - 10 // Ensure text stays within bounds
+          maxWidth: boxWidth - 15 // More restricted width for safety
         });
       } else if (book.review) {
         // Use separate review field if available
-        currentY = renderText(book.review, startX, currentY + 5, {
+        const normalizedReview = book.review.replace(/\s+/g, ' ').trim();
+        
+        // Reset font and spacing for review
+        doc.setFont("times", "normal");
+        doc.setFontSize(9);
+        
+        // Apply spacing control for review
+        try {
+          (doc as any).internal.out("0 Tc"); // Character spacing reset
+          (doc as any).internal.out("0 Tw"); // Word spacing reset
+        } catch (e) {
+          console.log("Advanced text rendering not supported, using standard rendering");
+        }
+        
+        // Use smaller max width for review to ensure proper wrapping
+        currentY = renderText(normalizedReview, startX, currentY + 5, {
           lineHeight: 4,
-          maxWidth: boxWidth - 10 // Ensure text stays within bounds
+          maxWidth: boxWidth - 15 // More restricted width for safety
         });
       }
     }
