@@ -777,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Clean up the file after sending
         fileStream.on('close', () => {
           console.log(`PDF Export: Cleaning up temporary file ${outputPath}`);
-          fs.unlink(outputPath, (err) => {
+          fs.unlink(outputPath, (err: NodeJS.ErrnoException | null) => {
             if (err) console.error(`PDF Export: Failed to delete temporary PDF file: ${err}`);
           });
         });
