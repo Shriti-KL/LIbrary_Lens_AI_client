@@ -688,10 +688,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Python-based PDF generation endpoint
   app.post("/api/books/export-pdf", async (req: Request, res: Response) => {
     try {
+      console.log("PDF Export: Starting PDF generation process");
+      
       const bookData = req.body;
       if (!bookData) {
+        console.error("PDF Export: No book data provided");
         return res.status(400).json({ error: "Book data is required" });
       }
+      
+      // Log important book fields for debugging
+      console.log("PDF Export: Book data received:");
+      console.log(`  - Title: ${bookData.title || 'N/A'}`);
+      console.log(`  - Author: ${bookData.author || 'N/A'}`);
+      console.log(`  - ISBN: ${bookData.isbn || 'N/A'}`);
+      console.log(`  - Fields present: ${Object.keys(bookData).join(', ')}`);
       
       // Create a temporary directory for the PDF file
       const { spawn } = require('child_process');
@@ -702,11 +712,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a unique temporary filename
       const tempDir = os.tmpdir();
       const outputPath = path.join(tempDir, `book_export_${Date.now()}.pdf`);
+      console.log(`PDF Export: Will save PDF to ${outputPath}`);
       
       // Prepare JSON data for Python script
       const jsonString = JSON.stringify(bookData);
       
-      console.log('Generating PDF using Python script...');
+      console.log('PDF Export: Spawning Python process for PDF generation...');
       
       // Spawn Python process to generate PDF
       const pythonProcess = spawn('python', [
@@ -715,27 +726,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '--output', outputPath
       ]);
       
+      // Log Python process standard output for debugging
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        console.log(`PDF Python stdout: ${data.toString().trim()}`);
+      });
+      
       // Handle Python process events
       let errorOutput = '';
       
-      pythonProcess.stderr.on('data', (data) => {
+      pythonProcess.stderr.on('data', (data: Buffer) => {
         errorOutput += data.toString();
-        console.error(`PDF Generation Error: ${data}`);
+        console.error(`PDF Python stderr: ${data.toString().trim()}`);
       });
       
-      pythonProcess.on('close', (code) => {
+      pythonProcess.on('close', (code: number) => {
+        console.log(`PDF Export: Python process exited with code ${code}`);
+        
         if (code !== 0) {
-          console.error(`Python process exited with code ${code}`);
-          console.error(`Error output: ${errorOutput}`);
-          return res.status(500).json({ error: "Failed to generate PDF" });
+          console.error(`PDF Export ERROR: Python process failed with code ${code}`);
+          console.error(`PDF Export ERROR details: ${errorOutput}`);
+          return res.status(500).json({ 
+            error: "Failed to generate PDF", 
+            details: errorOutput 
+          });
         }
         
         // Check if the file exists
         if (!fs.existsSync(outputPath)) {
+          console.error(`PDF Export ERROR: PDF file was not generated at ${outputPath}`);
           return res.status(500).json({ error: "PDF file was not generated" });
         }
         
-        console.log(`PDF generated successfully at ${outputPath}`);
+        // Get file stats for debugging
+        const stats = fs.statSync(outputPath);
+        console.log(`PDF Export: Generated PDF successfully at ${outputPath} (${stats.size} bytes)`);
         
         // Send the PDF file
         res.setHeader('Content-Type', 'application/pdf');
@@ -745,10 +769,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fileStream = fs.createReadStream(outputPath);
         fileStream.pipe(res);
         
+        // Log when stream ends
+        fileStream.on('end', () => {
+          console.log(`PDF Export: File streaming complete`);
+        });
+        
         // Clean up the file after sending
         fileStream.on('close', () => {
+          console.log(`PDF Export: Cleaning up temporary file ${outputPath}`);
           fs.unlink(outputPath, (err) => {
-            if (err) console.error(`Failed to delete temporary PDF file: ${err}`);
+            if (err) console.error(`PDF Export: Failed to delete temporary PDF file: ${err}`);
           });
         });
       });

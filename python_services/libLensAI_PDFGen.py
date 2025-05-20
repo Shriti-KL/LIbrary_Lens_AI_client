@@ -189,18 +189,37 @@ def render_fixed_layout_pdf(book_data, output_path):
 
 def generate_pdf_from_json(json_data, output_path=None):
     """Generate a PDF from JSON book data"""
+    print(f"[DEBUG] Python PDF Generator: Starting PDF generation")
+    
     book_data = load_data(json_data)
     if not book_data:
+        print(f"[DEBUG] Python PDF Generator: Failed to load book data from JSON")
         return None
+    
+    # Print book data for debugging
+    print(f"[DEBUG] Python PDF Generator: Book data loaded:")
+    print(f"  - Title: {book_data.get('title', 'N/A')}")
+    print(f"  - Author: {book_data.get('author', 'N/A')} / {book_data.get('mainAuthor', 'N/A')}")
+    print(f"  - ISBN: {book_data.get('isbn', 'N/A')}")
+    print(f"  - Publisher: {book_data.get('publisher', 'N/A')}")
     
     # If no output path specified, create a temporary file
     if not output_path:
         fd, output_path = tempfile.mkstemp(suffix='.pdf')
         os.close(fd)
     
+    print(f"[DEBUG] Python PDF Generator: Output path: {output_path}")
+    
     # Render the PDF
-    render_fixed_layout_pdf(book_data, output_path)
-    return output_path
+    try:
+        render_fixed_layout_pdf(book_data, output_path)
+        print(f"[DEBUG] Python PDF Generator: PDF successfully rendered")
+        return output_path
+    except Exception as e:
+        print(f"[DEBUG] Python PDF Generator ERROR: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate bibliographic PDF from JSON data.")
