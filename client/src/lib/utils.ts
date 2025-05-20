@@ -1063,7 +1063,7 @@ export function formatBookEntryForPDF(doc: jsPDF, book: Book, startY: number = 2
   return yPos + 10; // Return the final Y position with some extra space
 }
 
-// Export a single book to PDF
+// Export a single book to PDF - using fixed layout format
 export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Create a new PDF with standard A4 size (German DIN A4)
   const doc = new jsPDF({
@@ -1072,7 +1072,7 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
     compress: true,
     putOnlyUsedFonts: true,
     // Added text rendering options for better spacing consistency
-    hotfixes: ['px_scaling', 'px_scaling']
+    hotfixes: ['px_scaling']
   });
   
   // Create a wrapper for doc.text that always applies maxWidth
@@ -1093,26 +1093,20 @@ export function exportBookToPDF(book: Book, language: string = 'de'): void {
   // Configure language-specific text
   const bookLanguage = book.language || language;
   
-  // Use a simple, reliable approach for consistent letter spacing and typography
+  // Define page dimensions and layout values
+  const width = doc.internal.pageSize.width;
+  const height = doc.internal.pageSize.height;
+  const margin = 50; // mm - match example format
+  const gap = 30; // mm - gap between columns
+  const colWidth = (width - 2 * margin - gap) / 2;
+  const columns = [margin, margin + colWidth + gap];
+  const rowHeight = (height - 2 * margin) / 2;
+  
+  // Set up text rendering - using Times Roman font to match example
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("times", "roman");
   doc.setLineWidth(0.1);
   doc.setTextColor(0, 0, 0);
-  
-  // Create a simpler approach to fix letter spacing issues
-  try {
-    // Direct method to set character and word spacing at document level before any text is drawn
-    // This avoids TypeScript errors while still addressing the letter spacing issue
-    const docInternal = doc.internal as any;
-    if (docInternal && docInternal.out) {
-      docInternal.out("0 Tc"); // Set character spacing to 0 (normal)
-      docInternal.out("0 Tw"); // Set word spacing to 0 (normal)
-      docInternal.out("100 Tz"); // Set horizontal scaling to 100% (normal)
-    }
-  } catch (e) {
-    // If this fails, silently continue - standard text will still render
-    console.log("Letter spacing optimization unavailable");
-  }
   
   // Set base font and size
   doc.setFont("helvetica", "normal");
