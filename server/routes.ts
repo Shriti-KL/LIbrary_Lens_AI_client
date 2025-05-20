@@ -697,16 +697,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Sanitize and validate book data
+      // Define function for sanitizing book data
+      const sanitizeBookData = (data: any) => {
+        const sanitized: any = {};
+        
+        // Maximum field lengths
+        const maxLengths = {
+          title: 255,
+          subtitle: 255,
+          author: 100,
+          publisher: 100,
+          dimensions: 50,
+          price: 20,
+          summary: 5000,
+          review: 5000,
+          isbn: 20
+        };
+        
+        // Helper function to sanitize text
+        const sanitizeText = (text: any, maxLength: number): string => {
+          if (text === null || text === undefined) return '';
+          
+          // Convert to string
+          let cleanText = String(text);
+          
+          // Trim whitespace
+          cleanText = cleanText.trim();
+          
+          // Replace potentially dangerous characters for shell commands
+          cleanText = cleanText.replace(/[&;`'"|*?~<>^()[\]{}$\\]/g, '');
+          
+          // Replace newlines with spaces
+          cleanText = cleanText.replace(/[\r\n]+/g, ' ');
+          
+          // Truncate to maximum length
+          if (cleanText.length > maxLength) {
+            cleanText = cleanText.substring(0, maxLength);
+          }
+          
+          return cleanText;
+        };
+        
+        // Process each field
+        for (const [key, value] of Object.entries(data)) {
+          // Skip null or undefined values
+          if (value === null || value === undefined) continue;
+          
+          // Handle different field types
+          if (typeof value === 'string') {
+            // Get max length for this field or use default
+            const maxLength = maxLengths[key] || 255;
+            sanitized[key] = sanitizeText(value, maxLength);
+          } else if (typeof value === 'number') {
+            sanitized[key] = value;
+          } else if (Array.isArray(value)) {
+            // Handle arrays (like genres, themes)
+            sanitized[key] = value.map(item => {
+              if (typeof item === 'string') {
+                return sanitizeText(item, 100);
+              }
+              return item;
+            });
+          } else if (typeof value === 'object') {
+            // Handle nested objects recursively
+            sanitized[key] = sanitizeBookData(value);
+          } else {
+            sanitized[key] = value;
+          }
+        }
+        
+        return sanitized;
+      };
+      
+      // Apply sanitization
       const sanitizedData = sanitizeBookData(bookData);
+      console.log("PDF Export: Data sanitized successfully");
       
       // Use the sanitized data for the rest of the process
       
       // Log important book fields for debugging
-      console.log("PDF Export: Book data received:");
-      console.log(`  - Title: ${bookData.title || 'N/A'}`);
-      console.log(`  - Author: ${bookData.author || 'N/A'}`);
-      console.log(`  - ISBN: ${bookData.isbn || 'N/A'}`);
-      console.log(`  - Fields present: ${Object.keys(bookData).join(', ')}`);
+      console.log("PDF Export: Sanitized book data:");
+      console.log(`  - Title: ${sanitizedData.title || 'N/A'}`);
+      console.log(`  - Author: ${sanitizedData.author || 'N/A'}`);
+      console.log(`  - ISBN: ${sanitizedData.isbn || 'N/A'}`);
+      console.log(`  - Fields present: ${Object.keys(sanitizedData).join(', ')}`);
       
       // Setup paths and commands
       const { exec } = require('child_process');
@@ -719,10 +793,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const outputPath = path.join(tempDir, `book_export_${Date.now()}.pdf`);
       console.log(`PDF Export: Will save PDF to ${outputPath}`);
       
-      // Create a temporary JSON file for the book data
+      // Create a temporary JSON file for the sanitized book data
       const tempJsonPath = path.join(tempDir, `book_data_${Date.now()}.json`);
-      fs.writeFileSync(tempJsonPath, JSON.stringify(bookData, null, 2));
-      console.log(`PDF Export: Book data saved to temporary file ${tempJsonPath}`);
+      fs.writeFileSync(tempJsonPath, JSON.stringify(sanitizedData, null, 2));
+      console.log(`PDF Export: Sanitized book data saved to temporary file ${tempJsonPath}`);
       
       // Check if Python script exists
       const scriptPath = path.join(process.cwd(), 'python_services/libLensAI_PDFGen.py');
