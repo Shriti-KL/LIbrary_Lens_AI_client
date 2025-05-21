@@ -326,12 +326,22 @@ def generate_pdf_from_json(json_data, output_path=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate bibliographic PDF from JSON data.")
-    parser.add_argument("--json", help="JSON string containing book data", required=True)
+    parser.add_argument("--json", help="Path to JSON file containing book data", required=True)
     parser.add_argument("--output", help="Output PDF file path", default=None)
     args = parser.parse_args()
-
-    output_file = generate_pdf_from_json(args.json, args.output)
-    if output_file:
-        print(f"PDF generated at: {output_file}")
-    else:
+    
+    # Read the JSON file instead of expecting JSON content directly
+    try:
+        with open(args.json, 'r', encoding='utf-8') as f:
+            json_content = f.read()
+            
+        output_file = generate_pdf_from_json(json_content, args.output)
+        if output_file:
+            print(f"PDF generated at: {output_file}")
+        else:
+            print("Failed to generate PDF")
+    except Exception as e:
+        print(f"Error processing JSON file: {e}")
+        import traceback
+        traceback.print_exc()
         print("Failed to generate PDF")

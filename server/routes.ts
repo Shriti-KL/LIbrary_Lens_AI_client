@@ -829,13 +829,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Build the command to execute the Python script
-      // Use quotes around file paths to prevent spacing issues
-      const command = `python "${scriptPath}" --json "${tempJsonPath}" --output "${outputPath}"`;
+      // Pass the JSON file path rather than the JSON contents to avoid command-line spacing issues
+      // Use python -m syntax to ensure we're using the correct interpreter and pass arguments directly
+      const command = `python3 "${scriptPath}" --json="${tempJsonPath}" --output="${outputPath}"`;
       console.log(`PDF Export: Executing command: ${command}`);
       
-      // Execute the Python script
-      exec(command, (error, stdout, stderr) => {
+      // Execute the Python script with more robust error handling
+      exec(command, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
         // Clean up the temporary JSON file
         try {
           fs.unlinkSync(tempJsonPath);
