@@ -721,6 +721,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Convert to string
           let cleanText = String(text);
           
+          // Remove invisible control characters (including ASCII 152) that cause PDF spacing issues
+          cleanText = cleanText.replace(/[\x00-\x1F\x7F-\x9F\u0080-\u009F]/g, '');
+          
           // Trim whitespace
           cleanText = cleanText.trim();
           
@@ -732,6 +735,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Replace newlines with spaces
           cleanText = cleanText.replace(/[\r\n]+/g, ' ');
+          
+          // Extra sanitization for title fields
+          if (text && (key === 'title' || key === 'subtitle')) {
+            console.log(`Before cleaning title: "${cleanText}", ASCII first char: ${cleanText.charCodeAt(0)}`);
+            
+            // Double check for any remaining problematic characters at the start
+            while (cleanText.length > 0 && (
+              cleanText.charCodeAt(0) < 32 || 
+              (cleanText.charCodeAt(0) > 126 && cleanText.charCodeAt(0) < 160)
+            )) {
+              cleanText = cleanText.substring(1);
+            }
+            
+            console.log(`After cleaning title: "${cleanText}"`);
+          }
           
           // Truncate to maximum length
           if (cleanText.length > maxLength) {
