@@ -20,37 +20,80 @@ def load_data(json_string):
         print(f"Error parsing JSON: {e}")
         return None
 
-# Enhanced styles for better text wrapping and handling long words
+# Import additional fonts for better character support
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import sys
+
+# Use built-in fonts (no registration needed) for better portability
+# Standard ReportLab fonts include: 'Courier', 'Courier-Bold', 'Courier-Oblique', 'Courier-BoldOblique',
+# 'Helvetica', 'Helvetica-Bold', 'Helvetica-Oblique', 'Helvetica-BoldOblique',
+# 'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic', 'Symbol', 'ZapfDingbats'
+
+# Use Times-Roman as primary font with Helvetica as fallback for better character support
+primary_font = 'Times-Roman'
+bold_font = 'Times-Bold'
+italic_font = 'Times-Italic'
+bold_italic_font = 'Times-BoldItalic'
+
+# Define additional fallback fonts for better character support
+sans_font = 'Helvetica'
+sans_bold_font = 'Helvetica-Bold'
+
+print(f"Using default built-in fonts: {primary_font} (primary), {sans_font} (fallback)")
+
+# We will use PDF's built-in font substitution capabilities
+# This provides better support for international characters than trying to embed fonts
+
+# Enhanced styles with dynamic leading and font fallbacks
 styles = getSampleStyleSheet()
+
+# Function to calculate optimal leading based on font size
+def calculate_leading(font_size):
+    return font_size * 1.5  # 1.5x font size for better line spacing
+
+# Base font size
+base_font_size = 9
+base_leading = calculate_leading(base_font_size)
+
+# Common style parameters
+common_style_params = {
+    'fontSize': base_font_size,
+    'leading': base_leading,
+    'alignment': TA_LEFT,
+    'firstLineIndent': 0,
+    'leftIndent': 0,
+    'rightIndent': 0,
+    'wordWrap': 'CJK',        # Better handling of long words and non-Latin characters
+    'allowWidows': 0,         # Prevent single lines at bottom of paragraph
+    'allowOrphans': 0,        # Prevent single lines at top of paragraph
+    'splitLongWords': 1,      # Allow long words to break across lines
+    'encoding': 'utf8',       # Explicit encoding for better international text support
+    'bulletFontName': primary_font,  # For bullet lists
+    'language': None          # Auto-detect language for hyphenation
+}
+
+# Create body style
 body_style = ParagraphStyle(
     'body',
-    fontName="Times-Roman",
-    fontSize=9,
-    leading=12,
-    alignment=TA_LEFT,
-    firstLineIndent=0,
-    leftIndent=0,
-    rightIndent=0,
-    wordWrap='CJK', # Better handling of long words
-    allowWidows=0,  # Prevent single lines at bottom of paragraph
-    allowOrphans=0, # Prevent single lines at top of paragraph
-    splitLongWords=1 # Allow long words to break across lines
+    fontName=primary_font,
+    **common_style_params
 )
+
+# Create summary style
 summary_style = ParagraphStyle(
     'summary',
-    fontName="Times-Roman",
-    fontSize=9,
-    leading=12,
-    alignment=TA_LEFT,
+    fontName=primary_font,
     spaceBefore=6,
     spaceAfter=6,
-    firstLineIndent=0,
-    leftIndent=0,
-    rightIndent=0,
-    wordWrap='CJK', # Better handling of long words
-    allowWidows=0,  # Prevent single lines at bottom of paragraph
-    allowOrphans=0, # Prevent single lines at top of paragraph
-    splitLongWords=1 # Allow long words to break across lines
+    **common_style_params
+)
+
+# Create bold style
+bold_style = ParagraphStyle(
+    'bold',
+    fontName=bold_font,
+    **common_style_params
 )
 
 # Fixed height box rendering function
