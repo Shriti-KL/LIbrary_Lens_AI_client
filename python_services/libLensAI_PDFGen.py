@@ -45,6 +45,29 @@ print(f"Using default built-in fonts: {primary_font} (primary), {sans_font} (fal
 # We will use PDF's built-in font substitution capabilities
 # This provides better support for international characters than trying to embed fonts
 
+# Define a simple font fallback lookup to handle special characters
+font_fallbacks = {
+    'primary': [primary_font, sans_font, 'Symbol', 'ZapfDingbats'],
+    'bold': [bold_font, sans_bold_font, 'Symbol', 'ZapfDingbats'],
+    'italic': [italic_font, 'Helvetica-Oblique', 'Symbol', 'ZapfDingbats']
+}
+
+# Character set detection helper
+def detect_charset(text):
+    """Detect which character set a text likely belongs to"""
+    if not text:
+        return "latin"
+        
+    special_chars = 0
+    for char in text:
+        if ord(char) > 127:  # non-ASCII
+            special_chars += 1
+            
+    # If more than 10% of characters are special, use extended fonts
+    if special_chars > len(text) * 0.1:
+        return "extended"
+    return "latin"
+
 # Enhanced styles with dynamic leading and font fallbacks
 styles = getSampleStyleSheet()
 
@@ -232,14 +255,36 @@ def render_fixed_layout_pdf(book_data, output_path):
     if summary:
         paragraphs.append(f"<b>Zusammenfassung:</b> {summary}")
     
-    # Render each paragraph with proper text wrapping
+    # Render each paragraph with proper text wrapping and font fallback
     for text in paragraphs:
-        p = Paragraph(text, summary_style if "Zusammenfassung" in text else body_style)
+        # Detect character set to determine if we need font fallbacks
+        charset = detect_charset(text)
+        
+        # Use summary style for summary, body style for others
+        style = summary_style if "Zusammenfassung" in text else body_style
+        
+        # Calculate proper line height based on paragraph content (more space for special characters)
+        if charset == "extended":
+            # Add 20% more line height for extended character sets
+            style.leading = calculate_leading(style.fontSize) * 1.2
+        
+        # Create paragraph with proper style and wrap according to available width
+        p = Paragraph(text, style)
+        
+        # Enforce maximum width to ensure proper wrapping
         w, h = p.wrap(max_width, box_height)
+        
+        # Prevent text from flowing outside the box
         if text_y - h < y - box_height + 5:
+            print(f"Warning: Text overflow detected, some content may be truncated")
             break  # prevent overflow
+            
+        # Draw the paragraph with calculated position
         p.drawOn(c, text_x, text_y - h)
-        text_y -= h + 2
+        
+        # Update position for next paragraph, adding extra space between paragraphs
+        padding = 4 if charset == "extended" else 2  # Extra padding for extended character sets
+        text_y -= h + padding
 
     c.save()
     return output_path
