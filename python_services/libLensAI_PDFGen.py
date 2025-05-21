@@ -201,39 +201,58 @@ def render_fixed_layout_pdf(book_data, output_path):
     if illustrator:
         paragraphs.append(f"Illustrationen von {illustrator}.")
     
-    # Add publication information
-    pub_info = f"- {edition}"
-    if publication_place and publisher:
-        pub_info += f" - {publication_place} : {publisher}"
-    if year:
-        pub_info += f", {year}"
+    # Add publication information with proper formatting
+    # Normalize all fields first to ensure clean spacing
+    edition_clean = edition.strip() if edition else ""
+    place_clean = publication_place.strip() if publication_place else ""
+    publisher_clean = publisher.strip() if publisher else ""
+    year_clean = str(year).strip() if year else ""
+    
+    # Construct publication information with proper spacing and formatting
+    pub_info = f"- {edition_clean}"
+    if place_clean and publisher_clean:
+        pub_info += f" - {place_clean} : {publisher_clean}"
+    if year_clean:
+        pub_info += f", {year_clean}"
     pub_info += "."
     paragraphs.append(pub_info)
     
-    # Add physical description
+    # Add physical description with proper spacing
+    # Normalize these fields for consistent spacing
+    pages_clean = pages.strip() if pages else ""
+    illustrations_clean = illustrations_info.strip() if illustrations_info else ""
+    dimensions_clean = dimensions.strip() if dimensions else ""
+    
+    # Build physical description with proper spacing and formatting
     physical_desc = ""
-    if pages:
-        physical_desc += f"{pages}"
-    if illustrations_info:
+    if pages_clean:
+        physical_desc += f"{pages_clean}"
+    if illustrations_clean:
         if physical_desc:
-            physical_desc += f" : {illustrations_info}"
+            physical_desc += f" : {illustrations_clean}"
         else:
-            physical_desc += f"{illustrations_info}"
-    if dimensions:
+            physical_desc += f"{illustrations_clean}"
+    if dimensions_clean:
         if physical_desc:
-            physical_desc += f" ; {dimensions}"
+            physical_desc += f" ; {dimensions_clean}"
         else:
-            physical_desc += f"{dimensions}"
+            physical_desc += f"{dimensions_clean}"
     if physical_desc:
         paragraphs.append(physical_desc)
     
-    # Add ISBN and price
+    # Add ISBN and price with proper spacing
     if isbn:
-        isbn_line = f"ISBN {isbn}"
-        if binding:
-            isbn_line += f" {binding}"
-        if price:
-            isbn_line += f" : {price}"
+        # Normalize fields for consistent spacing
+        isbn_clean = isbn.strip() if isbn else ""
+        binding_clean = binding.strip() if binding else ""
+        price_clean = price.strip() if price else ""
+        
+        # Build ISBN line with proper formatting
+        isbn_line = f"ISBN {isbn_clean}"
+        if binding_clean:
+            isbn_line += f" {binding_clean}"
+        if price_clean:
+            isbn_line += f" : {price_clean}"
         paragraphs.append(isbn_line)
     
     # Add review if available
