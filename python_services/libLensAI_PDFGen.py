@@ -269,8 +269,12 @@ def render_fixed_layout_pdf(book_data, output_path):
             # Add 20% more line height for extended character sets
             style.leading = calculate_leading(style.fontSize) * 1.2
         
+        # Fix for spacing issue: normalize text before creating paragraph
+        # Replace multiple spaces with a single space and ensure proper word spacing
+        normalized_text = ' '.join(text.split())
+        
         # Create paragraph with proper style and wrap according to available width
-        p = Paragraph(text, style)
+        p = Paragraph(normalized_text, style)
         
         # Enforce maximum width to ensure proper wrapping
         w, h = p.wrap(max_width, box_height)
