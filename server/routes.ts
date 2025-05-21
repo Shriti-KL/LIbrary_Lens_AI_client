@@ -727,6 +727,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Replace potentially dangerous characters for shell commands
           cleanText = cleanText.replace(/[&;`'"|*?~<>^()[\]{}$\\]/g, '');
           
+          // Fix spacing issues by normalizing spaces (replace multiple spaces with a single space)
+          cleanText = cleanText.replace(/\s+/g, ' ');
+          
           // Replace newlines with spaces
           cleanText = cleanText.replace(/[\r\n]+/g, ' ');
           
