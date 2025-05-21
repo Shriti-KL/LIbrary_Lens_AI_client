@@ -30,8 +30,21 @@ def normalize_text_fields(data):
         result = {}
         for key, value in data.items():
             if isinstance(value, str):
-                # Normalize text by removing extra spaces
-                result[key] = ' '.join(value.split())
+                # Remove special characters and control characters first
+                # This will catch the ASCII 152 character causing spacing issues
+                cleaned_value = ''.join(char for char in value if ord(char) >= 32 and ord(char) <= 126 or ord(char) > 160)
+                
+                # Then normalize text by removing extra spaces
+                result[key] = ' '.join(cleaned_value.split())
+                
+                # Extra cleanup for title field
+                if key == 'title' or key == 'subtitle':
+                    # Make sure there are no leading/trailing spaces
+                    result[key] = result[key].strip()
+                    # Verify the title starts with a valid character
+                    if result[key] and (ord(result[key][0]) < 32 or (ord(result[key][0]) > 126 and ord(result[key][0]) < 160)):
+                        # Remove problematic first character
+                        result[key] = result[key][1:].strip()
             elif isinstance(value, (dict, list)):
                 result[key] = normalize_text_fields(value)
             else:
