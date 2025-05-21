@@ -737,7 +737,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cleanText = cleanText.replace(/[\r\n]+/g, ' ');
           
           // Extra sanitization for title fields
-          if (text && (key === 'title' || key === 'subtitle')) {
+          const fieldName = key; // Store the key in a local variable to fix the reference issue
+          if (text && (fieldName === 'title' || fieldName === 'subtitle')) {
             console.log(`Before cleaning title: "${cleanText}", ASCII first char: ${cleanText.charCodeAt(0)}`);
             
             // Double check for any remaining problematic characters at the start

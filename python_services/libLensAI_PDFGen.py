@@ -30,21 +30,47 @@ def normalize_text_fields(data):
         result = {}
         for key, value in data.items():
             if isinstance(value, str):
-                # Remove special characters and control characters first
-                # This will catch the ASCII 152 character causing spacing issues
-                cleaned_value = ''.join(char for char in value if ord(char) >= 32 and ord(char) <= 126 or ord(char) > 160)
+                # First, log the original string and its first few characters for debugging
+                if key == 'title' or key == 'subtitle':
+                    print(f"Processing {key}: '{value}'")
+                    if value:
+                        try:
+                            print(f"  First 5 chars: {[ord(c) for c in value[:5]]}")
+                        except Exception as e:
+                            print(f"  Error getting character codes: {e}")
+                
+                # Remove ALL control characters, special characters, and invisible characters
+                # This is a more aggressive approach to ensure PDF rendering works correctly
+                cleaned_value = ''
+                for char in value:
+                    # Only keep standard visible ASCII and extended Unicode that's safe for PDFs
+                    # Skip control characters, special invisible chars, and potentially problematic chars
+                    char_code = ord(char)
+                    if (char_code >= 32 and char_code <= 126) or (char_code > 160 and char_code < 65536):
+                        cleaned_value += char
                 
                 # Then normalize text by removing extra spaces
                 result[key] = ' '.join(cleaned_value.split())
                 
-                # Extra cleanup for title field
+                # Extra thorough cleanup for title fields
                 if key == 'title' or key == 'subtitle':
                     # Make sure there are no leading/trailing spaces
                     result[key] = result[key].strip()
-                    # Verify the title starts with a valid character
-                    if result[key] and (ord(result[key][0]) < 32 or (ord(result[key][0]) > 126 and ord(result[key][0]) < 160)):
-                        # Remove problematic first character
+                    
+                    # Double verification to ensure title starts with a valid character
+                    # Keep trimming invalid chars from the start until a valid one is found
+                    while result[key] and (ord(result[key][0]) < 32 or 
+                                          (ord(result[key][0]) > 126 and ord(result[key][0]) < 160) or
+                                          ord(result[key][0]) == 152):  # Special check for ASCII 152
                         result[key] = result[key][1:].strip()
+                    
+                    # Log the cleaned result
+                    print(f"Cleaned {key}: '{result[key]}'")
+                    if result[key]:
+                        try:
+                            print(f"  First 5 chars after cleaning: {[ord(c) for c in result[key][:5]]}")
+                        except Exception as e:
+                            print(f"  Error getting character codes: {e}")
             elif isinstance(value, (dict, list)):
                 result[key] = normalize_text_fields(value)
             else:
