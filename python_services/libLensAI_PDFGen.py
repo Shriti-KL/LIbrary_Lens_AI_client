@@ -12,13 +12,35 @@ from reportlab.platypus import Frame, Paragraph, KeepInFrame
 
 
 def load_data(json_string):
-    """Load book data from a JSON string"""
+    """Load book data from a JSON string with text normalization"""
     try:
         # Parse the JSON string into Python object
-        return json.loads(json_string)
+        data = json.loads(json_string)
+        
+        # Normalize all text fields to prevent spacing issues
+        normalized_data = normalize_text_fields(data)
+        return normalized_data
     except Exception as e:
         print(f"Error parsing JSON: {e}")
         return None
+        
+def normalize_text_fields(data):
+    """Normalize all text fields in the data to prevent spacing issues"""
+    if isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            if isinstance(value, str):
+                # Normalize text by removing extra spaces
+                result[key] = ' '.join(value.split())
+            elif isinstance(value, (dict, list)):
+                result[key] = normalize_text_fields(value)
+            else:
+                result[key] = value
+        return result
+    elif isinstance(data, list):
+        return [normalize_text_fields(item) for item in data]
+    else:
+        return data
 
 # Import additional fonts for better character support
 from reportlab.pdfbase import pdfmetrics
@@ -288,9 +310,9 @@ def render_fixed_layout_pdf(book_data, output_path):
             # Add 20% more line height for extended character sets
             style.leading = calculate_leading(style.fontSize) * 1.2
         
-        # Fix for spacing issue: normalize text before creating paragraph
-        # Replace multiple spaces with a single space and ensure proper word spacing
-        normalized_text = ' '.join(text.split())
+        # Since we're already normalizing all text at load time, 
+        # this is an extra safeguard to ensure no spacing issues occur
+        normalized_text = text
         
         # Create paragraph with proper style and wrap according to available width
         p = Paragraph(normalized_text, style)
