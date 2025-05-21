@@ -191,9 +191,10 @@ def render_fixed_layout_pdf(book_data, output_path):
     asb = book_data.get('classificationNumber') or ""
     
     # Create the paragraphs with book data
+    # Fix spacing issue in author and title by ensuring no extra spaces
     paragraphs = [
-        f"<b>{author}</b>:",
-        f"{title} / {statement_of_responsibility}"
+        f"<b>{author.strip()}</b>:",
+        f"{title.strip()} / {statement_of_responsibility.strip()}"
     ]
     
     # Add illustrator if available
