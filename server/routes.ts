@@ -830,7 +830,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Build the command to execute the Python script
-      const command = `python ${scriptPath} --json ${tempJsonPath} --output ${outputPath}`;
+      // Use quotes around file paths to prevent spacing issues
+      const command = `python "${scriptPath}" --json "${tempJsonPath}" --output "${outputPath}"`;
       console.log(`PDF Export: Executing command: ${command}`);
       
       // Execute the Python script
