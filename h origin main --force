@@ -1,0 +1,49 @@
+[33mcommit fa5c17ecb3b6c9bc877ba78dedc7189fcbed7a3d[m
+Merge: f1e388c 6a97058
+Author: shritisomani <42186614-shritisomani@users.noreply.replit.com>
+Date:   Thu May 15 09:40:26 2025 +0000
+
+    Ensure API keys are not saved in local storage for enhanced security
+    
+    Removes localStorage usage for API keys and ensures they are session-specific and user-dependent in `libraryLensDeepSeek.py`, `api-keys-modal.tsx`, `use-api-keys.tsx`, and `use-auth.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 313c841b-4a51-420d-847e-de7d195d6dad
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/77424023-a4f5-40e8-8939-13f57962fe59/ab657cdb-ac79-4166-be9d-161bf119cebc.jpg
+
+[33mcommit 6a970586bcdac9e9b001f0cd6c4a5f3b22e7c6de[m
+Author: shritisomani <42186614-shritisomani@users.noreply.replit.com>
+Date:   Thu May 15 09:40:26 2025 +0000
+
+    Ensure API keys are not saved in local storage for enhanced security
+    
+    Removes localStorage usage for API keys and ensures they are session-specific and user-dependent in `libraryLensDeepSeek.py`, `api-keys-modal.tsx`, `use-api-keys.tsx`, and `use-auth.tsx`.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 313c841b-4a51-420d-847e-de7d195d6dad
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/77424023-a4f5-40e8-8939-13f57962fe59/ab657cdb-ac79-4166-be9d-161bf119cebc.jpg
+
+[33mcommit fd19aaf4573ede4a9c5bf679087774b613d5c5a8[m
+Merge: 5145daa d295a62
+Author: shritisomani <42186614-shritisomani@users.noreply.replit.com>
+Date:   Tue May 13 11:08:36 2025 +0000
+
+    Improve book searches by using a new Python-based service
+    
+    Integrate a Python ISBN lookup service to enhance book metadata retrieval using child_process.spawn.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 313c841b-4a51-420d-847e-de7d195d6dad
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/77424023-a4f5-40e8-8939-13f57962fe59/80a6c05a-585d-47cd-ba8a-c24098293b14.jpg
+
+[33mcommit d295a624d7bd8d23d5194e210909a1025a16e34b[m
+Author: shritisomani <42186614-shritisomani@users.noreply.replit.com>
+Date:   Tue May 13 11:08:36 2025 +0000
+
+    Improve book searches by using a new Python-based service
+    
+    Integrate a Python ISBN lookup service to enhance book metadata retrieval using child_process.spawn.
+    
+    Replit-Commit-Author: Agent
+    Replit-Commit-Session-Id: 313c841b-4a51-420d-847e-de7d195d6dad
+    Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/77424023-a4f5-40e8-8939-13f57962fe59/80a6c05a-585d-47cd-ba8a-c24098293b14.jpg
